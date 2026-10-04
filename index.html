@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poker Sparring — Practice vs AI Opponents</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-emoji">🂡</span> Poker Sparring</div>
+  <nav class="nav">
+    <button class="nav-btn active" data-nav="setup">Play</button>
+    <button class="nav-btn" data-nav="archetypes">Bots</button>
+    <button class="nav-btn" data-nav="stats">Stats</button>
+  </nav>
+  <div class="topbar-right"><span id="bankroll-chip" class="bankroll" title="Session profit (big blinds)">±0 bb</span></div>
+</header>
+
+<main>
+  <!-- ============ SETUP ============ -->
+  <section id="screen-setup" class="screen">
+    <div class="setup-wrap">
+      <h1>Train against poker AI, <span class="accent">offline</span>.</h1>
+      <p class="subtitle">Pick a mode, pick your opponents, and practice real spots — cash games, heads-up, tournaments, and push/fold drills.</p>
+
+      <h2>1 · Choose a mode</h2>
+      <div class="mode-grid">
+        <button class="mode-card selected" data-mode="cash">
+          <div class="mode-emoji">💵</div><div class="mode-name">Cash Game</div>
+          <div class="mode-desc">6-max, 100bb deep. Bots auto top-up.</div>
+        </button>
+        <button class="mode-card" data-mode="hu">
+          <div class="mode-emoji">⚔️</div><div class="mode-name">Heads-Up</div>
+          <div class="mode-desc">You vs one bot. Pick your nemesis.</div>
+        </button>
+        <button class="mode-card" data-mode="tourney">
+          <div class="mode-emoji">🏆</div><div class="mode-name">Tournament</div>
+          <div class="mode-desc">6-max, escalating blinds + antes. Survive.</div>
+        </button>
+        <button class="mode-card" data-mode="pushfold">
+          <div class="mode-emoji">🚀</div><div class="mode-name">Push / Fold Trainer</div>
+          <div class="mode-desc">Short-stack shove-or-fold drills with instant feedback.</div>
+        </button>
+      </div>
+
+      <h2>2 · Choose your opponents <span class="hint">(tap to add/remove)</span></h2>
+      <div id="bot-roster" class="roster"></div>
+
+      <h2>3 · Table settings</h2>
+      <div class="settings-row">
+        <label>Starting stack <input id="cfg-stack" type="number" value="10000" step="1000" min="1000"></label>
+        <label>Small blind <input id="cfg-sb" type="number" value="50" step="25" min="10"></label>
+        <label>Big blind <input id="cfg-bb" type="number" value="100" step="25" min="20"></label>
+      </div>
+
+      <button id="btn-start" class="primary big">Start training →</button>
+      <p class="fineprint">No accounts, no network, no real money. Your stats stay in this browser.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABLE ============ -->
+  <section id="screen-table" class="screen" hidden>
+    <div class="table-topbar">
+      <button id="btn-leave" class="ghost">← Lobby</button>
+      <div id="hand-info" class="hand-info">Hand #1</div>
+      <div id="blinds-info" class="blinds-info"></div>
+    </div>
+    <div class="table-layout">
+      <div class="felt-wrap">
+        <div id="felt" class="felt">
+          <div id="board-area">
+            <div id="pot-display" class="pot">Pot: 0</div>
+            <div id="community" class="community"></div>
+            <div id="street-label" class="street-label"></div>
+          </div>
+          <div id="seats"></div>
+        </div>
+        <div id="winner-banner" class="winner-banner" hidden></div>
+      </div>
+      <aside class="side-panel">
+        <div id="coach-tip" class="coach" hidden></div>
+        <div class="log-title">Hand log</div>
+        <div id="hand-log" class="hand-log"></div>
+      </aside>
+    </div>
+    <div class="hero-bar">
+      <div class="hero-cards-wrap">
+        <div id="hero-cards" class="hero-cards"></div>
+        <div id="hero-name" class="hero-name">You</div>
+      </div>
+      <div id="controls" class="controls">
+        <button id="btn-fold" class="ctl danger">Fold</button>
+        <button id="btn-checkcall" class="ctl">Check</button>
+        <button id="btn-betraise" class="ctl primary">Bet</button>
+        <button id="btn-allin" class="ctl warn">All-in</button>
+        <div id="bet-panel" class="bet-panel" hidden>
+          <div class="bet-row">
+            <input id="bet-slider" type="range" min="0" max="100" value="50">
+            <span id="bet-amount" class="bet-amount">0</span>
+          </div>
+          <div class="bet-row quicks">
+            <button class="chip-btn" data-frac="0.5">½ Pot</button>
+            <button class="chip-btn" data-frac="0.75">¾ Pot</button>
+            <button class="chip-btn" data-frac="1">Pot</button>
+            <button class="chip-btn" data-frac="1.5">1.5×</button>
+          </div>
+          <div class="bet-row">
+            <button id="btn-bet-confirm" class="ctl primary">Confirm</button>
+            <button id="btn-bet-cancel" class="ctl ghost">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PUSH/FOLD TRAINER ============ -->
+  <section id="screen-pf" class="screen" hidden>
+    <div class="pf-wrap">
+      <div class="table-topbar">
+        <button id="btn-pf-leave" class="ghost">← Lobby</button>
+        <div class="hand-info">Push / Fold Trainer</div>
+        <div id="pf-score" class="blinds-info">Score: 0 / 0</div>
+      </div>
+      <div class="pf-table">
+        <div id="pf-situation" class="pf-situation"></div>
+        <div id="pf-opponents" class="pf-opponents"></div>
+        <div id="pf-hero-cards" class="hero-cards large"></div>
+        <div id="pf-actions" class="pf-actions">
+          <button id="pf-shove" class="ctl warn big">SHOVE</button>
+          <button id="pf-fold" class="ctl danger big">FOLD</button>
+        </div>
+        <div id="pf-feedback" class="pf-feedback" hidden></div>
+        <button id="pf-next" class="primary" hidden>Next spot →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ARCHETYPES ============ -->
+  <section id="screen-archetypes" class="screen" hidden>
+    <div class="setup-wrap">
+      <h1>Bot archetypes</h1>
+      <p class="subtitle">Each bot plays a distinct, recognizable style. Build your own to drill the exact player type that gives you trouble.</p>
+      <div id="preset-list" class="arch-list"></div>
+      <h2>Build a custom bot</h2>
+      <div class="builder">
+        <div class="builder-row">
+          <label>Name <input id="cust-name" type="text" maxlength="18" placeholder="e.g. Loose Lucy"></label>
+          <label>Emoji <input id="cust-emoji" type="text" maxlength="4" placeholder="🦊"></label>
+        </div>
+        <div class="builder-row">
+          <label>Style notes <input id="cust-desc" type="text" maxlength="80" placeholder="What makes this player tricky?"></label>
+        </div>
+        <div class="slider-grid">
+          <label>Looseness <span class="val" id="v-loose">40</span><input id="cust-loose" type="range" min="5" max="90" value="40"></label>
+          <label>Aggression <span class="val" id="v-aggr">50</span><input id="cust-aggr" type="range" min="5" max="100" value="50"></label>
+          <label>Bluff frequency <span class="val" id="v-bluff">20</span><input id="cust-bluff" type="range" min="0" max="80" value="20"></label>
+          <label>Call-down stubbornness <span class="val" id="v-stub">50</span><input id="cust-stub" type="range" min="5" max="100" value="50"></label>
+        </div>
+        <button id="btn-add-custom" class="primary">Add custom bot</button>
+      </div>
+      <h2>Your custom bots</h2>
+      <div id="custom-list" class="arch-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section id="screen-stats" class="screen" hidden>
+    <div class="setup-wrap">
+      <h1>Your training stats</h1>
+      <p class="subtitle">Tracked locally across cash, heads-up and tournament sessions.</p>
+      <div id="stat-cards" class="stat-grid"></div>
+      <h2>Stack over time (big blinds)</h2>
+      <canvas id="sparkline" width="640" height="160"></canvas>
+      <h2>Record vs archetypes</h2>
+      <div id="arch-table"></div>
+      <h2>Recent hands</h2>
+      <div id="history-list" class="history"></div>
+      <div class="settings-row">
+        <button id="btn-export" class="ghost">Export hand history (JSON)</button>
+        <button id="btn-reset-stats" class="ghost danger-text">Reset stats</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="modal-root"></div>
+
+<script src="js/cards.js"></script>
+<script src="js/evaluator.js"></script>
+<script src="js/equity.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/bots.js"></script>
+<script src="js/pushfold.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
