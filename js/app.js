@@ -1,0 +1,529 @@
+// app.js — Game flow conductor: screens, event pump, hero controls, tournament,
+// push/fold trainer, coach tips, and stats recording.
+
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- custom bots ----------
+  var CUSTOM_KEY = 'ps_custom_bots_v1';
+  function loadCustomBots() {
+    try {
+      var raw = localStorage.getItem(CUSTOM_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function saveCustomBots(list) {
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function allBots() { return ARCHETYPES.concat(loadCustomBots()); }
+  function botById(id) { return getArchetype(id, loadCustomBots()); }
+
+  // ---------- setup state ----------
+  var mode = 'cash';
+  var selectedBots = new Set(['nit', 'station', 'maniac', 'shark', 'crusher']);
+
+  // ---------- game state ----------
+  var table = null;
+  var evtQueue = [];
+  var pumping = false;
+  var waitingForHero = false;
+  var lastActions = {};
+  var handCtx = null;
+  var sessionStartBB = 0;
+  var tourney = null; // { levelIdx }
+  var gameMode = 'cash';
+  var cfg = { stack: 10000, sb: 50, bb: 100 };
+
+  var TOUR_LEVELS = [
+    { sb: 25, bb: 50, ante: 0 }, { sb: 50, bb: 100, ante: 0 },
+    { sb: 75, bb: 150, ante: 0 }, { sb: 100, bb: 200, ante: 25 },
+    { sb: 150, bb: 300, ante: 50 }, { sb: 200, bb: 400, ante: 50 },
+    { sb: 300, bb: 600, ante: 75 }, { sb: 400, bb: 800, ante: 100 },
+    { sb: 600, bb: 1200, ante: 150 }, { sb: 1000, bb: 2000, ante: 200 },
+    { sb: 1500, bb: 3000, ante: 300 }
+  ];
+
+  // ================= event pump =================
+  function onTableEvent(e) {
+    evtQueue.push(e);
+    pump();
+  }
+
+  function pump() {
+    if (pumping || waitingForHero || !evtQueue.length) return;
+    pumping = true;
+    var e = evtQueue.shift();
+    var delay = handleEvent(e);
+    setTimeout(function () {
+      pumping = false;
+      pump();
+    }, delay);
+  }
+
+  function pauseForHero() { waitingForHero = true; }
+  function resumeFromHero() { waitingForHero = false; pump(); }
+
+  function handleEvent(e) {
+    switch (e.t) {
+      case 'handStart': onHandStart(e); return 700;
+      case 'action': onAction(e); return 200;
+      case 'actionTaken': onActionTaken(e); return 450;
+      case 'street': onStreet(e); return 1100;
+      case 'handEnd': onHandEnd(e); return 3200;
+      case 'tableBroken': onTableBroken(); return 500;
+      default: return 200;
+    }
+  }
+
+  // ================= event handlers =================
+  function onHandStart(e) {
+    lastActions = {};
+    UI.winnerBanner(null);
+    UI.coachTip(null);
+    UI.clearLog();
+    var hero = table.players[0];
+    handCtx = {
+      startStack: hero.stack, vpip: false, pfr: false,
+      postBet: 0, postCall: 0, preflopActed: false
+    };
+    $('hand-info').textContent = 'Hand #' + e.handNo + (gameMode === 'tourney' ? ' · Level ' + (tourney.levelIdx + 1) : '');
+    updateBlindsInfo();
+    UI.log('— Hand #' + e.handNo + ' · blinds ' + UI.fmt(e.sb) + '/' + UI.fmt(e.bb) +
+      (e.ante ? ' (ante ' + UI.fmt(e.ante) + ')' : '') + ' —', 'hl-pot');
+    UI.disableControls();
+    UI.renderTable(table, { acting: -1, button: table.button });
+  }
+
+  function onAction(e) {
+    var p = table.players[e.player];
+    if (p.isHero) {
+      pauseForHero();
+      enableHeroControls();
+      UI.coachTip(coachTip());
+      UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
+    } else {
+      // Bot thinks, then acts.
+      pumping = true; // hold the pump until the bot moves
+      UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
+      setTimeout(function () {
+        var mv = botDecide(table, p);
+        pumping = false;
+        if (mv) table.act(e.player, mv.a, mv.amount);
+        else pump();
+      }, 650 + Math.random() * 750);
+    }
+  }
+
+  function actionLabel(e) {
+    var p = table.players[e.player];
+    var who = p.isHero ? 'You' : (p.archetype ? p.archetype.emoji + ' ' : '') + p.name;
+    switch (e.action) {
+      case 'fold': return who + ' fold' + (p.isHero ? '' : 's');
+      case 'check': return who + ' check' + (p.isHero ? '' : 's');
+      case 'call': return who + ' call' + (p.isHero ? '' : 's') + ' ' + UI.fmt(e.amount || table.currentBet - 0);
+      case 'bet': return who + ' bet' + (p.isHero ? '' : 's') + ' ' + UI.fmt(e.amount);
+      case 'raise': return who + ' raise' + (p.isHero ? '' : 's') + ' to ' + UI.fmt(e.amount);
+      default: return who + ' ' + e.action;
+    }
+  }
+
+  function onActionTaken(e) {
+    var p = table.players[e.player];
+    lastActions[e.player] = describeAction(e, p);
+    if (p.isHero) trackHeroAction(e);
+    UI.log(UI.escapeHtml(describeAction(e, p)), p.isHero ? 'hl-hero' : '');
+    UI.renderTable(table, { lastActions: lastActions, acting: table.acting, button: table.button });
+  }
+
+  function describeAction(e, p) {
+    var you = p.isHero;
+    switch (e.action) {
+      case 'fold': return you ? 'You fold' : 'folds';
+      case 'check': return you ? 'You check' : 'checks';
+      case 'call': return (you ? 'You call ' : 'calls ') + UI.fmt(p.bet);
+      case 'bet': return (you ? 'You bet ' : 'bets ') + UI.fmt(e.amount);
+      case 'raise': return (you ? 'You raise to ' : 'raises to ') + UI.fmt(e.amount);
+      default: return e.action;
+    }
+  }
+
+  function trackHeroAction(e) {
+    if (table.street === 'preflop' && !handCtx.preflopActed) {
+      handCtx.preflopActed = true;
+      if (e.action === 'call' || e.action === 'raise' || e.action === 'bet') handCtx.vpip = true;
+      if (e.action === 'raise' || e.action === 'bet') handCtx.pfr = true;
+    }
+    if (table.street !== 'preflop') {
+      if (e.action === 'bet' || e.action === 'raise') handCtx.postBet++;
+      if (e.action === 'call') handCtx.postCall++;
+    }
+  }
+
+  function onStreet(e) {
+    lastActions = {};
+    var names = { flop: 'Flop', turn: 'Turn', river: 'River' };
+    UI.log((names[e.street] || e.street) + ': ' +
+      e.community.map(function (c) { return cardName(c); }).join(' ') +
+      ' <span class="hl-pot">(pot ' + UI.fmt(e.pot) + ')</span>');
+    UI.renderTable(table, { lastActions: lastActions, acting: table.acting, button: table.button });
+  }
+
+  function heroWon(e) {
+    // e.winners: winByFold -> [{idx...}]; showdown -> [{winners:[idx]}]
+    var ids = [];
+    e.winners.forEach(function (w) {
+      if (w.idx !== undefined) ids.push(w.idx);
+      else (w.winners || []).forEach(function (i) { ids.push(i); });
+    });
+    return ids.indexOf(0) !== -1;
+  }
+
+  function onHandEnd(e) {
+    UI.disableControls();
+    UI.coachTip(null);
+    var hero = table.players[0];
+    var won = heroWon(e);
+    var revealed = {};
+    (e.revealed || []).forEach(function (r) { revealed[r.idx] = true; });
+    var winnerIdx = [];
+    e.winners.forEach(function (w) {
+      (w.winners || [w.idx]).forEach(function (i) { if (winnerIdx.indexOf(i) === -1) winnerIdx.push(i); });
+    });
+
+    // Banner
+    var bits = [];
+    e.winners.forEach(function (w) {
+      var names = (w.winners || [w.idx]).map(function (i) {
+        return table.players[i].isHero ? 'You' : table.players[i].name;
+      }).join(' & ');
+      if (w.uncalled) bits.push(names + ' takes ' + UI.fmt(w.amount) + ' (uncalled)');
+      else if (w.byFold) bits.push(names + ' win' + (names === 'You' ? '' : 's') + ' ' + UI.fmt(w.amount));
+      else bits.push(names + ' win' + (names.indexOf('You') === 0 ? '' : 's') + ' ' + UI.fmt(w.each || w.amount) + ' <span class="wsub">' + UI.escapeHtml(w.hand || '') + '</span>');
+    });
+    var title = won ? '🏆 You win ' + UI.fmt(e.pot) + '!' :
+      '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
+    UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
+    UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
+
+    UI.renderTable(table, { lastActions: {}, winners: winnerIdx, revealed: revealed, acting: -1, button: table.button });
+
+    // Stats
+    var profit = hero.stack - handCtx.startStack;
+    var resultText = won ? ('Won ' + UI.fmt(e.pot)) : 'Lost';
+    if (!won && e.winners.length && e.winners[0].hand) resultText = e.winners[0].hand;
+    recordHand({
+      mode: gameMode, bb: table.bb, heroHole: hero.hole, community: table.community,
+      profitChips: profit, wonHand: won, vpip: handCtx.vpip, pfr: handCtx.pfr,
+      postBet: handCtx.postBet, postCall: handCtx.postCall,
+      opponents: table.players.slice(1).filter(function (p) { return !p.sittingOut; })
+        .map(function (p) { return { id: p.archetype.id, name: p.archetype.name, emoji: p.archetype.emoji }; }),
+      heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
+    });
+    UI.setBankroll((hero.stack - sessionStartBB) / table.bb);
+
+    setTimeout(prepareNextHand, 600);
+  }
+
+  function onTableBroken() {
+    UI.modal({
+      title: 'Table broke', body: 'Not enough players left.',
+      buttons: [{ label: 'Back to lobby', primary: true, cb: leaveToLobby }]
+    });
+  }
+
+  // ================= between hands =================
+  function prepareNextHand() {
+    if (gameMode === 'tourney') {
+      // Eliminations
+      table.players.forEach(function (p, i) {
+        if (i !== 0 && !p.isHero && p.stack === 0 && !p.sittingOut) {
+          p.sittingOut = true;
+          UI.log('💀 ' + UI.escapeHtml(p.name) + ' is eliminated!');
+        }
+      });
+      var hero = table.players[0];
+      var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; });
+      if (hero.stack === 0) {
+        var place = alive.length + 1;
+        UI.modal({
+          title: 'Eliminated — ' + ordinal(place) + ' place',
+          body: 'Tough run. ' + alive.length + ' players remain. Review your stats and run it back!',
+          buttons: [
+            { label: 'View stats', cb: function () { UI.showScreen('stats'); UI.renderStats(); } },
+            { label: 'New tournament', primary: true, cb: startGame }
+          ]
+        });
+        return;
+      }
+      if (alive.length === 1) {
+        UI.modal({
+          title: '🏆 Champion!',
+          body: 'You outlasted the whole table. Tournament winner!',
+          buttons: [
+            { label: 'View stats', cb: function () { UI.showScreen('stats'); UI.renderStats(); } },
+            { label: 'New tournament', primary: true, cb: startGame }
+          ]
+        });
+        return;
+      }
+      // Blind escalation every 8 hands
+      if (table.handNo % 8 === 0) {
+        tourney.levelIdx = Math.min(tourney.levelIdx + 1, TOUR_LEVELS.length - 1);
+        var lv = TOUR_LEVELS[tourney.levelIdx];
+        table.setBlinds(lv.sb, lv.bb, lv.ante);
+        UI.log('⏫ Blinds up! Now ' + UI.fmt(lv.sb) + '/' + UI.fmt(lv.bb) + (lv.ante ? ' ante ' + lv.ante : ''), 'hl-pot');
+      }
+    } else {
+      // Cash: bots top up, hero rebuy if felted
+      table.players.forEach(function (p, i) {
+        if (i !== 0 && p.stack > 0 && p.stack < cfg.stack * 0.5) {
+          p.stack = cfg.stack;
+          UI.log(UI.escapeHtml(p.name) + ' tops up to ' + UI.fmt(cfg.stack));
+        }
+      });
+      var h = table.players[0];
+      if (h.stack < table.bb) {
+        UI.modal({
+          title: 'You are felted!',
+          body: 'Rebuy to ' + UI.fmt(cfg.stack) + ' and keep training?',
+          buttons: [
+            { label: 'Leave', cb: leaveToLobby },
+            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; dealNext(); } }
+          ]
+        });
+        return;
+      }
+    }
+    dealNext();
+  }
+
+  function dealNext() {
+    UI.winnerBanner(null);
+    if (!table.startHand()) onTableBroken();
+  }
+
+  function ordinal(n) {
+    var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  function updateBlindsInfo() {
+    var t = 'Blinds ' + UI.fmt(table.sb) + '/' + UI.fmt(table.bb);
+    if (table.ante) t += ' (ante ' + UI.fmt(table.ante) + ')';
+    if (gameMode === 'tourney') t = 'Level ' + (tourney.levelIdx + 1) + ' · ' + t;
+    $('blinds-info').textContent = t;
+  }
+
+  // ================= hero controls =================
+  function enableHeroControls() {
+    var legal = table.legalActions(0);
+    var toCall = legal.toCall;
+    var cfgCtl = {
+      fold: true,
+      checkCall: toCall > 0
+        ? { label: 'Call ' + UI.fmt(legal.callAmount), enabled: true }
+        : { label: 'Check', enabled: true },
+      betRaise: (legal.canBet || legal.canRaise)
+        ? { label: table.currentBet === 0 ? 'Bet' : 'Raise', enabled: true }
+        : { label: 'Bet', enabled: false },
+      allin: { enabled: table.players[0].stack > 0 }
+    };
+    // Facing an all-in for less than a full call handled by engine via callAmount
+    UI.setControls(cfgCtl);
+
+    $('btn-fold').onclick = function () { heroAct('fold'); };
+    $('btn-checkcall').onclick = function () { heroAct(toCall > 0 ? 'call' : 'check'); };
+    $('btn-betraise').onclick = function () {
+      var isRaise = table.currentBet > 0;
+      var minTo = isRaise ? legal.minRaiseTo : legal.minBetTo;
+      UI.openBetPanel(minTo, legal.maxRaiseTo, table.potTotal(), isRaise, function (amt) {
+        heroAct(isRaise ? 'raise' : 'bet', amt);
+      });
+    };
+    $('btn-allin').onclick = function () {
+      var p = table.players[0];
+      var to = p.bet + p.stack;
+      if (to <= table.currentBet) heroAct('call'); // short all-in is just a call
+      else heroAct(table.currentBet === 0 ? 'bet' : 'raise', to);
+    };
+  }
+
+  function heroAct(a, amount) {
+    if (!waitingForHero) return;
+    UI.disableControls();
+    UI.coachTip(null);
+    resumeFromHero();
+    table.act(0, a, amount);
+  }
+
+  // ================= coach =================
+  function coachTip() {
+    var hero = table.players[0];
+    var legal = table.legalActions(0);
+    var toCall = legal.toCall;
+    var pot = table.potTotal();
+    try {
+      if (table.street === 'preflop') {
+        var tier = holeTier(hero.hole);
+        var nm = hero.hole.map(function (c) { return rankName(c.r); }).join(' ');
+        if (toCall === 0) {
+          return '<b>' + UI.escapeHtml(nm) + '</b> — ' + tierName(tier) + '. ' +
+            (tier <= 3 ? 'Strong. Open it up.' : tier <= 4 ? 'Playable — open in late position, fold early.' : 'Just fold and wait.');
+        }
+        var need = toCall / (pot + toCall);
+        var eq = estimateEquity(hero.hole, [], Math.min(3, table.livePlayers().length - 1), 150);
+        return 'Call <b>' + UI.fmt(toCall) + '</b> to win <b>' + UI.fmt(pot + toCall) + '</b> — you need <b>' +
+          Math.round(need * 100) + '%</b> equity. ' + UI.escapeHtml(nm) + ' has ~<b>' + Math.round(eq * 100) +
+          '%</b>. ' + (eq > need + 0.03 ? 'The math says call.' : eq > need - 0.05 ? 'Close — consider position and opponent.' : 'Math says fold.');
+      }
+      var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
+      if (toCall > 0) {
+        var need2 = toCall / (pot + toCall);
+        return 'Need <b>' + Math.round(need2 * 100) + '%</b>, you have ~<b>' + Math.round(eq2 * 100) +
+          '%</b>. ' + (eq2 > need2 + 0.03 ? 'Call.' : 'Leaning fold unless you have a read.');
+      }
+      var d = detectDraws(hero.hole, table.community);
+      if (d.flushDraw || d.oesd) return 'You have a <b>strong draw</b> (~' + Math.round(eq2 * 100) + '% equity) — great semi-bluff spot if checked to.';
+      var pos = positionScore(table, 0);
+      if (pos > 0.7) return 'You are <b>in position</b> — you can play a wider range and control the pot size.';
+      return null;
+    } catch (err) { return null; }
+  }
+
+  // ================= game setup =================
+  function startGame() {
+    cfg.stack = Math.max(1000, parseInt($('cfg-stack').value, 10) || 10000);
+    cfg.sb = Math.max(10, parseInt($('cfg-sb').value, 10) || 50);
+    cfg.bb = Math.max(cfg.sb + 1, parseInt($('cfg-bb').value, 10) || 100);
+
+    if (mode === 'pushfold') { startPushFold(); return; }
+
+    var bots = allBots().filter(function (b) { return selectedBots.has(b.id); });
+    if (!bots.length) bots = [botById('shark')];
+    if (mode === 'hu') bots = bots.slice(0, 1);
+    if (mode === 'cash' || mode === 'tourney') bots = bots.slice(0, 5);
+
+    gameMode = mode;
+    var players = [{ name: 'You', isHero: true }].concat(bots.map(function (b) {
+      return { name: b.name, archetype: b };
+    }));
+
+    table = new PokerTable({
+      players: players, sb: cfg.sb, bb: cfg.bb,
+      startingStack: gameMode === 'tourney' ? 10000 : cfg.stack,
+      ante: 0, onEvent: onTableEvent
+    });
+    if (gameMode === 'tourney') {
+      tourney = { levelIdx: 0 };
+      table.setBlinds(TOUR_LEVELS[0].sb, TOUR_LEVELS[0].bb, 0);
+    } else tourney = null;
+
+    sessionStartBB = table.players[0].stack / table.bb;
+    UI.setBankroll(0);
+    evtQueue = []; pumping = false; waitingForHero = false;
+    UI.buildSeats(players.length);
+    UI.showScreen('table');
+    setTimeout(dealNext, 400);
+  }
+
+  function leaveToLobby() {
+    table = null; evtQueue = []; pumping = false; waitingForHero = false;
+    UI.winnerBanner(null);
+    UI.showScreen('setup');
+  }
+
+  // ================= push/fold trainer =================
+  var pf = { scn: null, score: 0, total: 0 };
+
+  function startPushFold() {
+    pf.score = 0; pf.total = 0;
+    UI.showScreen('pf');
+    nextPFScenario();
+  }
+  function nextPFScenario() {
+    pf.scn = newPushFoldScenario();
+    UI.renderPFScenario(pf.scn);
+    $('pf-score').textContent = 'Score: ' + pf.score + ' / ' + pf.total;
+  }
+  function pfAnswer(action) {
+    var fb = evaluatePushFold(pf.scn, action);
+    pf.total++;
+    if (fb.right) pf.score++;
+    UI.renderPFFeedback(fb);
+    $('pf-score').textContent = 'Score: ' + pf.score + ' / ' + pf.total;
+  }
+
+  // ================= wiring =================
+  function wire() {
+    document.querySelectorAll('.nav-btn').forEach(function (b) {
+      b.onclick = function () {
+        var dest = b.dataset.nav;
+        if (dest === 'setup') UI.showScreen('setup');
+        else if (dest === 'archetypes') { UI.renderArchetypes(loadCustomBots(), deleteCustom); UI.showScreen('archetypes'); }
+        else if (dest === 'stats') { UI.renderStats(); UI.showScreen('stats'); }
+      };
+    });
+    document.querySelectorAll('.mode-card').forEach(function (c) {
+      c.onclick = function () {
+        document.querySelectorAll('.mode-card').forEach(function (x) { x.classList.remove('selected'); });
+        c.classList.add('selected');
+        mode = c.dataset.mode;
+      };
+    });
+    $('btn-start').onclick = startGame;
+    $('btn-leave').onclick = leaveToLobby;
+    $('btn-pf-leave').onclick = leaveToLobby;
+
+    // push/fold buttons
+    $('pf-shove').onclick = function () { pfAnswer(pf.scn.facingShove ? 'call' : 'shove'); };
+    $('pf-fold').onclick = function () { pfAnswer('fold'); };
+    $('pf-next').onclick = nextPFScenario;
+
+    // custom bot builder
+    [['cust-loose', 'v-loose'], ['cust-aggr', 'v-aggr'], ['cust-bluff', 'v-bluff'], ['cust-stub', 'v-stub']]
+      .forEach(function (pair) {
+        $(pair[0]).oninput = function () { $(pair[1]).textContent = $(pair[0]).value; };
+      });
+    $('btn-add-custom').onclick = function () {
+      var name = $('cust-name').value.trim() || 'My Bot';
+      var emoji = $('cust-emoji').value.trim() || '🤖';
+      var a = customArchetype({
+        name: name, emoji: emoji,
+        desc: $('cust-desc').value.trim(),
+        looseness: +$('cust-loose').value, aggression: +$('cust-aggr').value,
+        bluff: +$('cust-bluff').value, stubborn: +$('cust-stub').value
+      });
+      var list = loadCustomBots();
+      list.push(a);
+      saveCustomBots(list);
+      selectedBots.add(a.id);
+      $('cust-name').value = ''; $('cust-desc').value = '';
+      UI.renderArchetypes(list, deleteCustom);
+      UI.renderRoster(allBots(), selectedBots);
+    };
+
+    // stats
+    $('btn-export').onclick = function () {
+      var blob = new Blob([exportStatsJSON()], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'poker-sparring-hands.json';
+      a.click();
+    };
+    $('btn-reset-stats').onclick = function () {
+      if (confirm('Reset all training stats?')) { clearStats(); UI.renderStats(); }
+    };
+
+    UI.renderRoster(allBots(), selectedBots);
+  }
+
+  function deleteCustom(id) {
+    saveCustomBots(loadCustomBots().filter(function (a) { return a.id !== id; }));
+    selectedBots.delete(id);
+    UI.renderArchetypes(loadCustomBots(), deleteCustom);
+    UI.renderRoster(allBots(), selectedBots);
+  }
+
+  document.addEventListener('DOMContentLoaded', wire);
+})();
