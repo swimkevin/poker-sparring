@@ -10,8 +10,11 @@ Vanilla HTML/CSS/JS. **No build step, no dependencies, no backend.**
 ## Commands
 
 ```bash
-node tests/test.js        # full suite: evaluator unit tests + 300-hand engine soak
-python3 -m http.server 8000   # serve locally → http://localhost:8000
+npm test               # full gate: unit/integration + jsdom component + gameplay smoke
+npm run test:unit      # node tests/test.js only
+npm run test:component # node tests/component.test.js only (needs `npm install` for jsdom)
+npm run test:smoke     # node tests/smoke.js: boots the real app in jsdom, auto-plays hands
+npm run serve          # → http://localhost:8000
 ```
 
 Open `index.html` directly also works, but serving is recommended.
@@ -24,7 +27,8 @@ js/evaluator.js   7-card evaluator. Score = category * 16^5 + kickers (integer c
 js/equity.js      Monte Carlo equity, madeStrength() [0,1], detectDraws(), holeTier() 1..6.
 js/engine.js      PokerTable class. Owns ALL game rules. Emits events via onEvent + eventQueue.
 js/bots.js        ARCHETYPES + botDecide(table, player) -> { a, amount }.
-js/pushfold.js    Push/fold drill scenarios + chart-based feedback.
+js/pushfold.js    Push/fold drill scenarios + range-based feedback (equity vs the
+                shover's archetype range, not vs random hands).
 js/stats.js       localStorage stats. Guarded so it loads in Node.
 js/ui.js          DOM rendering only. Never makes game decisions.
 js/app.js         Conductor: event pump, hero controls, tournament, coach tips.
@@ -56,11 +60,20 @@ Native port. `ui.js`/`app.js` are browser-only.
 
 ## Testing
 
-- `tests/test.js` must pass before any PR: evaluator vectors, equity sanity ranges,
-  and the 300-hand soak (chip conservation every hand, no exceptions, no infinite loops).
-- If you change engine rules, add a targeted test (e.g. side-pot split, short all-in).
+- `npm test` must pass before any push: evaluator vectors, equity sanity ranges,
+  deterministic side-pot/odd-chip/full-hand scenarios, push/fold verdict
+  consistency, the bot move-legality sweep (every archetype, only legal moves),
+  the 300-hand soak (chip conservation every hand, no exceptions, no infinite
+  loops), and jsdom component tests (escaping, feedback rendering, UI states).
+- If you change engine rules, add a targeted deterministic test (side-pot split,
+  short all-in, odd chip). The soak test catches regressions; deterministic tests
+  pin behavior.
 - If you tune bot params, run the lineup script pattern from git history to confirm
-  archetypes still separate (nit < shark < crusher < station < maniac by VPIP).
+  archetypes still separate (rock < shark < lag < station < maniac by VPIP).
+- If you change push/fold logic, the verdict must always agree with the equity
+  number shown in the feedback text (see `evaluatePushFold` range-consistency tests).
+- Never `innerHTML` user-controlled strings without `UI.escapeHtml` — there are
+  component tests guarding this; add one if you add a new injection point.
 
 ## Style
 
@@ -70,7 +83,12 @@ Native port. `ui.js`/`app.js` are browser-only.
 
 ## Roadmap (biggest wins next)
 
-1. GTO-ish preflop range charts per archetype (replace tier thresholds).
-2. LLM hand-review coach (needs a backend or BYO-key design — keep client static).
-3. React Native port reusing the DOM-free core.
-4. Online multiplayer (would need a server; out of scope for the static build).
+See `docs/ROADMAP.md` for the weekly plan. Headliners:
+
+1. Hand replayer (persist per-hand actions, street-by-street viewer).
+2. Drill packs: 3-bet pots, blind defense, ICM bubble spots.
+3. PWA: manifest + service worker for installable/offline phone play.
+4. GTO-ish preflop range charts per archetype (replace tier thresholds).
+5. LLM hand-review coach (needs a backend or BYO-key design — keep client static).
+6. React Native port reusing the DOM-free core.
+7. Online multiplayer (would need a server; out of scope for the static build).
