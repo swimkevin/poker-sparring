@@ -32,6 +32,10 @@ tournament bubble pack. Reuses the scenario/feedback pattern from `pushfold.js`.
 Web app manifest, service worker, iOS/Android install prompts — the phone story
 without the App Store. See `docs/MOBILE.md`.
 
+**Also in v1.6: analytics.** Add Cloudflare Web Analytics (free, privacy-first,
+one `<script>` tag — no cookie banner needed). This starts daily-active-user
+tracking with zero backend. Measure before monetizing.
+
 ## v1.7 — Range charts
 
 Visual preflop range grids per archetype/position (the natural upgrade from the
@@ -41,6 +45,31 @@ Visual preflop range grids per archetype/position (the natural upgrade from the
 
 Practice streaks, milestone badges, weekly challenges. Retention mechanics;
 all local.
+
+## Monetization track (secondary — after the product earns users)
+
+Priority order is deliberate: **resume first, revenue second.** A FANG/AI offer
+is worth orders of magnitude more than early app revenue; the public repo *is*
+the resume. Nothing below requires taking the repo private.
+
+- **Anytime: GitHub Sponsors.** Free tip jar on the profile (10 min setup).
+  Zero code changes.
+- **After analytics show real usage: Capacitor → App Store.** Same codebase in a
+  native shell, ~1 week of work, $99/yr Apple Developer. Paid-upfront
+  ($2.99–4.99) or freemium. No real-money play anywhere — keeps App Store review
+  viable (training apps are allowed; gambling-adjacent gets extra scrutiny).
+- **Later, if retention justifies it: premium backend.** Cloud sync, LLM hand
+  reviews, advanced drill packs as subscription. Needs a real backend; keep the
+  web client public (open-core model) and only the premium service private.
+- **What not to do:** AdSense on a niche trainer (pennies, hurts UX), or going
+  private prematurely (kills the resume value for zero revenue benefit).
+
+**Do you have to take it off public GitHub to make money? No.** This is the
+standard indie pattern: public repo + paid distribution (App Store binary,
+hosted premium). The code being public doesn't stop anyone from paying for the
+convenient, polished, installable version — the moat is distribution and UX,
+not the source. And for hiring, the public repo with live demo and real commit
+history is exactly what FANG/AI hiring managers want to see.
 
 ## Later / bigger bets
 
