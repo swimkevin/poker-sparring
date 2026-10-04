@@ -14,41 +14,50 @@ if (typeof module !== 'undefined' && module.exports) {
 //   threeBetTier: worst tier to 3-bet for value with
 //   aggression 0..1, bluff 0..1, stubborn 0..1 (call-down frequency)
 //   pushTier / callPushTier: short-stack (<13bb) shove / call-shove tiers
+// Profiles follow the classic live-game taxonomy (rock / calling station /
+// maniac / TAG / LAG) described by Sklansky, Harrington and modern training
+// sites: each has a `beat` line teaching the standard exploit, so practice
+// transfers to real tables.
 var ARCHETYPES = [
   {
-    id: 'nit', name: 'The Nit', emoji: '\uD83E\uDDCA',
-    tagline: 'Waits for aces. Folds everything else.',
-    desc: 'Tight-passive rock. Opens ~12% of hands, almost never bluffs, folds to pressure. Great for practicing value-betting thin and stealing blinds.',
-    openTier: 3, openTierLate: 3, callTier: 3, threeBetTier: 2,
-    aggression: 0.30, bluff: 0.05, stubborn: 0.25, pushTier: 3, callPushTier: 2, limp: 0.05
+    id: 'rock', name: 'The Rock', emoji: '🪨',
+    tagline: 'Only plays monsters. You always know where you stand.',
+    desc: 'Tight-passive: plays ~10% of hands — big pairs and big aces — and only bets with genuine strength. The classic "rock" from every low-stakes game.',
+    beat: 'Steal their blinds relentlessly. When they finally bet or raise, believe them and fold everything but the nuts.',
+    openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
+    aggression: 0.20, bluff: 0.02, stubborn: 0.20, pushTier: 3, callPushTier: 2, limp: 0.05
   },
   {
-    id: 'station', name: 'Calling Station', emoji: '\uD83D\uDCDE',
-    tagline: 'Never folds. Ever.',
-    desc: 'Loose-passive. Plays ~45% of hands, calls down with middle pair, hates folding draws. Practice: value bet relentlessly, never bluff.',
-    openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
-    aggression: 0.25, bluff: 0.05, stubborn: 0.90, pushTier: 4, callPushTier: 3, limp: 0.70
+    id: 'station', name: 'Calling Station', emoji: '📞',
+    tagline: 'Calls with anything. Folding is not in the vocabulary.',
+    desc: 'Loose-passive: sees ~45% of flops, calls down with middle pair or any draw, almost never raises. The most common player in home games.',
+    beat: 'Value bet big with any decent hand — and never bluff. They will call you down, so make them pay for it.',
+    openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 2,
+    aggression: 0.20, bluff: 0.03, stubborn: 0.95, pushTier: 4, callPushTier: 4, limp: 0.75
   },
   {
-    id: 'maniac', name: 'The Maniac', emoji: '\uD83E\uDD2A',
-    tagline: 'Raise. Re-raise. Repeat.',
-    desc: 'Loose-aggressive chaos. Opens ~60%, 3-bets light, bluffs rivers. Practice: trap with strong hands, stay calm, let them hang themselves.',
-    openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 4,
-    aggression: 0.95, bluff: 0.50, stubborn: 0.60, pushTier: 5, callPushTier: 4, limp: 0.05
+    id: 'maniac', name: 'The Maniac', emoji: '🤪',
+    tagline: 'Raises everything. No fold button found.',
+    desc: 'Loose-aggressive chaos: plays ~65% of hands, 3-bets light, bluffs every street. Terrifying until you realize their range is literally everything.',
+    beat: 'Tighten up, trap with strong hands, and call down lighter than usual. Let them bluff their stack to you.',
+    openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 5,
+    aggression: 0.95, bluff: 0.55, stubborn: 0.65, pushTier: 6, callPushTier: 4, limp: 0.05
   },
   {
-    id: 'shark', name: 'TAG Shark', emoji: '\uD83E\uDD88',
-    tagline: 'Solid, aggressive, balanced.',
-    desc: 'Tight-aggressive regular: ~22% VPIP, position-aware, value bets and bluffs at sane frequencies. The "good player" baseline to measure yourself against.',
+    id: 'shark', name: 'TAG Shark', emoji: '🦈',
+    tagline: 'Tight, aggressive, disciplined. The winning baseline.',
+    desc: 'Tight-aggressive: ~20% of hands, position-aware, value bets and bluffs at balanced frequencies. The style winning players are taught — measure yourself against it.',
+    beat: 'Respect their aggression and avoid marginal spots. Steal their blinds when they show weakness.',
     openTier: 3, openTierLate: 5, callTier: 3, threeBetTier: 2,
     aggression: 0.70, bluff: 0.25, stubborn: 0.50, pushTier: 4, callPushTier: 3, limp: 0.10
   },
   {
-    id: 'crusher', name: 'Tournament Crusher', emoji: '\uD83C\uDFC6',
-    tagline: 'Built for final tables.',
-    desc: 'Aggressive tournament specialist: steals blinds late, pressures bubbles, shoves/folds correctly short-stacked. The one to practice tournament spots against.',
+    id: 'lag', name: 'Tricky LAG', emoji: '🎭',
+    tagline: 'Plays lots of hands — and plays them well.',
+    desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed bluffs and tricky lines. The toughest home-game regular — hard to read, harder to push around.',
+    beat: 'Play solid and straightforward; don\'t try to out-bluff them. Value bet confidently — they call wider than they should.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
-    aggression: 0.80, bluff: 0.30, stubborn: 0.55, pushTier: 5, callPushTier: 3, limp: 0.15
+    aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15
   }
 ];
 

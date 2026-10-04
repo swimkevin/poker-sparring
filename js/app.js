@@ -21,7 +21,10 @@
 
   // ---------- setup state ----------
   var mode = 'cash';
-  var selectedBots = new Set(['nit', 'station', 'maniac', 'shark', 'crusher']);
+  var oppCount = 3; // opponents at the table (1..5)
+  var selectedBots = new Set(['shark', 'station', 'maniac']);
+  // Balanced default mix used when the opponent count changes.
+  var DEFAULT_MIX = ['shark', 'station', 'maniac', 'rock', 'lag'];
 
   // ---------- game state ----------
   var table = null;
@@ -36,12 +39,11 @@
   var cfg = { stack: 10000, sb: 50, bb: 100 };
 
   var TOUR_LEVELS = [
-    { sb: 25, bb: 50, ante: 0 }, { sb: 50, bb: 100, ante: 0 },
-    { sb: 75, bb: 150, ante: 0 }, { sb: 100, bb: 200, ante: 25 },
-    { sb: 150, bb: 300, ante: 50 }, { sb: 200, bb: 400, ante: 50 },
-    { sb: 300, bb: 600, ante: 75 }, { sb: 400, bb: 800, ante: 100 },
-    { sb: 600, bb: 1200, ante: 150 }, { sb: 1000, bb: 2000, ante: 200 },
-    { sb: 1500, bb: 3000, ante: 300 }
+    { sb: 10, bb: 20, ante: 0 }, { sb: 15, bb: 30, ante: 0 },
+    { sb: 20, bb: 40, ante: 0 }, { sb: 30, bb: 60, ante: 5 },
+    { sb: 40, bb: 80, ante: 10 }, { sb: 60, bb: 120, ante: 10 },
+    { sb: 80, bb: 160, ante: 20 }, { sb: 120, bb: 240, ante: 30 },
+    { sb: 160, bb: 320, ante: 40 }, { sb: 200, bb: 400, ante: 50 }
   ];
 
   // ================= event pump =================
@@ -393,16 +395,16 @@
 
   // ================= game setup =================
   function startGame() {
-    cfg.stack = Math.max(1000, parseInt($('cfg-stack').value, 10) || 10000);
-    cfg.sb = Math.max(10, parseInt($('cfg-sb').value, 10) || 50);
-    cfg.bb = Math.max(cfg.sb + 1, parseInt($('cfg-bb').value, 10) || 100);
+    cfg.stack = Math.max(200, parseInt($('cfg-stack').value, 10) || 1000);
+    cfg.sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
+    cfg.bb = Math.max(cfg.sb + 1, parseInt($('cfg-bb').value, 10) || 10);
 
     if (mode === 'pushfold') { startPushFold(); return; }
 
     var bots = allBots().filter(function (b) { return selectedBots.has(b.id); });
     if (!bots.length) bots = [botById('shark')];
     if (mode === 'hu') bots = bots.slice(0, 1);
-    if (mode === 'cash' || mode === 'tourney') bots = bots.slice(0, 5);
+    else bots = bots.slice(0, oppCount);
 
     gameMode = mode;
     var players = [{ name: 'You', isHero: true }].concat(bots.map(function (b) {
@@ -411,7 +413,7 @@
 
     table = new PokerTable({
       players: players, sb: cfg.sb, bb: cfg.bb,
-      startingStack: gameMode === 'tourney' ? 10000 : cfg.stack,
+      startingStack: gameMode === 'tourney' ? 1000 : cfg.stack,
       ante: 0, onEvent: onTableEvent
     });
     if (gameMode === 'tourney') {
@@ -469,12 +471,33 @@
         document.querySelectorAll('.mode-card').forEach(function (x) { x.classList.remove('selected'); });
         c.classList.add('selected');
         mode = c.dataset.mode;
+        // Heads-up is always 1 opponent; other modes use the stepper.
+        $('opp-count').textContent = mode === 'hu' ? 1 : oppCount;
       };
     });
     $('btn-start').onclick = startGame;
     $('btn-leave').onclick = leaveToLobby;
     $('btn-pf-leave').onclick = leaveToLobby;
 
+    // opponent count stepper
+    function syncRosterToCount() {
+      var ids = [];
+      DEFAULT_MIX.forEach(function (id) { if (botById(id)) ids.push(id); });
+      loadCustomBots().forEach(function (a) { ids.push(a.id); });
+      selectedBots = new Set(ids.slice(0, oppCount));
+      $('opp-count').textContent = oppCount;
+      UI.renderRoster(allBots(), selectedBots);
+    }
+    $('opp-minus').onclick = function () {
+      if (mode === 'hu') return;
+      oppCount = Math.max(1, oppCount - 1);
+      syncRosterToCount();
+    };
+    $('opp-plus').onclick = function () {
+      if (mode === 'hu') return;
+      oppCount = Math.min(5, oppCount + 1);
+      syncRosterToCount();
+    };
     // push/fold buttons
     $('pf-shove').onclick = function () { pfAnswer(pf.scn.facingShove ? 'call' : 'shove'); };
     $('pf-fold').onclick = function () { pfAnswer('fold'); };

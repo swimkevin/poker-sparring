@@ -226,7 +226,8 @@ var UI = (function () {
     d.innerHTML = '<div class="ah"><span class="aemoji">' + a.emoji + '</span>' +
       '<span class="aname">' + escapeHtml(a.name) + '</span></div>' +
       '<div class="atag">' + escapeHtml(a.tagline || '') + '</div>' +
-      '<div class="adesc">' + escapeHtml(a.desc || '') + '</div>';
+      '<div class="adesc">' + escapeHtml(a.desc || '') + '</div>' +
+      (a.beat ? '<div class="abeat"><b>How to beat:</b> ' + escapeHtml(a.beat) + '</div>' : '');
     if (custom && onDelete) {
       var del = document.createElement('button');
       del.className = 'ghost danger-text adel'; del.textContent = 'Delete';

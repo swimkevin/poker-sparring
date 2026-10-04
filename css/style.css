@@ -301,3 +301,24 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .side-panel { max-height: 220px; }
   .felt { height: 380px; border-radius: 40px; }
 }
+
+/* Opponent count stepper */
+.count-row { display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0; }
+.stepper {
+  width: 52px; height: 52px; border-radius: 50%;
+  font-size: 1.8rem; line-height: 1; cursor: pointer;
+  background: #1a2230; color: var(--text); border: 2px solid #2b3547;
+}
+.stepper:hover { border-color: var(--gold); }
+.count-display { text-align: center; min-width: 90px; }
+.count-display #opp-count { font-size: 2.2rem; font-weight: 800; color: var(--gold); }
+.count-display .count-label { display: block; font-size: 0.8rem; color: var(--muted); }
+.hint { font-size: 0.85rem; color: var(--muted); margin: 0.2rem 0 0.6rem; }
+
+/* Exploit tip on archetype cards */
+.abeat {
+  margin-top: 0.5rem; padding: 0.5rem 0.6rem; border-radius: 8px;
+  background: #101a14; border-left: 3px solid var(--green);
+  font-size: 0.82rem; color: var(--text);
+}
+.abeat b { color: var(--green); }
