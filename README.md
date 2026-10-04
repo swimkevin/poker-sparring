@@ -2,7 +2,7 @@
 
 **Train against offline poker AI.** A free, no-signup Texas Hold'em practice app: play cash games, heads-up, and tournaments against bots with distinct, customizable playing styles — or drill short-stack push/fold spots with instant feedback.
 
-▶️ **Live demo:** `https://<your-username>.github.io/poker-sparring/` *(enable GitHub Pages after pushing)*
+▶️ **Live demo:** `https://swimkevin.github.io/poker-sparring/`
 
 ![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-900%2B%20passing-brightgreen)
 
