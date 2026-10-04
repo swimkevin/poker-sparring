@@ -3,6 +3,20 @@
 
 (function () {
   'use strict';
+
+  /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
+  var APP_VERSION = '1.3.0';
+
+  // Last-resort error boundary: a UI glitch must never take down the table or
+  // lose the player's stats. Surfaces a calm notice instead of failing silently.
+  window.addEventListener('error', function (ev) {
+    try {
+      if (typeof UI !== 'undefined' && UI.log && document.getElementById('hand-log')) {
+        UI.log('⚠️ Something glitched, but the table is safe and your stats are saved.', 'hl-leak');
+      }
+    } catch (e) { /* error handler must never throw */ }
+  });
+
   function $(id) { return document.getElementById(id); }
 
   // ---------- custom bots ----------
@@ -117,15 +131,14 @@
     }
   }
 
-  function actionLabel(e) {
-    var p = table.players[e.player];
+  function describeAction(e, p) {
     var who = p.isHero ? 'You' : (p.archetype ? p.archetype.emoji + ' ' : '') + p.name;
     switch (e.action) {
-      case 'fold': return who + ' fold' + (p.isHero ? '' : 's');
-      case 'check': return who + ' check' + (p.isHero ? '' : 's');
-      case 'call': return who + ' call' + (p.isHero ? '' : 's') + ' ' + UI.fmt(e.amount || table.currentBet - 0);
-      case 'bet': return who + ' bet' + (p.isHero ? '' : 's') + ' ' + UI.fmt(e.amount);
-      case 'raise': return who + ' raise' + (p.isHero ? '' : 's') + ' to ' + UI.fmt(e.amount);
+      case 'fold': return p.isHero ? 'You fold' : who + ' folds';
+      case 'check': return p.isHero ? 'You check' : who + ' checks';
+      case 'call': return (p.isHero ? 'You call ' : who + ' calls ') + UI.fmt(e.bet || p.bet);
+      case 'bet': return (p.isHero ? 'You bet ' : who + ' bets ') + UI.fmt(e.amount);
+      case 'raise': return (p.isHero ? 'You raise to ' : who + ' raises to ') + UI.fmt(e.amount);
       default: return who + ' ' + e.action;
     }
   }
@@ -136,18 +149,6 @@
     if (p.isHero) trackHeroAction(e);
     UI.log(UI.escapeHtml(describeAction(e, p)), p.isHero ? 'hl-hero' : '');
     UI.renderTable(table, { lastActions: lastActions, acting: table.acting, button: table.button });
-  }
-
-  function describeAction(e, p) {
-    var you = p.isHero;
-    switch (e.action) {
-      case 'fold': return you ? 'You fold' : 'folds';
-      case 'check': return you ? 'You check' : 'checks';
-      case 'call': return (you ? 'You call ' : 'calls ') + UI.fmt(p.bet);
-      case 'bet': return (you ? 'You bet ' : 'bets ') + UI.fmt(e.amount);
-      case 'raise': return (you ? 'You raise to ' : 'raises to ') + UI.fmt(e.amount);
-      default: return e.action;
-    }
   }
 
   function trackHeroAction(e) {
@@ -199,9 +200,12 @@
       var names = (w.winners || [w.idx]).map(function (i) {
         return table.players[i].isHero ? 'You' : table.players[i].name;
       }).join(' & ');
-      if (w.uncalled) bits.push(names + ' takes ' + UI.fmt(w.amount) + ' (uncalled)');
-      else if (w.byFold) bits.push(names + ' win' + (names === 'You' ? '' : 's') + ' ' + UI.fmt(w.amount));
-      else bits.push(names + ' win' + (names.indexOf('You') === 0 ? '' : 's') + ' ' + UI.fmt(w.each || w.amount) + ' <span class="wsub">' + UI.escapeHtml(w.hand || '') + '</span>');
+      var potLabel = (w.potIndex == null || w.potIndex === 0) ? 'Main pot' : 'Side pot ' + w.potIndex;
+      var verb = names === 'You' ? 'win' : (names.indexOf('You') === 0 ? 'win' : 'wins');
+      if (w.uncalled) bits.push(names + ' takes ' + UI.fmt(w.amount) + ' back (uncalled bet)');
+      else if (w.byFold) bits.push(names + ' ' + verb + ' ' + UI.fmt(w.amount));
+      else bits.push(potLabel + ': ' + names + ' ' + verb + ' ' + UI.fmt(w.each || w.amount) +
+        ' <span class="wsub">' + UI.escapeHtml(w.hand || '') + '</span>');
     });
     var title = won ? '🏆 You win ' + UI.fmt(e.pot) + '!' :
       '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
@@ -218,8 +222,12 @@
       mode: gameMode, bb: table.bb, heroHole: hero.hole, community: table.community,
       profitChips: profit, wonHand: won, vpip: handCtx.vpip, pfr: handCtx.pfr,
       postBet: handCtx.postBet, postCall: handCtx.postCall,
-      opponents: table.players.slice(1).filter(function (p) { return !p.sittingOut; })
-        .map(function (p) { return { id: p.archetype.id, name: p.archetype.name, emoji: p.archetype.emoji }; }),
+      opponents: table.players.slice(1)
+        .filter(function (p) { return !p.sittingOut && p.hole.length === 2; })
+        .map(function (p) {
+          var a = p.archetype || { id: 'unknown', name: p.name, emoji: '🤖' };
+          return { id: a.id, name: a.name, emoji: a.emoji };
+        }),
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
     UI.setBankroll((hero.stack - sessionStartBB) / table.bb);
@@ -588,6 +596,8 @@
     };
 
     UI.renderRoster(allBots(), selectedBots);
+    var vv = $('app-version');
+    if (vv) vv.textContent = 'v' + APP_VERSION + ' · offline · stats stay in this browser';
   }
 
   function deleteCustom(id) {

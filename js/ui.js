@@ -88,9 +88,9 @@ var UI = (function () {
     var g = $('glossary');
     g.innerHTML = '';
     GLOSSARY.forEach(function (pair) {
-      var d = document.createElement('div');
+      var d = document.createElement('details');
       d.className = 'gloss-card';
-      d.innerHTML = '<div class="gloss-term">' + escapeHtml(pair[0]) + '</div>' +
+      d.innerHTML = '<summary class="gloss-term">' + escapeHtml(pair[0]) + '</summary>' +
         '<div class="gloss-def">' + escapeHtml(pair[1]) + '</div>';
       g.appendChild(d);
     });
@@ -122,7 +122,7 @@ var UI = (function () {
       d.innerHTML = '<div class="leak-head"><span class="leak-title">🩹 ' + escapeHtml(l.title) + '</span>' +
         '<span class="leak-meta">Hand #' + l.hand + ' · ' + escapeHtml(l.street) + ' · ' + escapeHtml(l.hole) + '</span></div>' +
         '<div class="leak-spot">' + escapeHtml(l.spot) + '</div>' +
-        '<div class="leak-why">' + escapeHtml(l.why) + '</div>';
+        '<details class="leak-why"><summary>Why this matters</summary><div>' + escapeHtml(l.why) + '</div></details>';
       box.appendChild(d);
     });
   }
@@ -151,7 +151,7 @@ var UI = (function () {
     allBots.forEach(function (b) {
       var btn = document.createElement('button');
       btn.className = 'roster-card' + (selected.has(b.id) ? ' selected' : '');
-      btn.innerHTML = '<span class="emoji">' + b.emoji + '</span>' +
+      btn.innerHTML = '<span class="emoji">' + escapeHtml(b.emoji) + '</span>' +
         '<span><div class="nm">' + escapeHtml(b.name) + '</div>' +
         '<div class="tg">' + escapeHtml(b.tagline) + '</div></span>' +
         '<span class="check">✓</span>';
@@ -309,6 +309,9 @@ var UI = (function () {
     back.className = 'modal-back';
     var m = document.createElement('div');
     m.className = 'modal';
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+    m.setAttribute('aria-label', o.title);
     m.innerHTML = '<h3>' + o.title + '</h3><p>' + o.body + '</p>';
     var row = document.createElement('div');
     row.className = 'mrow';
@@ -337,7 +340,7 @@ var UI = (function () {
   function archCard(a, custom, onDelete) {
     var d = document.createElement('div');
     d.className = 'arch-card';
-    d.innerHTML = '<div class="ah"><span class="aemoji">' + a.emoji + '</span>' +
+    d.innerHTML = '<div class="ah"><span class="aemoji">' + escapeHtml(a.emoji) + '</span>' +
       '<span class="aname">' + escapeHtml(a.name) + '</span></div>' +
       '<div class="atag">' + escapeHtml(a.tagline || '') + '</div>' +
       '<div class="adesc">' + escapeHtml(a.desc || '') + '</div>' +
@@ -354,9 +357,11 @@ var UI = (function () {
   // ---------- stats screen ----------
   function renderStats() {
     var s = loadStats(), d = derivedStats(s);
+    // bb/100 is noise below ~20 hands — show a dash instead of an alarming number.
+    var bb100 = d.hands >= 20 ? d.bbPer100.toFixed(1) : '—';
     var cards = [
       ['Hands', d.hands], ['Win %', d.winRate.toFixed(1)],
-      ['bb / 100', d.bbPer100.toFixed(1)], ['VPIP %', d.vpip.toFixed(1)],
+      ['bb / 100', bb100], ['VPIP %', d.vpip.toFixed(1)],
       ['PFR %', d.pfr.toFixed(1)], ['Aggr. factor', d.af >= 99 ? '∞' : d.af.toFixed(2)],
       ['Biggest pot', d.biggestPotBB.toFixed(0) + ' bb']
     ];
@@ -365,7 +370,8 @@ var UI = (function () {
     cards.forEach(function (c) {
       var el = document.createElement('div');
       el.className = 'stat-card';
-      el.innerHTML = '<div class="sk">' + c[0] + '</div><div class="sv">' + c[1] + '</div>';
+      var title = c[0] === 'bb / 100' && d.hands < 20 ? ' title="Play 20+ hands for a meaningful win rate"' : '';
+      el.innerHTML = '<div class="sk"' + title + '>' + c[0] + '</div><div class="sv"' + title + '>' + c[1] + '</div>';
       box.appendChild(el);
     });
     drawSparkline(s.graph);
