@@ -47,6 +47,51 @@ function estimateEquity(hole, community, opponents, iters) {
   return score / iters;
 }
 
+// Estimate P(win) for `hole` vs a SINGLE opponent whose hole cards are sampled
+// uniformly from hands with holeTier <= maxTier (a shoving/calling "range").
+// This is the honest number for "facing a shove" spots: a shover's range is
+// far stronger than random hands, so estimateEquity() would overstate our equity.
+function estimateEquityVsRange(hole, maxTier, iters) {
+  iters = iters || 300;
+  var known = {};
+  hole.forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  // All villain hole-card combos inside the range (hero's cards excluded).
+  var pool = [];
+  for (var i = 0; i < rest.length; i++)
+    for (var j = i + 1; j < rest.length; j++) {
+      var h = [rest[i], rest[j]];
+      if (holeTier(h) <= maxTier) pool.push(h);
+    }
+  if (!pool.length) return 0;
+
+  var score = 0;
+  for (var k = 0; k < iters; k++) {
+    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vknown = {};
+    vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
+    hole.forEach(function (c) { vknown[_key(c)] = 1; });
+    var deck = [];
+    for (var s2 = 0; s2 < 4; s2++)
+      for (var r2 = 2; r2 <= 14; r2++)
+        if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
+    // Partial Fisher-Yates for the 5 board cards.
+    for (var d = 0; d < 5; d++) {
+      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var t = deck[d]; deck[d] = deck[jj]; deck[jj] = t;
+    }
+    var board = deck.slice(0, 5);
+    var myScore = evaluate7(hole.concat(board)).score;
+    var opScore = evaluate7(vh.concat(board)).score;
+    if (myScore > opScore) score += 1;
+    else if (myScore === opScore) score += 0.5;
+  }
+  return score / iters;
+}
+// Adds draw bonuses so semi-bluffing works.
 // Rough "how strong is my made hand right now" in [0,1], for bot heuristics.
 // Adds draw bonuses so semi-bluffing works.
 function madeStrength(hole, community) {
@@ -155,7 +200,8 @@ function tierName(t) { return TIER_NAMES[t] || 'Unknown'; }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    estimateEquity: estimateEquity, madeStrength: madeStrength,
+    estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
+    madeStrength: madeStrength,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES
   };
 }

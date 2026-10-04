@@ -6,7 +6,8 @@
 
 if (typeof module !== 'undefined' && module.exports) {
   var __eq = require('./equity.js');
-  var holeTier = __eq.holeTier, estimateEquity = __eq.estimateEquity, tierName = __eq.tierName;
+  var holeTier = __eq.holeTier, estimateEquity = __eq.estimateEquity,
+      estimateEquityVsRange = __eq.estimateEquityVsRange, tierName = __eq.tierName;
   var __cards = require('./cards.js');
   var makeDeck = __cards.makeDeck, shuffle = __cards.shuffle, rankChar = __cards.rankChar;
   var __bots = require('./bots.js');
@@ -25,7 +26,7 @@ function newPushFoldScenario() {
   var opps = [];
   for (var i = 0; i < nOpp; i++) {
     var a = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
-    opps.push({ name: a.name, emoji: a.emoji, id: a.id, stackBB: 8 + Math.floor(Math.random() * 30) });
+    opps.push({ name: a.name, emoji: a.emoji, id: a.id, pushTier: a.pushTier, stackBB: 8 + Math.floor(Math.random() * 30) });
   }
   var facingShove = Math.random() < 0.35;
   var shover = null;
@@ -69,20 +70,28 @@ function evaluatePushFold(scn, action) {
         ? (action === 'shove' ? 'Correct shove — fold equity + hand strength makes this +EV.' : 'Correct fold — too weak to shove here; wait for a better spot.')
         : (action === 'shove' ? 'Too loose — this hand should be folded at this stack/position.' : 'Too tight — this is a standard shove; you are passing up +EV chips.'));
   } else {
-    // Facing a shove: pot odds math.
+    // Facing a shove: pot-odds math against the shover's RANGE, not random hands.
+    // A shover's range is much stronger than "any two cards", so comparing our
+    // equity-vs-random against the required equity would recommend far too many calls.
     var toCall = Math.min(scn.stackBB, scn.shover.stackBB);
     var potAfter = scn.potBB + scn.shover.stackBB + toCall;
     var need = toCall / potAfter;
+    var shoveTier = scn.shover.pushTier || 4; // worst tier this archetype shoves
+    var rangeEq = estimateEquityVsRange(scn.heroHole, shoveTier, 400);
     out.need = need;
-    out.correct = tier <= 2 || (tier === 3 && need < 0.42) || (eq > need + 0.05 && tier <= 4);
+    out.rangeEquity = rangeEq;
+    out.shoveTier = shoveTier;
+    out.correct = rangeEq > need + 0.02;
     out.playerAction = action;
     out.right = (action === 'call') === out.correct;
     out.explain = scn.shover.emoji + ' ' + scn.shover.name + ' shoves ' + scn.shover.stackBB + 'bb. ' +
       'Calling ' + toCall + 'bb to win ' + Math.round(potAfter) + 'bb — you need ' + Math.round(need * 100) + '% equity. ' +
-      'Your ' + cardPairName(scn.heroHole) + ' (' + tierName(tier) + ') has ~' + Math.round(eq * 100) + '% vs a random hand. ' +
+      'Your ' + cardPairName(scn.heroHole) + ' (' + tierName(tier) + ') has ~' + Math.round(rangeEq * 100) +
+      '% against ' + scn.shover.name + '\u2019s shoving range (roughly the top ' + tierLabel(shoveTier) + ' of hands — ' +
+      'much stronger than a random hand). ' +
       (out.right
-        ? (action === 'call' ? 'Correct call — the price is right for this hand.' : 'Correct fold — not enough equity to call off your stack.')
-        : (action === 'call' ? 'Too loose — you are not getting the right price with this hand.' : 'Too tight — this hand is strong enough to call the shove.'));
+        ? (action === 'call' ? 'Correct call — you have the equity against their range.' : 'Correct fold — not enough equity against a shoving range this strong.')
+        : (action === 'call' ? 'Too loose — against their shoving range you are not getting the right price.' : 'Too tight — this hand beats their shoving range often enough to call.'));
   }
   return out;
 }
