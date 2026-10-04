@@ -353,10 +353,58 @@
 
   function heroAct(a, amount) {
     if (!waitingForHero) return;
+    var leak = detectLeak(a);
+    if (leak) {
+      recordLeak(leak);
+      UI.log('🩹 <b>Leak spotted:</b> ' + UI.escapeHtml(leak.title) + ' — ' + UI.escapeHtml(leak.spot) + ' <span class="hl-leak-more">(see Stats → Leak tracker)</span>', 'hl-leak');
+    }
     UI.disableControls();
     UI.coachTip(null);
     resumeFromHero();
     table.act(0, a, amount);
+  }
+
+  // Spot common hero mistakes and explain them with the underlying math.
+  // Runs before the action is applied; uses the pre-action table state.
+  function detectLeak(a) {
+    try {
+      var hero = table.players[0];
+      var hole = hero.hole.map(function (c) { return cardName(c); }).join(' ');
+      var street = table.street;
+      var legal = table.legalActions(0);
+      var pot = table.potTotal();
+      function base(type, title, spot, why) {
+        return { hand: table.handNo, hole: hole, street: street, type: type, title: title, spot: spot, why: why };
+      }
+      if (street === 'preflop') {
+        if (a === 'call' && table.currentBet > table.bb && holeTier(hero.hole) >= 5) {
+          return base('loose-call', 'Calling too loose preflop',
+            'Called ' + UI.fmt(legal.callAmount) + ' with ' + hole,
+            'Hands like this win roughly 1 in 3 against a raiser\'s range. Poker profit comes from repeating small edges hundreds of times — one loose call is nothing, but a hundred of them is a bankroll leak no lucky streak can fix, because variance only evens out around your true (negative) expectation.');
+        }
+        return null;
+      }
+      var eq = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 120);
+      if (a === 'call' && legal.toCall > 0) {
+        var need = legal.callAmount / (pot + legal.callAmount);
+        if (eq < need - 0.12) {
+          return base('bad-chase', 'Chasing without the odds',
+            'Called ' + UI.fmt(legal.callAmount) + ' with ~' + Math.round(eq * 100) + '% equity (needed ' + Math.round(need * 100) + '%)',
+            'You needed ' + Math.round(need * 100) + '% equity to break even but had about ' + Math.round(eq * 100) + '%. Every such call quietly loses chips on average. Draws feel exciting, but bankroll discipline means chasing only when the math — pot odds plus what you might win later — says yes.');
+        }
+      }
+      if (a === 'check' && street === 'river' && madeStrength(hero.hole, table.community) > 0.88) {
+        return base('missed-value', 'Missed value bet',
+          'Checked the river with a monster (' + hole + ')',
+          'With a near-nut hand, checking leaves money on the table every single time. Value betting is the lowest-variance way to grow a stack: you were already winning the pot — the bet just makes it bigger. Unclaimed value is poker\'s quietest leak.');
+      }
+      if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > 0.35) {
+        return base('weak-fold', 'Folding too often',
+          'Folded to a small bet of ' + UI.fmt(legal.toCall) + ' with ~' + Math.round(eq * 100) + '% equity',
+          'Small bets have to work very often to be profitable bluffs — most of the time the math says look them up. Habitually folding here doesn\'t just lose this pot; it teaches observant opponents they can bluff you forever.');
+      }
+    } catch (e) { /* leak detection never breaks the game */ }
+    return null;
   }
 
   // ================= coach =================
@@ -464,6 +512,7 @@
         if (dest === 'setup') UI.showScreen('setup');
         else if (dest === 'archetypes') { UI.renderArchetypes(loadCustomBots(), deleteCustom); UI.showScreen('archetypes'); }
         else if (dest === 'stats') { UI.renderStats(); UI.showScreen('stats'); }
+        else if (dest === 'learn') { UI.renderLearn(); UI.showScreen('learn'); }
       };
     });
     document.querySelectorAll('.mode-card').forEach(function (c) {

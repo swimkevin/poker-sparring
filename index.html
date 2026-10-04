@@ -13,6 +13,7 @@
     <button class="nav-btn active" data-nav="setup">Play</button>
     <button class="nav-btn" data-nav="archetypes">Bots</button>
     <button class="nav-btn" data-nav="stats">Stats</button>
+    <button class="nav-btn" data-nav="learn">Learn</button>
   </nav>
   <div class="topbar-right"><span id="bankroll-chip" class="bankroll" title="Session profit (big blinds)">±0 bb</span></div>
 </header>
@@ -182,10 +183,27 @@
       <div id="arch-table"></div>
       <h2>Recent hands</h2>
       <div id="history-list" class="history"></div>
+      <h2>🩹 Leak tracker</h2>
+      <p class="subtitle">Mistakes the coach spotted in your recent play. Plug these leaks and your win rate follows — each one explains the <i>why</i>, not just the what.</p>
+      <div id="leak-list"></div>
       <div class="settings-row">
         <button id="btn-export" class="ghost">Export hand history (JSON)</button>
         <button id="btn-reset-stats" class="ghost danger-text">Reset stats</button>
       </div>
+    </div>
+  </section>
+
+  <section id="screen-learn" class="screen" hidden>
+    <div class="setup-wrap">
+      <h1>📖 Learn poker</h1>
+      <p class="subtitle">The books and sites the bots are modeled on — plus a plain-English glossary of every term this app uses.</p>
+      <h2>Essential reading</h2>
+      <div id="book-list" class="book-grid"></div>
+      <h2>Free training sites</h2>
+      <div id="site-list" class="book-grid"></div>
+      <h2>Poker glossary</h2>
+      <p class="subtitle">Tap any term. If you only learn five: pot odds, equity, expected value, position, bankroll management.</p>
+      <div id="glossary" class="gloss-grid"></div>
     </div>
   </section>
 </main>

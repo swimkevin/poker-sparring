@@ -15,7 +15,8 @@ function blankStats() {
     biggestPotBB: 0,
     perArchetype: {},                 // id -> { hands, won, profitBB }
     history: [],                      // recent hands (max 60)
-    graph: []                         // hero stack in bb after each hand (max 200)
+    graph: [],                        // hero stack in bb after each hand (max 200)
+    leaks: []                         // detected hero mistakes (max 40), newest first
   };
 }
 
@@ -92,10 +93,20 @@ function exportStatsJSON() {
   return JSON.stringify({ exportedAt: new Date().toISOString(), stats: loadStats() }, null, 2);
 }
 
+// A "leak" is a detected hero mistake: { hand, hole, street, type, title, spot, why }.
+// Newest first, capped at 40.
+function recordLeak(leak) {
+  var s = loadStats();
+  s.leaks.unshift(leak);
+  if (s.leaks.length > 40) s.leaks.length = 40;
+  saveStats(s);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     blankStats: blankStats, loadStats: loadStats, saveStats: saveStats,
     clearStats: clearStats, recordHand: recordHand, derivedStats: derivedStats,
+    recordLeak: recordLeak,
     exportStatsJSON: exportStatsJSON, STATS_KEY: STATS_KEY
   };
 }

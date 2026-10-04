@@ -322,3 +322,37 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   font-size: 0.82rem; color: var(--text);
 }
 .abeat b { color: var(--green); }
+
+/* Learn screen */
+.book-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
+.book-card {
+  display: block; padding: 0.9rem 1rem; border-radius: 10px; text-decoration: none;
+  background: #141b28; border: 1px solid #2b3547; color: var(--text);
+}
+.book-card:hover { border-color: var(--gold); }
+.bk-title { font-weight: 800; font-size: 1rem; }
+.bk-author { font-size: 0.8rem; color: var(--gold); margin: 0.15rem 0 0.4rem; }
+.bk-blurb { font-size: 0.85rem; color: var(--muted); }
+.bk-link { margin-top: 0.5rem; font-size: 0.8rem; color: var(--green); }
+.gloss-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.7rem; }
+.gloss-card { padding: 0.7rem 0.9rem; border-radius: 10px; background: #141b28; border: 1px solid #232d40; }
+.gloss-term { font-weight: 800; color: var(--gold); margin-bottom: 0.25rem; }
+.gloss-def { font-size: 0.85rem; color: var(--text); }
+
+/* Leak tracker */
+.leak-summary { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem; }
+.leak-chip {
+  padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.8rem;
+  background: #2a1a1a; border: 1px solid #a33; color: #f0b0b0;
+}
+.leak-card {
+  padding: 0.8rem 1rem; border-radius: 10px; margin-bottom: 0.7rem;
+  background: #141b28; border-left: 3px solid #c66;
+}
+.leak-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.3rem; }
+.leak-title { font-weight: 800; }
+.leak-meta { font-size: 0.78rem; color: var(--muted); }
+.leak-spot { font-size: 0.88rem; color: var(--gold); margin-bottom: 0.35rem; }
+.leak-why { font-size: 0.85rem; color: var(--text); }
+.hl-leak { color: #f0b0b0; }
+.hl-leak-more { color: var(--muted); font-size: 0.8em; }

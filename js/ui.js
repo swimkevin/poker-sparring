@@ -4,13 +4,127 @@ var UI = (function () {
   function $(id) { return document.getElementById(id); }
 
   function showScreen(name) {
-    ['setup', 'table', 'pf', 'archetypes', 'stats'].forEach(function (s) {
+    ['setup', 'table', 'pf', 'archetypes', 'stats', 'learn'].forEach(function (s) {
       $('screen-' + s).hidden = (s !== name);
     });
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.nav === name || (name === 'pf' && b.dataset.nav === 'setup'));
     });
     window.scrollTo(0, 0);
+  }
+
+  // ---------- learn screen ----------
+  var LEARN_BOOKS = [
+    { title: 'The Theory of Poker', author: 'David Sklansky',
+      blurb: 'The math bible: expected value, the Fundamental Theorem of Poker, and why every decision is a math problem.',
+      url: 'https://en.wikipedia.org/wiki/The_Theory_of_Poker' },
+    { title: "Harrington on Hold 'em", author: 'Dan Harrington & Bill Robertie',
+      blurb: 'The tournament bible: surviving rising blinds, inflection points, and endgame play — from a world champion.',
+      url: 'https://en.wikipedia.org/wiki/Harrington_on_Hold_%27em' },
+    { title: 'Super/System', author: 'Doyle Brunson',
+      blurb: 'The book that launched modern no-limit strategy — aggressive "power poker" from a two-time world champion.',
+      url: 'https://en.wikipedia.org/wiki/Super/System' }
+  ];
+  var LEARN_SITES = [
+    { title: 'Upswing Poker', author: 'Free articles + courses',
+      blurb: 'Strategy content from elite pros — great free articles on fundamentals.',
+      url: 'https://www.upswingpoker.com/' },
+    { title: 'PokerCoaching', author: 'Jonathan Little',
+      blurb: 'Free quizzes and hand reviews that drill exactly the spots this app trains.',
+      url: 'https://pokercoaching.com/' },
+    { title: 'PokerStrategy', author: 'Free since 2005',
+      blurb: 'Beginner-friendly strategy articles covering every concept in the glossary below.',
+      url: 'https://www.pokerstrategy.com/' }
+  ];
+  var GLOSSARY = [
+    ['Nit / Rock', 'An extremely tight player who only plays premium hands. Easy to bluff, impossible to get paid by — when they bet, believe them.'],
+    ['Calling Station', 'A loose-passive player who calls with almost anything and rarely raises. Never bluff them; value bet relentlessly.'],
+    ['Maniac', 'An extremely loose-aggressive player who bets and raises constantly. Trap them with strong hands and call down lighter.'],
+    ['TAG', 'Tight-Aggressive: plays few hands but plays them aggressively. The classic winning style — solid, disciplined, hard to exploit.'],
+    ['LAG', 'Loose-Aggressive: plays many hands with constant pressure. Tricky and dangerous when skilled, spewy when not.'],
+    ['VPIP', 'Voluntarily Put money In Pot: % of hands a player plays. ~15% is tight, ~25% is standard, 40%+ is loose.'],
+    ['PFR', 'Pre-Flop Raise: % of hands a player raises before the flop. The gap between VPIP and PFR shows how passive someone is.'],
+    ['Pot Odds', 'The price the pot offers you: a 150 call to win 600 means you need 20% equity to break even. The single most important math in poker.'],
+    ['Implied Odds', 'What you might win on later streets if you hit your hand. Justifies some calls that pure pot odds reject — but only against players who pay off.'],
+    ['Equity', 'Your share of the pot based on how often your hand wins right now. A flush draw on the flop has ~35% equity against top pair.'],
+    ['Expected Value (EV)', 'The average outcome of a decision repeated many times. Winning poker = making +EV decisions, even when individual results sting.'],
+    ['Bankroll Management', 'Only risking a small fraction of your poker money in any game, so bad luck (variance) can\'t wipe you out. Pros use 20-50 buy-ins.'],
+    ['Variance', 'Short-term luck. You can play perfectly and lose for weeks; you can play badly and win tonight. Skill shows over thousands of hands.'],
+    ['Tilt', 'Emotional play after bad beats — the #1 bankroll killer. The bots never tilt. Learn from them.'],
+    ['Position', 'Acting last is the biggest edge in poker: you see what everyone does first. Play tighter early, wider late.'],
+    ['Blinds', 'Forced bets that start the action: the small blind and big blind. Stealing blinds is how tight players stay profitable.'],
+    ['Ante', 'A small forced bet from everyone, used in later tournament stages to build pots and force action.'],
+    ['3-Bet', 'The third bet preflop (re-raise). A 3-bet usually means real strength — or a player applying pressure.'],
+    ['Continuation Bet', 'Betting the flop after raising preflop, whether you hit or not. Works because preflop raisers usually have the stronger range.'],
+    ['Value Bet', 'Betting with a strong hand to get called by worse. Against calling stations, this is where all the money comes from.'],
+    ['Bluff', 'Betting with a weak hand to make better hands fold. Works against tight players; lighting money on fire vs calling stations.'],
+    ['Semi-Bluff', 'Betting with a draw: you win if they fold now OR if you hit later. The mathematically beautiful play.'],
+    ['Slow Play', 'Checking a monster to trap. Great vs maniacs who bet for you; terrible vs passive players who\'ll never bet.'],
+    ['Check-Raise', 'Checking to induce a bet, then raising. A power move that screams strength — use sparingly.'],
+    ['Outs', 'Cards that improve your hand. A flush draw has 9 outs (~35% by the river). Rough rule: outs × 2 ≈ % per street.'],
+    ['Draw', 'An unfinished hand needing one more card — flush draws, straight draws. Strong draws are often favorites over one pair.'],
+    ['Push/Fold', 'Short-stack strategy (under ~13 big blinds): either shove all-in or fold. No calling, no small raises — the math demands it.'],
+    ['ICM', 'Independent Chip Model: in tournaments, chips have diminishing value — survival near payouts matters more than accumulating.'],
+    ['Bubble', 'The last spot before prize money. Medium stacks play terrified here; big stacks should attack relentlessly.']
+  ];
+
+  function renderLearn() {
+    function cards(list, boxId) {
+      var box = $(boxId);
+      box.innerHTML = '';
+      list.forEach(function (b) {
+        var a = document.createElement('a');
+        a.className = 'book-card';
+        a.href = b.url; a.target = '_blank'; a.rel = 'noopener';
+        a.innerHTML = '<div class="bk-title">' + escapeHtml(b.title) + '</div>' +
+          '<div class="bk-author">' + escapeHtml(b.author) + '</div>' +
+          '<div class="bk-blurb">' + escapeHtml(b.blurb) + '</div>' +
+          '<div class="bk-link">Learn more ↗</div>';
+        box.appendChild(a);
+      });
+    }
+    cards(LEARN_BOOKS, 'book-list');
+    cards(LEARN_SITES, 'site-list');
+    var g = $('glossary');
+    g.innerHTML = '';
+    GLOSSARY.forEach(function (pair) {
+      var d = document.createElement('div');
+      d.className = 'gloss-card';
+      d.innerHTML = '<div class="gloss-term">' + escapeHtml(pair[0]) + '</div>' +
+        '<div class="gloss-def">' + escapeHtml(pair[1]) + '</div>';
+      g.appendChild(d);
+    });
+  }
+
+  // ---------- leak tracker ----------
+  function renderLeaks() {
+    var box = $('leak-list');
+    box.innerHTML = '';
+    var leaks = loadStats().leaks || [];
+    if (!leaks.length) {
+      box.innerHTML = '<p class="subtitle">No leaks spotted yet. Play some hands — the coach is watching. 👀</p>';
+      return;
+    }
+    var byType = {};
+    leaks.forEach(function (l) {
+      byType[l.type] = byType[l.type] || { title: l.title, n: 0 };
+      byType[l.type].n++;
+    });
+    var sum = document.createElement('div');
+    sum.className = 'leak-summary';
+    sum.innerHTML = Object.keys(byType).map(function (t) {
+      return '<span class="leak-chip">' + escapeHtml(byType[t].title) + ' ×' + byType[t].n + '</span>';
+    }).join('');
+    box.appendChild(sum);
+    leaks.slice(0, 12).forEach(function (l) {
+      var d = document.createElement('div');
+      d.className = 'leak-card';
+      d.innerHTML = '<div class="leak-head"><span class="leak-title">🩹 ' + escapeHtml(l.title) + '</span>' +
+        '<span class="leak-meta">Hand #' + l.hand + ' · ' + escapeHtml(l.street) + ' · ' + escapeHtml(l.hole) + '</span></div>' +
+        '<div class="leak-spot">' + escapeHtml(l.spot) + '</div>' +
+        '<div class="leak-why">' + escapeHtml(l.why) + '</div>';
+      box.appendChild(d);
+    });
   }
 
   // ---------- cards ----------
@@ -255,6 +369,7 @@ var UI = (function () {
       box.appendChild(el);
     });
     drawSparkline(s.graph);
+    renderLeaks();
     var at = $('arch-table');
     at.innerHTML = '';
     var ids = Object.keys(s.perArchetype);
@@ -371,7 +486,7 @@ var UI = (function () {
     cardEl: cardEl, cardBackEl: cardBackEl,
     setControls: setControls, disableControls: disableControls, openBetPanel: openBetPanel,
     log: log, clearLog: clearLog, coachTip: coachTip, winnerBanner: winnerBanner, modal: modal,
-    renderArchetypes: renderArchetypes, renderStats: renderStats,
+    renderArchetypes: renderArchetypes, renderStats: renderStats, renderLearn: renderLearn,
     renderPFScenario: renderPFScenario, renderPFFeedback: renderPFFeedback,
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
   };
