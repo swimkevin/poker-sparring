@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.4.0';
+  var APP_VERSION = '1.4.1';
 
   // Last-resort error boundary: a UI glitch must never take down the table or
   // lose the player's stats. Surfaces a calm notice instead of failing silently.
@@ -297,7 +297,9 @@
     } else {
       // Cash: bots top up, hero rebuy if felted
       table.players.forEach(function (p, i) {
-        if (i !== 0 && p.stack > 0 && p.stack < cfg.stack * 0.5) {
+        // Felted bots (0 chips) top up too — otherwise they sit out every future
+        // hand as cardless zombies and distort live-player counts.
+        if (i !== 0 && p.stack < cfg.stack * 0.5) {
           p.stack = cfg.stack;
           UI.log(UI.escapeHtml(p.name) + ' tops up to ' + UI.fmt(cfg.stack));
         }

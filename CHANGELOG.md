@@ -3,6 +3,33 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.4.1] — 2026-10-04
+
+### Fixed
+- **Engine crash on broke players ("zombie" bug):** a busted player left seated
+  with 0 chips (cash games never marked them `sittingOut`) held no cards but
+  counted as a live player. A hand could then run to a showdown with no eligible
+  winner and crash in `_showdown` (`TypeError: Reduce of empty array`), or award
+  a pot to a cardless player by fold. `livePlayers()` now only counts players
+  who can still contest chips (not folded/out and `stack > 0 || totalBet > 0`);
+  all-in players are unaffected. `_showdown` also hardens the empty-eligible
+  case: contributors are refunded their slice at that level (chip-conserving)
+  instead of throwing, and the refund is flagged on the `handEnd` event.
+- **Cash-game bot top-up:** felted bots (0 chips) now top back up to the full
+  buy-in like the rest of the table, instead of sitting out every future hand as
+  cardless zombies and slowly killing the table.
+
+### Tests
+- 1,058 headless tests (was 1,041): new regression tests replicate the exact
+  crash scenario (broke players seated, hero SB folds to a short-stack BB
+  blind — asserts no throw, fold-win to the shorty, chip conservation), an
+  all-in showdown with broke players seated, and a direct degenerate
+  `_showdown` call (asserts no throw, contributor refund, conservation, and the
+  `refunded` flag on `handEnd`). Verified the new tests fail against the
+  unfixed engine (10 failures) and pass with the fix; a 60,000-hand
+  short-stack/zombie fuzzer reports zero crashes and zero conservation
+  violations.
+
 ## [1.4.0] — 2026-10-04
 
 ### Added

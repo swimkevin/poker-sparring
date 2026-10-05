@@ -22,6 +22,11 @@ Re-watch any hand from history street by street. New "Hands" tab: per-hand
 action capture, 50-hand localStorage history, replay viewer with Prev/Next and
 street-jump controls. 1,041 headless tests (was 981).
 
+**v1.4.1** (2026-10-04): engine crash fix — broke players left seated with 0
+chips no longer count as live (they could force a showdown with no eligible
+winner); `_showdown` refunds degenerate levels instead of throwing; cash-game
+bots top up from 0. 1,058 headless tests.
+
 ## v1.5 — Drill packs ⬅️ NEXT
 
 New push/fold-style trainers: 3-bet pots, blind defense, and an ICM-flavored
