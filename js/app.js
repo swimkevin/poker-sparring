@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.4.2';
+  var APP_VERSION = '1.5.0';
 
   // Last-resort error boundary: a UI glitch must never take down the table or
   // lose the player's stats. Surfaces a calm notice instead of failing silently.
@@ -558,6 +558,21 @@
 
   // ================= wiring =================
   function wire() {
+    // Theme: remembered light/dark preference, default dark. Visual only.
+    var THEME_KEY = 'ps_theme';
+    function applyTheme(t) {
+      document.documentElement.dataset.theme = t;
+      try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+    }
+    try {
+      var savedTheme = localStorage.getItem(THEME_KEY);
+      document.documentElement.dataset.theme =
+        (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
+    } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+    var themeBtn = $('theme-toggle');
+    if (themeBtn) themeBtn.onclick = function () {
+      applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+    };
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.onclick = function () {
         var dest = b.dataset.nav;

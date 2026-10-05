@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.5.0] — 2026-10-05
+
+### Added
+- **Visual polish pass (no behavior changes):** textured felt (woven gradient +
+  top light + vignette), staggered card-deal animation, button press physics,
+  view transitions, semantic action-button colors (check = blue, call = green,
+  bet/raise = gold), pot restyled as a pill badge, Georgia serif display type
+  with monospace hand log (system stacks only — the app stays offline-first),
+  bot "thinking" dots on the to-act seat, and a remembered **light theme**
+  (warm paper, toggle in the top bar, persisted in localStorage).
+
 ## [1.4.2] — 2026-10-04
 
 ### Fixed

@@ -215,6 +215,7 @@ var UI = (function () {
       }
       s.classList.toggle('folded', p.folded);
       s.classList.toggle('to-act', opts.acting === i && !table.handOver);
+      s.classList.toggle('thinking', opts.acting === i && !p.isHero && !table.handOver);
       s.classList.toggle('winner', !!(opts.winners && opts.winners.indexOf(i) !== -1));
       s.classList.toggle('out', p.sittingOut || p.stack === 0);
       var old = s.querySelector('.dealer-btn');
@@ -236,6 +237,12 @@ var UI = (function () {
     var br = $('btn-betraise');
     br.textContent = cfg.betRaise.label; br.disabled = !cfg.betRaise.enabled;
     $('btn-allin').disabled = !cfg.allin.enabled;
+    // Semantic color hooks: tint each action button by what it does.
+    cc.classList.remove('is-check', 'is-call');
+    if (cfg.checkCall.label.indexOf('Check') === 0) cc.classList.add('is-check');
+    else if (cfg.checkCall.label.indexOf('Call') === 0) cc.classList.add('is-call');
+    br.classList.remove('is-raise');
+    if (cfg.betRaise.label === 'Bet' || cfg.betRaise.label === 'Raise') br.classList.add('is-raise');
     if (cfg.fold === false && !cfg.checkCall.enabled && !cfg.betRaise.enabled) {
       // nothing to do (shouldn't happen)
     }

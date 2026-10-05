@@ -14,6 +14,8 @@
   --blue: #4c8dff;
 }
 * { box-sizing: border-box; }
+button { transition: transform .08s ease; }
+button:active { transform: scale(.96); }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -22,6 +24,8 @@ body {
 }
 h1 { font-size: 2.4rem; margin: 0.5em 0 0.3em; letter-spacing: -0.5px; }
 h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing: -0.2px; }
+/* offline-safe display serif + system stacks (no web fonts: the app is offline-first) */
+.brand, h1, h2, .rp-title { font-family: Georgia, 'Times New Roman', serif; }
 .subtitle { color: var(--muted); max-width: 640px; font-size: 1.02rem; }
 .accent { color: var(--gold); }
 .hint { color: var(--muted); font-size: 0.8em; font-weight: normal; }
@@ -46,7 +50,8 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 .bankroll { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
 .bankroll.pos { color: var(--green); } .bankroll.neg { color: var(--red); }
 
-.screen { padding: 1.2rem; max-width: 1100px; margin: 0 auto; }
+.screen { padding: 1.2rem; max-width: 1100px; margin: 0 auto; animation: view-in .22s ease backwards; }
+@keyframes view-in { from { opacity: 0; transform: translateY(8px); } }
 .setup-wrap { max-width: 820px; margin: 0 auto; }
 
 /* mode cards */
@@ -103,12 +108,20 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .felt-wrap { position: relative; }
 .felt {
   position: relative; height: 460px; border-radius: 230px;
-  background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 78%);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.028) 0 3px, rgba(0,0,0,0.028) 3px 6px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.028) 0 3px, rgba(0,0,0,0.028) 3px 6px),
+    radial-gradient(90% 110% at 50% 28%, var(--felt) 0%, var(--felt-dark) 78%);
   border: 10px solid #3a2a18; box-shadow: inset 0 0 60px rgba(0,0,0,0.55), 0 8px 30px rgba(0,0,0,0.5);
   overflow: hidden;
 }
 #board-area { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; }
-.pot { font-weight: 800; color: var(--gold); font-size: 1.05rem; margin-bottom: 0.5rem; font-variant-numeric: tabular-nums; }
+.pot {
+  display: inline-block; font-weight: 800; color: var(--gold); font-size: 1.05rem;
+  margin-bottom: 0.5rem; font-variant-numeric: tabular-nums;
+  background: rgba(0,0,0,0.45); border: 1px solid #2f6a58;
+  border-radius: 20px; padding: 0.15rem 0.9rem;
+}
 .community { display: flex; gap: 6px; justify-content: center; min-height: 74px; }
 .street-label { color: var(--muted); font-size: 0.8rem; margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -127,6 +140,13 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 .seat.to-act { border-color: var(--gold); box-shadow: 0 0 14px rgba(212, 175, 55, 0.55); }
 .seat.folded { opacity: 0.45; }
+/* bot "thinking" indicator: pulsing gold dots while a bot is to act */
+.seat.thinking .pact::after {
+  content: '●●●'; letter-spacing: 3px; color: var(--gold);
+  display: inline-block; margin-left: 6px; font-style: normal;
+  animation: think-pulse 0.9s ease-in-out infinite;
+}
+@keyframes think-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 .seat.winner { border-color: var(--green); box-shadow: 0 0 14px rgba(63, 185, 80, 0.6); }
 .seat.out { opacity: 0.25; }
 .dealer-btn {
@@ -139,9 +159,15 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .card {
   width: 52px; height: 72px; background: #f7f9fc; border-radius: 7px; color: #111;
   position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.45); flex: none;
-  animation: deal 0.25s ease-out;
+  animation: deal 0.32s cubic-bezier(.2,.9,.3,1.2) backwards;
 }
-@keyframes deal { from { transform: translateY(-8px); opacity: 0; } }
+@keyframes deal { from { opacity: 0; transform: translateY(-14px) rotate(-4deg) scale(.9); } }
+/* staggered deal: cards land one after another */
+.community .card:nth-child(1), .hero-cards .card:nth-child(1), .seat .pcards .card:nth-child(1) { animation-delay: 0ms; }
+.community .card:nth-child(2), .hero-cards .card:nth-child(2), .seat .pcards .card:nth-child(2) { animation-delay: 70ms; }
+.community .card:nth-child(3) { animation-delay: 140ms; }
+.community .card:nth-child(4) { animation-delay: 210ms; }
+.community .card:nth-child(5) { animation-delay: 280ms; }
 .card .crank { position: absolute; top: 3px; left: 5px; font-weight: 800; font-size: 0.95rem; line-height: 1; }
 .card .csuit { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; }
 .card.red { color: #c92a2a; }
@@ -179,7 +205,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .hand-log {
   flex: 1; overflow-y: auto; background: var(--panel); border: 1px solid #232c3d;
   border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.82rem; line-height: 1.6;
-  min-height: 120px;
+  min-height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .hand-log .hl-pot { color: var(--gold); }
 .hand-log .hl-win { color: var(--green); font-weight: 700; }
@@ -205,6 +231,10 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .ctl.danger:hover:not(:disabled) { background: #3a1d1e; border-color: var(--red); }
 .ctl.warn { border-color: #5a4a1f; color: var(--gold); }
 .ctl.big { font-size: 1.25rem; padding: 1rem 2.4rem; }
+/* semantic action colors: set by setControls() from the button label */
+.ctl.is-check { border-color: #2f81f7; color: #7fb3ff; }
+.ctl.is-call { border-color: #2b9348; color: #6fe08a; }
+.ctl.is-raise { background: linear-gradient(180deg, #e7c65a, #c39a2b); color: #1a1405; border: none; }
 .bet-panel {
   position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
   background: var(--panel2); border: 1px solid var(--gold-dim); border-radius: 12px;
@@ -429,3 +459,61 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .rp-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.5rem; }
 .rp-controls .ghost:disabled { opacity: 0.35; cursor: default; }
 .rp-progress { margin-bottom: 1rem; }
+
+/* ===== light theme: warm paper (dark felt stays green) ===== */
+[data-theme="light"] {
+  --bg: #f0ede3;
+  --panel: #fbfaf4;
+  --panel2: #f4f1e6;
+  --felt: #1d6b50;
+  --felt-dark: #123f30;
+  --gold: #8a6d1f;
+  --gold-dim: #b3962f;
+  --text: #1d211c;
+  --muted: #6b6f63;
+  --red: #c0392b;
+  --green: #2e7d3a;
+  --blue: #2f6fd0;
+}
+/* hardcoded dark borders -> paper line */
+[data-theme="light"] .topbar { border-bottom-color: #d8d2bd; }
+[data-theme="light"] .app-footer { border-top-color: #d8d2bd; }
+[data-theme="light"] .mode-card, [data-theme="light"] .roster-card,
+[data-theme="light"] .hand-log, [data-theme="light"] .hero-bar,
+[data-theme="light"] .pf-table, [data-theme="light"] .arch-card,
+[data-theme="light"] .builder, [data-theme="light"] .stat-card,
+[data-theme="light"] #sparkline, [data-theme="light"] .arch-table-row,
+[data-theme="light"] .hist-row, [data-theme="light"] .gloss-card,
+[data-theme="light"] .rp-actions, [data-theme="light"] .book-card,
+[data-theme="light"] .hrow, [data-theme="light"] .ctl,
+[data-theme="light"] .chip-btn, [data-theme="light"] .stepper,
+[data-theme="light"] button.ghost { border-color: #d8d2bd; }
+[data-theme="light"] input[type=number], [data-theme="light"] input[type=text] { border-color: #d8d2bd; }
+/* hardcoded dark surfaces -> paper tints */
+[data-theme="light"] .nav-btn.active, [data-theme="light"] .rp-result { background: #ece2c2; }
+[data-theme="light"] .mode-card.selected { background: #f3ecd4; }
+[data-theme="light"] .roster-card.selected, [data-theme="light"] .abeat { background: #e6f0e2; }
+[data-theme="light"] .book-card, [data-theme="light"] .gloss-card,
+[data-theme="light"] .leak-card, [data-theme="light"] .hrow,
+[data-theme="light"] .coach { background: var(--panel); }
+[data-theme="light"] .rp-actions { background: #e9e1cb; }
+[data-theme="light"] .stepper { background: var(--panel2); }
+[data-theme="light"] .felt { border-color: #6b5636; }
+/* red leak accents stay readable on paper */
+[data-theme="light"] .leak-chip { background: #f6e3e3; border-color: #c66; color: #a03030; }
+[data-theme="light"] .leak-card { border-left-color: #c0392b; }
+[data-theme="light"] .hl-leak { color: #a03030; }
+[data-theme="light"] button.ghost.danger-text { border-color: #d9a8a8; }
+[data-theme="light"] .ctl.danger { border-color: #d9a8a8; }
+[data-theme="light"] .ctl.danger:hover:not(:disabled) { background: #f2d8d8; }
+[data-theme="light"] .ctl.warn { border-color: #d8c98a; }
+/* semantic action text needs darker hues on paper */
+[data-theme="light"] .ctl.is-check { color: #1f6fd6; }
+[data-theme="light"] .ctl.is-call { color: #237a37; }
+/* seats stay dark chips on the green felt: keep their text light */
+[data-theme="light"] .seat { border-color: #d8d2bd; color: #e8edf3; }
+[data-theme="light"] .seat.to-act { border-color: var(--gold); }
+[data-theme="light"] .seat.winner { border-color: var(--green); }
+[data-theme="light"] .seat .pact { color: #9aa39b; }
+[data-theme="light"] .winner-banner { color: #e8edf3; }
+[data-theme="light"] .winner-banner .wsub { color: #a8b0a0; }
