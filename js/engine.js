@@ -43,7 +43,15 @@ class PokerTable {
 
   drainEvents() { var q = this.eventQueue; this.eventQueue = []; return q; }
 
-  livePlayers() { return this.players.filter(function (p) { return !p.folded && !p.sittingOut; }); }
+  livePlayers() {
+    // "Live" = still in the hand AND able to contest chips. A broke player with
+    // nothing invested holds no cards (startHand only deals to funded seats), so
+    // they are not live. Counting them as live let hands run to a showdown with
+    // no eligible winner (TypeError in _showdown) or awarded pots to a cardless
+    // player by fold. Note: all-in players always have totalBet > 0, so they
+    // stay live.
+    return this.players.filter(function (p) { return !p.folded && !p.sittingOut && (p.stack > 0 || p.totalBet > 0); });
+  }
   canAct(p) { return !p.folded && !p.allIn && !p.sittingOut && p.stack > 0; }
   activeCount() { return this.players.filter(function (p) { return p.stack > 0 && !p.sittingOut; }).length; }
 
@@ -195,7 +203,8 @@ class PokerTable {
     p.acted = true;
     this.emit({
       t: 'actionTaken', player: idx, action: action, amount: amount || 0,
-      bet: p.bet, stack: p.stack, pot: this.potTotal(), currentBet: this.currentBet
+      bet: p.bet, stack: p.stack, pot: this.potTotal(), currentBet: this.currentBet,
+      street: this.street
     });
     this._step();
   }
@@ -258,7 +267,7 @@ class PokerTable {
         amount += Math.min(contrib[i], L) - Math.min(contrib[i], prev);
         if (!p.folded && !p.sittingOut && contrib[i] >= L) eligible.push(i);
       });
-      if (amount > 0) pots.push({ amount: amount, eligible: eligible });
+      if (amount > 0) pots.push({ amount: amount, eligible: eligible, level: L, prev: prev });
       prev = L;
     });
     return pots;
@@ -274,6 +283,18 @@ class PokerTable {
         var w = pot.eligible[0];
         self.players[w].stack += pot.amount;
         results.push({ potIndex: pi, amount: pot.amount, winners: [w], uncalled: true, hand: null });
+        return;
+      }
+      if (pot.eligible.length === 0) {
+        // Degenerate: no live player can win this level. Unreachable via _step
+        // (the hand ends when a single contender remains), but _showdown is also
+        // invoked directly — never crash the app. Refund each contributor their
+        // slice at this level so chips are exactly conserved.
+        self.players.forEach(function (p) {
+          var slice = Math.min(p.totalBet, pot.level) - Math.min(p.totalBet, pot.prev);
+          if (slice > 0) p.stack += slice;
+        });
+        results.push({ potIndex: pi, amount: pot.amount, winners: [], refunded: true, hand: null });
         return;
       }
       var scored = pot.eligible.map(function (i) {

@@ -244,6 +244,75 @@ function heroPolicy(table, idx) {
     'handEnd flags a lone by-fold winner');
 })();
 
+// ---------- engine: broke players are not live (showdown-crash regression) ----------
+// Cash games leave busted bots seated with 0 chips (not sittingOut). They hold no
+// cards and must not keep a hand alive: previously the engine ran such hands to a
+// showdown with no eligible winner and crashed in _showdown (reduce of empty array).
+(function () {
+  function mkTable() {
+    var t = new EN.PokerTable({
+      players: [{ name: 'Hero' }, { name: 'Z1' }, { name: 'Shorty' }, { name: 'Z2' }],
+      sb: 50, bb: 100, startingStack: 10000 // default button=3 -> rotates to Hero(0)
+    });
+    t.players[1].stack = 0; // busted earlier, still seated (cash game)
+    t.players[3].stack = 0;
+    t.players[2].stack = 17; // short stack
+    return t;
+  }
+  // Heads-up by funding: Hero=SB(50), Shorty=BB(17 all-in). Hero folds.
+  var t = mkTable();
+  ok(t.startHand(), 'hand starts with broke players seated');
+  ok(t.players[1].hole.length === 0 && t.players[3].hole.length === 0, 'broke players are not dealt cards');
+  ok(t.livePlayers().length === 2, 'only funded players count as live');
+  ok(t.acting === 0, 'hero (SB) acts first');
+  var threw = false;
+  try { t.act(0, 'fold'); } catch (e) { threw = true; }
+  ok(!threw, 'fold into a short-stack blind does not throw');
+  ok(t.handOver, 'hand ends by fold instead of running a zombie showdown');
+  ok(t.players[2].stack === 67, 'shorty wins the 67 pot by fold, got ' + t.players[2].stack);
+  var chips = t.players.reduce(function (s, p) { return s + p.stack; }, 0);
+  ok(chips === 10017, 'chip conservation after zombie fold-win, got ' + chips);
+
+  // Same setup, hero calls -> clean all-in showdown, no crash, sane pots.
+  var t2 = mkTable();
+  t2.startHand();
+  t2.players[0].hole = hand('As Ah');
+  t2.players[2].hole = hand('7s 2d');
+  t2.deck = hand('4c 3s 9h 5d 2c'); // board runs out 2c 5d 9h | 3s | 4c
+  threw = false;
+  try { t2.act(0, 'call'); } catch (e) { threw = true; }
+  var guard = 0;
+  try { while (!t2.handOver && guard++ < 50) { t2.act(t2.acting, 'check'); } }
+  catch (e) { threw = true; }
+  ok(!threw && t2.handOver, 'all-in showdown with broke players seated does not throw');
+  ok(t2.players[0].stack === 10017, 'hero (AA) wins the 117 pot, got ' + t2.players[0].stack);
+  var chips2 = t2.players.reduce(function (s, p) { return s + p.stack; }, 0);
+  ok(chips2 === 10017, 'chip conservation after zombie showdown, got ' + chips2);
+})();
+
+// ---------- engine: degenerate showdown level refunds instead of crashing ----------
+// _showdown is also invoked directly (tests, future callers): a pot level no live
+// player is eligible for must refund contributors, never throw.
+(function () {
+  var t = new EN.PokerTable({ players: [{ name: 'A' }, { name: 'B' }], sb: 5, bb: 10, startingStack: 1000 });
+  t.handNo = 1; t.handOver = false; t.button = 0;
+  t.community = hand('2d 3d 4d 5d 9c');
+  t.players[0].hole = hand('As Ah'); t.players[0].totalBet = 50; t.players[0].stack = 950; t.players[0].folded = true;
+  t.players[1].hole = hand('Ks Kh'); t.players[1].totalBet = 17; t.players[1].stack = 983;
+  var threw = false;
+  try { t._showdown(); } catch (e) { threw = true; }
+  ok(!threw, 'degenerate showdown does not throw');
+  ok(t.handOver, 'hand still ends after degenerate showdown');
+  // Level 17: B alone eligible -> 34 uncalled. Level 50: nobody eligible -> A's 33 refunded.
+  ok(t.players[0].stack === 983, 'folder refunded 33, got ' + t.players[0].stack);
+  ok(t.players[1].stack === 1017, 'live player gets 34 uncalled, got ' + t.players[1].stack);
+  var tot = t.players[0].stack + t.players[1].stack;
+  ok(tot === 2000, 'chip conservation on refund, got ' + tot);
+  var end = t.eventQueue.filter(function (e) { return e.t === 'handEnd'; })[0];
+  ok(end && end.winners[1].refunded === true && end.winners[1].winners.length === 0,
+    'refund recorded on handEnd');
+})();
+
 // ---------- deterministic full hand through act() (rigged deck) ----------
 (function () {
   var t = new EN.PokerTable({
