@@ -16,13 +16,13 @@ small release: build, test (`npm test`), browser playtest, push, changelog entry
   accessibility pass (accordions, focus states, reduced motion).
 - Docs: rewritten README, `docs/ARCHITECTURE.md`, this roadmap, `docs/MOBILE.md`.
 
-## v1.4 — Hand replayer
+## v1.4 — Hand replayer ✅ (shipped 2026-10-04)
 
-Re-watch any hand from history street by street. Mostly a UI feature on top of
-existing events: persist per-hand action lists, add a replay viewer. High
-"wow" per effort.
+Re-watch any hand from history street by street. New "Hands" tab: per-hand
+action capture, 50-hand localStorage history, replay viewer with Prev/Next and
+street-jump controls. 1,041 headless tests (was 981).
 
-## v1.5 — Drill packs
+## v1.5 — Drill packs ⬅️ NEXT
 
 New push/fold-style trainers: 3-bet pots, blind defense, and an ICM-flavored
 tournament bubble pack. Reuses the scenario/feedback pattern from `pushfold.js`.

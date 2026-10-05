@@ -25,6 +25,7 @@ var dom = new jsdom.JSDOM('<!DOCTYPE html><html><body>' +
   '<div id="glossary"></div><div id="leak-list"></div><div id="bot-roster"></div>' +
   '<div id="book-list"></div><div id="site-list"></div>' +
   '<div id="preset-list"></div><div id="custom-list"></div>' +
+  '<div id="hand-list"></div><div id="replay-view" hidden></div>' +
   '</body></html>');
 
 global.window = dom.window;
@@ -52,11 +53,15 @@ global.localStorage = {
 var cards = require(path.join(__dirname, '..', 'js', 'cards.js'));
 var stats = require(path.join(__dirname, '..', 'js', 'stats.js'));
 var bots = require(path.join(__dirname, '..', 'js', 'bots.js'));
+var replay = require(path.join(__dirname, '..', 'js', 'replay.js'));
 global.ARCHETYPES = bots.ARCHETYPES;
 global.loadStats = stats.loadStats;
 global.derivedStats = stats.derivedStats;
 global.rankChar = cards.rankChar;
+global.isRed = cards.isRed;
 global.SUITS = cards.SUITS;
+global.replayState = replay.replayState;
+global.frameIndexForStreet = replay.frameIndexForStreet;
 
 var src = fs.readFileSync(path.join(__dirname, '..', 'js', 'ui.js'), 'utf8');
 eval(src); // exposes `var UI` in this module scope
@@ -165,6 +170,78 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   ok(why && !why.open, 'leak explanation collapsed behind <details>');
   ok(document.querySelector('#leak-list .leak-chip').textContent.indexOf('×1') !== -1,
     'leak summary chip counts by type');
+})();
+
+// ---------- hand history list + replayer ----------
+(function () {
+  function C(r, s) { return { r: r, s: s }; }
+  var rec = {
+    v: 1, id: 'h7-abc', handNo: 7, date: '2026-10-04T12:00:00.000Z', mode: 'cash',
+    sb: 5, bb: 10, ante: 0, button: 1,
+    players: [
+      { name: 'You', emoji: '🧑', isHero: true, stack: 1000 },
+      { name: 'The Rock', emoji: '🪨', isHero: false, stack: 1000 }
+    ],
+    heroHole: [C(14, 0), C(13, 0)],
+    timeline: [
+      { t: 'action', street: 'preflop', player: 0, name: 'You', emoji: '🧑', action: 'sb', amount: 5, pot: 5 },
+      { t: 'action', street: 'preflop', player: 1, name: 'The Rock', emoji: '🪨', action: 'bb', amount: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 0, name: 'You', emoji: '🧑', action: 'raise', amount: 40, bet: 40, pot: 50 },
+      { t: 'action', street: 'preflop', player: 1, name: 'The Rock', emoji: '🪨', action: 'call', amount: 30, bet: 40, pot: 80 },
+      { t: 'street', street: 'flop', community: [C(2, 2), C(7, 1), C(11, 0)], pot: 80 },
+      { t: 'end', pot: 80, community: [C(2, 2), C(7, 1), C(11, 0)],
+        winners: [{ names: ['You'], amount: 80, hand: 'Pair of Kings', uncalled: false, byFold: false, potIndex: 0 }] }
+    ],
+    heroNet: 40, heroNetBB: 4, result: 'You win 80 (Pair of Kings)'
+  };
+
+  // list
+  var opened = null;
+  UI.renderHandList([rec], function (id) { opened = id; });
+  var rows = document.querySelectorAll('#hand-list .hrow');
+  ok(rows.length === 1, 'hand list renders one row');
+  ok(rows[0].querySelector('.hnum').textContent === 'Hand #7', 'row shows hand number');
+  ok(rows[0].querySelector('.hres').classList.contains('pos'), 'positive net styled pos');
+  ok(rows[0].querySelectorAll('.hcards .card').length === 2, 'hero hole cards rendered in row');
+  rows[0].querySelector('.rp-open').click();
+  ok(opened === 'h7-abc', 'replay button opens record by id');
+  UI.renderHandList([], function () {});
+  ok(document.getElementById('hand-list').textContent.indexOf('No saved hands') !== -1, 'empty list state');
+
+  // viewer: start
+  UI.renderReplay(rec, 0);
+  ok(document.querySelectorAll('#replay-view .rp-community .card').length === 0, 'no community cards at frame 0');
+  ok(document.getElementById('rp-prev').disabled, 'prev disabled at start');
+  ok(!document.getElementById('rp-next').disabled, 'next enabled at start');
+  ok(document.getElementById('rp-back'), 'back button present');
+  ok(document.getElementById('rp-street-flop').dataset.street === 'flop', 'street jump button carries street');
+
+  // viewer: mid-hand
+  UI.renderReplay(rec, 2);
+  ok(document.querySelectorAll('#replay-view .rp-act').length === 2, 'two actions shown at frame 2');
+  ok(document.getElementById('replay-view').textContent.indexOf('Pot:') !== -1, 'pot shown in viewer');
+
+  // viewer: flop dealt
+  UI.renderReplay(rec, 5);
+  ok(document.querySelectorAll('#replay-view .rp-community .card').length === 3, 'three flop cards shown after street frame');
+  ok(document.getElementById('replay-view').textContent.indexOf('Flop') !== -1, 'street label shows Flop');
+
+  // viewer: end
+  UI.renderReplay(rec, 6);
+  ok(document.getElementById('rp-next').disabled && document.getElementById('rp-end').disabled,
+    'next/end disabled at final frame');
+  ok(!document.getElementById('rp-prev').disabled, 'prev enabled at final frame');
+  var res = document.querySelector('#replay-view .rp-result');
+  ok(res && res.textContent.indexOf('You win') !== -1, 'result shown at end');
+  ok(document.querySelector('#replay-view .rp-progress').textContent === 'Step 6 of 6', 'progress text');
+
+  // XSS: hostile name inside the timeline must render escaped
+  var evil = JSON.parse(JSON.stringify(rec));
+  evil.timeline[2].name = '<img src=x onerror=alert(1)>';
+  UI.renderReplay(evil, 3);
+  var rvHtml = document.getElementById('replay-view').innerHTML;
+  ok(rvHtml.indexOf('<img src=x') === -1, 'replay action names escaped');
+  ok(rvHtml.indexOf('&lt;img') !== -1, 'escaped name present as text');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');

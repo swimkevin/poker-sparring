@@ -3,6 +3,7 @@ var path = require('path');
 var js = function (f) { return require(path.join(__dirname, '..', 'js', f)); };
 var C = js('cards.js'), E = js('evaluator.js'), EQ = js('equity.js'), EN = js('engine.js');
 var BOTS = js('bots.js'), PF = js('pushfold.js'), ST = js('stats.js');
+var RP = js('replay.js');
 
 var pass = 0, fail = 0;
 function ok(cond, name) {
@@ -381,6 +382,152 @@ function heroPolicy(table, idx) {
   var d = ST.derivedStats(s2);
   ok(d.bbPer100 === 1500, 'bb/100 math');
   ok(ST.blankStats().hands === 0, 'blankStats unaffected');
+  delete global.localStorage;
+})();
+
+// ---------- replay.js: capture, storage, state machine ----------
+(function () {
+  // --- hand 1: preflop shove, hero doubles ---
+  // Events are fed to the recorder in emission order, exactly like app.js does.
+  var t1 = new EN.PokerTable({
+    players: [{ name: 'Hero', isHero: true }, { name: 'Villain' }],
+    sb: 5, bb: 10, startingStack: 1000, button: 1
+  });
+  t1.players[0].stack = 100;
+  var ev1 = [];
+  t1.onEvent = function (e) { ev1.push(e); };
+  ok(t1.startHand(), 'replay hand 1 starts');
+  t1.players[0].hole = hand('As Ah');
+  t1.players[1].hole = hand('7s 2d');
+  t1.deck = hand('4c 3s 9h 5d 2c');
+  var s0 = t1.players[0].stack; // 95 after posting SB
+  var rec1 = RP.startHandRecord(t1, ev1[0], 'cash');
+  ok(rec1.players[0].stack === 100 && rec1.players[1].stack === 1000, 'starting stacks recorded pre-blind');
+  ok(JSON.stringify(rec1.heroHole) === JSON.stringify(hand('As Ah')), 'hero hole cards captured');
+  var g1 = 0;
+  while (!t1.handOver && g1++ < 50) {
+    var i1 = t1.acting, lg1 = t1.legalActions(i1);
+    if (i1 === 0) t1.act(i1, 'raise', 100);
+    else if (lg1.toCall > 0) t1.act(i1, 'call');
+    else t1.act(i1, 'check');
+  }
+  ev1.forEach(function (e) {
+    if (e.t === 'actionTaken') RP.recordHandAction(rec1, t1, e);
+    else if (e.t === 'street') RP.recordHandStreet(rec1, t1, e);
+    else if (e.t === 'handEnd') RP.finishHandRecord(rec1, t1, e, t1.players[0].stack - s0);
+  });
+  var acts1 = rec1.timeline.filter(function (f) { return f.t === 'action'; });
+  // Villain is deep-stacked, so the board runs out after the all-in: the
+  // engine deals flop/turn/river with villain checking each street.
+  ok(rec1.timeline.length === 11, 'timeline: blinds + raise + call + 3 streets + end, got ' + rec1.timeline.length);
+  ok(acts1.map(function (a) { return a.action; }).join() === 'sb,bb,raise,call,check,check,check',
+    'action sequence, got ' + acts1.map(function (a) { return a.action; }).join());
+  ok(acts1.map(function (a) { return a.pot; }).join() === '5,15,110,200,200,200,200',
+    'pot evolution, got ' + acts1.map(function (a) { return a.pot; }).join());
+  ok(acts1.slice(0, 4).every(function (a) { return a.street === 'preflop'; }) &&
+    acts1[4].street === 'flop' && acts1[5].street === 'turn' && acts1[6].street === 'river',
+    'actions tagged with their street');
+  var streets1 = ev1.filter(function (e) { return e.t === 'actionTaken'; }).map(function (e) { return e.street; });
+  ok(streets1.join() === 'preflop,preflop,flop,turn,river',
+    'engine actionTaken events carry street, got ' + streets1.join());
+  var end1 = rec1.timeline[rec1.timeline.length - 1];
+  ok(end1.t === 'end' && end1.winners[0].names.join() === 'You' && end1.pot === 200, 'end frame: hero wins 200');
+  ok(rec1.heroNet === 105 && rec1.heroNetBB === 10.5, 'hero net +105 chips (+10.5 bb), got ' + rec1.heroNet);
+  ok(rec1.result.indexOf('You win 200') === 0, 'result one-liner, got "' + rec1.result + '"');
+
+  // state machine on the shove hand
+  var st = RP.replayState(rec1, 0);
+  ok(st.street === 'preflop' && st.community.length === 0 && st.actions.length === 0 && st.pot === 0 && !st.done,
+    'frame 0: empty preflop');
+  st = RP.replayState(rec1, 2);
+  ok(st.actions.length === 2 && st.pot === 15, 'frame 2: blinds posted, pot 15');
+  st = RP.replayState(rec1, 4);
+  ok(st.actions.length === 4 && st.pot === 200 && !st.done, 'frame 4: all preflop actions, pot 200, not done');
+  st = RP.replayState(rec1, 11);
+  ok(st.done && st.winners && st.winners[0].names[0] === 'You', 'final frame: done with winners');
+  st = RP.replayState(rec1, 10);
+  ok(!st.done && st.winners === null, 'stepping back clears winners');
+  ok(RP.replayState(rec1, 999).idx === 11 && RP.replayState(rec1, -3).idx === 0, 'frame index clamped');
+  ok(RP.frameIndexForStreet(rec1, 'preflop') === 0, 'preflop jump = 0');
+  ok(RP.frameIndexForStreet(rec1, 'flop') === 5, 'flop jump lands after street frame');
+
+  // --- hand 2: multi-street, checks all the way ---
+  var t2 = new EN.PokerTable({
+    players: [{ name: 'Hero', isHero: true }, { name: 'A' }, { name: 'B' }],
+    sb: 5, bb: 10, startingStack: 1000, button: 0 // rotates to 1; SB=2, BB=0(hero)
+  });
+  var ev2 = [];
+  t2.onEvent = function (e) { ev2.push(e); };
+  ok(t2.startHand(), 'replay hand 2 starts');
+  t2.players[0].hole = hand('As Ks');
+  t2.players[1].hole = hand('7h 2d');
+  t2.players[2].hole = hand('9c 8c');
+  t2.deck = hand('4c 3s 9h 5d 2c'); // board: 2c 5d 9h | 3s | 4c
+  var s20 = t2.players[0].stack;
+  var rec2 = RP.startHandRecord(t2, ev2[0], 'tourney');
+  var g2 = 0;
+  while (!t2.handOver && g2++ < 80) {
+    var i2 = t2.acting, lg2 = t2.legalActions(i2);
+    if (lg2.toCall > 0) t2.act(i2, 'call');
+    else t2.act(i2, 'check');
+  }
+  ok(t2.handOver, 'multi-street hand finished');
+  ev2.forEach(function (e) {
+    if (e.t === 'actionTaken') RP.recordHandAction(rec2, t2, e);
+    else if (e.t === 'street') RP.recordHandStreet(rec2, t2, e);
+    else if (e.t === 'handEnd') RP.finishHandRecord(rec2, t2, e, t2.players[0].stack - s20);
+  });
+  var streets = rec2.timeline.filter(function (f) { return f.t === 'street'; });
+  ok(streets.map(function (f) { return f.street; }).join() === 'flop,turn,river', 'street frames in order');
+  ok(streets[0].community.length === 3 && streets[1].community.length === 4 && streets[2].community.length === 5,
+    'community grows 3/4/5');
+  ok(JSON.stringify(streets[0].community) === JSON.stringify(hand('2c 5d 9h')), 'flop cards exact');
+  var preActs = rec2.timeline.slice(0, 5).filter(function (f) { return f.t === 'action'; });
+  ok(preActs.length === 5 && preActs.every(function (a) { return a.street === 'preflop'; }),
+    'first 5 timeline entries are preflop actions (sb,bb,call,call,check)');
+  var pots = rec2.timeline.map(function (f) { return f.pot; });
+  ok(pots.every(function (p, i) { return i === 0 || p >= pots[i - 1]; }), 'pot never decreases along timeline');
+  ok(RP.frameIndexForStreet(rec2, 'flop') === 6, 'flop jump lands after street frame');
+  ok(RP.frameIndexForStreet(rec2, 'river') === 14, 'river jump index');
+  var rs = RP.replayState(rec2, 6);
+  ok(rs.street === 'flop' && rs.community.length === 3 && rs.pot === 30, 'frame 6: flop, pot 30');
+  rs = RP.replayState(rec2, 5);
+  ok(rs.street === 'preflop' && rs.community.length === 0, 'frame 5: still preflop');
+  var rend = RP.replayState(rec2, rec2.timeline.length);
+  ok(rend.done && rend.winners.length === 1 && rend.winners[0].names[0] === 'You',
+    'hero wins with the wheel (A-2-3-4-5)');
+  ok(rec2.result.indexOf('You win 30 (Straight, Five high)') === 0,
+    'result one-liner, got "' + rec2.result + '"');
+  var rback = RP.replayState(rec2, rec2.timeline.length - 1);
+  ok(!rback.done && rback.winners === null, 'step back from end clears winners');
+
+  // --- hand 3: antes are synthesized in engine order ---
+  var t3 = new EN.PokerTable({
+    players: [{ name: 'Hero', isHero: true }, { name: 'V' }],
+    sb: 5, bb: 10, ante: 10, startingStack: 1000, button: 1
+  });
+  var ev3 = [];
+  t3.onEvent = function (e) { ev3.push(e); };
+  t3.startHand();
+  var rec3 = RP.startHandRecord(t3, ev3[0], 'tourney');
+  var syn = rec3.timeline.slice(0, 4);
+  ok(syn.map(function (a) { return a.action; }).join() === 'ante,ante,sb,bb', 'synth order ante,ante,sb,bb');
+  ok(syn.map(function (a) { return a.pot; }).join() === '10,20,25,35', 'synth pots 10,20,25,35');
+
+  // --- storage: cap 50, newest first, clear ---
+  var mem = {};
+  global.localStorage = {
+    getItem: function (k) { return mem[k] || null; },
+    setItem: function (k, v) { mem[k] = String(v); },
+    removeItem: function (k) { delete mem[k]; }
+  };
+  for (var i = 0; i < 55; i++) RP.saveHandRecord({ id: 'r' + i, handNo: i, timeline: [] });
+  var list = RP.loadHandRecords();
+  ok(list.length === 50, 'storage capped at 50, got ' + list.length);
+  ok(list[0].id === 'r54' && list[49].id === 'r5', 'newest first, oldest dropped');
+  ok(JSON.parse(mem[RP.HANDS_KEY]).length === 50, 'stored under ' + RP.HANDS_KEY);
+  RP.clearHandRecords();
+  ok(RP.loadHandRecords().length === 0, 'clearHandRecords empties storage');
   delete global.localStorage;
 })();
 

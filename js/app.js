@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.3.0';
+  var APP_VERSION = '1.4.0';
 
   // Last-resort error boundary: a UI glitch must never take down the table or
   // lose the player's stats. Surfaces a calm notice instead of failing silently.
@@ -47,6 +47,8 @@
   var waitingForHero = false;
   var lastActions = {};
   var handCtx = null;
+  var handRec = null; // in-progress hand record for the replayer (js/replay.js)
+  var replay = null;  // { rec, idx } while the replay viewer is open
   var sessionStartBB = 0;
   var tourney = null; // { levelIdx }
   var gameMode = 'cash';
@@ -103,6 +105,7 @@
       startStack: hero.stack, vpip: false, pfr: false,
       postBet: 0, postCall: 0, preflopActed: false
     };
+    handRec = startHandRecord(table, e, gameMode);
     $('hand-info').textContent = 'Hand #' + e.handNo + (gameMode === 'tourney' ? ' · Level ' + (tourney.levelIdx + 1) : '');
     updateBlindsInfo();
     UI.log('— Hand #' + e.handNo + ' · blinds ' + UI.fmt(e.sb) + '/' + UI.fmt(e.bb) +
@@ -147,6 +150,7 @@
     var p = table.players[e.player];
     lastActions[e.player] = describeAction(e, p);
     if (p.isHero) trackHeroAction(e);
+    if (handRec) recordHandAction(handRec, table, e);
     UI.log(UI.escapeHtml(describeAction(e, p)), p.isHero ? 'hl-hero' : '');
     UI.renderTable(table, { lastActions: lastActions, acting: table.acting, button: table.button });
   }
@@ -165,6 +169,7 @@
 
   function onStreet(e) {
     lastActions = {};
+    if (handRec) recordHandStreet(handRec, table, e);
     var names = { flop: 'Flop', turn: 'Turn', river: 'River' };
     UI.log((names[e.street] || e.street) + ': ' +
       e.community.map(function (c) { return cardName(c); }).join(' ') +
@@ -216,6 +221,11 @@
 
     // Stats
     var profit = hero.stack - handCtx.startStack;
+    if (handRec) {
+      finishHandRecord(handRec, table, e, profit);
+      saveHandRecord(handRec);
+      handRec = null;
+    }
     var resultText = won ? ('Won ' + UI.fmt(e.pot)) : 'Lost';
     if (!won && e.winners.length && e.winners[0].hand) resultText = e.winners[0].hand;
     recordHand({
@@ -491,6 +501,38 @@
     UI.showScreen('setup');
   }
 
+  // ================= hand replayer =================
+  function openHandList() {
+    replay = null;
+    UI.renderHandList(loadHandRecords(), openReplay);
+    UI.showScreen('hands');
+  }
+
+  function openReplay(id) {
+    var rec = loadHandRecords().filter(function (r) { return r.id === id; })[0];
+    if (!rec) return;
+    replay = { rec: rec, idx: 0 };
+    showReplay();
+  }
+
+  function showReplay() {
+    if (!replay) return;
+    var total = replay.rec.timeline.length;
+    replay.idx = Math.max(0, Math.min(replay.idx, total));
+    UI.renderReplay(replay.rec, replay.idx);
+    $('rp-back').onclick = openHandList;
+    $('rp-start').onclick = function () { replay.idx = 0; showReplay(); };
+    $('rp-prev').onclick = function () { replay.idx--; showReplay(); };
+    $('rp-next').onclick = function () { replay.idx++; showReplay(); };
+    $('rp-end').onclick = function () { replay.idx = total; showReplay(); };
+    document.querySelectorAll('[data-rp-street]').forEach(function (b) {
+      b.onclick = function () {
+        replay.idx = frameIndexForStreet(replay.rec, b.dataset.rpStreet);
+        showReplay();
+      };
+    });
+  }
+
   // ================= push/fold trainer =================
   var pf = { scn: null, score: 0, total: 0 };
 
@@ -519,6 +561,7 @@
         var dest = b.dataset.nav;
         if (dest === 'setup') UI.showScreen('setup');
         else if (dest === 'archetypes') { UI.renderArchetypes(loadCustomBots(), deleteCustom); UI.showScreen('archetypes'); }
+        else if (dest === 'hands') { openHandList(); }
         else if (dest === 'stats') { UI.renderStats(); UI.showScreen('stats'); }
         else if (dest === 'learn') { UI.renderLearn(); UI.showScreen('learn'); }
       };

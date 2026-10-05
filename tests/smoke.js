@@ -21,7 +21,7 @@ var errors = [];
 w.addEventListener('error', function (e) { errors.push(e.message || String(e.error)); });
 
 // Inject the app scripts in load order (synchronous execution on insertion).
-['cards', 'evaluator', 'equity', 'engine', 'bots', 'pushfold', 'stats', 'ui', 'app']
+['cards', 'evaluator', 'equity', 'engine', 'bots', 'pushfold', 'stats', 'replay', 'ui', 'app']
   .forEach(function (f) {
     var s = d.createElement('script');
     s.textContent = fs.readFileSync(path.join(dir, 'js', f + '.js'), 'utf8');
@@ -68,6 +68,30 @@ var iv = setInterval(function () {
   } catch (e) { errors.push('tick: ' + e.message); }
   if (ticks > 80 || Object.keys(handsSeen).length >= 3) {
     clearInterval(iv);
+    // Hand replayer: finished hands must be recorded, listed, and steppable.
+    try {
+      var recCount = w.eval('loadHandRecords().length');
+      console.log('hand records saved: ' + recCount);
+      if (Object.keys(handsSeen).length >= 1 && recCount < 1)
+        errors.push('replay: expected >=1 saved hand record');
+      d.querySelector('.nav-btn[data-nav="hands"]').click();
+      var rows = d.querySelectorAll('#hand-list .hrow').length;
+      console.log('hand list rows: ' + rows);
+      if (recCount >= 1 && rows < 1) errors.push('replay: hand list empty');
+      var openBtn = d.querySelector('#hand-list .rp-open');
+      if (openBtn && rows >= 1) {
+        openBtn.click();
+        var steps = 0, nb = d.getElementById('rp-next');
+        while (nb && !nb.disabled && steps < 300) { nb.click(); steps++; nb = d.getElementById('rp-next'); }
+        console.log('replay steps walked: ' + steps);
+        if (steps < 1) errors.push('replay: could not step through');
+        var prog = d.querySelector('.rp-progress');
+        if (!prog || prog.textContent.indexOf(' of ') === -1) errors.push('replay: progress missing');
+        var backBtn = d.getElementById('rp-back');
+        if (backBtn) backBtn.click();
+        if (d.querySelectorAll('#hand-list .hrow').length < 1) errors.push('replay: back button did not return to list');
+      } else if (recCount >= 1) errors.push('replay: no open button');
+    } catch (e) { errors.push('replay: ' + e.message); }
     // Push/fold screen: answer a few spots.
     try {
       w.eval('UI.showScreen("pf")');

@@ -3,6 +3,35 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.4.0] — 2026-10-04
+
+### Added
+- **Hand replayer** (new "Hands" tab): every finished hand is now captured as a
+  per-hand action/event record (hero hole cards, blinds/antes, every action
+  with street and running pot, board by street, winners/result) and persisted
+  to localStorage (`ps_hands_v1`, last 50 hands, newest first — existing stats
+  keys untouched). Open any hand to replay it street by street: ⏮ Start /
+  ◀ Prev / Next ▶ / End ⏭ plus Pre-flop/Flop/Turn/River jump buttons, with
+  board cards, action list, running pot, and result at the final frame.
+- New DOM-free module `js/replay.js`: capture (`startHandRecord`,
+  `recordHandAction`, `recordHandStreet`, `finishHandRecord`), storage
+  (guarded, capped), and a replay state machine (`replayState`,
+  `frameIndexForStreet`).
+- Engine: `actionTaken` events now carry `street` (one-line, backward
+  compatible) so capture doesn't depend on event-pump timing.
+
+### Tests
+- 1,041 headless tests (was 981): +41 unit tests — deterministic capture of a
+  rigged preflop shove (action sequence, pot evolution 5/15/110/200, winners,
+  hero net), a rigged multi-street hand (street frames in order, exact flop
+  cards, non-decreasing pot, step forward/back), synthesized ante/blind
+  ordering, and storage cap/ordering/clear. +21 jsdom component tests —
+  hand-list rendering (rows, net styling, hole cards, empty state, open-by-id),
+  replay viewer frames (start/mid/flop/end, disabled states, progress text,
+  result banner, street-jump buttons), and XSS escaping of hostile timeline
+  names. Gameplay smoke now also verifies a saved record renders in the Hands
+  tab and steps through to the end with zero JS errors.
+
 ## [1.3.0] — 2026-10-04
 
 ### Fixed

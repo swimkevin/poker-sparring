@@ -19,6 +19,11 @@ js/bots.js        ARCHETYPES + botDecide(table, player) -> { a, amount } | null.
 js/pushfold.js    Push/fold drill scenarios + feedback. Facing-a-shove verdicts
                   use range equity against the shover's archetype tiers.
 js/stats.js       localStorage stats (guarded so it loads in Node).
+js/replay.js      Hand-history capture + replay state machine (DOM-free).
+                  startHandRecord/recordHandAction/recordHandStreet/
+                  finishHandRecord build a JSON record per finished hand;
+                  replayState(rec, upto) + frameIndexForStreet() drive the
+                  viewer. Storage: ps_hands_v1, last 50, newest first.
 js/ui.js          DOM rendering ONLY. Never makes game decisions.
 js/app.js         Conductor: event pump, hero controls, tournament flow,
                   coach tips, leak detection, stats recording.
@@ -33,7 +38,10 @@ a React Native port later. `ui.js`/`app.js` are browser-only.
 1. `app.js` creates a `PokerTable` and calls `startHand()`.
 2. The engine emits synchronous events (`handStart`, `action`, `actionTaken`,
    `street`, `handEnd`). `app.js` queues them and drains the queue with animation
-   delays (`pump()`), so bot "thinking" time never blocks the engine.
+   delays (`pump()`), so bot "thinking" time never blocks the engine. `app.js`
+   also feeds each event into `js/replay.js`, which builds a per-hand record
+   (blinds/antes synthesized from `totalBet` at `handStart`, since the engine
+   posts them without action events) and saves the last 50 to localStorage.
 3. When the hero is to act, `app.js` pauses the pump, enables controls built from
    `table.legalActions(0)` — the UI never hand-rolls legality — and shows a coach tip.
 4. Bot turns: `botDecide(table, player)` returns `{ a, amount }`; the engine
