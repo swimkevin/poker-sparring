@@ -12,6 +12,7 @@
   <nav class="nav">
     <button class="nav-btn active" data-nav="setup">Play</button>
     <button class="nav-btn" data-nav="archetypes">Bots</button>
+    <button class="nav-btn" data-nav="hands">Hands</button>
     <button class="nav-btn" data-nav="stats">Stats</button>
     <button class="nav-btn" data-nav="learn">Learn</button>
   </nav>
@@ -198,6 +199,16 @@
     </div>
   </section>
 
+  <!-- ============ HAND HISTORY / REPLAYER ============ -->
+  <section id="screen-hands" class="screen" hidden>
+    <div class="setup-wrap">
+      <h1>Hand history</h1>
+      <p class="subtitle">Every finished hand is saved automatically (last 50, this browser only). Open one to replay it street by street.</p>
+      <div id="hand-list" class="hand-list"></div>
+      <div id="replay-view" hidden></div>
+    </div>
+  </section>
+
   <section id="screen-learn" class="screen" hidden>
     <div class="setup-wrap">
       <h1>📖 Learn poker</h1>
@@ -222,6 +233,7 @@
 <script src="js/bots.js"></script>
 <script src="js/pushfold.js"></script>
 <script src="js/stats.js"></script>
+<script src="js/replay.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
 </body>

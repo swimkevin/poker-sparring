@@ -387,3 +387,45 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .leak-why div { margin-top: 0.35rem; line-height: 1.55; }
 .hl-leak { color: #f0b0b0; }
 .hl-leak-more { color: var(--muted); font-size: 0.8em; }
+
+/* Hand history / replayer (v1.4) */
+.hand-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.hrow {
+  display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
+  background: #141b28; border: 1px solid #2b3547; border-radius: 10px;
+  padding: 0.7rem 1rem;
+}
+.hrow-main { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; flex: 1; min-width: 200px; }
+.hnum { font-weight: 800; color: var(--gold); }
+.hdate { font-size: 0.85rem; color: var(--muted); }
+.hcards { display: flex; gap: 0.25rem; }
+.hres { font-weight: 800; font-variant-numeric: tabular-nums; }
+.hres.pos { color: var(--green); } .hres.neg { color: var(--red); }
+.rp-open { margin-left: auto; }
+.rp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+.rp-title { font-size: 1.4rem; font-weight: 800; }
+.rp-board {
+  background: var(--felt-dark); border: 2px solid var(--felt); border-radius: 14px;
+  padding: 1rem; margin-bottom: 1rem; text-align: center;
+}
+.rp-hero { display: flex; gap: 0.4rem; justify-content: center; align-items: center; margin-bottom: 0.7rem; }
+.rp-you { font-weight: 800; margin-right: 0.4rem; }
+.rp-community { display: flex; gap: 0.4rem; justify-content: center; min-height: 76px; align-items: center; margin-bottom: 0.5rem; }
+.rp-pot { font-size: 1.05rem; }
+.rp-actions {
+  background: #0d1219; border: 1px solid #232d40; border-radius: 10px;
+  padding: 0.7rem 1rem; max-height: 240px; overflow-y: auto; margin-bottom: 1rem;
+  display: flex; flex-direction: column; gap: 0.25rem;
+}
+.rp-act { font-size: 0.92rem; }
+.rp-street {
+  display: inline-block; min-width: 62px; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--muted); margin-right: 0.4rem;
+}
+.rp-result {
+  background: #1c1a10; border: 1px solid var(--gold-dim); border-radius: 10px;
+  padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 1rem;
+}
+.rp-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.5rem; }
+.rp-controls .ghost:disabled { opacity: 0.35; cursor: default; }
+.rp-progress { margin-bottom: 1rem; }

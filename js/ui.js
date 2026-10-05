@@ -4,7 +4,7 @@ var UI = (function () {
   function $(id) { return document.getElementById(id); }
 
   function showScreen(name) {
-    ['setup', 'table', 'pf', 'archetypes', 'stats', 'learn'].forEach(function (s) {
+    ['setup', 'table', 'pf', 'archetypes', 'hands', 'stats', 'learn'].forEach(function (s) {
       $('screen-' + s).hidden = (s !== name);
     });
     document.querySelectorAll('.nav-btn').forEach(function (b) {
@@ -470,6 +470,159 @@ var UI = (function () {
     $('pf-next').hidden = false;
   }
 
+  // ---------- hand history / replayer ----------
+  function fmtReplayDate(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
+        d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    } catch (e) { return ''; }
+  }
+
+  // records: newest first. onOpen(id) opens the replay viewer.
+  function renderHandList(records, onOpen) {
+    var list = $('hand-list'), view = $('replay-view');
+    view.hidden = true; view.innerHTML = '';
+    list.hidden = false; list.innerHTML = '';
+    if (!records.length) {
+      list.innerHTML = '<p class="subtitle">No saved hands yet — play a few and they will appear here for replay.</p>';
+      return;
+    }
+    records.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'hrow';
+      var net = (r.heroNetBB > 0 ? '+' : '') + r.heroNetBB + ' bb';
+      var netCls = r.heroNetBB > 0 ? 'pos' : r.heroNetBB < 0 ? 'neg' : '';
+      var left = document.createElement('div');
+      left.className = 'hrow-main';
+      left.innerHTML = '<span class="hnum">Hand #' + r.handNo + '</span>' +
+        '<span class="hdate">' + escapeHtml(fmtReplayDate(r.date)) + ' · ' + escapeHtml(r.mode) + '</span>' +
+        '<span class="hres ' + netCls + '">' + escapeHtml(net) + '</span>';
+      var hc = document.createElement('span');
+      hc.className = 'hcards';
+      (r.heroHole || []).forEach(function (c) { hc.appendChild(cardEl(c, true)); });
+      left.appendChild(hc);
+      var btn = document.createElement('button');
+      btn.className = 'ghost rp-open';
+      btn.textContent = 'Replay →';
+      btn.setAttribute('aria-label', 'Replay hand ' + r.handNo);
+      btn.onclick = function () { onOpen(r.id); };
+      row.appendChild(left);
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  }
+
+  function describeReplayAction(a) {
+    var who = a.name + (a.emoji ? ' ' + a.emoji : '');
+    switch (a.action) {
+      case 'fold': return who + ' folds';
+      case 'check': return who + ' checks';
+      case 'call': return who + ' calls ' + fmt(a.bet);
+      case 'bet': return who + ' bets ' + fmt(a.amount);
+      case 'raise': return who + ' raises to ' + fmt(a.amount);
+      case 'sb': return who + ' posts small blind ' + fmt(a.amount);
+      case 'bb': return who + ' posts big blind ' + fmt(a.amount);
+      case 'ante': return who + ' posts ante ' + fmt(a.amount);
+      default: return who + ' ' + a.action;
+    }
+  }
+
+  // Render the replay viewer for record `rec` at frame `idx`
+  // (idx = number of timeline entries applied). Buttons carry stable ids;
+  // app.js wires them after each render.
+  function renderReplay(rec, idx) {
+    var list = $('hand-list'), view = $('replay-view');
+    list.hidden = true; view.hidden = false; view.innerHTML = '';
+    var st = replayState(rec, idx);
+    var streetNames = { preflop: 'Pre-flop', flop: 'Flop', turn: 'Turn', river: 'River' };
+
+    var head = document.createElement('div');
+    head.className = 'rp-head';
+    head.innerHTML = '<div><div class="rp-title">Hand #' + rec.handNo + '</div>' +
+      '<div class="fineprint">' + escapeHtml(fmtReplayDate(rec.date)) + ' · ' + escapeHtml(rec.mode) +
+      ' · blinds ' + fmt(rec.sb) + '/' + fmt(rec.bb) + (rec.ante ? ' (ante ' + fmt(rec.ante) + ')' : '') + '</div></div>';
+    var back = document.createElement('button');
+    back.className = 'ghost'; back.id = 'rp-back'; back.textContent = '← Hands';
+    head.appendChild(back);
+    view.appendChild(head);
+
+    var board = document.createElement('div');
+    board.className = 'rp-board';
+    var heroRow = document.createElement('div');
+    heroRow.className = 'rp-hero';
+    var yl = document.createElement('span');
+    yl.className = 'rp-you'; yl.textContent = 'You';
+    heroRow.appendChild(yl);
+    (rec.heroHole || []).forEach(function (c) { heroRow.appendChild(cardEl(c, true)); });
+    board.appendChild(heroRow);
+    var comm = document.createElement('div');
+    comm.className = 'rp-community';
+    if (!st.community.length) comm.innerHTML = '<span class="hint">no community cards yet</span>';
+    st.community.forEach(function (c) { comm.appendChild(cardEl(c, true)); });
+    board.appendChild(comm);
+    var potLine = document.createElement('div');
+    potLine.className = 'rp-pot';
+    potLine.innerHTML = 'Pot: <b>' + fmt(st.pot) + '</b> <span class="hint">· ' +
+      escapeHtml(streetNames[st.street] || st.street) + '</span>';
+    board.appendChild(potLine);
+    view.appendChild(board);
+
+    var acts = document.createElement('div');
+    acts.className = 'rp-actions';
+    acts.setAttribute('aria-live', 'polite');
+    if (!st.actions.length) {
+      acts.innerHTML = '<div class="hint">No actions yet — step forward.</div>';
+    } else {
+      st.actions.forEach(function (a) {
+        var line = document.createElement('div');
+        line.className = 'rp-act';
+        line.innerHTML = '<span class="rp-street">' + escapeHtml(a.street) + '</span> ' +
+          escapeHtml(describeReplayAction(a));
+        acts.appendChild(line);
+      });
+      acts.scrollTop = acts.scrollHeight;
+    }
+    view.appendChild(acts);
+
+    if (st.done && st.winners && st.winners.length) {
+      var res = document.createElement('div');
+      res.className = 'rp-result';
+      res.innerHTML = st.winners.map(function (w) {
+        var nm = w.names.map(escapeHtml).join(' &amp; ');
+        var label = w.uncalled ? ' takes back (uncalled)' : w.byFold ? ' win' : ' win';
+        return '<div>' + nm + escapeHtml(label) + ' <b>' + fmt(w.amount) + '</b>' +
+          (w.hand ? ' <span class="hint">' + escapeHtml(w.hand) + '</span>' : '') + '</div>';
+      }).join('');
+      view.appendChild(res);
+    }
+
+    var ctl = document.createElement('div');
+    ctl.className = 'rp-controls';
+    function mkBtn(id, label, disabled, title) {
+      var b = document.createElement('button');
+      b.className = 'ghost'; b.id = id; b.textContent = label;
+      b.disabled = !!disabled;
+      if (title) b.title = title;
+      return b;
+    }
+    ctl.appendChild(mkBtn('rp-start', '⏮ Start', idx <= 0));
+    ctl.appendChild(mkBtn('rp-prev', '◀ Prev', idx <= 0));
+    ['preflop', 'flop', 'turn', 'river'].forEach(function (s) {
+      var b = mkBtn('rp-street-' + s, streetNames[s], false, 'Jump to ' + streetNames[s]);
+      b.dataset.street = s;
+      ctl.appendChild(b);
+    });
+    ctl.appendChild(mkBtn('rp-next', 'Next ▶', st.done));
+    ctl.appendChild(mkBtn('rp-end', 'End ⏭', st.done));
+    view.appendChild(ctl);
+
+    var prog = document.createElement('div');
+    prog.className = 'fineprint rp-progress';
+    prog.textContent = 'Step ' + st.idx + ' of ' + st.total;
+    view.appendChild(prog);
+  }
+
   // ---------- misc ----------
   function fmt(n) {
     n = Math.round(n);
@@ -494,6 +647,7 @@ var UI = (function () {
     log: log, clearLog: clearLog, coachTip: coachTip, winnerBanner: winnerBanner, modal: modal,
     renderArchetypes: renderArchetypes, renderStats: renderStats, renderLearn: renderLearn,
     renderPFScenario: renderPFScenario, renderPFFeedback: renderPFFeedback,
+    renderHandList: renderHandList, renderReplay: renderReplay,
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
   };
 })();
