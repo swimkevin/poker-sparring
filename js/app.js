@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.4.1';
+  var APP_VERSION = '1.4.2';
 
   // Last-resort error boundary: a UI glitch must never take down the table or
   // lose the player's stats. Surfaces a calm notice instead of failing silently.
@@ -527,9 +527,9 @@
     $('rp-prev').onclick = function () { replay.idx--; showReplay(); };
     $('rp-next').onclick = function () { replay.idx++; showReplay(); };
     $('rp-end').onclick = function () { replay.idx = total; showReplay(); };
-    document.querySelectorAll('[data-rp-street]').forEach(function (b) {
+    document.querySelectorAll('#replay-view [data-street]').forEach(function (b) {
       b.onclick = function () {
-        replay.idx = frameIndexForStreet(replay.rec, b.dataset.rpStreet);
+        replay.idx = frameIndexForStreet(replay.rec, b.dataset.street);
         showReplay();
       };
     });

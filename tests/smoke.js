@@ -81,6 +81,22 @@ var iv = setInterval(function () {
       var openBtn = d.querySelector('#hand-list .rp-open');
       if (openBtn && rows >= 1) {
         openBtn.click();
+        // Street-jump buttons must actually move the replay (regression: the
+        // wiring once queried a data attribute the buttons never had).
+        var flopBtn = d.getElementById('rp-street-flop');
+        if (!flopBtn) errors.push('replay: street jump button missing');
+        else {
+          var before = d.querySelector('.rp-progress').textContent;
+          flopBtn.click();
+          var after = d.querySelector('.rp-progress').textContent;
+          var flopCards = d.querySelectorAll('#replay-view .rp-community .card').length;
+          console.log('street jump: ' + before + ' -> ' + after + ', flop cards: ' + flopCards);
+          if (before === after) errors.push('replay: street jump did not move');
+          // A hand that ended preflop has no flop: the jump lands at the end.
+          var m = /Step (\d+) of (\d+)/.exec(after || '');
+          var atEnd = m && m[1] === m[2];
+          if (flopCards !== 3 && !atEnd) errors.push('replay: street jump did not show flop, got ' + flopCards);
+        }
         var steps = 0, nb = d.getElementById('rp-next');
         while (nb && !nb.disabled && steps < 300) { nb.click(); steps++; nb = d.getElementById('rp-next'); }
         console.log('replay steps walked: ' + steps);

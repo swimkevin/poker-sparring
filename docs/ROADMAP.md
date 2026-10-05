@@ -27,6 +27,9 @@ chips no longer count as live (they could force a showdown with no eligible
 winner); `_showdown` refunds degenerate levels instead of throwing; cash-game
 bots top up from 0. 1,058 headless tests.
 
+**v1.4.2** (2026-10-04): replay street-jump buttons fixed (wiring queried a
+data attribute the buttons never had — caught by live-browser playtest).
+
 ## v1.5 — Drill packs ⬅️ NEXT
 
 New push/fold-style trainers: 3-bet pots, blind defense, and an ICM-flavored

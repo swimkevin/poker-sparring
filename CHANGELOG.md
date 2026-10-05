@@ -3,6 +3,21 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.4.2] — 2026-10-04
+
+### Fixed
+- **Hand replayer street-jump buttons:** the Pre-flop/Flop/Turn/River buttons
+  rendered but never responded to clicks — `ui.js` tags them with
+  `data-street` while `app.js` wired clicks via a `[data-rp-street]`
+  selector that matched nothing (found by live-browser playtest of v1.4.1).
+  Wiring now uses the same attribute, scoped to the replay view.
+
+### Tests
+- Smoke test now clicks a street-jump button in the replay viewer and asserts
+  the frame actually moves (and the flop renders, or the jump lands at the end
+  for preflop-ending hands). Verified the new assertion fails against the
+  unfixed wiring and passes with the fix.
+
 ## [1.4.1] — 2026-10-04
 
 ### Fixed
