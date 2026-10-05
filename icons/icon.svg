@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#0d2b24"/>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="none" stroke="#d4af37" stroke-width="10" opacity="0.55"/>
+  <text x="256" y="352" font-family="Georgia, 'Times New Roman', serif" font-size="300" fill="#d4af37" text-anchor="middle">♠</text>
+</svg>

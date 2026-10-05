@@ -97,6 +97,10 @@ var iv = setInterval(function () {
           var atEnd = m && m[1] === m[2];
           if (flopCards !== 3 && !atEnd) errors.push('replay: street jump did not show flop, got ' + flopCards);
         }
+        // Reset to the start: the street jump may have landed at the end,
+        // which would leave nothing for the next-button walk below.
+        var startBtn = d.getElementById('rp-start');
+        if (startBtn && !startBtn.disabled) startBtn.click();
         var steps = 0, nb = d.getElementById('rp-next');
         while (nb && !nb.disabled && steps < 300) { nb.click(); steps++; nb = d.getElementById('rp-next'); }
         console.log('replay steps walked: ' + steps);
