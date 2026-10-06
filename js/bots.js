@@ -56,7 +56,7 @@ var ARCHETYPES = [
   },
   {
     id: 'lag', name: 'swimkev', emoji: '🏊',
-    tagline: 'Wild, unpredictable — and somehow always a great time.',
+    tagline: 'Wild and unpredictable — wins big or rebuys instantly.',
     desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
     beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,

@@ -155,7 +155,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .seat .pbet { font-size: 0.75rem; color: var(--blue); min-height: 1em; font-variant-numeric: tabular-nums; }
 .seat .pcards { display: flex; gap: 3px; justify-content: center; margin-top: 4px; min-height: 40px; }
 .seat .pact { font-size: 0.72rem; color: var(--muted); min-height: 1.1em; font-style: italic;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .seat.to-act { border-color: var(--gold); box-shadow: 0 0 14px rgba(212, 175, 55, 0.55); }
 .seat.folded { opacity: 0.45; }
 /* bot "thinking" indicator: pulsing gold dots while a bot is to act */
