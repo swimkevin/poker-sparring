@@ -216,9 +216,12 @@ var UI = (function () {
 
   // ---------- table ----------
   function seatPos(i, n) {
+    // Phones: pull the ellipse in so side seats (min-width 84px) stay on the felt.
+    var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
+    var rx = narrow ? 35 : 42;
     if (i === 0) return { x: 50, y: 88 };
     var theta = (90 + i * (360 / n)) * Math.PI / 180;
-    return { x: 50 + 42 * Math.cos(theta), y: 50 + 40 * Math.sin(theta) };
+    return { x: 50 + rx * Math.cos(theta), y: 50 + 40 * Math.sin(theta) };
   }
 
   function buildSeats(n) {
