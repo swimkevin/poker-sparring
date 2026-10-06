@@ -381,7 +381,11 @@ var Online = (function () {
       if (p.hasCards) {
         var revealed = s.showdown && s.showdown.some(function (r) { return r.seat === p.seat; });
         var sd = revealed ? s.showdown.filter(function (r) { return r.seat === p.seat; })[0] : null;
+        // Hero's own seat shows their real cards (like the offline table);
+        // everyone else shows backs until the showdown reveals them.
+        var mine = !sd && p.seat === s.mySeat && s.hole && s.hole.length === 2;
         if (sd) { sd.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
+        else if (mine) { s.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
         else { pc.appendChild(UI.cardBackEl(true)); pc.appendChild(UI.cardBackEl(true)); }
       }
       if (!p.connected) d.classList.add('disconnected');
