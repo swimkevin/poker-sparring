@@ -26,23 +26,23 @@ var ARCHETYPES = [
     id: 'rock', name: 'The Rock', emoji: '🪨',
     tagline: 'Only plays monsters. You always know where you stand.',
     desc: 'Tight-passive: plays ~10% of hands — big pairs and big aces — and only bets with genuine strength. The classic "rock" from every low-stakes game.',
-    beat: 'Steal their blinds relentlessly. When they finally bet or raise, believe them and fold everything but the nuts.',
+    beat: 'Pick up their blinds when they let you. When they finally bet or raise, believe them and fold everything but the nuts.',
     openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.20, bluff: 0.02, stubborn: 0.20, pushTier: 3, callPushTier: 2, limp: 0.05
   },
   {
     id: 'station', name: 'Calling Station', emoji: '📞',
-    tagline: 'Calls with anything. Folding is not in the vocabulary.',
-    desc: 'Loose-passive: sees ~45% of flops, calls down with middle pair or any draw, almost never raises. The most common player in home games.',
-    beat: 'Value bet big with any decent hand — and never bluff. They will call you down, so make them pay for it.',
+    tagline: 'Sees every flop with a smile. Folding is not in the vocabulary.',
+    desc: 'Loose-passive: sees ~45% of flops, calls down with middle pair or any draw, almost never raises. The friendliest seat in home games — always in the hand, always having a good time.',
+    beat: 'Value bet big with any decent hand — and never bluff. They love to call, so size up your value bets and enjoy the ride.',
     openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 2,
     aggression: 0.20, bluff: 0.03, stubborn: 0.95, pushTier: 4, callPushTier: 4, limp: 0.75
   },
   {
-    id: 'maniac', name: 'Kevin', emoji: '🤪',
+    id: 'maniac', name: 'The Maniac', emoji: '🤪',
     tagline: 'Raises everything. No fold button found.',
-    desc: 'Loose-aggressive chaos: plays ~65% of hands, 3-bets light, bluffs every street. Terrifying until you realize their range is literally everything.',
-    beat: 'Tighten up, trap with strong hands, and call down lighter than usual. Let them bluff their stack to you.',
+    desc: 'Loose-aggressive chaos: plays ~65% of hands, 3-bets light, bluffs every street. A total rollercoaster — scary until you realize their range is literally everything, and then it is just plain fun.',
+    beat: 'Tighten up, trap with strong hands, and call down a little lighter than usual. Patience pays off big in this matchup.',
     openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 5,
     aggression: 0.95, bluff: 0.55, stubborn: 0.65, pushTier: 6, callPushTier: 4, limp: 0.05
   },
@@ -55,10 +55,10 @@ var ARCHETYPES = [
     aggression: 0.70, bluff: 0.25, stubborn: 0.50, pushTier: 4, callPushTier: 3, limp: 0.10
   },
   {
-    id: 'lag', name: 'Tricky LAG', emoji: '🎭',
-    tagline: 'Plays lots of hands — and plays them well.',
-    desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed bluffs and tricky lines. The toughest home-game regular — hard to read, harder to push around.',
-    beat: 'Play solid and straightforward; don\'t try to out-bluff them. Value bet confidently — they call wider than they should.',
+    id: 'lag', name: 'Kevin', emoji: '🎭',
+    tagline: 'Wild and unpredictable — and knows exactly what he is doing.',
+    desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. The most fun seat at any friendly home game: hard to read, harder to push around, always a good time.',
+    beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15
   },
@@ -74,8 +74,8 @@ var ARCHETYPES = [
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
     tagline: 'Bombs every pot the moment he likes his hand.',
-    desc: 'Maniac sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in relentlessly with monsters (QQ+/AKs). Value-heavy, not bluff-heavy — the sizing is the weapon.',
-    beat: 'Wait for a real hand and let him hang himself. Do not try to bluff-catch light — his range is strong when the money goes in.',
+    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in with monsters (QQ+/AKs) when the moment feels right. Value-heavy, not bluff-heavy — the sizing is the weapon, and it is a blast to play against.',
+    beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05
   },
