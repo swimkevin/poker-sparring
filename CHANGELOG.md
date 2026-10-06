@@ -52,9 +52,8 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
   all-in showdown with broke players seated, and a direct degenerate
   `_showdown` call (asserts no throw, contributor refund, conservation, and the
   `refunded` flag on `handEnd`). Verified the new tests fail against the
-  unfixed engine (10 failures) and pass with the fix; a 60,000-hand
-  short-stack/zombie fuzzer reports zero crashes and zero conservation
-  violations.
+  unfixed engine (10 failures) and pass with the fix; a 12,000-hand soak
+  diagnostic completed with zero crashes.
 
 ## [1.4.0] — 2026-10-04
 

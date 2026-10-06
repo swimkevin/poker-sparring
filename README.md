@@ -6,6 +6,21 @@
 
 ![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1058%20passing-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
 
+## Key decisions
+
+The architecture calls that shape this repo, recorded as ADRs:
+
+- [Vanilla JS, zero runtime dependencies](docs/adr/0001-vanilla-js-zero-dependencies.md) — no framework, no build step; the layering has to be designed, not inherited.
+- [Local-first storage, no backend](docs/adr/0002-local-first-storage.md) — stats and hands in `localStorage`; a backend only when a feature needs it.
+- [Heuristic bots, honestly labeled](docs/adr/0003-heuristic-bots-not-ml.md) — transparent agents, never marketed as ML.
+- [Static deploy on GitHub Pages](docs/adr/0004-static-deploy-github-pages.md) — push to main, live in ~2 minutes.
+
+## Verification
+
+- **1,058 tests** (1,012 unit + integration, 46 component) + a gameplay smoke test that boots the real app and auto-plays hands. Strategy: [docs/TESTING.md](docs/TESTING.md).
+- **Incident log** with root causes and regression guards: [docs/INCIDENTS.md](docs/INCIDENTS.md).
+- **How AI-assisted development is run here** (guardrails, verification, human ownership): [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md).
+
 ## Why this exists
 
 I'm Kevin Song, a software engineer (currently building auth infrastructure at Capital One). I started this project in October 2026 with two goals:
@@ -50,6 +65,7 @@ poker-sparring/
 │   ├── engine.js       # Table engine: blinds, betting rounds, side pots, showdown
 │   ├── bots.js         # Archetypes + heuristic decision engine
 │   ├── pushfold.js     # Push/fold drill scenarios + range-based feedback
+│   ├── replay.js       # Hand-history capture + replay state machine (DOM-free)
 │   ├── stats.js        # localStorage training stats + leak records
 │   ├── ui.js           # DOM rendering (no game logic)
 │   └── app.js          # Game flow, event pump, controls, tournament logic
@@ -72,7 +88,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full technical write-
 No build step:
 
 ```bash
-npm test          # full suite: 954 unit/integration + 25 component tests
+npm test          # full suite: 1012 unit + 46 component tests (1058 total)
 npm run serve     # → http://localhost:8000
 ```
 

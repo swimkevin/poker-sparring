@@ -33,6 +33,22 @@ js/app.js         Conductor: event pump, hero controls, tournament flow,
 must stay that way. They run in Node tests today and are written to be reused by
 a React Native port later. `ui.js`/`app.js` are browser-only.
 
+```mermaid
+flowchart LR
+    subgraph core["DOM-free core (runs in Node tests)"]
+        cards[cards.js] --> evaluator[evaluator.js] --> equity[equity.js] --> engine[engine.js] --> bots[bots.js]
+    end
+    engine -->|events| app[app.js\nconductor]
+    bots -->|decisions| app
+    equity -->|range equity| pushfold[pushfold.js]
+    pushfold --> app
+    app -->|feeds events| replay[replay.js\ncapture]
+    replay -->|records| app
+    app <--> stats[(stats.js\nlocalStorage)]
+    app --> ui[ui.js\nrender only]
+    ui --> browser[(DOM)]
+```
+
 ## Data flow (one hand)
 
 1. `app.js` creates a `PokerTable` and calls `startHand()`.
