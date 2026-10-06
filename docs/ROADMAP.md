@@ -59,6 +59,29 @@ Visual preflop range grids per archetype/position (the natural upgrade from the
 Practice streaks, milestone badges, weekly challenges. Retention mechanics;
 all local.
 
+## v2.0 — Online multiplayer (prototype) ⬅️ IN PROGRESS
+
+PokerNow-style friendly online poker as a separate **Online** mode (BETA tab):
+host creates a table with settings (2–8 players, stacks, blinds, turn timer),
+friends join with a 6-letter room code, host starts/pauses, everyone plays
+with per-turn timers (auto-check/auto-fold on expiry).
+
+**Architecture (mock vs worker split):**
+- `js/room-server.js` — DOM-free authoritative `Room` state machine wrapping
+  the `PokerTable` engine: lobby/seating, turn timers (injectable clock),
+  host pause (freezes timers), per-seat snapshots (hole cards only to owner).
+- `js/netplay.js` — JSON message protocol, `NetClient` WebSocket wrapper, and
+  `MockRoomServer`: the same protocol delivered via direct calls, so the UI
+  and the 46-test suite (`tests/netplay.test.js`) run with NO backend.
+- `js/online.js` — UI controller reusing the offline felt/seat/card CSS.
+- `worker/` — Cloudflare Workers + Durable Object production path (one DO per
+  room code, WebSocket relay, alarm-driven timers). Documented in
+  `worker/README.md`; not executed by `npm test`. Free-tier friendly.
+
+**Still to do:** real reconnect resume, mid-game rejoin polish, chat,
+play-money persistence across games, rate limiting / abuse controls, DO
+eviction snapshotting. The offline modes are untouched (additive only).
+
 ## Design polish backlog (from competitive research, 2026-10-05)
 
 Surveyed the best open-source/AI-built poker trainers (Fold Call or Jam,

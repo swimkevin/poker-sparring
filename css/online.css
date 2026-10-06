@@ -1,0 +1,100 @@
+/* Online multiplayer (prototype) — additive styles.
+   The table itself reuses .felt/.seat/.card/.pot/.community/.controls/.ctl
+   from style.css for visual consistency with the offline game. */
+
+.online-wrap { max-width: 860px; margin: 0 auto; }
+.beta-tag {
+  display: inline-block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1px;
+  color: #0b0f14; background: var(--gold); border-radius: 4px; padding: 0.1rem 0.4rem;
+  vertical-align: middle; margin-left: 0.4rem;
+}
+.nav-btn .beta-tag { margin-left: 0.3rem; }
+.conn-pill {
+  display: inline-block; font-size: 0.8rem; color: var(--muted);
+  border: 1px solid #2b3547; border-radius: 20px; padding: 0.2rem 0.7rem;
+  margin: 0.4rem 0 1rem;
+}
+.conn-pill .dot { color: var(--green); }
+
+.online-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.online-card {
+  background: var(--panel); border: 1px solid #232c3d; border-radius: 14px;
+  padding: 1.2rem;
+}
+.online-card h3 { margin: 0 0 0.8rem; }
+.online-card label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.7rem; }
+.online-card input, .online-card select {
+  background: var(--panel2); border: 1px solid #2b3547; color: var(--text);
+  border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 1rem;
+}
+.online-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.7rem; align-items: end; }
+.online-row label { margin-bottom: 0; flex: 1; min-width: 110px; }
+.code-input { text-transform: uppercase; letter-spacing: 3px; font-weight: 800; text-align: center; }
+.on-error { color: var(--red); font-weight: 700; margin-top: 0.6rem; font-size: 0.9rem; }
+
+/* lobby */
+.lobby-code-row { display: flex; align-items: center; gap: 1rem; margin: 1rem 0 0.4rem; flex-wrap: wrap; }
+.lobby-code {
+  font-size: 2.2rem; font-weight: 800; letter-spacing: 6px; color: var(--gold);
+  background: #0d1219; border: 2px dashed var(--gold-dim); border-radius: 12px;
+  padding: 0.4rem 1.2rem 0.4rem 1.6rem; font-variant-numeric: tabular-nums;
+}
+.settings-summary {
+  background: var(--panel); border: 1px solid #232c3d; border-radius: 10px;
+  padding: 0.7rem 1rem; margin: 0.8rem 0; font-size: 0.9rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.player-list { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.8rem 0 1.2rem; }
+.player-row {
+  display: flex; align-items: center; gap: 0.7rem; background: var(--panel);
+  border: 1px solid #232c3d; border-radius: 10px; padding: 0.55rem 0.9rem;
+}
+.player-row .avatar { font-size: 1.3rem; }
+.player-row .pname { font-weight: 700; }
+.player-row .seat-tag { margin-left: auto; font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.host-crown { color: var(--gold); }
+
+/* online table */
+.online-table-top { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+.online-table-top .conn-pill { margin: 0; }
+.online-felt { margin-top: 0.4rem; }
+.online-felt .board-area { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); text-align: center; z-index: 5; }
+.timer-bar {
+  height: 5px; background: rgba(0,0,0,0.45); border-radius: 3px; margin-top: 5px;
+  overflow: hidden; display: none;
+}
+.seat.to-act .timer-bar { display: block; }
+.timer-fill { height: 100%; width: 100%; background: var(--gold); transition: width 0.25s linear; }
+.timer-fill.low { background: var(--red); }
+.timer-secs { font-size: 0.7rem; color: var(--gold); font-variant-numeric: tabular-nums; }
+.seat .disconnected { opacity: 0.55; }
+.online-paused {
+  position: absolute; inset: 0; z-index: 15; display: flex; align-items: center; justify-content: center;
+  background: rgba(5, 8, 12, 0.72); border-radius: 230px; text-align: center;
+}
+.online-paused div {
+  background: var(--panel2); border: 2px solid var(--gold-dim); border-radius: 14px;
+  padding: 1.2rem 2rem; font-size: 1.2rem; font-weight: 800;
+}
+.online-paused .hint { display: block; margin-top: 0.4rem; font-weight: normal; }
+
+.online-controls-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+.bet-inline {
+  display: flex; gap: 0.5rem; align-items: center; background: var(--panel2);
+  border: 1px solid var(--gold-dim); border-radius: 10px; padding: 0.5rem 0.7rem;
+}
+.bet-inline input[type=range] { accent-color: var(--gold); width: 130px; }
+.online-status { color: var(--muted); font-style: italic; }
+
+.online-feed {
+  margin-top: 1rem; background: var(--panel); border: 1px solid #232c3d; border-radius: 10px;
+  padding: 0.6rem 0.9rem; font-size: 0.82rem; line-height: 1.6; color: var(--muted);
+  max-height: 130px; overflow-y: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.online-feed div:last-child { color: var(--text); }
+
+@media (max-width: 900px) {
+  .online-felt { height: 380px; border-radius: 40px; }
+  .online-paused { border-radius: 40px; }
+  .lobby-code { font-size: 1.7rem; letter-spacing: 4px; }
+}
