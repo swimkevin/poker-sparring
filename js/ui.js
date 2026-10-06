@@ -145,22 +145,73 @@ var UI = (function () {
   }
 
   // ---------- setup screen ----------
+  // Bot display name: custom rename when set, otherwise the archetype default.
+  // NamePrefs is a browser global (js/names.js); tests that load ui.js without
+  // it fall back to default names.
+  function dispName(a) {
+    if (!a) return '';
+    if (typeof NamePrefs !== 'undefined' && NamePrefs) return NamePrefs.displayName(a);
+    return a.name || a.id || '';
+  }
+
   function renderRoster(allBots, selected) {
     var box = $('bot-roster');
     box.innerHTML = '';
+    box._bots = allBots;
+    box._selected = selected;
+    var overrides = (typeof NamePrefs !== 'undefined' && NamePrefs) ? NamePrefs.getBotOverrides() : {};
     allBots.forEach(function (b) {
       var btn = document.createElement('button');
       btn.className = 'roster-card' + (selected.has(b.id) ? ' selected' : '');
+      var renamed = !!overrides[b.id];
       btn.innerHTML = '<span class="emoji">' + escapeHtml(b.emoji) + '</span>' +
-        '<span><div class="nm">' + escapeHtml(b.name) + '</div>' +
+        '<span><div class="nm"><span class="nm-row"><span class="nm-text">' + escapeHtml(dispName(b)) + '</span>' +
+        (renamed ? '<span class="renamed-tag" title="Default name: ' + escapeHtml(b.name) + '">renamed</span>' : '') +
+        '<span class="rename-btn" role="button" tabindex="0" title="Rename ' + escapeHtml(b.name) + '">✎</span>' +
+        '</span></div>' +
         '<div class="tg">' + escapeHtml(b.tagline) + '</div></span>' +
         '<span class="check">✓</span>';
       btn.onclick = function () {
         if (selected.has(b.id)) selected.delete(b.id); else selected.add(b.id);
         btn.classList.toggle('selected');
       };
+      var rbtn = btn.querySelector('.rename-btn');
+      rbtn.onclick = function (e) { e.stopPropagation(); openRename(btn, b); };
+      rbtn.onkeydown = function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); openRename(btn, b); }
+      };
       box.appendChild(btn);
     });
+  }
+
+  // Inline rename: swaps the name row for an input. Enter/blur saves (empty
+  // resets to the default name), Escape cancels. Re-renders the roster after.
+  function openRename(cardBtn, b) {
+    var nmRow = cardBtn.querySelector('.nm-row');
+    if (!nmRow || nmRow.querySelector('input')) return;
+    nmRow.innerHTML = '';
+    var input = document.createElement('input');
+    input.className = 'rename-input';
+    input.value = dispName(b);
+    input.maxLength = 18;
+    input.setAttribute('aria-label', 'Rename ' + b.name + ' (empty resets)');
+    var done = false;
+    function finish(save) {
+      if (done) return; done = true;
+      if (save && typeof NamePrefs !== 'undefined' && NamePrefs) NamePrefs.setBotOverride(b.id, input.value);
+      var box = $('bot-roster');
+      renderRoster(box._bots || [], box._selected || new Set());
+    }
+    input.onclick = function (e) { e.stopPropagation(); };
+    input.onkeydown = function (e) {
+      e.stopPropagation();
+      if (e.key === 'Enter') finish(true);
+      else if (e.key === 'Escape') finish(false);
+    };
+    input.onblur = function () { finish(true); };
+    nmRow.appendChild(input);
+    input.focus();
+    input.select();
   }
 
   // ---------- table ----------
@@ -200,7 +251,7 @@ var UI = (function () {
       var s = $('seat-' + i);
       if (!s) return;
       s.querySelector('.avatar').textContent = p.isHero ? '🧑' : (p.archetype ? p.archetype.emoji : '🤖');
-      s.querySelector('.pname').textContent = p.isHero ? 'You' : p.name;
+      s.querySelector('.pname').textContent = p.name; // hero name set at game start (username or 'You')
       s.querySelector('.pstack').textContent = fmt(p.stack);
       s.querySelector('.pbet').textContent = p.bet > 0 ? 'bet ' + fmt(p.bet) : '';
       var pact = s.querySelector('.pact');
@@ -348,7 +399,7 @@ var UI = (function () {
     var d = document.createElement('div');
     d.className = 'arch-card';
     d.innerHTML = '<div class="ah"><span class="aemoji">' + escapeHtml(a.emoji) + '</span>' +
-      '<span class="aname">' + escapeHtml(a.name) + '</span></div>' +
+      '<span class="aname">' + escapeHtml(dispName(a)) + '</span></div>' +
       '<div class="atag">' + escapeHtml(a.tagline || '') + '</div>' +
       '<div class="adesc">' + escapeHtml(a.desc || '') + '</div>' +
       (a.beat ? '<div class="abeat"><b>How to beat:</b> ' + escapeHtml(a.beat) + '</div>' : '');
@@ -392,7 +443,7 @@ var UI = (function () {
       var row = document.createElement('div');
       row.className = 'arch-table-row';
       row.innerHTML = '<span class="ae">' + (a.emoji || '🤖') + '</span>' +
-        '<span class="an">' + escapeHtml(a.name || id) + '</span>' +
+        '<span class="an">' + escapeHtml(dispName(a) || id) + '</span>' +
         '<span class="as">' + a.hands + ' hands · won ' + a.won + ' · ' +
         (a.profitBB >= 0 ? '+' : '') + a.profitBB.toFixed(1) + ' bb</span>';
       at.appendChild(row);

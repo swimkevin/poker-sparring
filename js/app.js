@@ -236,7 +236,7 @@
         .filter(function (p) { return !p.sittingOut && p.hole.length === 2; })
         .map(function (p) {
           var a = p.archetype || { id: 'unknown', name: p.name, emoji: '🤖' };
-          return { id: a.id, name: a.name, emoji: a.emoji };
+          return { id: a.id, name: p.name, emoji: a.emoji }; // p.name is the display name (custom rename or default)
         }),
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
@@ -475,8 +475,8 @@
     else bots = bots.slice(0, oppCount);
 
     gameMode = mode;
-    var players = [{ name: 'You', isHero: true }].concat(bots.map(function (b) {
-      return { name: b.name, archetype: b };
+    var players = [{ name: NamePrefs.heroName(), isHero: true }].concat(bots.map(function (b) {
+      return { name: NamePrefs.displayName(b), archetype: b };
     }));
 
     table = new PokerTable({
@@ -596,6 +596,16 @@
     $('btn-start').onclick = startGame;
     $('btn-leave').onclick = leaveToLobby;
     $('btn-pf-leave').onclick = leaveToLobby;
+
+    // username: persisted, applied to the hero seat at game start
+    var unameInput = $('cfg-username');
+    if (unameInput) {
+      unameInput.value = NamePrefs.getUsername();
+      unameInput.addEventListener('change', function () {
+        NamePrefs.setUsername(unameInput.value);
+        unameInput.value = NamePrefs.getUsername(); // trimmed to max length
+      });
+    }
 
     // opponent count stepper
     function syncRosterToCount() {
