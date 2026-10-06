@@ -20,6 +20,20 @@ var Online = (function () {
   var client = null;            // mock rec or live adapter {send,close,onmessage}
   var wsUrl = '';
   var WSURL_KEY = 'ps_wsurl_v1';
+  // Default public relay (Kevin's Cloudflare worker). The workers.dev URL is
+  // stable — it only changes if the worker is renamed or recreated. Nothing
+  // secret lives in it; rooms are still gated by their 6-letter codes.
+  // Users can override per session in the Advanced field; clearing the field
+  // falls back to local mock mode.
+  var DEFAULT_WS_URL = 'https://poker-sparring-relay.swimkevin1735.workers.dev';
+  // The dashboard shows an https:// URL but WebSockets need wss://.
+  // Normalize pasted values so either form works.
+  function normalizeWsUrl(u) {
+    u = (u || '').trim().replace(/\/+$/, '');
+    if (/^https:\/\//i.test(u)) return 'wss://' + u.slice(8);
+    if (/^http:\/\//i.test(u)) return 'ws://' + u.slice(7);
+    return u;
+  }
   // Remembered relay URL: paste once, not every game night. Guarded storage
   // (same pattern as names.js) so tests/Node get a memory fallback.
   var _wsMem = '';
@@ -121,9 +135,18 @@ var Online = (function () {
     }
   }
 
+  var lastAction = null; // 'host' | 'join' — routes async server errors to the right form
   function showError(msg) {
-    var el = $('online-error');
+    // Server/connection errors belong to the form that triggered them:
+    // a failed join ("Room not found") must not appear under the host form.
+    var el = $(lastAction === 'join' ? 'online-error2' : 'online-error') || $('online-error');
     if (el) { el.textContent = msg; el.hidden = false; }
+  }
+  function clearErrors() {
+    ['online-error', 'online-error2'].forEach(function (id) {
+      var el = $(id);
+      if (el) { el.textContent = ''; el.hidden = true; }
+    });
   }
 
   function leave() {
@@ -169,8 +192,7 @@ var Online = (function () {
       '<div id="online-error2" class="on-error" hidden></div>' +
       '<details class="settings-details"><summary>Advanced: live server</summary>' +
       '<label>WebSocket URL<input id="on-wsurl" placeholder="wss://your-worker.workers.dev"></label>' +
-      '<p class="hint">Empty = local mock mode (prototype, this page only). ' +
-      'Point at a deployed relay (see worker/README.md) to play across devices.</p>' +
+      '<p class="hint">Prefilled with the public relay — clear the field for local mock mode (this page only).</p>' +
       '</details>' +
       '</div></div>';
 
@@ -188,7 +210,7 @@ var Online = (function () {
       }
     }
     var wu = $('on-wsurl'), savedWu = loadWsUrl();
-    if (wu && !wu.value && savedWu) wu.value = savedWu;
+    if (wu && !wu.value) wu.value = savedWu || DEFAULT_WS_URL;
   }
 
   function readConfig() {
@@ -205,9 +227,11 @@ var Online = (function () {
   function hostGame() {
     var name = fieldVal('on-host-name', '').trim();
     var errBox = $('online-error');
+    clearErrors();
+    lastAction = 'host';
     if (!name) { errBox.textContent = 'Enter your name to host.'; errBox.hidden = false; return; }
-    wsUrl = fieldVal('on-wsurl', '').trim().replace(/\/+$/, '');
-    saveWsUrl(wsUrl);
+    wsUrl = normalizeWsUrl(fieldVal('on-wsurl', ''));
+    saveWsUrl(fieldVal('on-wsurl', '').trim().replace(/\/+$/, ''));
     myName = name;
     if (wsUrl) { hostLive(readConfig(), name); return; }
     mode = 'mock';
@@ -225,10 +249,12 @@ var Online = (function () {
     var code = fieldVal('on-code', '').toUpperCase().trim();
     var name = fieldVal('on-join-name', '').trim();
     var errBox = $('online-error2');
+    clearErrors();
+    lastAction = 'join';
     if (!isValidRoomCode(code)) { errBox.textContent = 'Enter the 6-letter room code.'; errBox.hidden = false; return; }
     if (!name) { errBox.textContent = 'Enter your name to join.'; errBox.hidden = false; return; }
-    wsUrl = fieldVal('on-wsurl', '').trim().replace(/\/+$/, '');
-    saveWsUrl(wsUrl);
+    wsUrl = normalizeWsUrl(fieldVal('on-wsurl', ''));
+    saveWsUrl(fieldVal('on-wsurl', '').trim().replace(/\/+$/, ''));
     myName = name;
     if (wsUrl) { joinLive(code, name); return; }
     mode = 'mock';
