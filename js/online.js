@@ -160,6 +160,16 @@ var Online = (function () {
 
     $('on-create').onclick = hostGame;
     $('on-join').onclick = joinGame;
+
+    // Prefill with the saved username from the offline setup screen.
+    if (typeof NamePrefs !== 'undefined' && NamePrefs) {
+      var un = NamePrefs.getUsername();
+      if (un) {
+        var hn = $('on-host-name'), jn = $('on-join-name');
+        if (hn && !hn.value) hn.value = un;
+        if (jn && !jn.value) jn.value = un;
+      }
+    }
   }
 
   function readConfig() {

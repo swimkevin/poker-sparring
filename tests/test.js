@@ -426,6 +426,122 @@ function heroPolicy(table, idx) {
   ok(tried > 500, 'enough bot decisions sampled (' + tried + ')');
 })();
 
+// ---------- new archetypes: Rohan / Amogh / Nathan behavior ----------
+(function () {
+  function mkTable(id, n) {
+    var A = BOTS.getArchetype(id);
+    var t = new EN.PokerTable({
+      players: Array.from({ length: n || 6 }, function (_, i) { return { name: 'P' + i, archetype: A }; }),
+      sb: 5, bb: 10, startingStack: 1000
+    });
+    t.startHand();
+    return t;
+  }
+  function playThrough(t, maxSteps) {
+    var guard = 0;
+    while (!t.handOver && guard++ < (maxSteps || 40)) {
+      var i = t.acting, mv = BOTS.botDecide(t, t.players[i]);
+      if (!mv) break;
+      t.act(i, mv.a, mv.amount);
+    }
+  }
+
+  // (a) Rohan never takes an aggressive action on any street.
+  var rAggro = 0, rTried = 0;
+  for (var k = 0; k < 40; k++) {
+    var t = mkTable('rohan');
+    var g = 0;
+    while (!t.handOver && g++ < 40) {
+      var i = t.acting, mv = BOTS.botDecide(t, t.players[i]);
+      if (!mv) break;
+      rTried++;
+      if (mv.a === 'bet' || mv.a === 'raise') rAggro++;
+      t.act(i, mv.a, mv.amount);
+    }
+  }
+  ok(rTried > 200, 'rohan decisions sampled (' + rTried + ')');
+  ok(rAggro === 0, 'Rohan never bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
+
+  // (b1) Amogh shoves tier-1 monsters (QQ+/AKs) preflop relentlessly.
+  var shoves = 0, spots = 0;
+  for (var k2 = 0; k2 < 80; k2++) {
+    var t2 = mkTable('amogh');
+    var i2 = t2.acting;
+    t2.players[i2].hole = hand('As Ah'); // rig the monster
+    var legal2 = t2.legalActions(i2);
+    if (t2.currentBet === t2.bb && legal2.canRaise) { // first-in spot
+      var mv2 = BOTS.botDecide(t2, t2.players[i2]);
+      spots++;
+      if (mv2 && mv2.a === 'raise' && mv2.amount >= legal2.maxRaiseTo * 0.97) shoves++;
+    }
+  }
+  ok(spots > 40, 'amogh monster spots sampled (' + spots + ')');
+  ok(shoves / spots > 0.5, 'Amogh shoves QQ+/AKs preflop relentlessly (' + shoves + '/' + spots + ')');
+
+  // (b2) Amogh's postflop sizing: whenever he bets with no one to call, it's
+  // an overbet (1.5x+ pot) or an all-in bomb. Tested directly against
+  // amoghPostflop with stubbed table/legal — the function only reads
+  // table.currentBet and the legal bounds, so no full table is needed.
+  var over = 0, bets = 0, bombs = 0;
+  for (var k3 = 0; k3 < 60; k3++) {
+    var fakeLegal = { toCall: 0, canCheck: true, canBet: true, canRaise: false,
+                      minBetTo: 10, maxRaiseTo: 990 };
+    var Aam = BOTS.getArchetype('amogh');
+    var mvb = BOTS.amoghPostflop({ currentBet: 0 }, {}, Aam, fakeLegal,
+                                 0, 100, 0.65, 0.55, 'flop', 2);
+    if (mvb && (mvb.a === 'bet' || mvb.a === 'raise')) {
+      bets++;
+      if (mvb.amount >= 140 || mvb.amount >= 990 * 0.97) over++;
+    }
+    var mvm = BOTS.amoghPostflop({ currentBet: 0 }, {}, Aam, fakeLegal,
+                                 0, 100, 0.9, 0.9, 'turn', 2);
+    if (mvm && mvm.amount >= 990 * 0.97) bombs++;
+  }
+  ok(bets > 30, 'amogh postflop bets sampled (' + bets + ')');
+  ok(over / bets > 0.9, 'Amogh overbets or bombs when he bets (' + over + '/' + bets + ')');
+  ok(bombs > 10, 'Amogh bombs all-in with monsters (' + bombs + '/60)');
+
+  // (c1) Nathan never bets/raises before the river.
+  var nAggro = 0, nTried = 0;
+  for (var k4 = 0; k4 < 40; k4++) {
+    var t4 = mkTable('nathan');
+    var g4 = 0;
+    while (!t4.handOver && g4++ < 40) {
+      if (t4.street === 'river') break; // the trap may spring on the river
+      var i4 = t4.acting, mv4 = BOTS.botDecide(t4, t4.players[i4]);
+      if (!mv4) break;
+      nTried++;
+      if (mv4.a === 'bet' || mv4.a === 'raise') nAggro++;
+      t4.act(i4, mv4.a, mv4.amount);
+    }
+  }
+  ok(nTried > 100, 'nathan pre-river decisions sampled (' + nTried + ')');
+  ok(nAggro === 0, 'Nathan never bets/raises before the river (' + nAggro + ')');
+
+  // (c2) Nathan springs the trap on the river with the nuts.
+  var trapBets = 0, trapSpots = 0;
+  for (var k5 = 0; k5 < 200; k5++) {
+    var t5 = mkTable('nathan');
+    var g5 = 0;
+    while (!t5.handOver && g5++ < 40) {
+      var i5 = t5.acting, p5 = t5.players[i5];
+      if (t5.street === 'river') {
+        var legal5 = t5.legalActions(i5);
+        if (legal5.toCall === 0 && EQ.madeStrength(p5.hole, t5.community) > 0.78) {
+          var mv5 = BOTS.botDecide(t5, p5);
+          trapSpots++;
+          if (mv5 && (mv5.a === 'bet' || mv5.a === 'raise')) trapBets++;
+        }
+      }
+      var mv6 = BOTS.botDecide(t5, p5);
+      if (!mv6) break;
+      t5.act(i5, mv6.a, mv6.amount);
+    }
+  }
+  ok(trapSpots > 10, 'nathan river-nut spots sampled (' + trapSpots + ')');
+  ok(trapBets / trapSpots > 0.4, 'Nathan bets the river with the nuts (' + trapBets + '/' + trapSpots + ')');
+})();
+
 // ---------- stats: recordHand / derivedStats ----------
 (function () {
   var s = ST.blankStats();
@@ -598,6 +714,54 @@ function heroPolicy(table, idx) {
   RP.clearHandRecords();
   ok(RP.loadHandRecords().length === 0, 'clearHandRecords empties storage');
   delete global.localStorage;
+})();
+
+// ---------------- NamePrefs (username + bot renames) ----------------
+(function () {
+  var NP = js('names.js').NamePrefs;
+  var mem = {};
+  global.localStorage = {
+    getItem: function (k) { return mem[k] || null; },
+    setItem: function (k, v) { mem[k] = String(v); },
+    removeItem: function (k) { delete mem[k]; }
+  };
+  NP.resetAll();
+
+  // username
+  ok(NP.getUsername() === '', 'username defaults to empty');
+  ok(NP.heroName() === 'You', 'hero seat falls back to You');
+  NP.setUsername('  Kevin  ');
+  ok(NP.getUsername() === 'Kevin', 'username trimmed');
+  ok(NP.heroName() === 'Kevin', 'heroName uses the username');
+  NP.setUsername('x'.repeat(50));
+  ok(NP.getUsername().length === NP.MAX_LEN, 'username capped at MAX_LEN');
+  NP.setUsername('');
+  ok(NP.heroName() === 'You', 'clearing username restores You');
+
+  // bot renames (keyed by archetype id; archetype objects never mutated)
+  var B = js('bots.js');
+  var shark = B.ARCHETYPES.filter(function (a) { return a.id === 'shark'; })[0];
+  ok(NP.displayName(shark) === shark.name, 'display name defaults to archetype name');
+  NP.setBotOverride('shark', 'Nemo');
+  ok(NP.displayName(shark) === 'Nemo', 'custom rename applies');
+  ok(shark.name !== 'Nemo', 'archetype object not mutated');
+  ok(NP.getBotOverrides().shark === 'Nemo', 'override persisted');
+  NP.setBotOverride('shark', '   ');
+  ok(NP.displayName(shark) === shark.name, 'empty rename resets to default');
+  ok(!('shark' in NP.getBotOverrides()), 'reset removes the override key');
+  NP.setBotOverride('rohan', 'y'.repeat(40));
+  ok(NP.displayName({ id: 'rohan', name: 'Rohan' }) === 'y'.repeat(NP.MAX_LEN), 'bot rename capped at MAX_LEN');
+  NP.clearBotOverride('rohan');
+  ok(NP.displayName({ id: 'rohan', name: 'Rohan' }) === 'Rohan', 'clearBotOverride resets');
+
+  // corrupted storage degrades gracefully
+  mem['ps_bot_names_v1'] = 'not-json{{{';
+  ok(NP.displayName(shark) === shark.name, 'corrupt override JSON falls back to default');
+  delete global.localStorage;
+  NP.resetAll(); // memory fallback still works without localStorage
+  NP.setUsername('Zed');
+  ok(NP.getUsername() === 'Zed', 'in-memory fallback works when localStorage is absent');
+  NP.resetAll();
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

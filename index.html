@@ -31,6 +31,11 @@
       <h1>Train against poker AI, <span class="accent">offline</span>.</h1>
       <p class="subtitle">Pick a mode, pick your opponents, and practice real spots — cash games, heads-up, tournaments, and push/fold drills.</p>
 
+      <div class="name-row">
+        <label>Your name <input id="cfg-username" maxlength="18" placeholder="e.g. Kevin" autocomplete="nickname"></label>
+        <span class="hint-inline">Shows on your seat. Tap ✎ on a bot card to rename it.</span>
+      </div>
+
       <h2>1 · Choose a mode</h2>
       <div class="mode-grid">
         <button class="mode-card selected" data-mode="cash">
@@ -241,6 +246,7 @@
 <script src="js/equity.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/bots.js"></script>
+<script src="js/names.js"></script>
 <script src="js/pushfold.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/replay.js"></script>
