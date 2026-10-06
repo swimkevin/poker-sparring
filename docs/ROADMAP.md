@@ -82,6 +82,35 @@ with per-turn timers (auto-check/auto-fold on expiry).
 play-money persistence across games, rate limiting / abuse controls, DO
 eviction snapshotting. The offline modes are untouched (additive only).
 
+## Next week — planned (2026-10-06 full QA round)
+
+Prioritized from the 2026-10-06 live QA pass (19 steps, all major flows).
+Order reflects user value per week-sized release:
+
+1. **v2.0 live: deploy the Cloudflare relay** — the single unlock for real
+   multiplayer. Needs the account owner's signup + deploy (dashboard paste
+   path needs no terminal; see `worker/README.md`). Then: two-browser
+   WebSocket test, reconnect/resume for dropped mobile players, table chat.
+2. **v1.6 drill packs** — 3-bet pots, blind defense, ICM-flavored tournament
+   bubble. Reuses the `pushfold.js` scenario/feedback pattern (now fixed:
+   no duplicate opponents, honors roster selection + renames).
+3. **Sound design** — Web Audio chip clicks, card deals, win fanfare; mutable,
+   zero deps. Cheapest big feel win on the list.
+4. **v1.9 streaks & achievements** — daily practice streaks, milestone badges,
+   weekly challenges. The daily-use driver; all local.
+5. **v1.8 range charts** — visual preflop range grids per archetype/position.
+
+QA fixes shipped 2026-10-06 (this round): session-profit header stat was
+mixing chips and big blinds (showed +91 bb on a 1 bb win — now a tested
+`sessionProfitBB` helper); push/fold trainer showed duplicate opponents and
+ignored roster selection/renames; seat-widget action text clipped past card
+edge (`max-width: 100%`); online hero seat showed card backs while the action
+panel showed real cards; the ⏸ Paused badge rendered on every online table
+because `.online-paused { display: flex }` overrode the `hidden` attribute
+(now `[hidden] { display: none !important }`); leak tracker fired "calling too
+loose" on defensible TQo calls (now: tier-6 trash vs any raise, tier-5 only
+vs 4bb+ heat).
+
 ## Design polish backlog (from competitive research, 2026-10-05)
 
 Surveyed the best open-source/AI-built poker trainers (Fold Call or Jam,

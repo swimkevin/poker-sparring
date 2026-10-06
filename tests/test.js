@@ -391,6 +391,34 @@ function heroPolicy(table, idx) {
   ok(r4.right === true, 'shoving AA first-in is correct');
 })();
 
+// ---------- push/fold: no duplicate opponents in generated scenarios ----------
+(function () {
+  // Regression: scenarios once showed the same bot twice (swimkev x2).
+  var seenDup = false, poolRespected = true;
+  for (var i = 0; i < 60; i++) {
+    var scn = PF.newPushFoldScenario();
+    var ids = scn.opponents.map(function (o) { return o.id; });
+    if (new Set(ids).size !== ids.length) seenDup = true;
+  }
+  ok(!seenDup, '60 scenarios, no duplicate opponent in any');
+  // Caller-supplied pool (roster selection) is honored when big enough.
+  var pool = [
+    { id: 'a', name: 'A', emoji: '🙂', pushTier: 3 },
+    { id: 'b', name: 'B', emoji: '🚀', pushTier: 3 },
+    { id: 'c', name: 'C', emoji: '🐢', pushTier: 3 }
+  ];
+  for (var j = 0; j < 30; j++) {
+    var s2 = PF.newPushFoldScenario(pool);
+    s2.opponents.forEach(function (o) {
+      if (pool.map(function (p) { return p.id; }).indexOf(o.id) === -1) poolRespected = false;
+    });
+    var ids2 = s2.opponents.map(function (o) { return o.id; });
+    if (new Set(ids2).size !== ids2.length) seenDup = true;
+  }
+  ok(poolRespected, 'scenario opponents come from the roster pool');
+  ok(!seenDup, 'no duplicates with a custom pool either');
+})();
+
 // ---------- bots always produce legal moves (all archetypes, many tables) ----------
 (function () {
   var tried = 0, illegal = 0;
@@ -568,6 +596,16 @@ function heroPolicy(table, idx) {
   ok(d.bbPer100 === 1500, 'bb/100 math');
   ok(ST.blankStats().hands === 0, 'blankStats unaffected');
   delete global.localStorage;
+})();
+
+// ---------- stats: sessionProfitBB regression (header stat units bug) ----------
+(function () {
+  // Regression: the header once computed (heroChips - startBB) / bb, mixing
+  // chips and big blinds — a 10-chip (1 bb) win displayed as +91 bb.
+  ok(ST.sessionProfitBB(1010, 100, 10) === 1, '1 bb win reads +1 bb');
+  ok(ST.sessionProfitBB(950, 100, 10) === -5, '5 bb loss reads -5 bb');
+  ok(ST.sessionProfitBB(1000, 100, 10) === 0, 'breakeven reads 0');
+  ok(ST.sessionProfitBB(3000, 100, 20) === 50, 'works at other blind levels');
 })();
 
 // ---------- replay.js: capture, storage, state machine ----------
