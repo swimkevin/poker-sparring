@@ -588,3 +588,45 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .roster { grid-template-columns: 1fr; }
   .bot-card { padding: 0.7rem 0.8rem; }
 }
+
+/* ===== Design refresh: clean, minimal, professional ===== */
+/* Typography: system sans throughout (no display serif), tighter headings */
+.brand, h1, h2, .rp-title { font-family: inherit; }
+body { font-size: 16px; line-height: 1.6; }
+h1 { font-size: 2.1rem; letter-spacing: -0.025em; font-weight: 750; }
+h2 { font-size: 1.15rem; color: var(--text); letter-spacing: -0.015em; font-weight: 700; margin: 1.8em 0 0.7em; }
+.brand { font-weight: 750; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 0.4rem; }
+.brand-mark { width: 20px; height: 20px; color: var(--gold); flex: none; }
+
+/* Nav: icon + label, calmer active state */
+.nav-btn { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }
+.nav-btn svg { width: 15px; height: 15px; flex: none; }
+.nav-btn.active { color: var(--gold); border-color: var(--gold-dim); background: rgba(212, 175, 55, 0.1); }
+
+/* Buttons: flat, consistent radius */
+button.primary { background: var(--gold); font-weight: 700; border-radius: 12px; }
+button.primary:hover { filter: brightness(1.07); }
+button.ghost { border-radius: 10px; font-weight: 600; }
+.ctl { border-radius: 12px; }
+.ctl.primary, .ctl.is-raise { background: var(--gold); }
+
+/* Cards & panels: one soft surface language */
+.mode-card, .bot-card, .book-card, .gloss-card, .online-card { border-radius: 14px; border-width: 1px; }
+.mode-card:hover { border-color: var(--gold-dim); }
+.mode-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.bot-card:hover { border-color: var(--gold-dim); }
+.settings-details { border-radius: 12px; }
+
+/* Inputs: 16px kills iOS auto-zoom; visible focus ring */
+input[type=number], input[type=text], input[type=text].code-input, select {
+  font-size: 16px; border-radius: 10px;
+}
+input:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--gold-dim); outline-offset: 1px;
+}
+label { font-weight: 600; }
+.settings-row label, .hint, .fineprint { font-weight: 400; }
+
+/* Section rhythm: less gold shouting, more air */
+.setup-wrap h2 { margin-top: 2.2em; }
+.mode-desc, .bot-desc { line-height: 1.5; }
