@@ -50,3 +50,34 @@ regression tests so they can never silently return.
   the jump lands at the end for preflop-ending hands). The new assertion was
   verified to fail against the unfixed wiring and pass with the fix —
   closing the exact layer gap that let the bug through.
+
+## v1.6 — Online tab dead in browsers: `var`/`class` global-scope collision
+
+- **Detected:** Pre-push verification of the Online multiplayer prototype.
+  The Node suite was fully green (46/46 netplay tests), but a script-tag-
+  faithful browser harness showed the Online tab rendering an empty lobby and
+  throwing on host: the prototype's two new scripts never parsed in the
+  browser at all.
+- **Root cause:** `js/room-server.js` declared `var PokerTable` inside its
+  Node `require` guard while `js/engine.js` declares `class PokerTable`;
+  `js/netplay.js` declared `var Room` while `js/room-server.js` declares
+  `class Room`. A hoisted `var` and a `class` of the same name in the shared
+  global lexical scope is a `SyntaxError` — but only when files load as
+  classic browser scripts. Node's per-file module scopes hid it completely,
+  so every test passed while the production tab was dead on arrival.
+- **Fix:** Aliased constructors (`PokerTableCtor`, `RoomCtor`) so no `var`
+  shadows a `class` binding; the `var` + `function` pattern (used elsewhere,
+  e.g. bots/equity) is harmless and unchanged. Also fixed in the same pass:
+  the mock server broadcast the lobby synchronously on attach, before the
+  UI's `onmessage` was set — the host view silently fell back to home.
+  `attachClient` now replays the pending snapshot.
+- **Verification:** Full host → lobby → demo bots → start → table → hero
+  action flow re-verified in the script-tag harness with zero page errors,
+  then confirmed on the deployed site.
+- **Regression guard:** `tests/test.js` now concatenates `index.html`'s
+  scripts in page order and parses them as a single classic script via
+  `vm.Script` — any future `var`/`class` collision fails the parse. Verified
+  the guard throws `SyntaxError: Identifier 'PokerTable' has already been
+  declared` against the pre-fix tree and passes on the fixed tree. This
+  closes the exact layer gap (Node module scope vs browser global scope)
+  that let the bug through.

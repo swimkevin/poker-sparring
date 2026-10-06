@@ -716,6 +716,30 @@ function heroPolicy(table, idx) {
   delete global.localStorage;
 })();
 
+// ---------- browser global scope: no var/class collisions ----------
+// Regression guard for the Online-tab incident (docs/INCIDENTS.md): a hoisted
+// `var X` in one script colliding with `class X` in another is a SyntaxError
+// in browsers (scripts share one global lexical scope) but invisible to Node
+// module tests, where each file gets its own scope. Concatenate index.html's
+// scripts in page order and parse as a single classic script — any collision
+// fails the parse. (Catches the bug class, not just the instance.)
+(function () {
+  var vm = require('vm');
+  var fs = require('fs');
+  var html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  var files = [];
+  var re = /<script src="([^"]+)"><\/script>/g, m;
+  while ((m = re.exec(html))) files.push(m[1]);
+  ok(files.length >= 10, 'found page scripts in index.html (' + files.length + ')');
+  var combined = files.map(function (f) {
+    return fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+  }).join('\n;\n');
+  var failed = null;
+  try { new vm.Script(combined, { filename: 'browser-bundle.js' }); }
+  catch (e) { failed = e.message; }
+  ok(!failed, 'page scripts parse as one global scope' + (failed ? ': ' + failed : ''));
+})();
+
 // ---------------- NamePrefs (username + bot renames) ----------------
 (function () {
   var NP = js('names.js').NamePrefs;

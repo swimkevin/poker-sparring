@@ -4,7 +4,7 @@
 
 ▶️ **Live demo:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1058%20passing-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1133%20assertions-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
 
 ## Key decisions
 
@@ -17,9 +17,41 @@ The architecture calls that shape this repo, recorded as ADRs:
 
 ## Verification
 
-- **1,058 tests** (1,012 unit + integration, 46 component) + a gameplay smoke test that boots the real app and auto-plays hands. Strategy: [docs/TESTING.md](docs/TESTING.md).
-- **Incident log** with root causes and regression guards: [docs/INCIDENTS.md](docs/INCIDENTS.md).
-- **How AI-assisted development is run here** (guardrails, verification, human ownership): [docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md).
+**144 test cases · 1,133 assertions per run · 4 layers.** The headline number is
+assertions, not cases — most execute inside simulation loops, which is the
+point: this suite tests *invariants* (properties that must hold across thousands
+of random hands), not just examples. No coverage-percentage badge: 100% coverage
+is a [vanity metric](https://hackernoon.com/why-100percent-test-coverage-is-a-vanity-metric);
+what's covered is every load-bearing path — money math, action legality,
+bot behavior — and [what isn't](docs/TESTING.md#what-we-dont-test-and-why) is
+documented.
+
+```mermaid
+flowchart TD
+    E2E["Smoke · boots the real app in jsdom,\nauto-plays hands, asserts zero JS errors"]
+    COMP["Component · 46 — real ui.js rendering:\nXSS escaping, replay viewer, roster rename UI"]
+    NET["Netplay · 46 — room protocol:\nseating, timers, pause, hole-card privacy"]
+    UNIT["Unit + integration · 1041 assertions —\nevaluator, engine, equity, bots, stats, replay, names"]
+    E2E --> COMP --> NET --> UNIT
+```
+
+What the suite actually proves:
+
+- **Money is conserved.** A 300-hand randomized soak asserts chip conservation
+  after every hand — chips can never be created or destroyed, whatever the cards.
+- **Every action is legal.** A sweep across all 8 bot archetypes × 30 random
+  tables asserts every produced move passes engine legality; humans in online
+  rooms get server-side validation too.
+- **Bugs stay fixed.** Every entry in the [incident log](docs/INCIDENTS.md)
+  ships with a regression test verified to fail without the fix (e.g. the
+  v1.4.1 showdown crash, the Online-tab `var`/`class` parse collision).
+- **Humans can't see each other's cards.** Netplay tests assert per-seat
+  snapshots contain hole cards only for the requesting seat.
+
+Full strategy, layer rationale, and honest limitations: [docs/TESTING.md](docs/TESTING.md).
+[docs/INCIDENTS.md](docs/INCIDENTS.md) ·
+[docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md) (how AI-assisted development is run here:
+guardrails, verification, human ownership).
 
 ## Why this exists
 
@@ -88,7 +120,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full technical write-
 No build step:
 
 ```bash
-npm test          # full suite: 1012 unit + 46 component tests (1058 total)
+npm test          # full suite: 1041 unit/integration + 46 component + 46 netplay + smoke
 npm run serve     # → http://localhost:8000
 ```
 
