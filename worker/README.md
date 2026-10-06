@@ -51,3 +51,24 @@ on it for anything serious.
 
 Same JSON protocol as the mock server — see the header comment in
 `js/netplay.js`. The client (`js/online.js`) speaks to both identically.
+
+## No-terminal deploy (phone or Safari, ~10 min)
+
+If you don't have Node/npm, skip wrangler entirely:
+
+1. Sign up at https://dash.cloudflare.com/sign-up (free plan, no credit card).
+2. **Workers & Pages → Create → Create Worker** → name it `poker-sparring-relay` → **Deploy** (placeholder).
+3. Open the worker → **Edit code** → delete the placeholder → paste the entire
+   contents of `worker/dist/relay-bundle.js` from this repo (open the raw file
+   on GitHub and copy) → **Save and deploy**.
+4. **Settings → Bindings → Add binding → Durable Objects**: Variable name `ROOM`,
+   Class name `RoomDO` → deploy again if prompted.
+5. Copy the `https://poker-sparring-relay.<you>.workers.dev` URL from the
+   worker's overview page.
+6. In the app: **Online tab → host form → "Advanced: live server"** → paste the
+   URL → Create table. Friends paste the same URL on their devices and join by
+   room code.
+
+The bundle is built with `npx esbuild worker/index.js --bundle --format=esm
+--platform=neutral --outfile=worker/dist/relay-bundle.js` — it contains the
+entry, the RoomDO class, and the shared Room state machine in one file.
