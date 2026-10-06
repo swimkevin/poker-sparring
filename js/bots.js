@@ -55,9 +55,9 @@ var ARCHETYPES = [
     aggression: 0.70, bluff: 0.25, stubborn: 0.50, pushTier: 4, callPushTier: 3, limp: 0.10
   },
   {
-    id: 'lag', name: 'Kevin', emoji: '🎭',
-    tagline: 'Wild and unpredictable — and knows exactly what he is doing.',
-    desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. The most fun seat at any friendly home game: hard to read, harder to push around, always a good time.',
+    id: 'lag', name: 'swimkev', emoji: '🏊',
+    tagline: 'Wild, unpredictable — and somehow always a great time.',
+    desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
     beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15
@@ -65,7 +65,7 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, raises nothing.',
-    desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — neverRaise converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair.',
+    desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — neverRaise converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair. Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
     beat: 'Value bet thin — he will call with worse. Never bluff him; he does not fold pairs.',
     openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.05, stubborn: 0.55, pushTier: 4, callPushTier: 4, limp: 0.9,
@@ -74,7 +74,7 @@ var ARCHETYPES = [
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
     tagline: 'Bombs every pot the moment he likes his hand.',
-    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in with monsters (QQ+/AKs) when the moment feels right. Value-heavy, not bluff-heavy — the sizing is the weapon, and it is a blast to play against.',
+    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in with monsters (QQ+/AKs) when the moment feels right. Value-heavy, not bluff-heavy — the sizing is the weapon, and it is a blast to play against. Some days Amogh gets super lucky and wins huge; other days he could not catch a card with a net. You never know which Amogh showed up today.',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05
@@ -82,7 +82,7 @@ var ARCHETYPES = [
   {
     id: 'nathan', name: 'Nathan', emoji: '🐢',
     tagline: 'Never raises. Has been trapping you since the flop.',
-    desc: 'Ultra-safe trapper: never raises on any street before the river — monsters included — just calls everything down. On the river the trap springs: a small value bet, or a rare all-in.',
+    desc: 'Ultra-safe trapper: never raises on any street before the river — monsters included — just calls everything down. On the river the trap springs: a small value bet, or a rare all-in. And fair warning: Nathan will leave the table right after winning a few big hands. Hit-and-run champion — if you want your chips back, win them fast.',
     beat: 'Bet your strong hands for value — he will never raise you off them. But when Nathan finally bets the river, believe him.',
     openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.02, stubborn: 0.9, pushTier: 3, callPushTier: 3, limp: 0.6,
