@@ -7,6 +7,14 @@ if (typeof module !== 'undefined' && module.exports) {
 
 var STATS_KEY = 'ps_stats_v1';
 
+// Session profit in big blinds. heroStackChips is in chips; startStackBB is the
+// hero's starting stack already expressed in bb (stack / bb at deal time).
+// Both terms must be in bb before subtracting — mixing chips and bb here once
+// shipped a header stat that read +91 bb after a 1 bb win.
+function sessionProfitBB(heroStackChips, startStackBB, bb) {
+  return heroStackChips / bb - startStackBB;
+}
+
 function blankStats() {
   return {
     hands: 0, won: 0, profitBB: 0,
@@ -107,6 +115,7 @@ if (typeof module !== 'undefined' && module.exports) {
     blankStats: blankStats, loadStats: loadStats, saveStats: saveStats,
     clearStats: clearStats, recordHand: recordHand, derivedStats: derivedStats,
     recordLeak: recordLeak,
-    exportStatsJSON: exportStatsJSON, STATS_KEY: STATS_KEY
+    exportStatsJSON: exportStatsJSON, STATS_KEY: STATS_KEY,
+    sessionProfitBB: sessionProfitBB
   };
 }

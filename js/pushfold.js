@@ -16,16 +16,21 @@ if (typeof module !== 'undefined' && module.exports) {
 
 var PF_POSITIONS = ['BTN', 'SB', 'BB', 'CO', 'MP', 'UTG'];
 
-function newPushFoldScenario() {
+function newPushFoldScenario(pool) {
   var deck = shuffle(makeDeck());
   var heroHole = [deck.pop(), deck.pop()];
   var stackBB = 5 + Math.floor(Math.random() * 11); // 5..15
   var nPlayers = 2 + Math.floor(Math.random() * 3); // 2..4 handed
   var pos = PF_POSITIONS[Math.floor(Math.random() * Math.min(nPlayers + 1, PF_POSITIONS.length))];
   var nOpp = nPlayers - 1;
+  // Opponent pool: the caller's archetypes (roster selection, display names)
+  // when big enough, else the full set. Sampled WITHOUT replacement — the
+  // same bot showing up twice in one scenario was a shipped bug.
+  var src = (pool && pool.length >= nOpp) ? pool : ARCHETYPES;
+  var order = shuffle(src.map(function (_, i) { return i; }));
   var opps = [];
   for (var i = 0; i < nOpp; i++) {
-    var a = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)];
+    var a = src[order[i]];
     opps.push({ name: a.name, emoji: a.emoji, id: a.id, pushTier: a.pushTier, stackBB: 8 + Math.floor(Math.random() * 30) });
   }
   var facingShove = Math.random() < 0.35;

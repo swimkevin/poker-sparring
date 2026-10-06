@@ -240,7 +240,7 @@
         }),
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
-    UI.setBankroll((hero.stack - sessionStartBB) / table.bb);
+    UI.setBankroll(sessionProfitBB(hero.stack, sessionStartBB, table.bb));
 
     setTimeout(prepareNextHand, 600);
   }
@@ -397,7 +397,12 @@
         return { hand: table.handNo, hole: hole, street: street, type: type, title: title, spot: spot, why: why };
       }
       if (street === 'preflop') {
-        if (a === 'call' && table.currentBet > table.bb && holeTier(hero.hole) >= 5) {
+        // Flag genuinely loose calls, not defensible marginals: tier-6 trash
+        // vs any raise, or tier-5 marginals facing real heat (4bb+). A tier-5
+        // like TQo vs a standard 2.5-3bb open is a reasonable defend, not a leak.
+        var tier = holeTier(hero.hole);
+        if (a === 'call' && table.currentBet > table.bb &&
+            (tier >= 6 || (tier >= 5 && table.currentBet >= 4 * table.bb))) {
           return base('loose-call', 'Calling too loose preflop',
             'Called ' + UI.fmt(legal.callAmount) + ' with ' + hole,
             'Hands like this win roughly 1 in 3 against a raiser\'s range. Poker profit comes from repeating small edges hundreds of times — one loose call is nothing, but a hundred of them is a bankroll leak no lucky streak can fix, because variance only evens out around your true (negative) expectation.');
@@ -544,7 +549,14 @@
     nextPFScenario();
   }
   function nextPFScenario() {
-    pf.scn = newPushFoldScenario();
+    // Train against the user's actual roster selection, with their renames.
+    // Falls back to the full roster inside newPushFoldScenario when the
+    // selection is smaller than the scenario needs.
+    var pool = allBots().filter(function (b) { return selectedBots.has(b.id); })
+      .map(function (b) {
+        return { id: b.id, name: NamePrefs.displayName(b), emoji: b.emoji, pushTier: b.pushTier };
+      });
+    pf.scn = newPushFoldScenario(pool);
     UI.renderPFScenario(pf.scn);
     $('pf-score').textContent = 'Score: ' + pf.score + ' / ' + pf.total;
   }
