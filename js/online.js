@@ -19,6 +19,22 @@ var Online = (function () {
   var server = null;            // MockRoomServer (mock mode)
   var client = null;            // mock rec or live adapter {send,close,onmessage}
   var wsUrl = '';
+  var WSURL_KEY = 'ps_wsurl_v1';
+  // Remembered relay URL: paste once, not every game night. Guarded storage
+  // (same pattern as names.js) so tests/Node get a memory fallback.
+  var _wsMem = '';
+  function loadWsUrl() {
+    try {
+      if (typeof localStorage !== 'undefined') return localStorage.getItem(WSURL_KEY) || '';
+    } catch (e) { /* fall through */ }
+    return _wsMem;
+  }
+  function saveWsUrl(u) {
+    try {
+      if (typeof localStorage !== 'undefined') { localStorage.setItem(WSURL_KEY, u); return; }
+    } catch (e) { /* fall through */ }
+    _wsMem = u;
+  }
   var mySeat = -1, isHost = false, myName = '';
   var roomCode = '';
   var lastState = null, lastLobby = null;
@@ -161,7 +177,8 @@ var Online = (function () {
     $('on-create').onclick = hostGame;
     $('on-join').onclick = joinGame;
 
-    // Prefill with the saved username from the offline setup screen.
+    // Prefill with the saved username from the offline setup screen,
+    // and the saved relay URL (paste once, reused every session).
     if (typeof NamePrefs !== 'undefined' && NamePrefs) {
       var un = NamePrefs.getUsername();
       if (un) {
@@ -170,6 +187,8 @@ var Online = (function () {
         if (jn && !jn.value) jn.value = un;
       }
     }
+    var wu = $('on-wsurl'), savedWu = loadWsUrl();
+    if (wu && !wu.value && savedWu) wu.value = savedWu;
   }
 
   function readConfig() {
@@ -188,6 +207,7 @@ var Online = (function () {
     var errBox = $('online-error');
     if (!name) { errBox.textContent = 'Enter your name to host.'; errBox.hidden = false; return; }
     wsUrl = fieldVal('on-wsurl', '').trim().replace(/\/+$/, '');
+    saveWsUrl(wsUrl);
     myName = name;
     if (wsUrl) { hostLive(readConfig(), name); return; }
     mode = 'mock';
@@ -208,6 +228,7 @@ var Online = (function () {
     if (!isValidRoomCode(code)) { errBox.textContent = 'Enter the 6-letter room code.'; errBox.hidden = false; return; }
     if (!name) { errBox.textContent = 'Enter your name to join.'; errBox.hidden = false; return; }
     wsUrl = fieldVal('on-wsurl', '').trim().replace(/\/+$/, '');
+    saveWsUrl(wsUrl);
     myName = name;
     if (wsUrl) { joinLive(code, name); return; }
     mode = 'mock';
