@@ -581,6 +581,7 @@
         else if (dest === 'hands') { openHandList(); }
         else if (dest === 'stats') { UI.renderStats(); UI.showScreen('stats'); }
         else if (dest === 'learn') { UI.renderLearn(); UI.showScreen('learn'); }
+        else if (dest === 'online') { Online.show(); }
       };
     });
     document.querySelectorAll('.mode-card').forEach(function (c) {
