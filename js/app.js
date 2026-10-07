@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.7';
+  var APP_VERSION = '1.8.8';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -81,6 +81,14 @@
   var handRec = null; // in-progress hand record for the replayer (js/replay.js)
   var replay = null;  // { rec, idx } while the replay viewer is open
   var sessionStartChips = 0;
+  // Bankroll chip shows LIFETIME profit from persistent stats, so it survives
+  // refreshes. (Session-only profit reset to 0 on every page load.)
+  function refreshBankroll() {
+    try {
+      var st = (typeof Stats !== 'undefined' && Stats.get) ? Stats.get() : null;
+      UI.setBankroll(st ? (st.profitChips || 0) : 0);
+    } catch (e) { UI.setBankroll(0); }
+  }
   var tourney = null; // { levelIdx }
   var gameMode = 'cash';
   var cfg = { stack: 10000, sb: 50, bb: 100 };
@@ -354,6 +362,7 @@
     });
     recordHand({
       mode: gameMode, bb: table.bb, heroHole: hero.hole, community: table.community,
+      recId: handRec ? handRec.id : null,
       allHands: allHands,
       profitChips: profit, wonHand: won, vpip: handCtx.vpip, pfr: handCtx.pfr,
       postBet: handCtx.postBet, postCall: handCtx.postCall,
@@ -365,7 +374,7 @@
         }),
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
-    UI.setBankroll(hero.stack - sessionStartChips);
+    refreshBankroll();
 
     // Give the result room to breathe: a Next-hand button plus a 6s auto-deal
     // countdown, so the banner, board, and revealed hands can actually be read.
@@ -839,7 +848,7 @@
     } else tourney = null;
 
     sessionStartChips = table.players[0].stack;
-    UI.setBankroll(0);
+    refreshBankroll();
     evtQueue = []; pumping = false; waitingForHero = false;
     UI.buildSeats(players.length);
     UI.showScreen('table');
@@ -859,6 +868,7 @@
     UI.showScreen('hands');
   }
 
+  window.__openReplay = openReplay;
   function openReplay(id) {
     var rec = loadHandRecords().filter(function (r) { return r.id === id; })[0];
     if (!rec) return;
@@ -1158,6 +1168,7 @@
       if (el) el.addEventListener('input', syncQuickHint);
     });
     syncQuickHint();
+    refreshBankroll();
     var vv = $('app-version');
     if (vv) vv.textContent = 'v' + APP_VERSION + ' · offline · stats stay in this browser';
   }
