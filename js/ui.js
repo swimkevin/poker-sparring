@@ -392,12 +392,16 @@ var UI = (function () {
     table.players.forEach(function (p, i) {
       var s = $('seat-' + i);
       if (!s) return;
-      s.querySelector('.avatar').textContent = p.isHero ? '🧑' : (p.archetype ? p.archetype.emoji : '🤖');
+      var heroEmoji = '🧑';
+      try { heroEmoji = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) {}
+      s.querySelector('.avatar').textContent = p.isHero ? heroEmoji : (p.archetype ? p.archetype.emoji : '🤖');
       s.querySelector('.pname').textContent = p.name; // hero name set at game start (username or 'You')
       // Rebuy counter (PokerNow-style) + tilt meter on the seat.
       var badges = '';
       if ((p.rebuys || 0) > 0) badges += '<span class="seat-badge rb" title="' + p.rebuys + ' rebuys">×' + p.rebuys + '</span>';
       if ((p.tilt || 0) > 0.55) badges += '<span class="seat-badge tilt" title="On tilt — playing looser">🌡️</span>';
+      if (table.sbIdx === i) badges += '<span class="pos-badge sb" title="Small blind">SB</span>';
+      if (table.bbIdx === i) badges += '<span class="pos-badge bb" title="Big blind">BB</span>';
       var who = s.querySelector('.who');
       var bg = who.querySelector('.badges');
       if (!bg) { bg = document.createElement('span'); bg.className = 'badges'; who.appendChild(bg); }
@@ -465,10 +469,9 @@ var UI = (function () {
     panel.querySelectorAll('.chip-btn').forEach(function (b) {
       b.onclick = function () { setFromFrac(parseFloat(b.dataset.frac)); };
     });
-    // Raise opens at the minimum legal raise (poker standard, like PokerNow);
-    // an opening bet keeps the 3/4-pot default.
-    if (isRaise) { slider.value = 0; paint(minTo); }
-    else setFromFrac(0.75);
+    // Both raises and opening bets start at the minimum legal amount —
+    // the user can slide up from there.
+    slider.value = 0; paint(minTo);
     $('btn-bet-confirm').onclick = function () {
       var t = minTo + (maxTo - minTo) * (slider.value / 1000);
       t = Math.max(minTo, Math.min(maxTo, Math.round(t / 5) * 5));
