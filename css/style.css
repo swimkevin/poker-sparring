@@ -36,7 +36,9 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
   padding: 0.6rem 1.2rem; background: var(--panel);
   border-bottom: 1px solid #232c3d; position: sticky; top: 0; z-index: 50;
 }
-.brand { font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; }
+.brand { font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; background: none; border: none; color: inherit; cursor: pointer; padding: 6px 10px; border-radius: 10px; display: inline-flex; align-items: center; gap: 0.5rem; }
+.brand:hover { background: rgba(128,128,128,0.12); }
+.brand .brand-mark { width: 20px; height: 20px; }
 .brand-emoji { margin-right: 0.3rem; }
 .nav { display: flex; gap: 0.4rem; margin-left: 1rem; }
 .nav-btn {
@@ -80,8 +82,9 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 .roster-card.selected .check { visibility: visible; }
 .roster-card .nm-row { display: flex; align-items: center; gap: 0.35rem; }
 .rename-btn {
-  background: none; border: none; cursor: pointer; padding: 0.1rem 0.25rem;
+  background: none; border: none; cursor: pointer; padding: 0.5rem 0.6rem;
   font-size: 0.8rem; color: var(--muted); border-radius: 6px; line-height: 1;
+  min-width: 40px; min-height: 40px;
 }
 .rename-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
 .rename-input {
@@ -118,7 +121,10 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 
 /* ===== table ===== */
 #screen-table { max-width: 1280px; }
-.table-topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
+.table-topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+@media (max-width: 640px) {
+  .table-topbar { gap: 0.5rem; font-size: 0.9rem; }
+}
 .hand-info { font-weight: 700; }
 .blinds-info { color: var(--gold); font-size: 0.9rem; margin-left: auto; font-variant-numeric: tabular-nums; }
 .table-layout { display: grid; grid-template-columns: 1fr 280px; gap: 1rem; }
@@ -328,6 +334,11 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .slider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem 1.2rem; margin-bottom: 1rem; }
 .slider-grid label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
 .slider-grid input[type=range] { accent-color: var(--gold); }
+@media (pointer: coarse) {
+  input[type=range] { min-height: 44px; }
+  input[type=range]::-webkit-slider-thumb { width: 28px; height: 28px; }
+  input[type=range]::-moz-range-thumb { width: 28px; height: 28px; }
+}
 .slider-grid .val { color: var(--gold); font-weight: 700; }
 
 /* stats */
@@ -389,6 +400,13 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .table-layout { grid-template-columns: 1fr; }
   .side-panel { max-height: 220px; }
   .felt { height: 380px; border-radius: 40px; }
+  /* Keep action buttons reachable: stick the hero bar to the bottom on phones */
+  .hero-bar {
+    position: sticky; bottom: 0; z-index: 50;
+    margin-left: -0.75rem; margin-right: -0.75rem;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+  }
 }
 
 /* Opponent count stepper */
@@ -566,7 +584,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .winner-banner .dismiss-btn {
     position: absolute; top: 4px; right: 8px;
     background: none; border: none; color: var(--muted);
-    font-size: 1.1rem; cursor: pointer; padding: 4px;
+    font-size: 1.1rem; cursor: pointer; padding: 10px 12px;
+    min-width: 44px; min-height: 44px;
   }
 }
 
@@ -646,6 +665,9 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
     margin-left: 0; gap: 0.25rem; flex: 1 1 auto; min-width: 0;
     flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    /* fade hint that more tabs are off-screen to the right */
+    -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%);
+    mask-image: linear-gradient(to right, black 88%, transparent 100%);
   }
   .nav::-webkit-scrollbar { display: none; }
   .nav-btn { padding: 0.42rem 0.6rem; font-size: 0.8rem; white-space: nowrap; flex: 0 0 auto; }
@@ -819,7 +841,7 @@ label { font-weight: 600; }
 /* Stat ⓘ popovers: inline definitions on the Stats page. */
 .stat-card { position: relative; }
 .stat-info {
-  background: none; border: none; padding: 0 0 0 0.3rem; cursor: pointer;
+  background: none; border: none; min-width: 36px; min-height: 36px; padding: 8px; cursor: pointer;
   color: var(--blue); font-size: 0.9em; line-height: 1; vertical-align: baseline;
 }
 .stat-info:hover { color: var(--gold); }
