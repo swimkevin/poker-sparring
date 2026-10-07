@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.6.2';
+  var APP_VERSION = '1.7.0';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -37,10 +37,25 @@
 
   // ---------- setup state ----------
   var mode = 'cash';
-  var oppCount = 3; // opponents at the table (1..5)
-  var selectedBots = new Set(['shark', 'station', 'maniac']);
-  // Balanced default mix used when the opponent count changes.
-  var DEFAULT_MIX = ['shark', 'station', 'maniac', 'rock', 'lag'];
+  // Opponent selection: a Set of bot ids, the single source of truth.
+  // Invariants: 1 <= size <= maxOpp() (1 for heads-up, 5 otherwise).
+  // The stepper, mode cards, and roster cards all mutate this set; the count
+  // display derives from it, so the number and the highlighted cards can
+  // never disagree.
+  var selectedBots = new Set(['lag', 'rohan', 'amogh']);
+  var preHuSelection = null; // full table remembered across a heads-up detour
+  function maxOpp() { return mode === 'hu' ? 1 : 5; }
+  function rosterOrderIds() { return allBots().map(function (b) { return b.id; }); }
+  // Transient hint under the bot roster ("Only 1 opponent for heads-up", …).
+  var rosterHintTimer = null;
+  function rosterHint(msg) {
+    var el = $('roster-hint');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    if (rosterHintTimer) clearTimeout(rosterHintTimer);
+    rosterHintTimer = setTimeout(function () { el.classList.remove('show'); }, 2400);
+  }
 
   // ---------- game state ----------
   var table = null;
@@ -272,6 +287,39 @@
     }
     renderEndTable();
 
+    // ---- tilt: bad beats steam players, wins cool them off ----
+    // Losers at showdown holding a strong hand just took a bad beat; big-pot
+    // losers and felted players steam too. Winners and time decay it.
+    try {
+      var wonSet = {};
+      winnerIdx.forEach(function (i) { wonSet[i] = true; });
+      var showdown = !e.winners.some(function (w) { return w.byFold; });
+      table.players.forEach(function (p, i) {
+        if (p.isHero) return;
+        var arch = p.archetype || {};
+        var prone = (typeof arch.tiltProne === 'number') ? arch.tiltProne : 0.5;
+        var t = p.tilt || 0;
+        t = Math.max(0, t - 0.12); // time heals
+        if (wonSet[i]) t = Math.max(0, t - 0.25); // winning cools off fast
+        else {
+          if (showdown && revealed[i] && p.hole.length === 2) {
+            // Lost at showdown — how strong was the beaten hand?
+            var ms = madeStrength(p.hole, table.community);
+            if (ms >= 0.72) t += 0.38 * prone; // bad beat: two pair+ cracked
+            else if (ms >= 0.55) t += 0.15 * prone;
+          }
+          if (e.pot >= table.bb * 30) t += 0.15 * prone; // big pot lost
+          if (p.stack <= 0) t += 0.30 * prone; // felted
+        }
+        p.tilt = Math.max(0, Math.min(1, t));
+      });
+    } catch (err) {}
+
+    // ---- bot thinking: post-hand learning notes ----
+    // Pick the 1-2 most teachable bot actions and explain the range logic
+    // behind them, so each hand trains reading real player types.
+    try { botThinkingNotes(e); } catch (err) {}
+
     // Stats
     var profit = hero.stack - handCtx.startStack;
     if (handRec) {
@@ -375,11 +423,28 @@
         UI.log('⏫ Blinds up! Now ' + UI.fmt(lv.sb) + '/' + UI.fmt(lv.bb) + (lv.ante ? ' ante ' + lv.ante : ''), 'hl-pot');
       }
     } else {
-      // Cash: bots top up, hero rebuy if felted
+      // Cash: bot rebuys (with counters, like PokerNow), then hero rebuy if felted.
+      // A rebuying bot comes back steaming — fresh tilt, looser play.
       table.players.forEach(function (p, i) {
-        // Felted bots (0 chips) top up too — otherwise they sit out every future
-        // hand as cardless zombies and distort live-player counts.
-        if (i !== 0 && p.stack < cfg.stack * 0.5) {
+        if (i === 0 || p.sittingOut) return;
+        if (p.stack <= 0) {
+          if (cfg.botRebuys === false) { p.sittingOut = true; return; }
+          var arch = p.archetype || {};
+          var rp = (typeof arch.rebuy === 'number') ? arch.rebuy : 0.7;
+          if (Math.random() < rp) {
+            p.stack = cfg.stack;
+            p.rebuys = (p.rebuys || 0) + 1;
+            p.tilt = Math.min(1, (p.tilt || 0) + 0.25);
+            UI.log(UI.escapeHtml(p.archetype ? p.archetype.emoji : '🤖') + ' ' +
+              UI.escapeHtml(p.name) + ' rebuys to ' + UI.fmt(cfg.stack) +
+              ' (' + ordinal(p.rebuys) + ' rebuy) — and is steaming');
+          } else {
+            p.sittingOut = true;
+            UI.log(UI.escapeHtml(p.name) + ' busts out and leaves the table');
+          }
+        } else if (p.stack < cfg.stack * 0.5) {
+          // Felted bots (0 chips) top up too — otherwise they sit out every future
+          // hand as cardless zombies and distort live-player counts.
           p.stack = cfg.stack;
           UI.log(UI.escapeHtml(p.name) + ' tops up to ' + UI.fmt(cfg.stack));
         }
@@ -391,7 +456,7 @@
           body: 'Rebuy to ' + UI.fmt(cfg.stack) + ' and keep training?',
           buttons: [
             { label: 'Leave', cb: leaveToLobby },
-            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; dealNext(); } }
+            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; h.rebuys = (h.rebuys || 0) + 1; dealNext(); } }
           ]
         });
         return;
@@ -513,39 +578,185 @@
   }
 
   // ================= coach =================
+  // ================= coach: TAG fundamentals + fold-equity math =================
+  // The coach teaches tight-aggressive poker: play fewer hands, play them
+  // aggressively. Every tip carries the math — pot odds when calling, bluff
+  // break-even when betting — and adjusts to the villain in the hand.
+  // (bluffBE, villainFoldy/villainBluffy, exploitLine live in equity.js.)
+  function pct(x) { return Math.round(x * 100) + '%'; }
+
+  // The most relevant live opponent: the street's aggressor, else the lone
+  // villain, else the first live seat.
+  function pickVillain() {
+    var live = [];
+    for (var i = 1; i < table.players.length; i++) {
+      var pl = table.players[i];
+      if (!pl.folded && !pl.sittingOut) live.push(pl);
+    }
+    if (!live.length) return null;
+    if (live.length === 1) return live[0];
+    var agg = live[0], best = -1;
+    live.forEach(function (p) { var b = p.bet || 0; if (b > best) { best = b; agg = p; } });
+    return best > 0 ? agg : live[0];
+  }
+
+  function villainLine(V) {
+    if (!V) return '';
+    return ' <span class="coach-v">vs ' + UI.escapeHtml(V.name) + ': ' +
+      UI.escapeHtml(exploitLine(V.archetype)) + '.</span>';
+  }
+
+  // A high overcard on the latest street — the classic bluff card.
+  function scareCardRank() {
+    var c = table.community;
+    if (!c.length) return null;
+    var last = c[c.length - 1], prevMax = 0;
+    for (var i = 0; i < c.length - 1; i++) prevMax = Math.max(prevMax, c[i].r);
+    return (last.r >= 11 && last.r > prevMax) ? rankName(last.r) : null;
+  }
+
+  // ---------------- post-hand bot thinking ----------------
+  // After each hand, explain the range logic behind the 1-2 most teachable
+  // bot actions, so every hand trains reading real player types.
+  function botThinkingNotes(e) {
+    if (!handRec || !handRec.timeline) return;
+    var cands = [];
+    handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.player === 0) return;
+      if (t.action !== 'bet' && t.action !== 'raise') return;
+      var p = table.players[t.player];
+      if (!p || !p.archetype) return;
+      var size = t.bet || t.amount || 0;
+      if (!(size > 0) || !(t.pot > 0)) return;
+      cands.push({ t: t, p: p, ratio: size / t.pot });
+    });
+    if (!cands.length) return;
+    // Biggest bets relative to pot first; preflop 3-bets get a bonus.
+    cands.sort(function (a, b) {
+      var sa = a.ratio + (a.t.street === 'preflop' && a.t.action === 'raise' ? 0.5 : 0);
+      var sb = b.ratio + (b.t.street === 'preflop' && b.t.action === 'raise' ? 0.5 : 0);
+      return sb - sa;
+    });
+    var seen = {}, notes = [];
+    cands.forEach(function (c) {
+      if (notes.length >= 2) return;
+      var id = c.p.archetype.id;
+      if (seen[id]) return;
+      seen[id] = true;
+      var why = thinkingWhy(c.p.archetype, c.t);
+      if (why) notes.push('💭 ' + UI.escapeHtml(c.p.archetype.emoji || '🤖') + ' <b>' +
+        UI.escapeHtml(c.p.name) + '</b> ' + why);
+    });
+    notes.forEach(function (n) { UI.log(n, 'hl-think'); });
+  }
+
+  function thinkingWhy(A, t) {
+    var verb = t.action === 'raise' ? 'raised' : 'bet';
+    var where = t.street === 'preflop' ? 'preflop' : 'on the ' + t.street;
+    var base = verb + ' ' + UI.fmt(t.bet || t.amount) + ' ' + where;
+    switch (A.id) {
+      case 'maniac': return base + ' — with ~65% of hands in range, any two cards qualify. Your exploit: trap with strong hands, never bluff.';
+      case 'station': return base + ' — they almost never raise, so this is real strength. Believe it; fold your marginal hands.';
+      case 'rock': return base + ' — they play ~10% of hands. This is premiums only.';
+      case 'nathan': return base + ' — the trap springs. They never raise before the river without a monster.';
+      case 'amogh': return base + ' — sizing is the weapon. Big bets mean big hands; don\'t bluff-catch light.';
+      case 'bubble': return base + ' — they fold everything but the nuts. This IS the nuts.';
+      case 'grinder': return base + ' — tournament 3-bet: polarized between premiums and blocker bluffs. Respect it without a hand.';
+      case 'lag': return base + ' — constant pressure with ~30% of hands. Could be anything; 3-bet your strong hands back at them.';
+      case 'shark': return base + ' — solid TAG aggression, balanced between value and bluffs. Don\'t get fancy.';
+      default:
+        var lo = Math.round(((A.openTier || 3) / 6) * 100);
+        return base + ' — fits a ~' + lo + '%-range profile. Play your standard exploit.';
+    }
+  }
+
   function coachTip() {
     var hero = table.players[0];
     var legal = table.legalActions(0);
     var toCall = legal.toCall;
     var pot = table.potTotal();
+    var esc = UI.escapeHtml, fmt = UI.fmt;
     try {
+      var V = pickVillain();
+      var tail = villainLine(V);
+      var vName = V ? esc(V.name) : 'they';
+      var nm = hero.hole.slice().sort(function (a, b) { return b.r - a.r; })
+        .map(function (c) { return rankName(c.r); }).join(' ');
+      // ---------------- preflop ----------------
       if (table.street === 'preflop') {
         var tier = holeTier(hero.hole);
-        // Name high-card first ("Ace King", "Jack Nine") — deal order is random
-        // and "Nine Jack" reads like a different hand.
-        var nm = hero.hole.slice().sort(function (a, b) { return b.r - a.r; })
-          .map(function (c) { return rankName(c.r); }).join(' ');
         if (toCall === 0) {
-          return '<b>' + UI.escapeHtml(nm) + '</b> — ' + tierName(tier) + '. ' +
-            (tier <= 3 ? 'Strong. Open it up.' : tier <= 4 ? 'Playable — open in late position, fold early.' : 'Just fold and wait.');
+          var msg;
+          if (tier <= 2) msg = '<b>' + esc(nm) + '</b> — premium. <b>Open-raise</b> 2.5–3× the blind. TAG poker is raise-or-fold; never limp.';
+          else if (tier <= 4) msg = '<b>' + esc(nm) + '</b> — playable. Open it in late position, fold it early. If you play it, raise.';
+          else msg = '<b>' + esc(nm) + '</b> — fold. TAG means folding ~80% of hands preflop; discipline is the edge.';
+          if (tier <= 4 && V && villainFoldy(V && V.archetype) > 0.6)
+            msg += ' Good steal spot — ' + vName + ' folds too much.';
+          return msg + tail;
         }
+        var open = table.currentBet;
         var need = toCall / (pot + toCall);
         var eq = estimateEquity(hero.hole, [], Math.min(3, table.livePlayers().length - 1), 150);
-        return 'Call <b>' + UI.fmt(toCall) + '</b> to win <b>' + UI.fmt(pot + toCall) + '</b> — you need <b>' +
-          Math.round(need * 100) + '%</b> equity. ' + UI.escapeHtml(nm) + ' has ~<b>' + Math.round(eq * 100) +
-          '%</b>. ' + (eq > need + 0.03 ? 'The math says call.' : eq > need - 0.05 ? 'Close — consider position and opponent.' : 'Math says fold.');
+        if (tier <= 2 && legal.canRaise) {
+          // Value 3-bet: 3x the open in position is the standard TAG sizing.
+          var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * 3)));
+          return '<b>3-bet</b> ' + esc(nm) + ' to ~<b>' + fmt(three) + '</b> (3× their open). Best hand most of the time, fold equity the rest — the 3-bet is the TAG money-maker.' + tail;
+        }
+        var hasAce = hero.hole.some(function (c) { return c.r === 14; });
+        if (tier >= 4 && hasAce && legal.canRaise && V && villainFoldy(V && V.archetype) > 0.45) {
+          return 'Mix in a <b>bluff 3-bet</b> sometimes: your Ace blocks their strongest continuing hands, and ' + vName + ' folds to pressure. Balanced ranges get paid.' + tail;
+        }
+        return 'Call <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need <b>' +
+          pct(need) + '</b> equity. ' + esc(nm) + ' has ~<b>' + pct(eq) + '</b>. ' +
+          (eq > need + 0.03 ? 'The math says call.' : eq > need - 0.05 ? 'Close — prefer it in position.' : 'Math says fold.') + tail;
       }
+      // ---------------- postflop ----------------
       var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
-      if (toCall > 0) {
-        var need2 = toCall / (pot + toCall);
-        return 'Need <b>' + Math.round(need2 * 100) + '%</b>, you have ~<b>' + Math.round(eq2 * 100) +
-          '%</b>. ' + (eq2 > need2 + 0.03 ? 'Call.' : 'Leaning fold unless you have a read.');
-      }
+      var str = madeStrength(hero.hole, table.community);
       var d = detectDraws(hero.hole, table.community);
-      if (d.flushDraw || d.oesd) return 'You have a <b>strong draw</b> (~' + Math.round(eq2 * 100) + '% equity) — great semi-bluff spot if checked to.';
       var pos = positionScore(table, 0);
-      if (pos > 0.7) return 'You are <b>in position</b> — you can play a wider range and control the pot size.';
-      return null;
+      var foldy = villainFoldy(V && V.archetype);
+      if (toCall === 0) {
+        var canBet = legal.canBet || legal.canRaise;
+        var halfBet = Math.max(1, Math.round(pot / 2));
+        var be = pct(bluffBE(halfBet, pot));
+        if (str >= 0.60 || eq2 >= 0.62) {
+          // Value: size up vs stations who never fold.
+          var sizing = foldy < 0.25 ? '¾-pot' : '½–¾ pot';
+          return '<b>Bet for value</b> (~' + sizing + ', ' + fmt(halfBet) + '). Ask: what worse hands call? Never slow-play — build the pot while ahead.' + tail;
+        }
+        if ((d.flushDraw || d.oesd) && canBet) {
+          if (foldy < 0.25)
+            return 'Strong draw (~' + pct(eq2) + '), but ' + vName + ' never folds — <b>check</b> and take the free card.' + tail;
+          return '<b>Semi-bluff</b> the draw (~' + pct(eq2) + '): bet ~½ pot (' + fmt(halfBet) +
+            '). Two ways to win — folds now, or you hit. Needs only <b>' + be + '</b> folds on fold equity alone.' + tail;
+        }
+        if (canBet) {
+          var scare = scareCardRank();
+          var spot = (pos > 0.6 ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) - (foldy < 0.3 ? 2 : 0);
+          if (spot >= 2) {
+            var why = [];
+            if (scare) why.push('the ' + esc(scare) + ' is a scare card');
+            if (pos > 0.6) why.push('you have position');
+            if (foldy > 0.55) why.push(vName + ' overfolds');
+            return '<b>Bluff</b> ~½ pot (' + fmt(halfBet) + ') — needs <b>' + be + '</b> folds (' + why.join(', ') +
+              '). Mix bluffs in, or your value bets never get paid.' + tail;
+          }
+          return '<b>Check</b> — no value, no fold equity. Save the bluff for a better spot.' + tail;
+        }
+        return null;
+      }
+      var need2 = toCall / (pot + toCall);
+      if ((str >= 0.62 || eq2 >= 0.65) && legal.canRaise)
+        return '<b>Raise for value</b> (~3× their bet). Don\'t slow-play monsters — charge the draws and worse hands now.' + tail;
+      if ((d.flushDraw || d.oesd) && legal.canRaise && foldy > 0.4)
+        return '<b>Semi-bluff raise</b> sometimes: fold equity plus ~' + pct(eq2) + ' to hit. Otherwise call ' +
+          fmt(toCall) + ' needing ' + pct(need2) + '.' + tail;
+      var vAggro = V && villainBluffy(V && V.archetype) > 0.4;
+      var verdict = eq2 > need2 + 0.03 ? 'The math says call.'
+        : (vAggro && eq2 > need2 - 0.12) ? 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.'
+        : 'Math says fold.';
+      return 'Need <b>' + pct(need2) + '</b>, you have ~<b>' + pct(eq2) + '</b>. ' + verdict + tail;
     } catch (err) { return null; }
   }
 
@@ -554,13 +765,12 @@
     cfg.stack = Math.max(200, parseInt($('cfg-stack').value, 10) || 1000);
     cfg.sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
     cfg.bb = Math.max(cfg.sb + 1, parseInt($('cfg-bb').value, 10) || 10);
+    cfg.botRebuys = $('cfg-botrebuys') ? $('cfg-botrebuys').checked : true;
 
     if (mode === 'pushfold') { startPushFold(); return; }
 
-    var bots = allBots().filter(function (b) { return selectedBots.has(b.id); });
-    if (!bots.length) bots = [botById('shark')];
-    if (mode === 'hu') bots = bots.slice(0, 1);
-    else bots = bots.slice(0, oppCount);
+    var bots = allBots().filter(function (b) { return selectedBots.has(b.id); }).slice(0, maxOpp());
+    if (!bots.length) bots = [botById('lag')]; // safety net; the UI enforces >= 1
 
     gameMode = mode;
     var players = [{ name: NamePrefs.heroName(), isHero: true }].concat(bots.map(function (b) {
@@ -696,10 +906,21 @@
       c.onclick = function () {
         document.querySelectorAll('.mode-card').forEach(function (x) { x.classList.remove('selected'); });
         c.classList.add('selected');
+        var prev = mode;
         mode = c.dataset.mode;
-        // Heads-up is always 1 opponent; other modes use the stepper.
-        $('opp-count').textContent = mode === 'hu' ? 1 : oppCount;
-        syncQuickHint();
+        if (mode === 'hu' && prev !== 'hu') {
+          // Heads-up is exactly one bot: remember the full table, keep the
+          // first pick (swimkev when the set is somehow empty).
+          preHuSelection = Array.from(selectedBots);
+          var first = rosterOrderIds().filter(function (id) { return selectedBots.has(id); })[0] || 'lag';
+          selectedBots = new Set([first]);
+        } else if (prev === 'hu' && mode !== 'hu' && preHuSelection) {
+          // Restore the pre-heads-up table.
+          selectedBots = new Set(preHuSelection.filter(function (id) { return botById(id); }).slice(0, 5));
+          if (!selectedBots.size) selectedBots = new Set(['lag', 'rohan', 'amogh']);
+          preHuSelection = null;
+        }
+        syncOppUI();
       };
     });
     $('btn-start').onclick = startGame;
@@ -711,7 +932,7 @@
       if (!q) return;
       var modeName = { cash: 'cash game', hu: 'heads-up', tourney: 'tournament', pushfold: 'push/fold drills' }[mode] || 'cash game';
       if (mode === 'pushfold') { q.textContent = 'One tap: ' + modeName + '.'; return; }
-      var n = mode === 'hu' ? 1 : oppCount;
+      var n = selectedBots.size;
       var stack = Math.max(200, parseInt($('cfg-stack').value, 10) || 1000);
       var sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
       var bb = Math.max(sb + 1, parseInt($('cfg-bb').value, 10) || 10);
@@ -735,24 +956,38 @@
       });
     }
 
-    // opponent count stepper
-    function syncRosterToCount() {      var ids = [];
-      DEFAULT_MIX.forEach(function (id) { if (botById(id)) ids.push(id); });
-      loadCustomBots().forEach(function (a) { ids.push(a.id); });
-      selectedBots = new Set(ids.slice(0, oppCount));
-      $('opp-count').textContent = oppCount;
-      UI.renderRoster(allBots(), selectedBots);
+    // Opponent count display always derives from the selection — the number
+    // and the highlighted cards can never disagree.
+    function syncOppUI() {
+      $('opp-count').textContent = selectedBots.size;
+      UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
       syncQuickHint();
+    }
+    // Select a bot, enforcing the cap by swapping out the last-picked bot.
+    // Used when a newly created custom bot should join the table immediately.
+    function selectBot(id) {
+      if (selectedBots.has(id)) return;
+      if (selectedBots.size >= maxOpp()) {
+        var ids = rosterOrderIds().filter(function (x) { return selectedBots.has(x); });
+        selectedBots.delete(ids[ids.length - 1]);
+      }
+      selectedBots.add(id);
     }
     $('opp-minus').onclick = function () {
       if (mode === 'hu') return;
-      oppCount = Math.max(1, oppCount - 1);
-      syncRosterToCount();
+      if (selectedBots.size <= 1) { rosterHint('Pick at least 1 opponent'); return; }
+      // Drop the last-picked bot (last in roster order).
+      var ids = rosterOrderIds().filter(function (id) { return selectedBots.has(id); });
+      selectedBots.delete(ids[ids.length - 1]);
+      syncOppUI();
     };
     $('opp-plus').onclick = function () {
       if (mode === 'hu') return;
-      oppCount = Math.min(5, oppCount + 1);
-      syncRosterToCount();
+      if (selectedBots.size >= maxOpp()) { rosterHint('Only ' + maxOpp() + ' opponents for this mode'); return; }
+      // Add the first unpicked bot in roster order.
+      var id = rosterOrderIds().filter(function (x) { return !selectedBots.has(x); })[0];
+      if (id) selectedBots.add(id);
+      syncOppUI();
     };
     // push/fold buttons
     $('pf-shove').onclick = function () { pfAnswer(pf.scn.facingShove ? 'call' : 'shove'); };
@@ -760,7 +995,8 @@
     $('pf-next').onclick = nextPFScenario;
 
     // custom bot builder
-    [['cust-loose', 'v-loose'], ['cust-aggr', 'v-aggr'], ['cust-bluff', 'v-bluff'], ['cust-stub', 'v-stub']]
+    [['cust-loose', 'v-loose'], ['cust-aggr', 'v-aggr'], ['cust-bluff', 'v-bluff'], ['cust-stub', 'v-stub'],
+     ['cust-tilt', 'v-tilt'], ['cust-rebuy', 'v-rebuy']]
       .forEach(function (pair) {
         $(pair[0]).oninput = function () { $(pair[1]).textContent = $(pair[0]).value; };
       });
@@ -771,7 +1007,8 @@
         name: name, emoji: emoji,
         desc: $('cust-desc').value.trim(),
         looseness: +$('cust-loose').value, aggression: +$('cust-aggr').value,
-        bluff: +$('cust-bluff').value, stubborn: +$('cust-stub').value
+        bluff: +$('cust-bluff').value, stubborn: +$('cust-stub').value,
+        tiltProne: +$('cust-tilt').value, rebuy: +$('cust-rebuy').value
       });
       var list = loadCustomBots();
       list.push(a);
@@ -779,7 +1016,8 @@
       selectedBots.add(a.id);
       $('cust-name').value = ''; $('cust-desc').value = '';
       UI.renderArchetypes(list, deleteCustom);
-      UI.renderRoster(allBots(), selectedBots);
+      selectBot(a.id);
+      syncOppUI();
     };
 
     // stats
@@ -794,7 +1032,7 @@
       if (confirm('Reset all training stats?')) { clearStats(); UI.renderStats(); }
     };
 
-    UI.renderRoster(allBots(), selectedBots);
+    UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
     // Stack/blind tweaks update the quick-start hint live.
     ['cfg-stack', 'cfg-sb', 'cfg-bb'].forEach(function (id) {
       var el = $(id);
@@ -808,8 +1046,9 @@
   function deleteCustom(id) {
     saveCustomBots(loadCustomBots().filter(function (a) { return a.id !== id; }));
     selectedBots.delete(id);
+    if (!selectedBots.size) selectedBots.add('lag'); // never drop to zero
     UI.renderArchetypes(loadCustomBots(), deleteCustom);
-    UI.renderRoster(allBots(), selectedBots);
+    UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
   }
 
   document.addEventListener('DOMContentLoaded', wire);

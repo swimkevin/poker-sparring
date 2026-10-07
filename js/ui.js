@@ -157,17 +157,29 @@ var UI = (function () {
     return a.name || a.id || '';
   }
 
-  function renderRoster(allBots, selected) {
+  // Opponent roster. `selected` is a Set of bot ids; `max` caps how many can be
+  // picked for the current mode (1 for heads-up). `onHint` shows a transient
+  // message when a toggle is refused. Selected cards show their pick order.
+  function renderRoster(allBots, selected, max, onHint) {
+    max = max || 5;
     var box = $('bot-roster');
     box.innerHTML = '';
     box._bots = allBots;
     box._selected = selected;
+    box._max = max;
+    box._onHint = onHint;
     var overrides = (typeof NamePrefs !== 'undefined' && NamePrefs) ? NamePrefs.getBotOverrides() : {};
+    // Pick order follows roster order, so "first N" is unambiguous.
+    var order = [];
+    allBots.forEach(function (b) { if (selected.has(b.id)) order.push(b.id); });
     allBots.forEach(function (b) {
       var btn = document.createElement('button');
-      btn.className = 'roster-card' + (selected.has(b.id) ? ' selected' : '');
+      var isSel = selected.has(b.id);
+      btn.className = 'roster-card' + (isSel ? ' selected' : '');
       var renamed = !!overrides[b.id];
-      btn.innerHTML = '<span class="emoji">' + escapeHtml(b.emoji) + '</span>' +
+      var badge = isSel ? '<span class="sel-num">' + (order.indexOf(b.id) + 1) + '</span>' : '';
+      btn.innerHTML = badge +
+        '<span class="emoji">' + escapeHtml(b.emoji) + '</span>' +
         '<span><div class="nm"><span class="nm-row"><span class="nm-text">' + escapeHtml(dispName(b)) + '</span>' +
         (renamed ? '<span class="renamed-tag" title="Default name: ' + escapeHtml(b.name) + '">renamed</span>' : '') +
         '<span class="rename-btn" role="button" tabindex="0" title="Rename ' + escapeHtml(b.name) + '">✎</span>' +
@@ -175,8 +187,17 @@ var UI = (function () {
         '<div class="tg">' + escapeHtml(b.tagline) + '</div></span>' +
         '<span class="check">✓</span>';
       btn.onclick = function () {
-        if (selected.has(b.id)) selected.delete(b.id); else selected.add(b.id);
-        btn.classList.toggle('selected');
+        if (selected.has(b.id)) {
+          if (selected.size <= 1) { if (onHint) onHint('Pick at least 1 opponent'); return; }
+          selected.delete(b.id);
+        } else {
+          if (selected.size >= max) {
+            if (onHint) onHint(max === 1 ? 'Heads-up is you vs 1 bot — deselect to swap' : 'Only ' + max + ' opponents for this mode — deselect one first');
+            return;
+          }
+          selected.add(b.id);
+        }
+        renderRoster(allBots, selected, max, onHint);
       };
       var rbtn = btn.querySelector('.rename-btn');
       rbtn.onclick = function (e) { e.stopPropagation(); openRename(btn, b); };
@@ -227,7 +248,7 @@ var UI = (function () {
         NamePrefs.setBotOverride(b.id, input.value);
       }
       var box = $('bot-roster');
-      renderRoster(box._bots || [], box._selected || new Set());
+      renderRoster(box._bots || [], box._selected || new Set(), box._max || 5, box._onHint);
     }
     input.onclick = function (e) { e.stopPropagation(); };
     input.onkeydown = function (e) {
@@ -372,6 +393,14 @@ var UI = (function () {
       if (!s) return;
       s.querySelector('.avatar').textContent = p.isHero ? '🧑' : (p.archetype ? p.archetype.emoji : '🤖');
       s.querySelector('.pname').textContent = p.name; // hero name set at game start (username or 'You')
+      // Rebuy counter (PokerNow-style) + tilt meter on the seat.
+      var badges = '';
+      if ((p.rebuys || 0) > 0) badges += '<span class="seat-badge rb" title="' + p.rebuys + ' rebuys">×' + p.rebuys + '</span>';
+      if ((p.tilt || 0) > 0.55) badges += '<span class="seat-badge tilt" title="On tilt — playing looser">🌡️</span>';
+      var who = s.querySelector('.who');
+      var bg = who.querySelector('.badges');
+      if (!bg) { bg = document.createElement('span'); bg.className = 'badges'; who.appendChild(bg); }
+      bg.innerHTML = badges;
       setTextFx(s.querySelector('.pstack'), fmt(p.stack));
       setTextFx(s.querySelector('.pbet'), p.bet > 0 ? 'bet ' + fmt(p.bet) : '');
       setPact(s.querySelector('.pact'), i, (opts.lastActions && opts.lastActions[i]) || '');
@@ -599,6 +628,22 @@ var UI = (function () {
   }
 
   // ---------- stats screen ----------
+  // Inline definitions: each stat card gets an ⓘ that pops a one-line
+  // "what it means + how it's calculated" note, so nobody has to scroll to
+  // the Learn glossary mid-session.
+  var STAT_INFO = {
+    'Hands': 'Total hands played. Everything else is built on this sample — bigger sample, more trustworthy.',
+    'Win %': 'Hands won ÷ hands played. Short-term luck dominates this one; bb/100 measures skill better.',
+    'bb / 100': 'Big blinds won per 100 hands = (profit in BB ÷ hands) × 100. The standard poker win-rate; 0–5 is solid. Needs 20+ hands to mean anything.',
+    'VPIP %': 'Voluntarily Put money In Pot: % of hands you played preflop by calling or raising (posted blinds don\'t count). ~15% is tight, ~25% standard, 40%+ loose.',
+    'PFR %': 'Pre-Flop Raise: % of hands you raised preflop. The VPIP–PFR gap measures passivity — TAG players keep it small.',
+    'Aggr. factor': 'Aggression Factor = (postflop bets + raises) ÷ postflop calls. Under 1 is passive, 1.5–3 is solid TAG, 3+ is maniac territory.',
+    'Biggest pot': 'The largest pot you\'ve won, shown in chips.'
+  };
+  function closeStatTips() {
+    Array.prototype.forEach.call(document.querySelectorAll('.stat-tip.show'),
+      function (t) { t.classList.remove('show'); });
+  }
   function renderStats() {
     var s = loadStats(), d = derivedStats(s);
     // bb/100 is noise below ~20 hands — show a dash instead of an alarming number.
@@ -615,9 +660,26 @@ var UI = (function () {
       var el = document.createElement('div');
       el.className = 'stat-card';
       var title = c[0] === 'bb / 100' && d.hands < 20 ? ' title="Play 20+ hands for a meaningful win rate"' : '';
-      el.innerHTML = '<div class="sk"' + title + '>' + c[0] + '</div><div class="sv"' + title + '>' + c[1] + '</div>';
+      var info = STAT_INFO[c[0]]
+        ? '<button class="stat-info" aria-label="What does ' + c[0] + ' mean?">ⓘ</button>' : '';
+      el.innerHTML = '<div class="sk"' + title + '>' + c[0] + info + '</div>' +
+        '<div class="sv"' + title + '>' + c[1] + '</div>' +
+        (STAT_INFO[c[0]] ? '<div class="stat-tip" role="note">' + STAT_INFO[c[0]] + '</div>' : '');
+      var btn = el.querySelector('.stat-info');
+      if (btn) btn.onclick = function (e) {
+        e.stopPropagation();
+        var tip = el.querySelector('.stat-tip');
+        var was = tip.classList.contains('show');
+        closeStatTips();
+        if (!was) tip.classList.add('show');
+      };
       box.appendChild(el);
     });
+    // One global closer for stat tips (registered once).
+    if (!closeStatTips._wired) {
+      closeStatTips._wired = true;
+      document.addEventListener('click', function () { closeStatTips(); });
+    }
     drawSparkline(s.graph);
     renderLeaks();
     var at = $('arch-table');
