@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.5.2] — 2026-10-07
+
+### Fixed
+- **Hibernated sockets survive DO restarts:** the per-socket attachment now
+  carries the room code, and a socket that speaks up on a restarted instance
+  re-registers for broadcasts. Previously, any worker restart/eviction left
+  live sockets failing every message with "Room not found" (the lobby looked
+  fine, then Start died) — caught by a live two-client test, reproduced in
+  `tests/worker.test.js` (fails without the fix, passes with it).
+
 ## [1.5.1] — 2026-10-06
 
 ### Fixed

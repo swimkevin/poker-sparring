@@ -32,13 +32,23 @@ export class RoomDO {
     // rides along via serializeAttachment.
     this.state.acceptWebSocket(server);
     const clientId = 'c' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    server.serializeAttachment({ clientId: clientId, name: name });
+    // The attachment must carry the room code: after a DO restart the sessions
+    // map is empty and _meta() falls back to deserializeAttachment() — without
+    // `code`, every message on a hibernated socket fails "Room not found".
+    server.serializeAttachment({ clientId: clientId, name: name, code: code });
     this.sessions.set(server, { clientId: clientId, name: name, code: code });
     return new Response(null, { status: 101, webSocket: client });
   }
 
   _meta(ws) {
-    return this.sessions.get(ws) || ws.deserializeAttachment();
+    let meta = this.sessions.get(ws);
+    if (!meta) {
+      try { meta = ws.deserializeAttachment(); } catch (e) { meta = null; }
+      // Hibernated socket on a restarted DO: the sessions map is empty, so
+      // re-register it — otherwise broadcasts (lobby/state) never reach it.
+      if (meta) this.sessions.set(ws, meta);
+    }
+    return meta || null;
   }
 
   _getRoom(code) {

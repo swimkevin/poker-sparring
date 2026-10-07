@@ -1210,12 +1210,21 @@ var RoomDO = class {
     const [client, server] = Object.values(pair);
     this.state.acceptWebSocket(server);
     const clientId = "c" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    server.serializeAttachment({ clientId, name });
+    server.serializeAttachment({ clientId, name, code });
     this.sessions.set(server, { clientId, name, code });
     return new Response(null, { status: 101, webSocket: client });
   }
   _meta(ws) {
-    return this.sessions.get(ws) || ws.deserializeAttachment();
+    let meta = this.sessions.get(ws);
+    if (!meta) {
+      try {
+        meta = ws.deserializeAttachment();
+      } catch (e) {
+        meta = null;
+      }
+      if (meta) this.sessions.set(ws, meta);
+    }
+    return meta || null;
   }
   _getRoom(code) {
     if (!this.room) return null;

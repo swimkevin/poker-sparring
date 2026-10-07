@@ -143,5 +143,35 @@ function upgradeRequest(roomUrl) {
   ok(!!snap && snap.state === 'playing', 'rejoiner gets a live game snapshot after mid-game restore');
   ok(!!snap && Array.isArray(snap.hole) && snap.hole.length === 2, 'rejoiner sees their own hole cards');
 
+  // --- 6. hibernated socket across DO restart: the serialized attachment must
+  // carry the room code. Regression: after a restart the sessions map is
+  // empty, _meta() falls back to deserializeAttachment(), and without `code`
+  // every message on the surviving socket failed "Room not found" — the host
+  // saw a live lobby, then Start died with "Room not found. The host creates
+  // it first." (live incident 2026-10-07, room UPCD57).
+  var hibHost = makeSocket();
+  var doA = new RoomDO(fakeState(), {});
+  global.WebSocketPair = function () { return { 0: makeSocket(), 1: hibHost }; };
+  await doA.fetch(upgradeRequest(RELAY + '/room/HBCDEF/ws?name=HostH'));
+  global.WebSocketPair = realPair;
+  await doA.webSocketMessage(hibHost, JSON.stringify({ t: 'create', config: { maxPlayers: 6 } }));
+  var hibGuest = makeSocket();
+  global.WebSocketPair = function () { return { 0: makeSocket(), 1: hibGuest }; };
+  await doA.fetch(upgradeRequest(RELAY + '/room/HBCDEF/ws?name=GuestH'));
+  global.WebSocketPair = realPair;
+  await doA.webSocketMessage(hibGuest, JSON.stringify({ t: 'join', name: 'GuestH' }));
+  ok(hibGuest.sent.filter(function (m) { return m.t === 'error'; }).length === 0, 'hibernation setup: 2 players seated');
+  // DO restarts: fresh instance, same storage. Both sockets hibernate — no new
+  // fetch(), no sessions entries; only their serialized attachments survive.
+  var storeH = doA.state._store;
+  var doB = new RoomDO(fakeState(storeH), {});
+  hibHost.sent.length = 0;
+  await doB.webSocketMessage(hibHost, JSON.stringify({ t: 'start' }));
+  var hibErrs = hibHost.sent.filter(function (m) { return m.t === 'error'; });
+  ok(!hibErrs.some(function (e) { return /not found/i.test(e.message); }),
+    'hibernated socket after restart: no "Room not found" (got: ' + JSON.stringify(hibErrs.map(function (e) { return e.message; })) + ')');
+  var hibState = hibHost.sent.filter(function (m) { return m.t === 'state'; })[0];
+  ok(!!hibState && hibState.state === 'playing', 'hibernated host can still start the game after restart');
+
   console.log(pass + ' worker assertions passed');
 })().catch(function (e) { console.log('FAIL: ' + (e && e.stack || e)); process.exitCode = 1; });
