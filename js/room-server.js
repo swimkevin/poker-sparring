@@ -65,7 +65,8 @@ class Room {
     this.lastResult = null; // {winners, revealed, handNo} from the last handEnd
     this.champion = null;
     this.recent = [];
-    this.chat = [];              // [{from, text, ts}] — last 50, broadcast to all
+    this.chat = [];
+    this.shownHands = {}; // seat -> [{r,s}] voluntarily shown (PokerNow-style)              // [{from, text, ts}] — last 50, broadcast to all
     this.closed = false;
     this.onEvent = opts.onEvent || function () {};
     this._now = opts.now || function () { return Date.now(); };
@@ -177,6 +178,20 @@ class Room {
 
   // ---------- chat ----------
 
+  // Voluntary show: a player reveals their mucked cards to the table.
+  // hole comes from the client (they know their own cards from their snapshot).
+  showCards(clientId, hole) {
+    var p = this.playerByClientId(clientId);
+    if (!p) return { ok: false, error: 'not at this table' };
+    if (!Array.isArray(hole) || hole.length !== 2) return { ok: false, error: 'bad cards' };
+    var clean = hole.map(function (c) {
+      return { r: Math.max(2, Math.min(14, parseInt(c.r, 10) || 0)), s: Math.max(0, Math.min(3, parseInt(c.s, 10) || 0)) };
+    });
+    if (!clean[0].r || !clean[1].r) return { ok: false, error: 'bad cards' };
+    this.shownHands[p.seat] = clean;
+    this._emit({ t: 'cardsShown', seat: p.seat, name: p.name });
+    return { ok: true };
+  }
   sendChat(clientId, text) {
     var p = this.playerByClientId(clientId);
     if (!p) return { ok: false, error: 'not at this table' };
@@ -241,6 +256,7 @@ class Room {
   }
 
   _startHand() {
+    this.shownHands = {};
     if (this.table.activeCount() < 2) return false;
     // The Room flag is the source of truth; mirror it onto the engine seats so
     // blinds, action order, and pots skip sitters-out. (Mid-hand the engine
@@ -497,6 +513,12 @@ class Room {
         return { seat: r.idx, hole: r.hole.map(function (c) { return { r: c.r, s: c.s }; }) };
       });
     }
+    // Voluntarily shown cards (cleared when a new hand starts)
+    var shown = [];
+    for (var seat in this.shownHands) {
+      shown.push({ seat: parseInt(seat, 10), hole: this.shownHands[seat] });
+    }
+    if (shown.length) snap.shown = shown;
     return snap;
   }
 
