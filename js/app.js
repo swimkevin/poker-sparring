@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.2';
+  var APP_VERSION = '1.8.4';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -342,8 +342,19 @@
     }
     var resultText = won ? ('Won ' + UI.fmt(e.pot)) : 'Lost';
     if (!won && e.winners.length && e.winners[0].hand) resultText = e.winners[0].hand;
+    // Capture everyone's cards for the hand history: hero always, opponents only if revealed
+    var allHands = table.players.map(function (p, idx) {
+      var show = idx === 0 || revealed[idx];
+      return {
+        name: idx === 0 ? 'You' : p.name,
+        emoji: idx === 0 ? null : (p.archetype ? p.archetype.emoji : '🤖'),
+        hole: show && p.hole.length === 2 ? p.hole.map(function (c) { return { r: c.r, s: c.s }; }) : null,
+        isHero: idx === 0
+      };
+    });
     recordHand({
       mode: gameMode, bb: table.bb, heroHole: hero.hole, community: table.community,
+      allHands: allHands,
       profitChips: profit, wonHand: won, vpip: handCtx.vpip, pfr: handCtx.pfr,
       postBet: handCtx.postBet, postCall: handCtx.postCall,
       opponents: table.players.slice(1)
