@@ -329,7 +329,7 @@ var Online = (function () {
     if (wsUrl) { hostLive(readConfig(), name); return; }
     mode = 'mock';
     setConn('Local mock — no server needed');
-    var res = ensureMock().createRoom(readConfig(), name, myEmoji());
+    var res = ensureMock().createRoom(readConfig(), name, loadEmoji());
     if (res.error) { errBox.textContent = res.error; errBox.hidden = false; return; }
     roomCode = res.code;
     attachClient(res.client);
