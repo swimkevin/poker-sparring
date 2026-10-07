@@ -4,7 +4,7 @@
 
 ▶️ **Play it:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1500%2B%20assertions-brightgreen)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.1-blue)
 
 ## Why I built this
 
@@ -20,14 +20,26 @@ It's also my engineering playground: I use it to practice AI-assisted developmen
 
 ## What you can do
 
-- **Spar vs bots** — cash games, heads-up, and full tournaments against 10 built-in opponents (Tricky LAG 🎭, Rohan 🙂, The Maniac 🤪, Nathan 🪤, TAG Shark 🦈, The Grinder 💪, Bubble Boy 🫧, The Rock 🪨, Calling Station 📞, plus custom bots you design), each with a "how to beat them" tip from classic poker literature
+### ♠️ Spar vs bots (offline)
+- **Cash games, heads-up, and full tournaments** against 10 built-in opponents (Tricky LAG 🎭, Rohan 🙂, The Maniac 🤪, Nathan 🪤, TAG Shark 🦈, The Grinder 💪, Bubble Boy 🫧, The Rock 🪨, Calling Station 📞, plus custom bots you design), each with a "how to beat them" tip from classic poker literature
 - **Build your own opponent** — sliders for looseness, aggression, bluff frequency, and stubbornness; rename them after your friends
-- **Play online with friends** — host a table, share a 6-letter code, up to 8 players. Live on a Cloudflare Durable Object relay: rooms survive disconnects, dropped connections auto-reconnect and resync mid-hand
 - **Push/fold trainer** — short-stack shove-or-fold drills with instant, range-based feedback
 - **Hand replayer** — every hand is saved locally; step through them street by street
 - **Training stats** — VPIP/PFR/aggression, win rate in bb/100, stack graph, per-archetype records, and a leak tracker that spots your most common mistakes and explains the math
 - **Coach tips** — pot-odds and equity advice on your turn, in plain English ("Call 25 to win 65 — you need 38% equity. You have ~26%. Math says fold.")
-- **Learn** — 29-term glossary and curated books/sites
+
+### 🌐 Play online with friends
+Host a table, share a 6-letter code, up to 8 players. No accounts, no signup — just a link.
+
+- **💬 Table chat** — talk strategy (or trash) in the lobby and at the table; last 50 messages kept
+- **📊 Session ledger** — per-player buy-ins, stack, and net, updating live. Settle up with friends after
+- **Rebuy** — busted or short? Top back up to the starting stack mid-game; buy-in count tracked
+- **Join sitting out** — hop into a running table as a spectator without being dealt in
+- **Sit out / back in** — take a break mid-session; your seat is held and you auto-fold
+- **Resilient by design** — rooms live on a Cloudflare Durable Object relay: dropped connections auto-reconnect and resync mid-hand, and if the host disconnects, another player can take over
+
+### 📚 Learn
+- 29-term glossary and curated books/sites
 - **No accounts, no tracking** — everything lives in your browser
 
 ## How it's built
@@ -40,7 +52,7 @@ Key decisions are recorded as ADRs in `docs/adr/` — vanilla JS, local-first st
 
 ## Verification
 
-**~1,750 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
+**~1,800 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
 
 ```bash
 npm test          # unit + component + smoke + netplay + worker
