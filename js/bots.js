@@ -29,7 +29,8 @@ var ARCHETYPES = [
     beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15,
-    tiltProne: 0.70, rebuy: 0.90
+    tiltProne: 0.70, rebuy: 0.90,
+    friendly: true,
   },
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
@@ -48,7 +49,9 @@ var ARCHETYPES = [
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
-    tiltProne: 0.80, rebuy: 0.85
+    tiltProne: 0.80, rebuy: 0.85,
+    friendly: true,
+    friendly: true,
   },
   {
     id: 'nathan', name: 'Nathan', emoji: '🐢',
@@ -67,7 +70,8 @@ var ARCHETYPES = [
     beat: 'Steal his blinds early when stacks are deep. Never pay off a shove without a real hand — his all-in range is brutally strong.',
     openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 2,
     aggression: 0.65, bluff: 0.12, stubborn: 0.40, pushTier: 5, callPushTier: 2, limp: 0.05,
-    tiltProne: 0.25, rebuy: 0.60
+    tiltProne: 0.25, rebuy: 0.60,
+    friendly: true,
   },
   {
     id: 'bubble', name: 'Bubble Boy', emoji: '🫧',
@@ -193,6 +197,19 @@ function effectiveArchetype(A, tilt) {
   });
 }
 
+// Friendly-game looseness: when the price to call is trivial relative to the
+// bot's stack (e.g. 40 chips from a 3000 stack), even tight bots play looser —
+// just like a real home game. Returns 0..1, higher = call wider.
+// Friend-named bots (friendly: true) get roughly double the discount.
+function stackDiscount(p, toCall, A) {
+  var total = p.stack + p.bet;
+  if (total <= 0 || toCall <= 0) return 0;
+  var frac = toCall / total;
+  var base = frac >= 0.05 ? 0 : frac >= 0.03 ? 0.15 : frac >= 0.015 ? 0.35 : 0.55;
+  if (A && A.friendly) base = Math.min(0.8, base * 1.8);
+  return base;
+}
+
 function botDecide(table, p) {
   if (!table.canAct(p)) return null;
   var A = effectiveArchetype(p.archetype || getArchetype('shark'), p.tilt || 0);
@@ -282,6 +299,9 @@ function botPreflop(table, p, A) {
     if (to3 != null) return { a: 'raise', amount: to3 };
   }
   var callLine = A.callTier + (pos >= 0.75 ? 1 : 0);
+  // Stack-relative looseness: trivial prices get called much wider.
+  var sd = stackDiscount(p, toCall, A);
+  if (sd > 0 && tier <= callLine + Math.round(sd * 3) && need < 0.45) return { a: 'call' };
   if (tier <= callLine && (need < 0.33 || tier <= 2 || Math.random() < (A.callTier / 12)))
     return { a: 'call' };
   // Min-raise defense: a 2bb open lays ~2.5:1, too good a price to fold
@@ -332,6 +352,8 @@ function botPostflop(table, p, A) {
   }
 
   function betSized(frac) {
+    // Friendly bots lean into slightly bigger sizing (home-game feel).
+    if (A.friendly) frac = Math.min(1.2, frac * 1.25);
     var to = clampRaise(table, p, legal, pot * frac);
     if (to == null) return { a: 'check' };
     if (to >= legal.maxRaiseTo * 0.97) return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
@@ -348,6 +370,8 @@ function botPostflop(table, p, A) {
 
   var need = toCall / (pot + toCall);
   var margin = (0.5 - A.stubborn) * 0.12 + (street === 'river' ? 0.03 : 0);
+  // Stack-relative looseness: cheap calls need less equity (friendly game).
+  margin -= stackDiscount(p, toCall, A) * 0.18;
   if (eq > need + margin) {
     if (eq > 0.74 && Math.random() < A.aggression * 0.55 && legal.canRaise) {
       var to = clampRaise(table, p, legal, (pot + toCall) * (0.7 + Math.random() * 0.5));
