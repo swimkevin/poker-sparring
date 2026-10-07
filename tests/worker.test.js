@@ -33,10 +33,16 @@ global.Response = function (body, init) {
   this.webSocket = init && init.webSocket;
 };
 
-function fakeState() {
+function fakeState(store) {
+  store = store || new Map();
   return {
     acceptWebSocket: function () {},
-    storage: { setAlarm: function () { return Promise.resolve(); } }
+    storage: {
+      setAlarm: function () { return Promise.resolve(); },
+      get: function (k) { return Promise.resolve(store.has(k) ? JSON.parse(JSON.stringify(store.get(k))) : undefined); },
+      put: function (k, v) { store.set(k, JSON.parse(JSON.stringify(v))); return Promise.resolve(); }
+    },
+    _store: store
   };
 }
 function upgradeRequest(roomUrl) {
@@ -95,6 +101,47 @@ function upgradeRequest(roomUrl) {
   await badDO.webSocketMessage(badSock, JSON.stringify({ t: 'join', name: 'Stranger' }));
   var berrs = badSock.sent.filter(function (m) { return m.t === 'error'; });
   ok(berrs.length === 1 && /not found/i.test(berrs[0].message), 'join of nonexistent room errors "not found"');
+
+  // --- 4. eviction: room survives, dropped players reclaim their seats ---
+  // Both sockets die (phones sleep); the DO is evicted (fresh instance, same
+  // disk). HostA reopens the page and rejoins with the same name.
+  await hostDO.webSocketClose(hostSock, 1006, 'drop', false);
+  await hostDO.webSocketClose(joinSock, 1006, 'drop', false);
+  var store = hostDO.state._store;
+  var evictedDO = new RoomDO(fakeState(store), {});
+  var rejoinSock = makeSocket();
+  global.WebSocketPair = function () { return { 0: makeSocket(), 1: rejoinSock }; };
+  await evictedDO.fetch(upgradeRequest(RELAY + '/room/ABC234/ws?name=HostA'));
+  global.WebSocketPair = realPair;
+  await evictedDO.webSocketMessage(rejoinSock, JSON.stringify({ t: 'join', name: 'HostA' }));
+  var rerrs = rejoinSock.sent.filter(function (m) { return m.t === 'error'; });
+  ok(rerrs.length === 0, 'join after eviction produces no error (got: ' + JSON.stringify(rerrs.map(function (e) { return e.message; })) + ')');
+  var rlobby = rejoinSock.sent.filter(function (m) { return m.code === 'ABC234'; })[0];
+  ok(!!rlobby && rlobby.players.length === 2, 'room restored from storage with both players');
+
+  // --- 5. mid-game eviction: engine state round-trips, play continues ---
+  // GuestB also reconnects, then the host starts the game.
+  var rejoinSockB = makeSocket();
+  global.WebSocketPair = function () { return { 0: makeSocket(), 1: rejoinSockB }; };
+  await evictedDO.fetch(upgradeRequest(RELAY + '/room/ABC234/ws?name=GuestB'));
+  global.WebSocketPair = realPair;
+  await evictedDO.webSocketMessage(rejoinSockB, JSON.stringify({ t: 'join', name: 'GuestB' }));
+  await evictedDO.webSocketMessage(rejoinSock, JSON.stringify({ t: 'start' }));
+  var serrs = rejoinSock.sent.filter(function (m) { return m.t === 'error'; });
+  ok(serrs.length === 0, 'start after restore produces no error');
+  await evictedDO.webSocketClose(rejoinSock, 1006, 'drop', false);
+  await evictedDO.webSocketClose(rejoinSockB, 1006, 'drop', false);
+  var evicted2 = new RoomDO(fakeState(store), {});
+  var actSock = makeSocket();
+  global.WebSocketPair = function () { return { 0: makeSocket(), 1: actSock }; };
+  await evicted2.fetch(upgradeRequest(RELAY + '/room/ABC234/ws?name=GuestB'));
+  global.WebSocketPair = realPair;
+  await evicted2.webSocketMessage(actSock, JSON.stringify({ t: 'join', name: 'GuestB' }));
+  var aerrs = actSock.sent.filter(function (m) { return m.t === 'error'; });
+  ok(aerrs.length === 0, 'rejoin mid-game after eviction produces no error');
+  var snap = actSock.sent.filter(function (m) { return m.t === 'state'; })[0];
+  ok(!!snap && snap.state === 'playing', 'rejoiner gets a live game snapshot after mid-game restore');
+  ok(!!snap && Array.isArray(snap.hole) && snap.hole.length === 2, 'rejoiner sees their own hole cards');
 
   console.log(pass + ' worker assertions passed');
 })().catch(function (e) { console.log('FAIL: ' + (e && e.stack || e)); process.exitCode = 1; });

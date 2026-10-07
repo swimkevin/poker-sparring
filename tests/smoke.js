@@ -21,7 +21,7 @@ var errors = [];
 w.addEventListener('error', function (e) { errors.push(e.message || String(e.error)); });
 
 // Inject the app scripts in load order (synchronous execution on insertion).
-['cards', 'evaluator', 'equity', 'engine', 'bots', 'pushfold', 'stats', 'replay', 'ui', 'app']
+['cards', 'evaluator', 'equity', 'engine', 'bots', 'names', 'pushfold', 'stats', 'replay', 'room-server', 'netplay', 'ui', 'online', 'app']
   .forEach(function (f) {
     var s = d.createElement('script');
     s.textContent = fs.readFileSync(path.join(dir, 'js', f + '.js'), 'utf8');
