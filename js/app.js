@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.1';
+  var APP_VERSION = '1.8.2';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -978,7 +978,22 @@
     if (hmo) hmo.addEventListener('click', function (e) { if (e.target === hmo) UI.closeHandsModal(); });
     $('btn-pf-leave').onclick = leaveToLobby;
 
-    // username: persisted, applied to the hero seat at game start
+    // username + emoji: persisted, applied to the hero seat at game start
+    var EMOJI_CHOICES = ['🧑','👩','👨','🧔','👵','👴','🐶','🐱','🦊','🐼','🦁','🐯','🦄','🐸','👻','🤖','👽','🎃','😎','🤠','🥷','🧙','🦸','👑','💀','🔥','⚡','🌊','🍀','🎲'];
+    var emojiSel = $('cfg-emoji');
+    if (emojiSel) {
+      var curEm = '🧑';
+      try { curEm = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) {}
+      EMOJI_CHOICES.forEach(function (em) {
+        var o = document.createElement('option');
+        o.value = em; o.textContent = em;
+        if (em === curEm) o.selected = true;
+        emojiSel.appendChild(o);
+      });
+      emojiSel.addEventListener('change', function () {
+        try { localStorage.setItem('ps_player_emoji', emojiSel.value); } catch (e) {}
+      });
+    }
     var unameInput = $('cfg-username');
     if (unameInput) {
       unameInput.value = NamePrefs.getUsername();
