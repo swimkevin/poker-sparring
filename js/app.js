@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.7.0';
+  var APP_VERSION = '1.7.1';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -349,8 +349,10 @@
     if (fastForward) {
       setTimeout(function () { if (table) prepareNextHand(); }, 600);
     } else {
+      // Give the result room to breathe: a Next-hand button plus a 16s auto-deal
+      // countdown, so the board and revealed hands stay readable.
       UI.showHandEndControls({
-        autoMs: 6000,
+        autoMs: 16000,
         onNext: function () { if (table) prepareNextHand(); },
         onShowHero: hero.folded ? function () { heroShow = true; renderEndTable(); } : null
       });
@@ -456,7 +458,7 @@
           body: 'Rebuy to ' + UI.fmt(cfg.stack) + ' and keep training?',
           buttons: [
             { label: 'Leave', cb: leaveToLobby },
-            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; h.rebuys = (h.rebuys || 0) + 1; dealNext(); } }
+            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; h.rebuys = (h.rebuys || 0) + 1; sessionStartChips = cfg.stack; UI.setBankroll(0); dealNext(); } }
           ]
         });
         return;
@@ -944,6 +946,12 @@
     $('btn-leave').onclick = leaveToLobby;
     var sk = $('btn-skip');
     if (sk) sk.onclick = skipHand;
+    var bh = $('btn-hands');
+    if (bh) bh.onclick = function () { UI.openHandsModal(loadHandRecords()); };
+    var hmc = $('hands-modal-close');
+    if (hmc) hmc.onclick = UI.closeHandsModal;
+    var hmo = $('hands-modal');
+    if (hmo) hmo.addEventListener('click', function (e) { if (e.target === hmo) UI.closeHandsModal(); });
     $('btn-pf-leave').onclick = leaveToLobby;
 
     // username: persisted, applied to the hero seat at game start
@@ -1029,7 +1037,15 @@
       a.click();
     };
     $('btn-reset-stats').onclick = function () {
-      if (confirm('Reset all training stats?')) { clearStats(); UI.renderStats(); }
+      if (confirm('Reset all training stats?')) {
+        clearStats();
+        UI.renderStats();
+        // The top-right session pill is a live session figure, not stored
+        // stats: re-baseline it so it reads 0 immediately instead of going
+        // stale until the next refresh.
+        sessionStartChips = (table && table.players && table.players[0]) ? table.players[0].stack : 0;
+        UI.setBankroll(0);
+      }
     };
 
     UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);

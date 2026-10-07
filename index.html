@@ -97,6 +97,7 @@
       <div id="hand-info" class="hand-info">Hand #1</div>
       <div id="blinds-info" class="blinds-info"></div>
       <div id="last-result" class="last-result" aria-live="polite"></div>
+      <button id="btn-hands" class="ghost" title="View hand history">📖</button>
       <button id="btn-skip" class="ghost" title="Fold your hand (if live) and fast-forward to the next hand">⏩ Skip</button>
     </div>
     <div class="table-layout">
@@ -134,6 +135,7 @@
             <span id="bet-amount" class="bet-amount">0</span>
           </div>
           <div class="bet-row quicks">
+            <button class="chip-btn" data-frac="0">Min</button>
             <button class="chip-btn" data-frac="0.5">½ Pot</button>
             <button class="chip-btn" data-frac="0.75">¾ Pot</button>
             <button class="chip-btn" data-frac="1">Pot</button>
@@ -270,5 +272,15 @@
 <script src="js/online.js"></script>
 <script src="js/app.js"></script>
 <script src="js/update-check.js"></script>
+<!-- In-game hand history modal -->
+<div id="hands-modal" class="modal-overlay" hidden>
+  <div class="modal-panel" role="dialog" aria-label="Hand history">
+    <div class="modal-head">
+      <div class="modal-title">📖 Hand history</div>
+      <button id="hands-modal-close" class="ghost">✕ Close</button>
+    </div>
+    <div id="hands-modal-list" class="modal-list"></div>
+  </div>
+</div>
 </body>
 </html>
