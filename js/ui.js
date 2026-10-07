@@ -535,7 +535,10 @@ var UI = (function () {
     hideHandEndControls();
     if (!html) { w.hidden = true; return; }
     w.hidden = false;
-    w.innerHTML = html;
+    // Dismiss button: lets users see the board behind the banner on mobile.
+    w.innerHTML = '<button class="dismiss-btn" aria-label="Dismiss">✕</button>' + html;
+    var db = w.querySelector('.dismiss-btn');
+    if (db) db.onclick = function () { w.hidden = true; };
   }
 
   // Hand-end controls: a "Next hand" button plus an auto-deal countdown, and
