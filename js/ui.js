@@ -410,10 +410,11 @@ var UI = (function () {
       setTextFx(s.querySelector('.pbet'), p.bet > 0 ? 'bet ' + fmt(p.bet) : '');
       setPact(s.querySelector('.pact'), i, (opts.lastActions && opts.lastActions[i]) || '');
       var hole = [], faceUp = false;
-      if (!p.sittingOut && p.hole.length === 2 && (!p.folded || handEnd)) {
+      // Hero always keeps their cards (folding hides from table, not from self).
+      // Others' cards show only at hand end or when revealed.
+      var showHole = !p.sittingOut && p.hole.length === 2 && (!p.folded || p.isHero || handEnd);
+      if (showHole) {
         hole = p.hole;
-        // The hero always sees their own cards — folding hides them from the
-        // table, not from yourself. heroShow controls whether others see them.
         if (p.isHero) faceUp = true;
         else faceUp = handEnd || (opts.revealed && opts.revealed[i]);
       }
@@ -1239,3 +1240,99 @@ var UI = (function () {
 })();
 // Guarded Node export for headless geometry tests (browser: `module` is undefined).
 if (typeof module !== 'undefined' && module.exports) module.exports = UI;
+
+// ---------- mobile tab bar (phones) ----------
+(function initMobileTabs() {
+  if (typeof document === 'undefined') return;
+  var tabs = document.getElementById('mobile-tabs');
+  var panel = document.getElementById('mobile-panel');
+  var panelTitle = document.getElementById('mp-title');
+  var panelBody = document.getElementById('mp-body');
+  var closeBtn = document.getElementById('mp-close');
+  if (!tabs || !panel) return;
+
+  // Show the tab bar only on the game screen (mobile CSS handles visibility).
+  function syncTabBar() {
+    var onGame = !document.getElementById('screen-table').hidden ||
+                 !document.getElementById('screen-game').hidden;
+    tabs.style.display = '';
+  }
+
+  function setActive(name) {
+    tabs.querySelectorAll('.mtab').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tab === name);
+    });
+  }
+
+  function closePanel() {
+    panel.hidden = true;
+    setActive('table');
+  }
+
+  function openPanel(name, title, fill) {
+    panelTitle.textContent = title;
+    panelBody.innerHTML = '';
+    fill(panelBody);
+    panel.hidden = false;
+    setActive(name);
+  }
+
+  // Pull the latest coach tip HTML into the panel.
+  function fillCoach(body) {
+    var src = document.getElementById('coach-tip');
+    if (src && !src.hidden) {
+      body.innerHTML = src.innerHTML;
+    } else {
+      body.innerHTML = '<p class="fineprint">No tip right now — coach speaks up on your turn.</p>';
+    }
+  }
+
+  // Pull the hand log HTML into the panel.
+  function fillHistory(body) {
+    var src = document.getElementById('hand-log');
+    var wrap = document.createElement('div');
+    wrap.className = 'hand-log';
+    if (src) wrap.innerHTML = src.innerHTML;
+    if (!wrap.innerHTML.trim()) wrap.innerHTML = '<p class="fineprint">No hands yet.</p>';
+    body.appendChild(wrap);
+    var replay = document.createElement('button');
+    replay.className = 'ghost'; replay.style.marginTop = '0.75rem';
+    replay.textContent = '📖 Open full hand replayer';
+    replay.onclick = function () { closePanel(); UI.showScreen('hands'); };
+    body.appendChild(replay);
+  }
+
+  // Menu: quick actions (leave, skip, settings-ish).
+  function fillMenu(body) {
+    var mk = function (label, fn) {
+      var b = document.createElement('button');
+      b.className = 'ghost'; b.style.display = 'block';
+      b.style.width = '100%'; b.style.marginBottom = '0.5rem'; b.style.textAlign = 'left';
+      b.textContent = label; b.onclick = function () { closePanel(); fn(); };
+      body.appendChild(b);
+    };
+    mk('⏩ Skip to next hand', function () { var b = document.getElementById('btn-skip'); if (b) b.click(); });
+    mk('📊 View stats', function () { UI.showScreen('stats'); if (UI.renderStats) UI.renderStats(); });
+    mk('← Leave table', function () { var b = document.getElementById('btn-leave'); if (b) b.click(); });
+  }
+
+  tabs.addEventListener('click', function (e) {
+    var btn = e.target.closest('.mtab');
+    if (!btn) return;
+    var tab = btn.dataset.tab;
+    if (tab === 'table') { closePanel(); return; }
+    if (tab === 'coach') { openPanel('coach', '💡 Coach', fillCoach); return; }
+    if (tab === 'history') { openPanel('history', '📖 Hand history', fillHistory); return; }
+    if (tab === 'menu') { openPanel('menu', '☰ Menu', fillMenu); return; }
+  });
+  if (closeBtn) closeBtn.onclick = closePanel;
+
+  // Keep panel content fresh while open (coach tips update on your turn).
+  setInterval(function () {
+    if (panel.hidden) return;
+    var active = tabs.querySelector('.mtab.active');
+    if (!active) return;
+    if (active.dataset.tab === 'coach') fillCoach(panelBody);
+    if (active.dataset.tab === 'history') fillHistory(panelBody);
+  }, 1500);
+})();
