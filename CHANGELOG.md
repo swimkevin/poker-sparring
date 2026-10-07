@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.7] — 2026-10-07
+
+### Changed
+- **Friend bots play looser** — swimkev, Rohan, Amogh, and Nathan now call
+  wider when the price is small relative to their stack (40 chips from 3000
+  is nothing), and size up their bets a bit. More like a real friendly game.
+
 ## [1.8.6] — 2026-10-07
 
 ### Added
