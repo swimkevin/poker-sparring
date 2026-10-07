@@ -1253,10 +1253,15 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
 
   // Show the tab bar only on the game screen (mobile CSS handles visibility).
   function syncTabBar() {
-    var onGame = !document.getElementById('screen-table').hidden ||
-                 !document.getElementById('screen-game').hidden;
-    tabs.style.display = '';
+    var el = document.getElementById('screen-table');
+    var onGame = el && !el.hidden;
+    tabs.style.display = onGame ? '' : 'none';
   }
+  // Sync on screen changes.
+  if (typeof MutationObserver !== 'undefined') {
+    new MutationObserver(syncTabBar).observe(document.getElementById('screen-table'), { attributes: true, attributeFilter: ['hidden'] });
+  }
+  syncTabBar();
 
   function setActive(name) {
     tabs.querySelectorAll('.mtab').forEach(function (b) {
