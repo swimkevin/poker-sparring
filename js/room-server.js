@@ -349,7 +349,12 @@ class Room {
     var ep = this.table && this.table.players[p.seat];
     if (out && this.table && !this.table.handOver && ep && !ep.folded && !ep.allIn) {
       try { this.table.act(p.seat, 'fold'); }
-      catch (e) { ep.folded = true; ep.acted = true; } // not their turn: engine skips folded seats
+      catch (e) {
+        // Not their turn: mark folded manually, then let the engine check if
+        // the hand is over (_step -> _winByFold when one player remains).
+        ep.folded = true; ep.acted = true;
+        this.table._step();
+      }
     }
     this._pushRecent(p.name + (out ? ' sits out.' : ' is back in.'));
     this._afterTableChange();
