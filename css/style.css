@@ -504,7 +504,31 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .rp-story-sec { background: #0d1219; border: 1px solid #232d40; border-radius: 10px; padding: 0.7rem 1rem; }
 .rp-story-street { font-weight: 800; color: var(--gold); margin-bottom: 0.35rem; font-size: 0.95rem; }
 .rp-story-line { font-size: 0.92rem; padding: 0.12rem 0; color: var(--text); }
-.rp-story-result { background: #1c1a10; border: 1px solid var(--gold-dim); border-radius: 10px; padding: 0.8rem 1rem; font-size: 1rem; }
+.rp-story-result {
+  background: var(--panel2); border: 1px solid var(--gold-dim);
+  border-radius: 10px; padding: 0.8rem 1rem; font-size: 1rem; color: var(--text);
+}
+/* everyone's hands at the top of hand history */
+.rp-hands-grid {
+  display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1rem;
+  padding: 0.7rem; background: var(--panel2); border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.rp-hand-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  padding: 0.5rem 0.7rem; border-radius: 8px; background: var(--panel);
+  border: 1px solid var(--line); min-width: 90px;
+}
+.rp-hand-cell.hero { border-color: var(--gold); }
+.rp-hand-who { font-size: 0.8rem; font-weight: 700; }
+.rp-hand-cards { display: flex; gap: 4px; }
+.mini-card {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 44px; background: #fff; color: #111;
+  border-radius: 6px; font-weight: 800; font-size: 0.95rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.mini-card.red { color: #c0392b; }
 .rp-story-net { font-size: 1.15rem; font-weight: 800; text-align: center; }
 .rp-story-net.pos { color: var(--green); } .rp-story-net.neg { color: var(--red); }
 [data-theme="light"] .rp-story-sec { background: #fbfaf4; border-color: #d8d2bd; }
@@ -728,6 +752,12 @@ label { font-weight: 600; }
   flex-shrink: 0;
 }
 .update-toast-btn:hover { filter: brightness(1.08); }
+.update-toast-x {
+  background: none; border: none; color: var(--muted);
+  font-size: 1rem; cursor: pointer; padding: 6px 8px; flex-shrink: 0;
+  border-radius: 50%; line-height: 1;
+}
+.update-toast-x:hover { color: var(--text); background: rgba(128,128,128,0.15); }
 
 /* Quick start: the one-tap hero button above the setup wall */
 .quick-start-wrap { margin: 1.2rem 0 0.4rem; }
