@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.5';
+  var APP_VERSION = '1.8.6';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -409,24 +409,43 @@
   // ================= between hands =================
   function prepareNextHand() {
     if (gameMode === 'tourney') {
-      // Eliminations
+      // Eliminations (or rebuys, if enabled)
       table.players.forEach(function (p, i) {
         if (i !== 0 && !p.isHero && p.stack === 0 && !p.sittingOut) {
-          p.sittingOut = true;
-          UI.log('💀 ' + UI.escapeHtml(p.name) + ' is eliminated!');
+          if (cfg.tourneyRebuys) {
+            p.stack = 1000; p.rebuys = (p.rebuys || 0) + 1;
+            UI.log('🔄 ' + UI.escapeHtml(p.name) + ' rebuys (1000 chips)');
+          } else {
+            p.sittingOut = true;
+            UI.log('💀 ' + UI.escapeHtml(p.name) + ' is eliminated!');
+          }
         }
       });
       var hero = table.players[0];
       var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; });
       if (hero.stack === 0) {
         var place = alive.length + 1;
+        var buttons = [
+          { label: 'View stats', cb: function () { UI.showScreen('stats'); UI.renderStats(); } },
+          { label: 'New tournament', primary: true, cb: startGame }
+        ];
+        if (cfg.tourneyRebuys) {
+          buttons.unshift({
+            label: '🔄 Rebuy (1000 chips)', primary: true,
+            cb: function () {
+              hero.stack = 1000; hero.rebuys = (hero.rebuys || 0) + 1;
+              UI.log('🔄 You rebuy (1000 chips)');
+              prepareNextHand();
+            }
+          });
+          // New tournament is no longer the primary action when rebuy is available
+          buttons[2].primary = false;
+        }
         UI.modal({
           title: 'Eliminated — ' + ordinal(place) + ' place',
-          body: 'Tough run. ' + alive.length + ' players remain. Review your stats and run it back!',
-          buttons: [
-            { label: 'View stats', cb: function () { UI.showScreen('stats'); UI.renderStats(); } },
-            { label: 'New tournament', primary: true, cb: startGame }
-          ]
+          body: 'Tough run. ' + alive.length + ' players remain.' +
+            (cfg.tourneyRebuys ? ' Rebuy to stay in, or start fresh.' : ' Review your stats and run it back!'),
+          buttons: buttons
         });
         return;
       }
@@ -441,8 +460,9 @@
         });
         return;
       }
-      // Blind escalation every 8 hands
-      if (table.handNo % 8 === 0) {
+      // Blind escalation every N hands (configurable, default 8)
+      var blindEvery = Math.max(2, cfg.blindInterval || 8);
+      if (table.handNo % blindEvery === 0) {
         tourney.levelIdx = Math.min(tourney.levelIdx + 1, TOUR_LEVELS.length - 1);
         var lv = TOUR_LEVELS[tourney.levelIdx];
         table.setBlinds(lv.sb, lv.bb, lv.ante);
@@ -795,6 +815,8 @@
     cfg.bb = Math.max(cfg.sb + 1, parseInt($('cfg-bb').value, 10) || 10);
     cfg.botRebuys = $('cfg-botrebuys') ? $('cfg-botrebuys').checked : true;
     cfg.roundBets = $('cfg-roundbets') ? $('cfg-roundbets').checked : false;
+    cfg.blindInterval = Math.max(2, parseInt(($('cfg-blindint') || {}).value, 10) || 8);
+    cfg.tourneyRebuys = $('cfg-tourneyrebuys') ? $('cfg-tourneyrebuys').checked : false;
 
     if (mode === 'pushfold') { startPushFold(); return; }
 
