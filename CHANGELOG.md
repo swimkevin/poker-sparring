@@ -3,6 +3,23 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.4] — 2026-10-07
+
+### Fixed
+- **Hand history redesign**: everyone's hole cards now show in an organized
+  grid at the top (not scattered), result box uses readable colors in both
+  themes.
+- **Update toast is dismissible**: tap ✕ to finish your hand first; it reminds
+  you again in 30 minutes. Online tables auto-rejoin by name after refresh.
+
+## [1.8.3] — 2026-10-07
+
+### Fixed — mobile table UX
+- **Board no longer covered on mobile**: compact seat badges, smaller cards,
+  and a taller felt keep all 5 community cards visible even 8-handed.
+- **Winner banner is dismissible**: tap ✕ to see the board behind it; also
+  more compact on small screens.
+
 ## [1.8.2] — 2026-10-07
 
 ### Added
