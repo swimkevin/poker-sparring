@@ -119,7 +119,7 @@ var evaluate7 = evaluate;
 // Human-readable description, e.g. "Flush, Ace high" / "Two Pair, Kings and Tens".
 function describeHand(ev) {
   var k = ev.kickers, rn = (typeof rankName !== 'undefined') ? rankName : function (r) { return String(r); };
-  function plural(r) { return rn(r) + 's'; }
+  function plural(r) { var n = rn(r); return n === 'Six' ? 'Sixes' : n + 's'; }
   switch (ev.cat) {
     case 8: return k[0] === 14 ? 'Royal Flush' : 'Straight Flush, ' + rn(k[0]) + ' high';
     case 7: return 'Four of a Kind, ' + plural(k[0]);
