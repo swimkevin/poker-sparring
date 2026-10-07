@@ -1,155 +1,88 @@
-# 🂡 Poker Sparring
+# Poker Sparring
 
-**Train against offline poker AI.** A free, no-signup Texas Hold'em practice app: play cash games, heads-up, and tournaments against bots with distinct, customizable playing styles — or drill short-stack push/fold spots with instant feedback.
+**A free, no-signup Texas Hold'em practice app.** Spar against offline AI opponents modeled on the player types you actually meet at the table — the rock, the calling station, the maniac — or host a private online table and play real hands with friends from a link.
 
-▶️ **Live demo:** https://swimkevin.github.io/poker-sparring/
+▶️ **Play it:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1133%20assertions-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1500%2B%20assertions-brightgreen)
 
-## Key decisions
+## Why I built this
 
-The architecture calls that shape this repo, recorded as ADRs:
+I started playing poker with friends and kept running into the same problem: I knew the theory, but I had no good way to *practice* it. Real-money sites are expensive tuition. Charts don't fight back.
 
-- [Vanilla JS, zero runtime dependencies](docs/adr/0001-vanilla-js-zero-dependencies.md) — no framework, no build step; the layering has to be designed, not inherited.
-- [Local-first storage, no backend](docs/adr/0002-local-first-storage.md) — stats and hands in `localStorage`; a backend only when a feature needs it.
-- [Heuristic bots, honestly labeled](docs/adr/0003-heuristic-bots-not-ml.md) — transparent agents, never marketed as ML.
-- [Static deploy on GitHub Pages](docs/adr/0004-static-deploy-github-pages.md) — push to main, live in ~2 minutes.
+So I built myself a sparring partner.
+
+The idea is simple: instead of generic "poker AI," you practice against the actual archetypes that give you trouble — the rock who only plays aces, the calling station you can't bluff, the maniac raising every hand. Learn to exploit each style offline, build a custom bot that plays like your toughest friend, then take it to a real table (or just host a free online game here and take their chips instead).
+
+It's also my engineering playground: I use it to practice AI-assisted development the way I'd use it on the job — agents writing code, me reviewing and testing it, shipping weekly like a real product. Everything ships with tests and an honest changelog.
+
+*— Kevin*
+
+## What you can do
+
+- **Spar vs bots** — cash games, heads-up, and full tournaments against 5 built-in archetypes (The Rock 🪨, Calling Station 📞, The Maniac 🤪, TAG Shark 🦈, Tricky LAG 🎭), each with a "how to beat them" tip from classic poker literature
+- **Build your own opponent** — sliders for looseness, aggression, bluff frequency, and stubbornness; rename them after your friends
+- **Play online with friends** — host a table, share a 6-letter code, up to 8 players. Live on a Cloudflare Durable Object relay: rooms survive disconnects, dropped connections auto-reconnect and resync mid-hand
+- **Push/fold trainer** — short-stack shove-or-fold drills with instant, range-based feedback
+- **Hand replayer** — every hand is saved locally; step through them street by street
+- **Training stats** — VPIP/PFR/aggression, win rate in bb/100, stack graph, per-archetype records, and a leak tracker that spots your most common mistakes and explains the math
+- **Coach tips** — pot-odds and equity advice on your turn, in plain English ("Call 25 to win 65 — you need 38% equity. You have ~26%. Math says fold.")
+- **Learn** — 29-term glossary and curated books/sites
+- **No accounts, no tracking** — everything lives in your browser
+
+## How it's built
+
+**Vanilla JS. Zero runtime dependencies. No build step.** The poker engine (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser. `ui.js` renders, `app.js` conducts.
+
+Online play runs on a **Cloudflare Workers relay** (`worker/`): one Durable Object per room, authoritative game state, rooms persisted to storage so they survive worker eviction, per-seat snapshots so your hole cards never leave the server for anyone else's eyes. The client auto-reconnects with backoff and reclaims its seat by name.
+
+Key decisions are recorded as ADRs in `docs/adr/` — vanilla JS, local-first storage, honestly-labeled heuristic bots, static deploy.
 
 ## Verification
 
-**144 test cases · 1,133 assertions per run · 4 layers.** The headline number is
-assertions, not cases — most execute inside simulation loops, which is the
-point: this suite tests *invariants* (properties that must hold across thousands
-of random hands), not just examples. No coverage-percentage badge: 100% coverage
-is a [vanity metric](https://hackernoon.com/why-100percent-test-coverage-is-a-vanity-metric);
-what's covered is every load-bearing path — money math, action legality,
-bot behavior — and [what isn't](docs/TESTING.md#what-we-dont-test-and-why) is
-documented.
+**~1,500 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
 
-```mermaid
-flowchart TD
-    E2E["Smoke · boots the real app in jsdom,\nauto-plays hands, asserts zero JS errors"]
-    COMP["Component · 46 — real ui.js rendering:\nXSS escaping, replay viewer, roster rename UI"]
-    NET["Netplay · 46 — room protocol:\nseating, timers, pause, hole-card privacy"]
-    UNIT["Unit + integration · 1041 assertions —\nevaluator, engine, equity, bots, stats, replay, names"]
-    E2E --> COMP --> NET --> UNIT
+```bash
+npm test          # unit + component + smoke + netplay + worker
+npm run serve     # → http://localhost:8000
 ```
 
-What the suite actually proves:
-
-- **Money is conserved.** A 300-hand randomized soak asserts chip conservation
-  after every hand — chips can never be created or destroyed, whatever the cards.
-- **Every action is legal.** A sweep across all 8 bot archetypes × 30 random
-  tables asserts every produced move passes engine legality; humans in online
-  rooms get server-side validation too.
-- **Bugs stay fixed.** Every entry in the [incident log](docs/INCIDENTS.md)
-  ships with a regression test verified to fail without the fix (e.g. the
-  v1.4.1 showdown crash, the Online-tab `var`/`class` parse collision).
-- **Humans can't see each other's cards.** Netplay tests assert per-seat
-  snapshots contain hole cards only for the requesting seat.
-
-Full strategy, layer rationale, and honest limitations: [docs/TESTING.md](docs/TESTING.md).
-[docs/INCIDENTS.md](docs/INCIDENTS.md) ·
-[docs/AI-WORKFLOW.md](docs/AI-WORKFLOW.md) (how AI-assisted development is run here:
-guardrails, verification, human ownership).
-
-## Why this exists
-
-I'm Kevin Song, a software engineer (currently building auth infrastructure at Capital One). I started this project in October 2026 with two goals:
-
-1. **Build something genuinely useful.** Most poker tools are either real-money sites or static charts. I wanted a *sparring partner*: offline opponents modeled on the player archetypes you actually meet — the rock who only plays aces, the calling station you can't bluff, the maniac who raises every hand. Practice exploiting each style, then build a custom bot to drill the exact player type that gives you trouble.
-2. **Level up as an engineer.** This is my deliberate practice ground for AI-assisted development: prompting, reviewing and testing agent-written code, designing multi-agent collaboration, and shipping iteratively like a real product — weekly releases, QA passes, and honest changelogs. The "AI" here is used the way I'd use it on the job: as leverage, with verification.
-
-On the "AI" label, to be precise: the opponents are **transparent heuristic agents** (tiered hand ranges, Monte Carlo equity, pot-odds math) — not neural networks or trained models. I call it "offline bot AI" and keep every decision rule readable and tunable. That trade-off is intentional: it's explainable, testable, runs with zero dependencies, and teaches real poker concepts instead of hiding behind a black box.
-
-## Features
-
-- **4 game modes** — cash games (auto top-ups), heads-up, full tournaments (escalating blinds + antes, eliminations), and a push/fold trainer
-- **5 built-in AI archetypes** — The Rock 🪨, Calling Station 📞, The Maniac 🤪, TAG Shark 🦈, Tricky LAG 🎭, each with a "how to beat" exploit tip grounded in classic poker literature
-- **Custom bot builder** — sliders for looseness, aggression, bluff frequency, and call-down stubbornness; saved to your browser
-- **Real poker engine** — full betting rounds, side pots, all-ins, split pots with odd-chip rules, antes, heads-up blind rules
-- **Coach tips + leak tracker** — contextual pot-odds/equity advice on your turn; the app spots 4 common hero mistakes and explains the math behind them
-- **Learn screen** — essential books, free training sites, and a 29-term plain-English glossary
-- **Training stats** — VPIP/PFR/aggression factor, win rate (bb/100, shown only after 20+ hands), stack graph, per-archetype records, hand history export (JSON)
-- **100% offline** — no accounts, no servers, no tracking. Stats live in `localStorage`.
-
-## How the bot AI works
-
-Transparent, tunable heuristics (see `js/bots.js`):
-
-1. **Preflop**: hole cards are bucketed into 6 strength tiers; each archetype has open/call/3-bet tier thresholds adjusted for position, plus push/fold logic under 13bb.
-2. **Postflop**: Monte Carlo equity estimation vs opponent ranges, combined with made-hand strength and draw detection, drives bet/call/fold decisions; pot-odds math gates every call.
-3. **Personality**: aggression shifts value-bet thresholds, bluff frequency drives bluffs/semi-bluffs, stubbornness widens call-downs.
-4. **Push/fold trainer**: facing-a-shove verdicts are computed against the *shover's range* (each archetype's own shoving tiers), not against random hands — because a shover's range is much stronger than "any two cards."
-
-Bot-vs-bot simulations confirm the styles separate cleanly (rock ~7% VPIP → maniac ~74%), and an automated sweep verifies every archetype only ever produces legal moves.
+What the suite proves: money can't be created or destroyed · every action is legal · humans can't see each other's cards · dropped connections resync. Honest limits are documented in [docs/TESTING.md](docs/TESTING.md).
 
 ## Project structure
 
 ```
 poker-sparring/
-├── index.html          # App shell (screens: setup, table, push/fold, bots, stats, learn)
-├── css/style.css       # Dark casino theme, no frameworks
-├── js/
-│   ├── cards.js        # Card primitives
-│   ├── evaluator.js    # 7-card hand evaluator (integer-scored)
-│   ├── equity.js       # Monte Carlo equity, range equity, hand strength, draws
-│   ├── engine.js       # Table engine: blinds, betting rounds, side pots, showdown
-│   ├── bots.js         # Archetypes + heuristic decision engine
-│   ├── pushfold.js     # Push/fold drill scenarios + range-based feedback
-│   ├── replay.js       # Hand-history capture + replay state machine (DOM-free)
-│   ├── stats.js        # localStorage training stats + leak records
-│   ├── ui.js           # DOM rendering (no game logic)
-│   └── app.js          # Game flow, event pump, controls, tournament logic
-├── tests/
-│   ├── test.js           # Unit + integration: evaluator, engine, equity, bots, stats
-│   └── component.test.js # jsdom component tests: rendering, escaping, UI states
-├── docs/
-│   ├── ARCHITECTURE.md # Module map, data flow, testing strategy, deployment
-│   ├── ROADMAP.md      # Weekly iteration plan
-│   └── MOBILE.md       # Phone-web vs PWA vs App Store trade-offs
-├── package.json        # Scripts only — zero runtime dependencies
-├── CHANGELOG.md        # Release notes
-└── CLAUDE.md / AGENTS.md # Contributor + AI-agent guides
+├── index.html / css / js      # the app — no build, no bundler
+│   └── js/
+│       ├── cards/evaluator/equity/engine.js  # DOM-free poker core
+│       ├── bots.js            # archetypes + heuristic decision engine
+│       ├── room-server.js       # authoritative room (used by worker + mock)
+│       ├── netplay.js           # WebSocket client w/ auto-reconnect
+│       ├── online.js            # online lobby + table UI
+│       ├── ui.js / app.js       # rendering / game flow
+│       └── update-check.js      # "new version available" toast
+├── worker/                    # Cloudflare relay (Durable Object rooms)
+├── tests/                     # unit, component (jsdom), smoke, netplay, worker
+├── docs/                      # ADRs, architecture, testing strategy, roadmap
+└── CHANGELOG.md
 ```
-
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full technical write-up: layering rules, event flow, and why the poker core is DOM-free (it runs unchanged in Node tests and is ready for a React Native port).
 
 ## Run it
 
-No build step:
+No build step. `npm test`, `npm run serve`, or just open `index.html`.
 
-```bash
-npm test          # full suite: 1041 unit/integration + 46 component + 46 netplay + smoke
-npm run serve     # → http://localhost:8000
-```
-
-Or just open `index.html` directly.
-
-## How the live site works (GitHub Pages)
-
-The demo at `swimkevin.github.io/poker-sparring` is **GitHub Pages**: GitHub serves the files on the `main` branch as a static website, free, with automatic redeploys on every push. There is no backend, no database, no server code — which is exactly why the app is pure HTML/CSS/JS with all state in the browser's `localStorage`.
-
-Practical consequences:
-- Your stats and custom bots live **in your browser on your device**. Clearing site data resets them; they don't sync between devices.
-- No login, no multiplayer, no real-money anything — by architecture, not just by policy.
-- I deliberately skipped a custom domain: the `github.io` URL is the standard look for a portfolio side project, and a custom domain adds cost and DNS setup for zero hiring benefit.
+The demo at `swimkevin.github.io/poker-sparring` is GitHub Pages (static); online play uses the Cloudflare relay above. Your stats and custom bots live in your browser — clearing site data resets them.
 
 ## Limitations (honest)
 
-- **Coaching is heuristic, not solver-certified.** Tips and leak detection use pot-odds/equity math and tier charts — good fundamentals, not GTO solutions.
-- **Monte Carlo estimates vary** run to run; bot play includes deliberate randomization to feel human.
-- **No cloud sync or multiplayer** — local browser only, by design of the static hosting.
-- **Tournament ICM is simplified** (chip-EV based, no payout-structure modeling yet).
-- **Mobile web works** but isn't yet installable/offline-first — see [`docs/MOBILE.md`](docs/MOBILE.md) for the PWA/App Store path.
+- **Bots are heuristics, not solvers.** Tiered ranges, Monte Carlo equity, pot-odds math — good fundamentals, not GTO. They're labeled as such everywhere.
+- **Coaching is math-based, not solver-certified.**
+- **Online is beta** — built for friends, not real money (there is none) or big public tables.
 
 ## Roadmap
 
-Weekly iterations — see [`docs/ROADMAP.md`](docs/ROADMAP.md) for the plan and [`CHANGELOG.md`](CHANGELOG.md) for what's shipped. Near-term: hand replayer, more drill packs (3-bet pots, blind defense, ICM), PWA installability, range charts.
-
-## Contributing
-
-See [CLAUDE.md](CLAUDE.md) (full guide) and [AGENTS.md](AGENTS.md) (quick version): architecture, conventions, and how to run tests. AI agents welcome — that's part of the point.
+Weekly iterations — [`docs/ROADMAP.md`](docs/ROADMAP.md) for the plan, [`CHANGELOG.md`](CHANGELOG.md) for what's shipped. Next: 3-bet/blind-defense/ICM drill packs, sound design, range charts.
 
 ---
 
