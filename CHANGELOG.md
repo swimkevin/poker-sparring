@@ -12,10 +12,27 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 - **Rooms survive host disconnects + worker eviction:** room state persists to
   Durable Object storage (`Room.toJSON`/`fromJSON`); a guest joining minutes
   after the host vanished finds the room intact.
+- **Fast redial no longer loses the seat:** a reconnect arriving before the
+  server processes the old socket's close is now treated as a session takeover
+  instead of being rejected as "name taken."
+- **Online status accuracy:** the home status pill now reports the actual mode
+  ("Live relay ready" vs "Local mock") instead of always claiming the mock.
+- **Coach tip naming:** hole cards are named high-card-first ("Jack Nine")
+  instead of in random deal order.
 
 ### Added
 - **Update-available toast:** a long-open tab polls `version.txt`; when a new
   release lands it offers one-click Refresh instead of needing a hard refresh.
+- **One-tap start ("Deal me in"):** a hero button on Play starts a cash game
+  vs 3 bots immediately — no configuration wall.
+- **Skip hand:** fast-forwards bot-vs-bot streets after the hero folds
+  (or folds the hero's live hand first).
+- **Turn status line:** explicit "Your turn" / "Waiting for X…" so it's never
+  ambiguous why the action buttons are idle; plus a persistent compact
+  last-result line in the top bar.
+- **Accessibility:** cards announce rank and suit to screen readers; the raise
+  slider has an accessible name.
+- **Bot renames reject duplicates** inline (two "Doyle"s at one table).
 
 ## [1.5.0] — 2026-10-05
 
