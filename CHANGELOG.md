@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.6.2] — 2026-10-07
+
+### Fixed
+- Session bankroll pill's tooltip/accessible label now says chips, not
+  "big blinds".
+
 ## [1.6.1] — 2026-10-07
 
 ### Fixed
