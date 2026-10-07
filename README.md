@@ -4,7 +4,7 @@
 
 ▶️ **Play it:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.5-blue)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.9-blue)
 
 ## Why I built this
 
@@ -21,7 +21,7 @@ It's also my engineering playground: I use it to practice AI-assisted developmen
 ## What you can do
 
 ### ♠️ Spar vs bots (offline)
-- **Cash games, heads-up, and full tournaments** against 10 built-in opponents (Tricky LAG 🎭, Rohan 🙂, The Maniac 🤪, Nathan 🪤, TAG Shark 🦈, The Grinder 💪, Bubble Boy 🫧, The Rock 🪨, Calling Station 📞, plus custom bots you design), each with a "how to beat them" tip from classic poker literature
+- **Cash games, heads-up, and full tournaments** against 10 built-in opponents (swimkev 🙂, Rohan 🙂, Amogh 🙂, Nathan 🪤, Tricky LAG 🎭, The Maniac 🤪, TAG Shark 🦈, The Grinder 💪, Bubble Boy 🫧, The Rock 🪨, Calling Station 📞, plus custom bots you design), each with a "how to beat them" tip from classic poker literature
 - **Build your own opponent** — sliders for looseness, aggression, bluff frequency, and stubbornness; rename them after your friends
 - **Push/fold trainer** — short-stack shove-or-fold drills with instant, range-based feedback
 - **Hand replayer** — every hand is saved locally; step through them street by street
@@ -29,7 +29,9 @@ It's also my engineering playground: I use it to practice AI-assisted developmen
 - **Coach tips** — pot-odds and equity advice on your turn, in plain English ("Call 25 to win 65 — you need 38% equity. You have ~26%. Math says fold.")
 - **SB/BB badges** — small blind and big blind shown on seats, just like the dealer button
 - **Pick your emoji** — choose your avatar; shows above your seat offline and online
-- **Exact bet amounts** — bet any amount you like (67, 58, whatever); optional "round to 5s" setting
+- **Exact bet amounts** — bet any amount you like (27, 58, whatever); optional "round to 5s" setting
+- **Collapsible result banner** — hand results start as a slim bar that never blocks the board; tap to expand
+- **Tournament options** — set the blind-up interval ("every N hands") and allow rebuys
 
 ### 🌐 Play online with friends
 Host a table, share a 6-letter code, up to 8 players. No accounts, no signup — just a link.
@@ -41,6 +43,7 @@ Host a table, share a 6-letter code, up to 8 players. No accounts, no signup —
 - **Sit out / back in** — take a break mid-session; your seat is held and you auto-fold
 - **Resilient by design** — rooms live on a Cloudflare Durable Object relay: dropped connections auto-reconnect and resync mid-hand, and if the host disconnects, another player can take over
 - **SB/BB + emoji avatars** — blind positions and your chosen emoji show on every seat
+- **👁 Show my cards** — cards are mucked by default online; reveal them voluntarily after a hand if you want
 
 ### 📚 Learn
 - 29-term glossary and curated books/sites
