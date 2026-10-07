@@ -430,7 +430,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   /* Make room for the fixed bar so it doesn't cover content */
-  .table-wrap, .game-screen { padding-bottom: 140px; }
+  #screen-table, #screen-game { padding-bottom: 140px; }
 }
 
 /* Opponent count stepper */
@@ -941,3 +941,83 @@ label { font-weight: 600; }
 .ledger-head { font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--line); margin-bottom: 0.25rem; }
 .ledger-row .pos { color: var(--green); }
 .ledger-row .neg { color: var(--red); }
+
+/* ============ MOBILE TAB BAR + PANELS (phones) ============ */
+.mobile-tabs, .mobile-panel { display: none; }
+
+@media (max-width: 900px) {
+  /* Compact game screen: no page scroll, everything fits the viewport */
+  #screen-game {
+    height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  #screen-game .table-topbar { flex: 0 0 auto; padding: 0.4rem 0.5rem; }
+  #screen-game .table-topbar .hand-info { font-size: 0.95rem; }
+  #screen-game .table-topbar .blinds-info,
+  #screen-game .table-topbar .last-result { font-size: 0.8rem; }
+  #screen-game .table-layout {
+    flex: 1 1 auto; min-height: 0; display: block; overflow: hidden;
+    padding: 0 0.4rem;
+  }
+  #screen-game .felt-wrap { height: 100%; }
+  /* Smaller felt + cards on phones (PokerNow-style compactness) */
+  #screen-game .felt { height: 100%; min-height: 0; border-radius: 24px; }
+  #screen-game .card { width: 34px; height: 48px; font-size: 0.85rem; border-radius: 6px; }
+  #screen-game .card .crank { font-size: 0.8rem; }
+  #screen-game .community { gap: 4px; }
+  #screen-game .pot { font-size: 0.95rem; padding: 0.2rem 0.7rem; }
+  #screen-game .street-label { font-size: 0.7rem; }
+  /* Compact seats */
+  #screen-game .seat { padding: 0.3rem 0.4rem; font-size: 0.8rem; border-radius: 10px; }
+  #screen-game .seat .pname { font-size: 0.8rem; }
+  #screen-game .seat .pstack { font-size: 0.75rem; }
+  #screen-game .seat .pcards .card { width: 26px; height: 36px; font-size: 0.7rem; }
+  #screen-game .pos-badge { font-size: 0.6rem; padding: 0.05rem 0.3rem; }
+  /* Hide the desktop side panel on phones — Coach/History live in tab panels */
+  #screen-game .side-panel { display: none; }
+  /* Hero bar sits above the tab bar */
+  #screen-game .hero-bar {
+    flex: 0 0 auto;
+    position: fixed; bottom: 64px; left: 0; right: 0; z-index: 60;
+    margin: 0; border-radius: 14px 14px 0 0;
+    padding: 0.5rem 0.6rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+    background: var(--panel);
+  }
+  #screen-game .hero-bar .controls { gap: 0.4rem; }
+  #screen-game .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; }
+  #screen-game .hero-cards .card { width: 40px; height: 56px; }
+
+  /* Bottom tab bar */
+  .mobile-tabs {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: var(--panel); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .mtab {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 2px; padding: 0.5rem 0 0.4rem; background: none; border: none;
+    color: var(--muted); font: inherit; cursor: pointer;
+  }
+  .mtab-icon { font-size: 1.3rem; line-height: 1; }
+  .mtab-label { font-size: 0.65rem; font-weight: 600; }
+  .mtab.active { color: var(--gold); }
+  .mtab:active { opacity: 0.7; }
+
+  /* Slide-up panel for Coach / History / Menu */
+  .mobile-panel {
+    display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    max-height: 70dvh; background: var(--panel);
+    border-radius: 16px 16px 0 0; border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 32px rgba(0,0,0,0.4);
+    transform: translateY(0); transition: transform 0.25s ease;
+  }
+  .mobile-panel[hidden] { display: none; }
+  .mp-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.7rem 1rem; border-bottom: 1px solid var(--line);
+  }
+  .mp-title { font-weight: 700; font-size: 1rem; }
+  .mp-body { padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px)); overflow-y: auto; max-height: calc(70dvh - 60px); }
+  .mp-body .coach { font-size: 0.9rem; }
+  .mp-body .hand-log { max-height: none; font-size: 0.85rem; }
+}
