@@ -1010,8 +1010,11 @@ var UI = (function () {
           '<div class="rp-hand-cards">';
         if (h.hole && h.hole.length === 2) {
           h.hole.forEach(function (c) {
-            html += '<span class="mini-card ' + (c.s === '♥' || c.s === '♦' ? 'red' : '') + '">' +
-              escapeHtml(c.r) + escapeHtml(c.s) + '</span>';
+            // Cards stored as {r: 2-14, s: 0-3}; convert to display format.
+            var rank = { 14: 'A', 13: 'K', 12: 'Q', 11: 'J' }[c.r] || String(c.r);
+            var suit = ['♠', '♥', '♦', '♣'][c.s] || '';
+            var red = (c.s === 1 || c.s === 2) ? ' red' : '';
+            html += '<span class="mini-card' + red + '">' + escapeHtml(rank) + escapeHtml(suit) + '</span>';
           });
         } else {
           html += '<span class="hint">—</span>';
@@ -1050,7 +1053,7 @@ var UI = (function () {
     if (end && end.winners && end.winners.length) {
       html += '<div class="rp-story-result">' + end.winners.map(function (w) {
         var nm = w.names.map(escapeHtml).join(' & ');
-        var label = w.uncalled ? ' takes back (uncalled)' : ' win';
+        var label = w.uncalled ? ' takes back (uncalled)' : ' wins';
         return '<div>' + nm + escapeHtml(label) + ' <b>' + fmt(w.amount) + '</b>' +
           (w.hand ? ' <span class="hint">' + escapeHtml(w.hand) + '</span>' : '') + '</div>';
       }).join('') + '</div>';
