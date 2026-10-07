@@ -237,6 +237,16 @@ MockRoomServer.prototype._route = function (rec, msg) {
       if (!r.ok) this._deliver(rec, { t: 'error', message: r.error });
       else this._broadcastState(entry);
       break;
+    case 'chat':
+      r = room.sendChat(rec.id, msg.text);
+      if (!r.ok) this._deliver(rec, { t: 'error', message: r.error });
+      else this._broadcastState(entry);
+      break;
+    case 'rebuy':
+      r = room.rebuy(rec.id);
+      if (!r.ok) this._deliver(rec, { t: 'error', message: r.error });
+      else this._broadcastState(entry);
+      break;
     default:
       this._deliver(rec, { t: 'error', message: 'Unknown message.' });
   }

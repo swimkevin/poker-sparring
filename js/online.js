@@ -79,7 +79,12 @@ var Online = (function () {
   var _wsMem = '';
   function loadWsUrl() {
     try {
-      if (typeof localStorage !== 'undefined') return localStorage.getItem(WSURL_KEY) || '';
+      // null = never set -> default relay. '' = user explicitly cleared ->
+      // mock mode. Don't conflate the two or clearing won't stick.
+      if (typeof localStorage !== 'undefined') {
+        var v = localStorage.getItem(WSURL_KEY);
+        return v == null ? null : v;
+      }
     } catch (e) { /* fall through */ }
     return _wsMem;
   }
@@ -270,7 +275,7 @@ var Online = (function () {
       }
     }
     var wu = $('on-wsurl'), savedWu = loadWsUrl();
-    if (wu && !wu.value) wu.value = savedWu || DEFAULT_WS_URL;
+    if (wu && !wu.value) wu.value = savedWu == null ? DEFAULT_WS_URL : savedWu;
     updateHomeConn();
     if (wu) wu.addEventListener('input', updateHomeConn);
   }
