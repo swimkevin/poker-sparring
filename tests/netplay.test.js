@@ -239,5 +239,86 @@ function lastState(client) {
   srv.close();
 })();
 
+// ---------- NetClient auto-reconnect (stubbed WebSocket) ----------
+// Regression: a dropped socket used to leave the client on a stale lobby
+// forever ("Disconnected from the relay." with no redial). The client must
+// redial with backoff and re-send its join on every (re)connect so the Room
+// reclaims the seat and the snapshot resyncs it (lobby or mid-game).
+(function () {
+  function FakeWS(url) {
+    this.url = url;
+    this.readyState = 0;
+    this.sent = [];
+    FakeWS.instances.push(this);
+  }
+  FakeWS.instances = [];
+  FakeWS.prototype.send = function (d) { this.sent.push(d); };
+  FakeWS.prototype.close = function () { this._drop(); };
+  FakeWS.prototype._open = function () { this.readyState = 1; if (this.onopen) this.onopen(); };
+  FakeWS.prototype._drop = function () { this.readyState = 3; if (this.onclose) this.onclose(); };
+
+  var realWS = global.WebSocket, realST = global.setTimeout;
+  var delays = [];
+  global.WebSocket = FakeWS;
+  // Run redial timers immediately, but record the backoff delays.
+  global.setTimeout = function (fn, ms) { delays.push(ms); fn(); return 0; };
+
+  function freshClient(maxTries) {
+    var nc = new NP.NetClient();
+    var events = [];
+    nc.onopen = function () { events.push('open'); nc.send({ t: 'join', name: 'G' }); };
+    nc.onreconnecting = function (n) { events.push('reconnecting' + n); };
+    nc.onclose = function () { events.push('close'); };
+    nc.onerror = function () { events.push('error'); };
+    nc.connect('ws://relay/room/ABC123/ws?name=G', { autoReconnect: true, maxTries: maxTries });
+    return { nc: nc, events: events };
+  }
+
+  // Drop -> redial -> reopen re-sends join on the new socket.
+  FakeWS.instances = []; delays = [];
+  var c1 = freshClient(3);
+  FakeWS.instances[0]._open();
+  FakeWS.instances[0]._drop();          // network drop; redial runs immediately
+  FakeWS.instances[1]._open();          // redialled socket opens
+  ok(FakeWS.instances.length === 2, 'reconnect redials after a drop');
+  ok(FakeWS.instances[1].url === 'ws://relay/room/ABC123/ws?name=G', 'redial targets the same room URL');
+  ok(c1.events.join(',') === 'open,reconnecting1,open', 'reconnecting fires, then open again');
+  ok(FakeWS.instances[0].sent.length === 1 && FakeWS.instances[1].sent.length === 1 &&
+     JSON.parse(FakeWS.instances[1].sent[0]).t === 'join',
+     'join re-sent on the redialled socket (seat reclaim + resync)');
+  ok(delays.length === 1 && delays[0] === 2000, 'first redial backs off 2s');
+
+  // Backoff caps at 8s (consecutive drops without a successful open).
+  FakeWS.instances = []; delays = [];
+  var c2 = freshClient(12);
+  FakeWS.instances[0]._open();
+  for (var i = 0; i < 5; i++) {
+    FakeWS.instances[FakeWS.instances.length - 1]._drop();
+  }
+  ok(delays.slice(0, 3).join(',') === '2000,4000,8000' &&
+     Math.max.apply(null, delays) === 8000, 'backoff grows, then caps at 8s');
+
+  // Retries exhausted -> onclose fires once (give-up), no more redials.
+  FakeWS.instances = []; delays = [];
+  var c3 = freshClient(2);
+  FakeWS.instances[0]._open();
+  FakeWS.instances[0]._drop();          // try 1 redials
+  FakeWS.instances[1]._drop();          // try 2 redials
+  FakeWS.instances[2]._drop();          // exhausted -> give up
+  ok(c3.events.join(',') === 'open,reconnecting1,reconnecting2,close', 'give-up fires onclose after maxTries');
+  ok(FakeWS.instances.length === 3, 'no redial after give-up');
+
+  // Intentional close() is silent: no redial, no onclose.
+  FakeWS.instances = []; delays = [];
+  var c4 = freshClient(3);
+  FakeWS.instances[0]._open();
+  c4.nc.close();
+  ok(c4.events.join(',') === 'open', 'intentional close fires nothing');
+  ok(FakeWS.instances.length === 1, 'intentional close does not redial');
+
+  global.WebSocket = realWS;
+  global.setTimeout = realST;
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

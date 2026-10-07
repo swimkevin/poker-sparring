@@ -272,18 +272,35 @@ var Online = (function () {
   // NetClient to the same {send, close, onmessage} shape the UI expects.
   function liveAdapter(url, code, name, firstMsg) {
     var nc = new NetClient();
+    var relayHost = url.replace(/^wss?:\/\//, '');
+    var everConnected = false;
     var adapter = {
       send: function (m) { nc.send(m); },
       close: function () { nc.close(); },
       onmessage: null, seat: -1
     };
-    nc.onopen = function () { nc.send(firstMsg); };
+    // Re-sent on every (re)connect: the Room reclaims our seat by name and
+    // the snapshot resyncs us to the current state, lobby or mid-game.
+    nc.onopen = function () {
+      everConnected = true;
+      nc.send(firstMsg);
+      setConn('Live relay — ' + relayHost);
+      clearErrors();
+    };
     nc.onmessage = function (m) { if (adapter.onmessage) adapter.onmessage(m); };
-    nc.onerror = function () { showError('Could not reach the relay. Check the URL.'); };
-    nc.onclose = function () { showError('Disconnected from the relay.'); };
-    nc.connect(url + '/room/' + code + '/ws?name=' + encodeURIComponent(name));
+    nc.onerror = function () { /* onreconnecting/onclose own the status UX */ };
+    nc.onreconnecting = function () { setConn('Reconnecting…'); };
+    nc.onclose = function () {
+      // Only fires after auto-reconnect gives up (intentional closes are silent).
+      setConn('Disconnected');
+      showError(everConnected
+        ? 'Connection lost. Leave and rejoin to get back in.'
+        : 'Could not reach the relay. Check the URL.');
+    };
+    nc.connect(url + '/room/' + code + '/ws?name=' + encodeURIComponent(name),
+               { autoReconnect: true, maxTries: 12 });
     mode = 'live';
-    setConn('Live relay — ' + url.replace(/^wss?:\/\//, ''));
+    setConn('Live relay — ' + relayHost);
     roomCode = code;
     attachClient(adapter);
     view = 'lobby';

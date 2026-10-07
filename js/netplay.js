@@ -34,15 +34,23 @@ function NetClient() {
   this.ws = null;
   this.onmessage = null;
   this.onopen = null;
-  this.onclose = null;
+  this.onclose = null;        // fires only when the socket is gone for good
   this.onerror = null;
+  this.onreconnecting = null; // fires before each automatic redial: (tryNumber)
   this._url = null;
   this._reconnectTries = 0;
+  this._autoReconnect = false;
+  this._maxTries = 12;
+  this._userClosed = false;
 }
 
-NetClient.prototype.connect = function (url) {
+NetClient.prototype.connect = function (url, opts) {
   var self = this;
   this._url = url;
+  opts = opts || {};
+  this._autoReconnect = !!opts.autoReconnect;
+  if (opts.maxTries) this._maxTries = opts.maxTries;
+  this._userClosed = false;
   if (typeof WebSocket === 'undefined') {
     if (self.onerror) self.onerror(new Error('WebSocket is not available in this environment.'));
     return;
@@ -59,7 +67,25 @@ NetClient.prototype.connect = function (url) {
     try { m = JSON.parse(ev.data); } catch (e) { return; }
     if (self.onmessage) self.onmessage(m);
   };
-  ws.onclose = function () { if (self.onclose) self.onclose(); };
+  ws.onclose = function () {
+    // A dropped socket redials with backoff while autoReconnect is on. The app
+    // re-sends its join on every onopen, which is how the Room reclaims the
+    // seat and the client resyncs to the current state (lobby or mid-game).
+    // Intentional close() is silent: no redial, no onclose.
+    if (self._userClosed) return;
+    if (self._autoReconnect && self._reconnectTries < self._maxTries) {
+      self._reconnectTries++;
+      var delay = Math.min(1000 * Math.pow(2, self._reconnectTries), 8000);
+      if (self.onreconnecting) { try { self.onreconnecting(self._reconnectTries); } catch (e) {} }
+      setTimeout(function () {
+        if (self._userClosed) return;
+        self.connect(url, opts);
+      }, delay);
+      return;
+    }
+    self._reconnectTries = 0;
+    if (self.onclose) self.onclose();
+  };
   ws.onerror = function (e) { if (self.onerror) self.onerror(e); };
 };
 
@@ -70,22 +96,8 @@ NetClient.prototype.send = function (obj) {
 };
 
 NetClient.prototype.close = function () {
+  this._userClosed = true; // intentional: the pending redial (if any) stands down
   if (this.ws) { try { this.ws.close(); } catch (e) {} this.ws = null; }
-};
-
-// Reconnect stub: best-effort re-dial with backoff, then gives up and fires
-// onclose. Rejoin (same name + code) is re-issued by the app layer, which is
-// how the Room reclaims the seat. Production hardening lives in worker/README.
-NetClient.prototype.reconnect = function (maxTries) {
-  var self = this;
-  maxTries = maxTries || 3;
-  if (!this._url || this._reconnectTries >= maxTries) {
-    if (self.onclose) self.onclose();
-    return;
-  }
-  this._reconnectTries++;
-  var delay = Math.min(1000 * Math.pow(2, this._reconnectTries), 8000);
-  setTimeout(function () { self.connect(self._url); }, delay);
 };
 
 // ---------- MockRoomServer: in-page server for prototype + tests ----------
