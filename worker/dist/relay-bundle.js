@@ -419,7 +419,7 @@ var require_engine = __commonJS({
           var s = self.button;
           for (var k = 0; k < live.length; k++) {
             s = self._nextSeat(s, function(p) {
-              return p.stack > 0 || p.totalBet > 0;
+              return !p.sittingOut && (p.stack > 0 || p.totalBet > 0);
             });
             order.push(s);
           }
@@ -797,7 +797,7 @@ var require_room_server = __commonJS({
           break;
         }
         var isHost = this.players.length === 0;
-        this.players.push({ clientId, name, seat, stack: this.config.startingStack, connected: true, isHost });
+        this.players.push({ clientId, name, seat, stack: this.config.startingStack, connected: true, isHost, sittingOut: false });
         this._emit({ t: "playerJoined", seat, name, isHost });
         return { ok: true, seat, isHost, rejoined: false };
       }
@@ -840,6 +840,7 @@ var require_room_server = __commonJS({
         var self = this;
         this.players.forEach(function(q) {
           q.stack = self.config.startingStack;
+          q.sittingOut = false;
         });
         var seated = this.players.slice().sort(function(a, b) {
           return a.seat - b.seat;
@@ -868,6 +869,11 @@ var require_room_server = __commonJS({
       }
       _startHand() {
         if (this.table.activeCount() < 2) return false;
+        var self = this;
+        this.players.forEach(function(p) {
+          var ep = self.table.players[p.seat];
+          if (ep) ep.sittingOut = !!p.sittingOut;
+        });
         this._lastActing = -1;
         this.turnDeadline = 0;
         if (!this.table.startHand()) return false;
@@ -935,6 +941,29 @@ var require_room_server = __commonJS({
           this.table = null;
           this._emit({ t: "gameOver", champion: this.champion });
         }
+      }
+      // Sit out (or back in). Sitting out mid-hand kills the hand immediately;
+      // sitters are skipped for blinds and action until they return. An all-in
+      // player's pot eligibility is untouched: only the Room flag is set and the
+      // engine picks it up next hand.
+      setSitOut(clientId, out) {
+        var p = this.playerByClientId(clientId);
+        if (!p) return { ok: false, error: "You are not seated." };
+        out = !!out;
+        if (!!p.sittingOut === out) return { ok: true };
+        p.sittingOut = out;
+        var ep = this.table && this.table.players[p.seat];
+        if (out && this.table && !this.table.handOver && ep && !ep.folded && !ep.allIn) {
+          try {
+            this.table.act(p.seat, "fold");
+          } catch (e) {
+            ep.folded = true;
+            ep.acted = true;
+          }
+        }
+        this._pushRecent(p.name + (out ? " sits out." : " is back in."));
+        this._afterTableChange();
+        return { ok: true };
       }
       _autoAction(seat, reason) {
         if (!this.table || this.table.handOver) return;
@@ -1030,7 +1059,7 @@ var require_room_server = __commonJS({
           players: this.players.slice().sort(function(a, b) {
             return a.seat - b.seat;
           }).map(function(p) {
-            return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost };
+            return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut };
           })
         };
       }
@@ -1067,7 +1096,7 @@ var require_room_server = __commonJS({
           snap.players = this.players.slice().sort(function(a, b) {
             return a.seat - b.seat;
           }).map(function(p) {
-            return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost };
+            return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut };
           });
           return snap;
         }
@@ -1092,7 +1121,8 @@ var require_room_server = __commonJS({
             acted: p.acted,
             hasCards: p.hole.length === 2 && !p.folded,
             connected: rp ? rp.connected : true,
-            isHost: rp ? rp.isHost : false
+            isHost: rp ? rp.isHost : false,
+            sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut
           };
         }, this);
         if (me && !t.handOver) {
@@ -1290,6 +1320,10 @@ var RoomDO = class {
       else changed = true;
     } else if (msg.t === "pause" || msg.t === "resume") {
       const r = room.setPaused(meta.clientId, msg.t === "pause");
+      if (!r.ok) ws.send(JSON.stringify({ t: "error", message: r.error }));
+      else changed = true;
+    } else if (msg.t === "sitout") {
+      const r = room.setSitOut(meta.clientId, msg.out);
       if (!r.ok) ws.send(JSON.stringify({ t: "error", message: r.error }));
       else changed = true;
     } else if (msg.t === "leave") {

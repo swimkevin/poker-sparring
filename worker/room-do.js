@@ -113,6 +113,10 @@ export class RoomDO {
       const r = room.setPaused(meta.clientId, msg.t === 'pause');
       if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
       else changed = true;
+    } else if (msg.t === 'sitout') {
+      const r = room.setSitOut(meta.clientId, msg.out);
+      if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
+      else changed = true;
     } else if (msg.t === 'leave') {
       room.removePlayer(meta.clientId);
       changed = true;

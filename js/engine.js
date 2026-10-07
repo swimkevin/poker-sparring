@@ -107,7 +107,7 @@ class PokerTable {
     var order = [];
     (function () {
       var s = self.button;
-      for (var k = 0; k < live.length; k++) { s = self._nextSeat(s, function (p) { return p.stack > 0 || p.totalBet > 0; }); order.push(s); }
+      for (var k = 0; k < live.length; k++) { s = self._nextSeat(s, function (p) { return !p.sittingOut && (p.stack > 0 || p.totalBet > 0); }); order.push(s); }
     })();
     for (var r = 0; r < 2; r++) order.forEach(function (s) { self.players[s].hole.push(self.deck.pop()); });
 

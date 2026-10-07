@@ -232,6 +232,11 @@ MockRoomServer.prototype._route = function (rec, msg) {
     case 'leave':
       this._removeClient(rec);
       break;
+    case 'sitout':
+      r = room.setSitOut(rec.id, msg.out);
+      if (!r.ok) this._deliver(rec, { t: 'error', message: r.error });
+      else this._broadcastState(entry);
+      break;
     default:
       this._deliver(rec, { t: 'error', message: 'Unknown message.' });
   }
