@@ -598,11 +598,12 @@ var Online = (function () {
       wrap.appendChild(d);
     });
 
-    // Hero cards
+    // Hero cards — always face-up to the hero (folding hides them from the
+    // table, not from yourself).
     var hero = $('on-hero');
     hero.innerHTML = '';
     if (s.hole && s.hole.length === 2) {
-      s.hole.forEach(function (c) { hero.appendChild(UI.cardEl(c, false)); });
+      s.hole.forEach(function (c) { hero.appendChild(UI.cardEl(c, true)); });
     }
 
     // Timer bar on the to-act seat
