@@ -86,7 +86,8 @@ function recordHand(ctx) {
     board: (ctx.community || []).length,
     profitBB: Math.round(profitBB * 10) / 10,
     profitChips: profitChips,
-    won: !!ctx.wonHand, mode: ctx.mode, result: ctx.resultText || ''
+    won: !!ctx.wonHand, mode: ctx.mode, result: ctx.resultText || '',
+    recId: ctx.recId || null
   });
   s.history = s.history.slice(0, 60);
   s.graph.push(Math.round(ctx.heroStackBB * 10) / 10);
