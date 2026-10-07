@@ -412,7 +412,9 @@ var UI = (function () {
       var hole = [], faceUp = false;
       if (!p.sittingOut && p.hole.length === 2 && (!p.folded || handEnd)) {
         hole = p.hole;
-        if (p.isHero) faceUp = p.folded ? !!opts.heroShow : true;
+        // The hero always sees their own cards — folding hides them from the
+        // table, not from yourself. heroShow controls whether others see them.
+        if (p.isHero) faceUp = true;
         else faceUp = handEnd || (opts.revealed && opts.revealed[i]);
       }
       syncCards(s.querySelector('.pcards'), hole, faceUp, true);
