@@ -860,5 +860,79 @@ function heroPolicy(table, idx) {
   checkSeats(390, 358, 440, 84, 112, 'phone');
 })();
 
+
+
+// ---------- coach theory helpers (equity.js) ----------
+(function () {
+  var E = require('../js/equity.js');
+  // Bluff break-even: bet/(bet+pot).
+  ok(Math.abs(E.bluffBE(50, 100) - 1 / 3) < 1e-9, 'half-pot bluff needs 33% folds');
+  ok(Math.abs(E.bluffBE(100, 300) - 0.25) < 1e-9, 'third-pot bluff needs 25% folds');
+  ok(Math.abs(E.bluffBE(100, 100) - 0.5) < 1e-9, 'pot bluff needs 50% folds');
+  // Villain foldiness from stubbornness.
+  ok(Math.abs(E.villainFoldy({ stubborn: 0.9 }) - 0.1) < 1e-9, 'stubborn 0.9 rarely folds to pressure');
+  ok(E.villainFoldy({ stubborn: 0.2 }) === 0.8, 'rock folds a lot');
+  ok(E.villainFoldy(null) === 0.5, 'unknown villain defaults to 0.5');
+  // Exploit lines: every built-in bot has one, customs get a slider read.
+  var B = require('../js/bots.js');
+  B.ARCHETYPES.forEach(function (a) {
+    ok(typeof E.exploitLine(a) === 'string' && E.exploitLine(a).length > 10,
+      'exploit line for ' + a.id);
+  });
+  ok(/never bluff/.test(E.exploitLine({ id: 'station' })), 'station line says never bluff');
+  ok(/trap/.test(E.exploitLine({ id: 'maniac' })), 'maniac line says trap');
+  ok(/steal/.test(E.exploitLine({ id: 'rock' })), 'rock line says steal');
+  ok(/bluff target/.test(E.exploitLine({ id: 'custom-1', stubborn: 0.2, bluff: 0.1 })),
+    'foldy custom is a bluff target');
+  ok(/value bet/.test(E.exploitLine({ id: 'custom-2', stubborn: 0.9, bluff: 0.1 })),
+    'sticky custom gets value-bet line');
+  ok(/call down lighter/.test(E.exploitLine({ id: 'custom-3', stubborn: 0.5, bluff: 0.8 })),
+    'bluffy custom gets trap line');
+})();
+
+
+
+
+// ---------- bot realism: tilt, rebuys, tournament archetypes ----------
+(function () {
+  var B = require('../js/bots.js');
+  // effectiveArchetype: no tilt => same object back.
+  var shark = B.getArchetype('shark');
+  ok(B.effectiveArchetype(shark, 0) === shark, 'zero tilt returns archetype unchanged');
+  ok(B.effectiveArchetype(shark, undefined) === shark, 'undefined tilt returns archetype unchanged');
+  // Tilt loosens everything and never mutates the base.
+  var tilted = B.effectiveArchetype(shark, 1);
+  ok(tilted !== shark, 'tilted copy is a new object');
+  ok(tilted.openTier > shark.openTier, 'tilt opens more hands');
+  ok(tilted.aggression > shark.aggression, 'tilt raises aggression');
+  ok(tilted.bluff > shark.bluff, 'tilt bluffs more');
+  ok(tilted.stubborn > shark.stubborn, 'tilt calls down lighter');
+  ok(shark.openTier === 3 && shark.aggression === 0.70, 'base archetype not mutated');
+  ok(tilted.aggression <= 1 && tilted.stubborn <= 1 && tilted.openTier <= 6, 'tilt params clamped');
+  var half = B.effectiveArchetype(shark, 0.5);
+  ok(half.aggression > shark.aggression && half.aggression < tilted.aggression, 'tilt scales monotonically');
+  // Every archetype carries tilt/rebuy traits.
+  B.ARCHETYPES.forEach(function (a) {
+    ok(typeof a.tiltProne === 'number' && a.tiltProne >= 0 && a.tiltProne <= 1,
+      a.id + ' has tiltProne');
+    ok(typeof a.rebuy === 'number' && a.rebuy >= 0 && a.rebuy <= 1,
+      a.id + ' has rebuy tendency');
+  });
+  ok(B.getArchetype('maniac').tiltProne > B.getArchetype('rock').tiltProne, 'maniac tilts harder than rock');
+  // Tournament archetypes.
+  var grinder = B.getArchetype('grinder'), bubble = B.getArchetype('bubble');
+  ok(grinder && grinder.openTier <= 2, 'grinder is tight preflop');
+  ok(grinder.threeBetTier <= 2, 'grinder 3-bets aggressively');
+  ok(grinder.pushTier >= 5, 'grinder shoves short stacks');
+  ok(bubble && bubble.openTier <= 1, 'bubble boy barely plays');
+  ok(bubble.rebuy < 0.3, 'bubble boy rarely rebuys');
+  // Custom bots get calibration fields.
+  var c = B.customArchetype({ looseness: 40, aggression: 50, bluff: 20, stubborn: 50, tiltProne: 80, rebuy: 30 });
+  ok(c.tiltProne === 0.8 && c.rebuy === 0.3, 'custom tilt/rebuy sliders stored');
+  var c2 = B.customArchetype({ looseness: 40, aggression: 50, bluff: 20, stubborn: 50 });
+  ok(c2.tiltProne === 0.5 && c2.rebuy === 0.7, 'custom tilt/rebuy default when unset');
+})();
+
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

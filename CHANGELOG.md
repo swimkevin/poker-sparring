@@ -3,6 +3,52 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.7.0] — 2026-10-07
+
+### Added — bot realism: rebuys, tilt, tournament pros, thinking explainer
+- **Bot rebuys with seat counters (PokerNow-style):** busted bots buy back in
+  based on their rebuy tendency (Maniac always, Rock rarely), with a ×N badge
+  on their seat and a hand-log line. Toggleable in Table settings; a bot that
+  declines leaves the table.
+- **Tilt meter:** bad beats (strong hand cracked at showdown), big-pot losses,
+  and bust-outs steam bots up; wins and time cool them off. Tilted bots play
+  more hands, blast more, and call down lighter — a 🌡️ badge marks the seat.
+- **Two tournament archetypes:** The Grinder (tight, relentless 3-bets,
+  correct short-stack shoves) and Bubble Boy (folds everything but the nuts).
+- **Post-hand bot-thinking notes:** the 1–2 most teachable bot bets/raises get
+  a 💭 hand-log line explaining the range logic and your exploit.
+- **Custom-bot calibration:** new Tilt-proneness and Rebuy tendency sliders.
+
+### Added — smarter coach
+- Coach now teaches TAG aggression: value-bet and semi-bluff math, bluff
+  break-even % (½-pot needs 33% folds), 3-bet sizing (~3× the open), bluff
+  3-bets with blockers, and bluff-catching vs aggro villains.
+- Every tip ends with a per-opponent exploit line (vs the Station: value bet
+  big, never bluff…).
+
+### Added — stats & setup UX
+- **Stat ⓘ popovers:** every Stats card explains what it means and how it's
+  calculated inline (VPIP, PFR, Aggression Factor, bb/100…).
+- **Roster selection rework:** named bots (swimkev, Rohan, Amogh, Nathan)
+  lead the roster; heads-up locks to exactly 1 opponent (swimkev by default)
+  with over-selection refused; pick-order badges; count always derives from
+  the selection; leaving heads-up restores your table.
+- **Raise UX:** offline raise panel starts at the minimum legal raise
+  (PokerNow-style) with a Min quick button; opening bets still default to
+  ¾ pot.
+- **In-table hand history:** 📖 button opens the Hand Story without leaving
+  the table.
+- **Results pacing:** 16-second hand-end pause (was 6); winner banner docked
+  to the bottom so the board stays visible.
+- **Multiplayer:** per-turn timer (Off/15s/30s/45s/60s, auto-check/fold) and
+  sit-out/back-in with seat badges.
+
+### Fixed
+- Reset Stats / rebuy / leave-table now immediately zero the session
+  bankroll pill.
+- `getArchetype` fallback is id-based (shark) instead of positional, so
+  roster reordering can't change bot behavior.
+
 ## [1.6.2] — 2026-10-07
 
 ### Fixed

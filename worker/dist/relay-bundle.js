@@ -305,7 +305,11 @@ var require_engine = __commonJS({
             bet: 0,
             totalBet: 0,
             acted: false,
-            sittingOut: false
+            sittingOut: false,
+            rebuys: 0,
+            // times this player has bought back in after busting
+            tilt: 0
+            // 0..1 — rises on bad beats, decays per hand; loosens play
           };
         });
         this.sb = opts.sb || 50;
