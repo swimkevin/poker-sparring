@@ -66,6 +66,28 @@ var Online = (function () {
   // Users can override per session in the Advanced field; clearing the field
   // falls back to local mock mode.
   var DEFAULT_WS_URL = 'https://poker-sparring-relay.swimkevin1735.workers.dev';
+  var EMOJI_CHOICES = ['🧑','👩','👨','🧔','👵','👴','🐶','🐱','🦊','🐼','🦁','🐯','🦄','🐸','👻','🤖','👽','🎃','😎','🤠','🥷','🧙','🦸','👑','💀','🔥','⚡','🌊','🍀','🎲'];
+  var EMOJI_KEY = 'ps_player_emoji';
+  function loadEmoji() {
+    try {
+      var v = localStorage.getItem(EMOJI_KEY);
+      if (v && EMOJI_CHOICES.indexOf(v) >= 0) return v;
+    } catch (e) {}
+    return '🧑';
+  }
+  function saveEmoji(e) { try { localStorage.setItem(EMOJI_KEY, e); } catch (x) {} }
+  function fillEmojiPick(sel) {
+    if (!sel) return;
+    sel.innerHTML = '';
+    var cur = loadEmoji();
+    EMOJI_CHOICES.forEach(function (em) {
+      var o = document.createElement('option');
+      o.value = em; o.textContent = em;
+      if (em === cur) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.onchange = function () { saveEmoji(sel.value); };
+  }
   // The dashboard shows an https:// URL but WebSockets need wss://.
   // Normalize pasted values so either form works.
   function normalizeWsUrl(u) {
@@ -233,6 +255,7 @@ var Online = (function () {
       '<div class="online-cards">' +
       '<div class="online-card"><h3>Host a table</h3>' +
       '<label>Your name<input type="text" id="on-host-name" maxlength="18" placeholder="e.g. Kevin"></label>' +
+      '<label>Your emoji <select id="on-host-emoji" class="emoji-pick"></select></label>' +
       '<label>Table name<input id="on-table-name" maxlength="30" value="Poker Night"></label>' +
       '<div class="online-row">' +
       '<label>Players (2–8)<input id="on-max" type="number" min="2" max="8" value="6"></label>' +
@@ -252,6 +275,7 @@ var Online = (function () {
       '<div class="online-card"><h3>Join a table</h3>' +
       '<label>Room code<input id="on-code" class="code-input" maxlength="6" placeholder="A3F9K2" autocapitalize="characters"></label>' +
       '<label>Your name<input type="text" id="on-join-name" maxlength="18" placeholder="e.g. Sam"></label>' +
+      '<label>Your emoji <select id="on-join-emoji" class="emoji-pick"></select></label>' +
       '<label class="check-row"><input type="checkbox" id="on-join-away"> Join sitting out (watch first)</label>' +
       '<button id="on-join" class="primary">Join →</button>' +
       '<div id="online-error2" class="on-error" hidden></div>' +
@@ -276,6 +300,8 @@ var Online = (function () {
     }
     var wu = $('on-wsurl'), savedWu = loadWsUrl();
     if (wu && !wu.value) wu.value = savedWu == null ? DEFAULT_WS_URL : savedWu;
+    fillEmojiPick($('on-host-emoji'));
+    fillEmojiPick($('on-join-emoji'));
     updateHomeConn();
     if (wu) wu.addEventListener('input', updateHomeConn);
   }
@@ -339,7 +365,7 @@ var Online = (function () {
 
   // Live (WebSocket) path. The worker relay owns the Room; this just adapts
   // NetClient to the same {send, close, onmessage} shape the UI expects.
-  function liveAdapter(url, code, name, firstMsg) {
+  function liveAdapter(url, code, name, firstMsg, emoji) {
     var nc = new NetClient();
     var relayHost = url.replace(/^wss?:\/\//, '');
     var everConnected = false;
@@ -366,7 +392,7 @@ var Online = (function () {
         ? 'Connection lost. Leave and rejoin to get back in.'
         : 'Could not reach the relay. Check the URL.');
     };
-    nc.connect(url + '/room/' + code + '/ws?name=' + encodeURIComponent(name),
+    nc.connect(url + '/room/' + code + '/ws?name=' + encodeURIComponent(name) + (emoji ? '&emoji=' + encodeURIComponent(emoji) : ''),
                { autoReconnect: true, maxTries: 12 });
     mode = 'live';
     setConn('Live relay — ' + relayHost);
@@ -378,11 +404,13 @@ var Online = (function () {
 
   function hostLive(config, name) {
     var code = makeRoomCode();
-    liveAdapter(wsUrl, code, name, { t: 'create', config: config, name: name });
+    var emoji = loadEmoji();
+    liveAdapter(wsUrl, code, name, { t: 'create', config: config, name: name, emoji: emoji }, emoji);
   }
 
   function joinLive(code, name) {
-    liveAdapter(wsUrl, code, name, { t: 'join', name: name });
+    var emoji = loadEmoji();
+    liveAdapter(wsUrl, code, name, { t: 'join', name: name, emoji: emoji }, emoji);
   }
 
   // ---------------- lobby view ----------------
@@ -394,7 +422,7 @@ var Online = (function () {
     var cfg = lob.config;
     var players = lob.players.slice().sort(function (a, b) { return a.seat - b.seat; });
     var rows = players.map(function (p) {
-      return '<div class="player-row"><span class="avatar">' + (p.seat === mySeat ? '🧑' : '👤') + '</span>' +
+      return '<div class="player-row"><span class="avatar">' + esc(p.emoji || (p.seat === mySeat ? loadEmoji() : '👤')) + '</span>' +
         '<span class="pname">' + esc(p.name) + '</span>' +
         (p.isHost ? '<span class="host-crown" title="Host">👑</span>' : '') +
         (!p.connected ? '<span class="hint">reconnecting…</span>' : '') +
@@ -519,9 +547,14 @@ var Online = (function () {
       d.style.left = pos.x + '%';
       d.style.top = pos.y + '%';
       var cardsHtml = '';
-      var who = '<div class="who"><span class="avatar">' + (p.seat === s.mySeat ? '🧑' : '👤') + '</span>' +
+      var avatarEmoji = p.emoji || (p.seat === s.mySeat ? '🧑' : '👤');
+      var badges = '';
+      if (s.button === p.seat) badges += '<span class="pos-badge dealer" title="Dealer">D</span>';
+      if (s.sbIdx === p.seat) badges += '<span class="pos-badge sb" title="Small blind">SB</span>';
+      if (s.bbIdx === p.seat) badges += '<span class="pos-badge bb" title="Big blind">BB</span>';
+      var who = '<div class="who"><span class="avatar">' + esc(avatarEmoji) + '</span>' +
         '<span class="pname">' + esc(p.name) + '</span>' +
-        (p.isHost ? '<span class="host-crown">👑</span>' : '') + '</div>';
+        (p.isHost ? '<span class="host-crown">👑</span>' : '') + badges + '</div>';
       d.innerHTML = who +
         '<div class="pstack">' + fmt(p.stack) + '</div>' +
         '<div class="pbet">' + (p.bet > 0 ? 'bet ' + fmt(p.bet) : '') + '</div>' +
