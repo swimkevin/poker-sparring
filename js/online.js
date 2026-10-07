@@ -598,20 +598,42 @@ var Online = (function () {
     pausedEl.hidden = !s.paused;
     if (s.paused) $('on-paused-by').textContent = 'by ' + s.pausedBy;
 
-    // Winner banner
+    // Winner banner: collapsible (same pattern as offline). Starts as a slim
+    // bar; tap to expand details. Never fully disappears until next hand.
     var banner = $('on-banner');
     if (s.winners && s.winners.length) {
       var w = s.winners[0];
       var pl = s.players.filter(function (p) { return p.seat === w.idx; })[0];
-      banner.innerHTML = '<button class="dismiss-btn" aria-label="Dismiss">✕</button>' +
-        '<div class="wtitle">' + esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>' +
-        (w.hand ? '<div class="wsub">' + esc(w.hand) + '</div>' : '') +
+      var titleHtml = '<div class="wtitle">' + esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>';
+      var detailsHtml = (w.hand ? '<div class="wsub">' + esc(w.hand) + '</div>' : '') +
         (s.nextHandInMs > 0 ? '<div class="wsub">Next hand soon…</div>' : '');
+      // Only rebuild if the winner changed (preserves expanded/collapsed state
+      // across re-renders of the same result).
+      var sig = w.idx + ':' + w.amount + ':' + (w.hand || '');
+      if (banner.dataset.sig !== sig) {
+        banner.dataset.sig = sig;
+        banner.classList.remove('expanded');
+        banner.innerHTML =
+          '<button class="wmain" aria-expanded="false">' +
+            '<span class="wtitle-wrap">' + titleHtml + '</span>' +
+            '<span class="wchevron" aria-hidden="true">▾</span>' +
+          '</button>' +
+          '<div class="wdetails"' + (detailsHtml ? '' : ' hidden') + '>' + detailsHtml + '</div>';
+        var main = banner.querySelector('.wmain');
+        var det = banner.querySelector('.wdetails');
+        var hasDet = detailsHtml.trim().length > 0;
+        main.querySelector('.wchevron').style.display = hasDet ? '' : 'none';
+        main.onclick = function () {
+          if (!hasDet) return;
+          var exp = banner.classList.toggle('expanded');
+          main.setAttribute('aria-expanded', exp ? 'true' : 'false');
+          det.hidden = !exp;
+        };
+      }
       banner.hidden = false;
-      var odb = banner.querySelector('.dismiss-btn');
-      if (odb) odb.onclick = function () { banner.hidden = true; };
     } else {
       banner.hidden = true;
+      banner.dataset.sig = '';
     }
 
     // Feed
