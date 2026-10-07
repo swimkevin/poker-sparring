@@ -1118,6 +1118,73 @@ var require_room_server = __commonJS({
         }
         return snap;
       }
+      // ---- Durable Object persistence ----
+      // Rooms must survive DO eviction (idle DOs are dropped; this.room is memory
+      // only). toJSON captures everything needed to revive the room, including a
+      // mid-hand engine state — all fields are plain JSON data.
+      toJSON() {
+        var t = this.table;
+        return {
+          code: this.code,
+          config: this.config,
+          state: this.state,
+          players: this.players,
+          table: t ? {
+            players: t.players,
+            sb: t.sb,
+            bb: t.bb,
+            ante: t.ante,
+            startingStack: t.startingStack,
+            button: t.button,
+            handNo: t.handNo,
+            handOver: t.handOver,
+            acting: t.acting,
+            deck: t.deck,
+            community: t.community,
+            pot: t.pot,
+            currentBet: t.currentBet,
+            lastRaiseSize: t.lastRaiseSize,
+            street: t.street,
+            sbIdx: t.sbIdx,
+            eventQueue: t.eventQueue || []
+          } : null,
+          paused: this.paused,
+          pausedBy: this.pausedBy,
+          turnDeadline: this.turnDeadline,
+          nextHandAt: this.nextHandAt,
+          lastResult: this.lastResult,
+          champion: this.champion,
+          recent: this.recent,
+          closed: this.closed,
+          _lastActing: this._lastActing,
+          _pauseStartedAt: this._pauseStartedAt
+        };
+      }
+    };
+    Room2.fromJSON = function(data) {
+      var room = new Room2({ code: data.code, config: data.config });
+      room.state = data.state;
+      room.players = data.players || [];
+      room.paused = !!data.paused;
+      room.pausedBy = data.pausedBy || null;
+      room.turnDeadline = data.turnDeadline || 0;
+      room.nextHandAt = data.nextHandAt || 0;
+      room.lastResult = data.lastResult || null;
+      room.champion = data.champion || null;
+      room.recent = data.recent || [];
+      room.closed = !!data.closed;
+      room._lastActing = data._lastActing != null ? data._lastActing : -1;
+      room._pauseStartedAt = data._pauseStartedAt || 0;
+      if (data.table) {
+        var t = Object.create(PokerTableCtor.prototype);
+        Object.assign(t, data.table);
+        t.onEvent = function(e) {
+          room._onEngineEvent(e);
+        };
+        t.eventQueue = t.eventQueue || [];
+        room.table = t;
+      }
+      return room;
     };
     if (typeof module !== "undefined" && module.exports) {
       module.exports = { Room: Room2, makeRoomCode, isValidRoomCode: isValidRoomCode2, BREAK_BETWEEN_HANDS_MS };
@@ -1158,6 +1225,22 @@ var RoomDO = class {
     if (!this.room) return null;
     return this.room.code === code ? this.room : null;
   }
+  // Rooms live in DO storage, not just memory: idle DOs are evicted, and the
+  // room must still be there when players (re)connect minutes later.
+  async _ensureRoom(code) {
+    if (this.room) return;
+    try {
+      var data = await this.state.storage.get("room");
+      if (data && (!code || data.code === code)) this.room = import_room_server.Room.fromJSON(data);
+    } catch (e) {
+    }
+  }
+  async _saveRoom() {
+    try {
+      if (this.room) await this.state.storage.put("room", this.room.toJSON());
+    } catch (e) {
+    }
+  }
   async webSocketMessage(ws, raw) {
     let msg;
     try {
@@ -1168,6 +1251,7 @@ var RoomDO = class {
     const meta = this._meta(ws);
     if (!meta) return;
     const code = meta.code;
+    await this._ensureRoom(code);
     if (msg.t === "create") {
       if (!this.room) {
         this.room = new import_room_server.Room({ code, config: msg.config || {} });
@@ -1210,7 +1294,10 @@ var RoomDO = class {
       ws.send(JSON.stringify({ t: "error", message: "Unknown message." }));
       return;
     }
-    if (changed) this.broadcast();
+    if (changed) {
+      this.broadcast();
+      await this._saveRoom();
+    }
     this.scheduleTick();
   }
   async webSocketClose(ws, code, reason, wasClean) {
@@ -1219,6 +1306,7 @@ var RoomDO = class {
     if (meta && this.room) {
       this.room.setConnected(meta.clientId, false);
       this.broadcast();
+      await this._saveRoom();
       this.scheduleTick();
     }
   }
@@ -1250,9 +1338,13 @@ var RoomDO = class {
     }
   }
   async alarm() {
-    if (!this.room) return;
+    if (!this.room) {
+      await this._ensureRoom();
+      return;
+    }
     const changed = this.room.tick();
     if (changed) {
+      await this._saveRoom();
       if (this.room.state === "lobby") this.broadcast();
       else this.broadcast();
     } else if (this.room.state === "playing" && !this.room.paused && this.room.config.turnTimerSec > 0) {

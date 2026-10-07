@@ -46,12 +46,31 @@ export class RoomDO {
     return this.room.code === code ? this.room : null;
   }
 
+  // Rooms live in DO storage, not just memory: idle DOs are evicted, and the
+  // room must still be there when players (re)connect minutes later.
+  async _ensureRoom(code) {
+    if (this.room) return;
+    try {
+      var data = await this.state.storage.get('room');
+      // The DO instance is already scoped to one room code (idFromName), so a
+      // stored room is always ours; the code check is belt-and-braces.
+      if (data && (!code || data.code === code)) this.room = Room.fromJSON(data);
+    } catch (e) { /* storage unavailable; stay memory-only */ }
+  }
+
+  async _saveRoom() {
+    try {
+      if (this.room) await this.state.storage.put('room', this.room.toJSON());
+    } catch (e) { /* persistence is best-effort */ }
+  }
+
   async webSocketMessage(ws, raw) {
     let msg;
     try { msg = JSON.parse(raw); } catch (e) { return; }
     const meta = this._meta(ws);
     if (!meta) return;
     const code = meta.code;
+    await this._ensureRoom(code);
 
     if (msg.t === 'create') {
       if (!this.room) {
@@ -93,7 +112,7 @@ export class RoomDO {
       return;
     }
 
-    if (changed) this.broadcast();
+    if (changed) { this.broadcast(); await this._saveRoom(); }
     this.scheduleTick();
   }
 
@@ -105,6 +124,7 @@ export class RoomDO {
     if (meta && this.room) {
       this.room.setConnected(meta.clientId, false);
       this.broadcast();
+      await this._saveRoom();
       this.scheduleTick();
     }
   }
@@ -139,9 +159,10 @@ export class RoomDO {
   }
 
   async alarm() {
-    if (!this.room) return;
+    if (!this.room) { await this._ensureRoom(); return; }
     const changed = this.room.tick();
     if (changed) {
+      await this._saveRoom();
       if (this.room.state === 'lobby') this.broadcast(); // game over -> lobby
       else this.broadcast();
     } else if (this.room.state === 'playing' && !this.room.paused && this.room.config.turnTimerSec > 0) {
