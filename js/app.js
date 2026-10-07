@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.4';
+  var APP_VERSION = '1.8.5';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -532,7 +532,7 @@
       var minTo = isRaise ? legal.minRaiseTo : legal.minBetTo;
       UI.openBetPanel(minTo, legal.maxRaiseTo, table.potTotal(), isRaise, function (amt) {
         heroAct(isRaise ? 'raise' : 'bet', amt);
-      });
+      }, { roundBets: !!(cfg && cfg.roundBets) });
     };
     $('btn-allin').onclick = function () {
       var p = table.players[0];
@@ -794,6 +794,7 @@
     cfg.sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
     cfg.bb = Math.max(cfg.sb + 1, parseInt($('cfg-bb').value, 10) || 10);
     cfg.botRebuys = $('cfg-botrebuys') ? $('cfg-botrebuys').checked : true;
+    cfg.roundBets = $('cfg-roundbets') ? $('cfg-roundbets').checked : false;
 
     if (mode === 'pushfold') { startPushFold(); return; }
 
@@ -919,6 +920,8 @@
     if (themeBtn) themeBtn.onclick = function () {
       applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
     };
+    var brandBtn = $('brand-home');
+    if (brandBtn) brandBtn.onclick = function () { UI.showScreen('setup'); };
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.onclick = function () {
         var dest = b.dataset.nav;
@@ -937,6 +940,12 @@
     if (fmc) fmc.onclick = UI.closeFeedbackModal;
     var fmo = $('feedback-modal');
     if (fmo) fmo.addEventListener('click', function (e) { if (e.target === fmo) UI.closeFeedbackModal(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        var m = $('feedback-modal');
+        if (m && !m.hidden) UI.closeFeedbackModal();
+      }
+    });
     var fsb = $('fb-submit');
     if (fsb) fsb.onclick = UI.submitFeedback;
     document.querySelectorAll('.mode-card').forEach(function (c) {
