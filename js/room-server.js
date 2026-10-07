@@ -96,7 +96,8 @@ class Room {
 
   // ---------- lobby ----------
 
-  addPlayer(clientId, name) {
+  addPlayer(clientId, name, opts) {
+    opts = opts || {};
     name = String(name == null ? '' : name).trim().slice(0, MAX_NAME_LEN);
     if (!name) return { ok: false, error: 'Enter a name to join.' };
     var existing = this.playerByClientId(clientId);
@@ -122,7 +123,7 @@ class Room {
     var seat = -1;
     for (var s = 0; s < this.config.maxPlayers; s++) if (!taken[s]) { seat = s; break; }
     var isHost = this.players.length === 0;
-    this.players.push({ clientId: clientId, name: name, seat: seat, stack: this.config.startingStack, connected: true, isHost: isHost, sittingOut: false, buyins: 1 });
+    this.players.push({ clientId: clientId, name: name, seat: seat, stack: this.config.startingStack, connected: true, isHost: isHost, sittingOut: false, buyins: 1, emoji: opts.emoji || null });
     this._emit({ t: 'playerJoined', seat: seat, name: name, isHost: isHost });
     return { ok: true, seat: seat, isHost: isHost, rejoined: false };
   }
@@ -345,8 +346,15 @@ class Room {
       var legal = this.table.legalActions(seat);
       var action = legal.canCheck ? 'check' : 'fold';
       this.table.act(seat, action);
+      // The engine's actionTaken event already pushed "Name check/fold" to
+      // recent via _onEngineEvent; don't add a second line. Amend the last
+      // entry to note it was automatic.
       var p = this.playerBySeat(seat);
-      this._pushRecent((p ? p.name : 'Seat ' + seat) + ' auto-' + action + 's (' + reason + ')');
+      var nm = p ? p.name : ('Seat ' + seat);
+      var last = this.recent[this.recent.length - 1];
+      if (last && last.indexOf(nm + ' ' + action) === 0) {
+        this.recent[this.recent.length - 1] = nm + ' auto-' + action + 's (' + reason + ')';
+      }
     } catch (e) { /* engine is the source of truth; a failed auto-action just stalls to next tick */ }
     this._afterTableChange();
   }
@@ -430,7 +438,8 @@ class Room {
       config: Object.assign({}, this.config),
       champion: this.champion,
       players: this.players.slice().sort(function (a, b) { return a.seat - b.seat; })
-        .map(function (p) { return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut }; })
+        .map(function (p) { return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut }; }),
+      chat: this.chat.slice(-50)
     };
   }
 
@@ -450,7 +459,7 @@ class Room {
     };
     if (this.state === 'lobby' || !this.table) {
       snap.players = this.players.slice().sort(function (a, b) { return a.seat - b.seat; })
-        .map(function (p) { return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut, buyins: p.buyins || 1 }; });
+        .map(function (p) { return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut, buyins: p.buyins || 1, emoji: p.emoji || null }; });
       return snap;
     }
     var t = this.table;
@@ -460,6 +469,7 @@ class Room {
     snap.pot = t.potTotal();
     snap.acting = t.handOver ? -1 : t.acting;
     snap.button = t.button;
+    snap.sbIdx = t.sbIdx; snap.bbIdx = t.bbIdx;
     snap.timerMsLeft = this._msLeft();
     snap.nextHandInMs = t.handOver ? Math.max(0, this.nextHandAt - this._now()) : 0;
     snap.players = t.players.map(function (p) {
@@ -470,7 +480,8 @@ class Room {
         acted: p.acted, hasCards: p.hole.length === 2 && !p.folded,
         connected: rp ? rp.connected : true, isHost: rp ? rp.isHost : false,
         sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut,
-        buyins: rp ? (rp.buyins || 1) : 1
+        buyins: rp ? (rp.buyins || 1) : 1,
+        emoji: rp ? (rp.emoji || null) : null
       };
     }, this);
     if (me && !t.handOver) {
@@ -526,6 +537,7 @@ Room.fromJSON = function (data) {
   room.lastResult = data.lastResult || null;
   room.champion = data.champion || null;
   room.recent = data.recent || [];
+  room.chat = data.chat || [];
   room.closed = !!data.closed;
   room._lastActing = data._lastActing != null ? data._lastActing : -1;
   room._pauseStartedAt = data._pauseStartedAt || 0;
