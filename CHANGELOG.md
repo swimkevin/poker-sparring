@@ -3,6 +3,18 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.8] — 2026-10-07
+
+### Added
+- **Show your cards (online)** — PokerNow-style: after a hand, tap "👁 Show my
+  cards" to voluntarily reveal your mucked hand to the table.
+- **Stats hand history** — last 10 hands, each expandable with game mode and a
+  "▶ Replay hand" button that opens the hand replayer.
+
+### Fixed
+- **Bankroll chip** now shows lifetime profit (persists across refreshes)
+  instead of resetting to 0.
+
 ## [1.8.7] — 2026-10-07
 
 ### Changed
