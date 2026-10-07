@@ -934,9 +934,28 @@ var UI = (function () {
   // the in-game history modal.
   function handStoryHtml(rec) {
     var html = '';
-    if (rec.heroHole && rec.heroHole.length === 2) {
-      html += '<div class="rp-story-hero">Your hand: <b>' +
-        rec.heroHole.map(function (c) { return escapeHtml(cardText(c)); }).join(' ') + '</b></div>';
+    // Everyone's hands at the top — clean grid, not scattered
+    var hands = rec.allHands || [];
+    if (!hands.length && rec.heroHole && rec.heroHole.length === 2) {
+      hands = [{ name: 'You', hole: rec.heroHole, isHero: true }];
+    }
+    if (hands.length) {
+      html += '<div class="rp-hands-grid">';
+      hands.forEach(function (h) {
+        html += '<div class="rp-hand-cell' + (h.isHero ? ' hero' : '') + '">' +
+          '<div class="rp-hand-who">' + (h.emoji ? escapeHtml(h.emoji) + ' ' : '') + escapeHtml(h.name) + '</div>' +
+          '<div class="rp-hand-cards">';
+        if (h.hole && h.hole.length === 2) {
+          h.hole.forEach(function (c) {
+            html += '<span class="mini-card ' + (c.s === '♥' || c.s === '♦' ? 'red' : '') + '">' +
+              escapeHtml(c.r) + escapeHtml(c.s) + '</span>';
+          });
+        } else {
+          html += '<span class="hint">—</span>';
+        }
+        html += '</div></div>';
+      });
+      html += '</div>';
     }
     var streetNames = { preflop: 'Pre-flop', flop: 'Flop', turn: 'Turn', river: 'River' };
     var sections = [], sec = null;
