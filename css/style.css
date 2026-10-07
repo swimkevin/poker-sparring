@@ -1021,3 +1021,28 @@ label { font-weight: 600; }
   .mp-body .coach { font-size: 0.9rem; }
   .mp-body .hand-log { max-height: none; font-size: 0.85rem; }
 }
+
+/* ============ POKERNOW-STYLE FIXED VIEWPORT (phones) ============ */
+@media (max-width: 900px) {
+  /* Online screen: fixed viewport, no scroll */
+  #screen-online {
+    height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  #screen-online #online-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #screen-online #online-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #screen-online .online-table-top { flex: 0 0 auto; padding: 0.4rem 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 0.3rem; }
+  #screen-online .online-felt { flex: 1 1 auto; min-height: 0; border-radius: 20px; margin: 0 0.4rem; }
+  #screen-online .online-felt .card { width: 32px; height: 46px; font-size: 0.8rem; }
+  /* Hide inline feed + chat on phones — they live in the History tab */
+  #screen-online .online-feed, #screen-online .online-chat { display: none; }
+  /* Hero bar docked above tab bar */
+  #screen-online .hero-bar {
+    flex: 0 0 auto; position: fixed; bottom: 64px; left: 0; right: 0; z-index: 60;
+    margin: 0; border-radius: 14px 14px 0 0;
+    padding: 0.5rem 0.6rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    background: var(--panel); box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+  }
+  /* Taller panels that feel like a real view, not a dropdown */
+  .mobile-panel { max-height: 82dvh; }
+  .mobile-panel .mp-body { max-height: calc(82dvh - 60px); }
+}
