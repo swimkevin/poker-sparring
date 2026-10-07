@@ -826,5 +826,39 @@ function heroPolicy(table, idx) {
   NP.resetAll();
 })();
 
+// ---------- seat geometry (regression: seats clipped by .felt{overflow:hidden}) ----------
+(function () {
+  // Minimal DOM stubs: ui.js only touches document/window inside functions;
+  // seatPos reads window.innerWidth at call time.
+  if (typeof document === 'undefined') {
+    global.document = {
+      getElementById: function () { return null; },
+      querySelectorAll: function () { return []; },
+      createElement: function () { return { style: {}, dataset: {}, classList: { add: function () {}, toggle: function () {} } }; }
+    };
+  }
+  if (typeof window === 'undefined') global.window = { innerWidth: 1280, scrollTo: function () {} };
+  var UI = js('ui.js');
+
+  // Seats are absolutely positioned with translate(-50%,-50%) and the felt has
+  // overflow:hidden, so every seat rect must sit fully inside the felt.
+  // Geometries mirror css/style.css: desktop felt 460px tall, phone felt 440px.
+  function checkSeats(viewportW, feltW, feltH, seatW, seatH, tag) {
+    global.window.innerWidth = viewportW;
+    for (var n = 2; n <= 9; n++) {
+      for (var i = 0; i < n; i++) {
+        var p = UI.seatPos(i, n);
+        var cx = p.x / 100 * feltW, cy = p.y / 100 * feltH;
+        ok(cx - seatW / 2 >= 0, tag + ': seat ' + i + '/' + n + ' left edge inside');
+        ok(cx + seatW / 2 <= feltW, tag + ': seat ' + i + '/' + n + ' right edge inside');
+        ok(cy - seatH / 2 >= 0, tag + ': seat ' + i + '/' + n + ' top edge inside');
+        ok(cy + seatH / 2 <= feltH, tag + ': seat ' + i + '/' + n + ' bottom edge inside');
+      }
+    }
+  }
+  checkSeats(1280, 1100, 460, 118, 150, 'desktop');
+  checkSeats(390, 358, 440, 84, 112, 'phone');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

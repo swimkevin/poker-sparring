@@ -217,11 +217,13 @@ var UI = (function () {
   // ---------- table ----------
   function seatPos(i, n) {
     // Phones: pull the ellipse in so side seats (min-width 84px) stay on the felt.
+    // All screens: keep top/bottom seats fully inside (seats are ~110-150px tall,
+    // so y=10%/88% clipped them under .felt{overflow:hidden}).
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
     var rx = narrow ? 35 : 42;
-    if (i === 0) return { x: 50, y: 88 };
+    if (i === 0) return { x: 50, y: 82 };
     var theta = (90 + i * (360 / n)) * Math.PI / 180;
-    return { x: 50 + rx * Math.cos(theta), y: 50 + 40 * Math.sin(theta) };
+    return { x: 50 + rx * Math.cos(theta), y: 50 + 32 * Math.sin(theta) };
   }
 
   function buildSeats(n) {
@@ -702,7 +704,7 @@ var UI = (function () {
 
   return {
     showScreen: showScreen, renderRoster: renderRoster,
-    buildSeats: buildSeats, renderTable: renderTable,
+    buildSeats: buildSeats, seatPos: seatPos, renderTable: renderTable,
     cardEl: cardEl, cardBackEl: cardBackEl,
     setControls: setControls, disableControls: disableControls, openBetPanel: openBetPanel,
     log: log, clearLog: clearLog, coachTip: coachTip, winnerBanner: winnerBanner, modal: modal,
@@ -712,3 +714,5 @@ var UI = (function () {
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
   };
 })();
+// Guarded Node export for headless geometry tests (browser: `module` is undefined).
+if (typeof module !== 'undefined' && module.exports) module.exports = UI;
