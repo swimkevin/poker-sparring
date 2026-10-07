@@ -510,6 +510,42 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 [data-theme="light"] .rp-story-sec { background: #fbfaf4; border-color: #d8d2bd; }
 
 /* ===== phone: keep hand rows tidy ===== */
+/* ===== mobile table: keep the board visible ===== */
+@media (max-width: 640px) {
+  /* Compact seats so 8-up doesn't swallow the board */
+  .seat {
+    min-width: 84px; padding: 0.3rem 0.4rem; border-radius: 10px;
+  }
+  .seat .avatar { font-size: 1.05rem; }
+  .seat .pname { font-size: 0.72rem; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
+  .seat .pstack { font-size: 0.7rem; }
+  .seat .pbet { font-size: 0.65rem; }
+  .seat .pcards { min-height: 32px; margin-top: 2px; }
+  .seat .pcards .card, .seat .pcards .card-back {
+    width: 30px; height: 42px;
+  }
+  .pos-badge { min-width: 16px; height: 16px; font-size: 0.55rem; }
+  /* Taller felt gives the board breathing room */
+  .felt { height: 520px; border-radius: 200px; }
+  /* Smaller community cards on mobile so all 5 fit with clearance */
+  .community { gap: 4px; }
+  .community .card {
+    width: 44px; height: 62px;
+  }
+  .pot { font-size: 0.9rem; padding: 0.1rem 0.7rem; }
+  /* Winner banner: compact + dismissible, never covers the board */
+  .winner-banner {
+    padding: 0.7rem 1rem; max-width: 92%; bottom: 3%;
+  }
+  .winner-banner .wtitle { font-size: 1rem; }
+  .winner-banner .wsub { font-size: 0.8rem; }
+  .winner-banner .dismiss-btn {
+    position: absolute; top: 4px; right: 8px;
+    background: none; border: none; color: var(--muted);
+    font-size: 1.1rem; cursor: pointer; padding: 4px;
+  }
+}
+
 @media (max-width: 560px) {
   .hrow { gap: 0.5rem; padding: 0.6rem 0.8rem; }
   .hrow-main { gap: 0.5rem; min-width: 0; }
