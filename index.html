@@ -155,6 +155,31 @@
     </div>
   </section>
 
+  <!-- ============ MOBILE TAB BAR ============ -->
+  <!-- Bottom navigation for phones: Table, Coach, History, Menu -->
+  <nav id="mobile-tabs" class="mobile-tabs" aria-label="Game navigation">
+    <button class="mtab active" data-tab="table" aria-label="Table">
+      <span class="mtab-icon">🃏</span><span class="mtab-label">Table</span>
+    </button>
+    <button class="mtab" data-tab="coach" aria-label="Coach tips">
+      <span class="mtab-icon">💡</span><span class="mtab-label">Coach</span>
+    </button>
+    <button class="mtab" data-tab="history" aria-label="Hand history">
+      <span class="mtab-icon">📖</span><span class="mtab-label">History</span>
+    </button>
+    <button class="mtab" data-tab="menu" aria-label="Menu">
+      <span class="mtab-icon">☰</span><span class="mtab-label">Menu</span>
+    </button>
+  </nav>
+  <!-- Mobile slide-up panels for Coach and History -->
+  <div id="mobile-panel" class="mobile-panel" hidden>
+    <div class="mp-header">
+      <span id="mp-title" class="mp-title">Coach</span>
+      <button id="mp-close" class="ghost" aria-label="Close panel">✕</button>
+    </div>
+    <div id="mp-body" class="mp-body"></div>
+  </div>
+
   <!-- ============ PUSH/FOLD TRAINER ============ -->
   <section id="screen-pf" class="screen" hidden>
     <div class="pf-wrap">
