@@ -515,5 +515,53 @@ function lastState(client) {
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (netplay)');
 
+(function () {
+  // v1.8: chat, rebuy, host migration on disconnect.
+  var RS2 = js('room-server.js');
+  function mkRoom() {
+    var r = new RS2.Room({ code: 'ABCDEF', config: { maxPlayers: 6, startingStack: 1000, sb: 5, bb: 10 } });
+    r.addPlayer('c1', 'Host');
+    r.addPlayer('c2', 'Guest');
+    return r;
+  }
+  // Chat: message stored and broadcast, capped at 200 chars, empty rejected.
+  var r = mkRoom();
+  var cr = r.sendChat('c1', 'hello table');
+  ok(cr.ok, 'chat send ok');
+  ok(r.chat.length === 1 && r.chat[0].from === 'Host' && r.chat[0].text === 'hello table', 'chat stored with sender');
+  var cr2 = r.sendChat('c1', '   ');
+  ok(!cr2.ok, 'empty chat rejected');
+  var long = new Array(300).join('x');
+  r.sendChat('c1', long);
+  ok(r.chat[r.chat.length - 1].text.length === 200, 'chat capped at 200 chars');
+  var snap = r.getSnapshot(0);
+  ok(snap.chat && snap.chat.length === 2, 'chat included in snapshot');
+  // Rebuy: busted player tops back up to starting stack, buyins tracked.
+  var r2 = mkRoom();
+  r2.start('c1');
+  var guest = r2.players.filter(function (p) { return p.name === 'Guest'; })[0];
+  guest.stack = 0;
+  if (r2.table && r2.table.players[guest.seat]) r2.table.players[guest.seat].stack = 0;
+  var rr = r2.rebuy('c2');
+  ok(rr.ok, 'rebuy ok when busted');
+  ok(guest.stack === 1000 && guest.buyins === 2, 'rebuy restores stack, increments buyins');
+  var rr2 = r2.rebuy('c2');
+  ok(!rr2.ok, 'rebuy rejected when already topped up');
+  var snap2 = r2.getSnapshot(guest.seat);
+  var gp = snap2.players.filter(function (p) { return p.seat === guest.seat; })[0];
+  ok(gp.buyins === 2, 'buyins visible in snapshot for ledger');
+  // Host migration: lazy — host keeps the crown across transient drops; a
+  // connected non-host who tries to start while the host is gone takes over.
+  var r3 = new RS2.Room({ code: 'ABCDEF', config: { maxPlayers: 6, startingStack: 1000, sb: 5, bb: 10 } });
+  r3.addPlayer('c1', 'Host');
+  r3.addPlayer('c2', 'Guest');
+  r3.addPlayer('c3', 'Third');
+  ok(r3.host().name === 'Host', 'host starts as Host');
+  r3.setConnected('c1', false);
+  ok(r3.host().name === 'Host', 'host keeps crown across transient disconnect');
+  var sr = r3.start('c2');
+  ok(sr.ok && r3.host().name === 'Guest', 'connected guest takes host on start when host is gone');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

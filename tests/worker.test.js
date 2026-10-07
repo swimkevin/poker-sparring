@@ -184,6 +184,21 @@ function upgradeRequest(roomUrl) {
   await doB.webSocketMessage(hibGuest, JSON.stringify({ t: 'sitout', out: false }));
   ok(doB.room.playerBySeat(guestSeat.seat).sittingOut === false, 'back-in clears the flag');
 
+  // --- chat + rebuy route through the DO ---
+  hibGuest.sent.length = 0;
+  await doB.webSocketMessage(hibGuest, JSON.stringify({ t: 'chat', text: 'gg all' }));
+  var chatErrs = hibGuest.sent.filter(function (m) { return m.t === 'error'; });
+  ok(chatErrs.length === 0, 'chat routes without error');
+  ok(doB.room.chat.length === 1 && doB.room.chat[0].text === 'gg all', 'chat stored in room');
+  var chatState = hibGuest.sent.filter(function (m) { return m.t === 'state'; }).pop();
+  ok(chatState && chatState.chat && chatState.chat.length === 1, 'chat visible in state snapshot');
+  // rebuy when not busted is rejected cleanly (no crash, no unknown-message)
+  hibGuest.sent.length = 0;
+  await doB.webSocketMessage(hibGuest, JSON.stringify({ t: 'rebuy' }));
+  var rbErrs = hibGuest.sent.filter(function (m) { return m.t === 'error'; });
+  var unknown = rbErrs.filter(function (m) { return /Unknown message/.test(m.message); });
+  ok(unknown.length === 0, 'rebuy is a known message type');
+
 
   console.log(pass + ' worker assertions passed');
 })().catch(function (e) { console.log('FAIL: ' + (e && e.stack || e)); process.exitCode = 1; });
