@@ -1346,7 +1346,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     var btn = e.target.closest('.mtab');
     if (!btn) return;
     var tab = btn.dataset.tab;
-    if (tab === 'table') { closePanel(); return; }
+    // Tapping the active tab toggles its panel closed (like a details disclosure).
+    var isActive = btn.classList.contains('active') && !panel.hidden && tab !== 'table';
+    if (tab === 'table' || isActive) { closePanel(); return; }
     if (tab === 'coach') { openPanel('coach', '💡 Coach', fillCoach); return; }
     if (tab === 'history') { openPanel('history', '📖 Hand history', fillHistory); return; }
     if (tab === 'menu') { openPanel('menu', '☰ Menu', fillMenu); return; }
