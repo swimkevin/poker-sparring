@@ -208,6 +208,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 }
 .winner-banner .wtitle { font-size: 1.25rem; font-weight: 800; color: var(--gold); }
 .winner-banner .wsub { color: var(--muted); margin-top: 0.3rem; font-size: 0.9rem; }
+#handend-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; flex-wrap: wrap; }
+#handend-row .fineprint { font-size: 0.8rem; }
 .winner-banner .wsub .wsub { margin-left: 0.35em; font-style: italic; }
 
 /* side panel */
@@ -476,6 +478,26 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .rp-controls .ghost:disabled { opacity: 0.35; cursor: default; }
 .rp-progress { margin-bottom: 1rem; }
 
+/* ===== hand story: clean phone-readable hand history ===== */
+.rp-story { display: flex; flex-direction: column; gap: 0.9rem; }
+.rp-story-hero { font-size: 1.05rem; }
+.rp-story-sec { background: #0d1219; border: 1px solid #232d40; border-radius: 10px; padding: 0.7rem 1rem; }
+.rp-story-street { font-weight: 800; color: var(--gold); margin-bottom: 0.35rem; font-size: 0.95rem; }
+.rp-story-line { font-size: 0.92rem; padding: 0.12rem 0; color: var(--text); }
+.rp-story-result { background: #1c1a10; border: 1px solid var(--gold-dim); border-radius: 10px; padding: 0.8rem 1rem; font-size: 1rem; }
+.rp-story-net { font-size: 1.15rem; font-weight: 800; text-align: center; }
+.rp-story-net.pos { color: var(--green); } .rp-story-net.neg { color: var(--red); }
+[data-theme="light"] .rp-story-sec { background: #fbfaf4; border-color: #d8d2bd; }
+
+/* ===== phone: keep hand rows tidy ===== */
+@media (max-width: 560px) {
+  .hrow { gap: 0.5rem; padding: 0.6rem 0.8rem; }
+  .hrow-main { gap: 0.5rem; min-width: 0; }
+  .rp-open { width: 100%; margin-left: 0; }
+  .rp-controls .ghost { min-height: 44px; }
+  .rp-story-line { font-size: 0.95rem; }
+}
+
 /* ===== light theme: warm paper (dark felt stays green) ===== */
 [data-theme="light"] {
   --bg: #f0ede3;
@@ -670,4 +692,22 @@ label { font-weight: 600; }
 .last-result {
   font-size: 0.8rem; color: var(--muted); font-style: italic;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw;
+}
+
+/* ---------- smooth table motion ---------- */
+/* Value pulse: pot/stacks/bets shimmer instead of snapping */
+@keyframes bump { 0% { filter: brightness(1.7); } 100% { filter: none; } }
+.bump { animation: bump 0.3s ease; }
+/* Action badge: rises and fades in when a player acts */
+.seat .pact.pop { animation: pact-pop 0.45s ease backwards; }
+@keyframes pact-pop { from { opacity: 0; transform: translateY(7px); } }
+/* Acting glow eases between seats instead of snapping */
+.seat { transition: border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.3s ease; }
+/* Flying chip: bettor's seat -> pot */
+.chip-fly {
+  position: fixed; z-index: 60; width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe9a8, var(--gold) 60%, #8a6d1f);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  pointer-events: none; margin: -11px 0 0 -11px;
+  transition: transform 0.55s cubic-bezier(.3,.7,.3,1), opacity 0.55s ease;
 }

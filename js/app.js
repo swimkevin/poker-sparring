@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.5.2';
+  var APP_VERSION = '1.6.0';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -111,6 +111,7 @@
     lastActions = {};
     fastForward = false; // a new hand always starts at full speed
     setTurnStatus('', false);
+    UI.resetTableFx(); // drop per-hand fx state (card diff cache, stray chips)
     var skipBtn = $('btn-skip');
     if (skipBtn) skipBtn.hidden = false;
     UI.winnerBanner(null);
@@ -169,6 +170,8 @@
     lastActions[e.player] = describeAction(e, p);
     if (p.isHero) trackHeroAction(e);
     if (handRec) recordHandAction(handRec, table, e);
+    // Chip-commit actions fly a chip from the bettor's seat to the pot.
+    if (e.action === 'bet' || e.action === 'raise' || e.action === 'call') UI.chipFly(e.player);
     UI.log(UI.escapeHtml(describeAction(e, p)), p.isHero ? 'hl-hero' : '');
     UI.renderTable(table, { lastActions: lastActions, acting: table.acting, button: table.button });
   }
@@ -230,8 +233,14 @@
       else bits.push(potLabel + ': ' + names + ' ' + verb + ' ' + UI.fmt(w.each || w.amount) +
         ' <span class="wsub">' + UI.escapeHtml(w.hand || '') + '</span>');
     });
-    var title = won ? '🏆 You win ' + UI.fmt(e.pot) + '!' :
-      '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
+    var title;
+    if (won) {
+      // Title shows what the hero actually won (not the total pot when side
+      // pots went elsewhere, and never the hero's stack).
+      title = '🏆 You win ' + UI.fmt(UI.handWinAmount(e)) + '!';
+    } else {
+      title = '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
+    }
     UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
     UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
     // Compact persistent result in the topbar — the banner flashes by, but this
@@ -245,11 +254,22 @@
         }).join(' & ');
         lr.textContent = w0.uncalled
           ? 'Last: ' + wn + ' takes back ' + UI.fmt(w0.amount)
-          : 'Last: ' + wn + ' +' + UI.fmt(w0.each || w0.amount) + (w0.hand ? ' · ' + w0.hand : '');
+          : 'Last: ' + wn + ' +' + UI.fmt(UI.firstWinnersTotal(e)) + (w0.hand ? ' · ' + w0.hand : '');
       }
     } catch (err) {}
 
-    UI.renderTable(table, { lastActions: {}, winners: winnerIdx, revealed: revealed, acting: -1, button: table.button });
+    // Results beat: every bot's hole cards are revealed face-up (practice
+    // mode — study how they played), and a folded hero sees card backs with a
+    // "Show my hand" choice. renderEndTable re-runs when hero taps Show.
+    var heroShow = false;
+    function renderEndTable() {
+      if (!table) return;
+      UI.renderTable(table, {
+        lastActions: {}, winners: winnerIdx, revealed: revealed,
+        acting: -1, button: table.button, handEnd: true, heroShow: heroShow
+      });
+    }
+    renderEndTable();
 
     // Stats
     var profit = hero.stack - handCtx.startStack;
@@ -274,7 +294,18 @@
     });
     UI.setBankroll(sessionProfitBB(hero.stack, sessionStartBB, table.bb));
 
-    setTimeout(prepareNextHand, fastForward ? 500 : 600);
+    // Give the result room to breathe: a Next-hand button plus a 6s auto-deal
+    // countdown, so the banner, board, and revealed hands can actually be read.
+    // Skipped (fast-forward) hands stay instant.
+    if (fastForward) {
+      setTimeout(function () { if (table) prepareNextHand(); }, 600);
+    } else {
+      UI.showHandEndControls({
+        autoMs: 6000,
+        onNext: function () { if (table) prepareNextHand(); },
+        onShowHero: hero.folded ? function () { heroShow = true; renderEndTable(); } : null
+      });
+    }
   }
 
   // ⏩ Skip: fold the hero's live hand (if it's their turn), then collapse all
@@ -286,6 +317,9 @@
       try { table.act(0, 'fold'); } catch (e) { /* already unplayable; just fast-forward */ }
       waitingForHero = false;
     }
+    // Results pause showing? Skip it immediately via the Next-hand button.
+    var nx = document.getElementById('btn-next-hand');
+    if (nx) { nx.click(); return; }
     fastForward = true;
     pump();
   }
@@ -572,20 +606,33 @@
 
   function showReplay() {
     if (!replay) return;
+    showReplaySteps();
+  }
+
+  function showReplaySteps() {
+    if (!replay) return;
     var total = replay.rec.timeline.length;
     replay.idx = Math.max(0, Math.min(replay.idx, total));
     UI.renderReplay(replay.rec, replay.idx);
     $('rp-back').onclick = openHandList;
-    $('rp-start').onclick = function () { replay.idx = 0; showReplay(); };
-    $('rp-prev').onclick = function () { replay.idx--; showReplay(); };
-    $('rp-next').onclick = function () { replay.idx++; showReplay(); };
-    $('rp-end').onclick = function () { replay.idx = total; showReplay(); };
+    $('rp-story').onclick = showReplayStory;
+    $('rp-start').onclick = function () { replay.idx = 0; showReplaySteps(); };
+    $('rp-prev').onclick = function () { replay.idx--; showReplaySteps(); };
+    $('rp-next').onclick = function () { replay.idx++; showReplaySteps(); };
+    $('rp-end').onclick = function () { replay.idx = total; showReplaySteps(); };
     document.querySelectorAll('#replay-view [data-street]').forEach(function (b) {
       b.onclick = function () {
         replay.idx = frameIndexForStreet(replay.rec, b.dataset.street);
-        showReplay();
+        showReplaySteps();
       };
     });
+  }
+
+  function showReplayStory() {
+    if (!replay) return;
+    UI.renderHandStory(replay.rec);
+    $('rp-back').onclick = openHandList;
+    $('rp-steps').onclick = showReplaySteps;
   }
 
   // ================= push/fold trainer =================
@@ -651,21 +698,27 @@
         mode = c.dataset.mode;
         // Heads-up is always 1 opponent; other modes use the stepper.
         $('opp-count').textContent = mode === 'hu' ? 1 : oppCount;
+        syncQuickHint();
       };
     });
     $('btn-start').onclick = startGame;
-    // One-tap start: sensible defaults, no configuration wall. Forces cash
-    // mode with the default 3 opponents — the single biggest first-impression
-    // win is reaching a hand in one tap.
+    // One-tap start: a live mirror of the configuration below — no forcing,
+    // no hardcoded "3 bots". The hint always describes exactly what one tap
+    // does, so the stepper and the hero button can never contradict.
+    function syncQuickHint() {
+      var q = $('quick-hint');
+      if (!q) return;
+      var modeName = { cash: 'cash game', hu: 'heads-up', tourney: 'tournament', pushfold: 'push/fold drills' }[mode] || 'cash game';
+      if (mode === 'pushfold') { q.textContent = 'One tap: ' + modeName + '.'; return; }
+      var n = mode === 'hu' ? 1 : oppCount;
+      var stack = Math.max(200, parseInt($('cfg-stack').value, 10) || 1000);
+      var sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
+      var bb = Math.max(sb + 1, parseInt($('cfg-bb').value, 10) || 10);
+      q.textContent = 'One tap: ' + modeName + ' vs ' + (n === 1 ? '1 bot' : n + ' bots') +
+        ', ' + stack + '-chip stacks, ' + sb + '/' + bb + ' blinds. Customize below if you like.';
+    }
     var bq = $('btn-quick');
-    if (bq) bq.onclick = function () {
-      document.querySelectorAll('.mode-card').forEach(function (x) {
-        x.classList.toggle('selected', x.dataset.mode === 'cash');
-      });
-      mode = 'cash';
-      $('opp-count').textContent = oppCount;
-      startGame();
-    };
+    if (bq) bq.onclick = function () { startGame(); };
     $('btn-leave').onclick = leaveToLobby;
     var sk = $('btn-skip');
     if (sk) sk.onclick = skipHand;
@@ -682,13 +735,13 @@
     }
 
     // opponent count stepper
-    function syncRosterToCount() {
-      var ids = [];
+    function syncRosterToCount() {      var ids = [];
       DEFAULT_MIX.forEach(function (id) { if (botById(id)) ids.push(id); });
       loadCustomBots().forEach(function (a) { ids.push(a.id); });
       selectedBots = new Set(ids.slice(0, oppCount));
       $('opp-count').textContent = oppCount;
       UI.renderRoster(allBots(), selectedBots);
+      syncQuickHint();
     }
     $('opp-minus').onclick = function () {
       if (mode === 'hu') return;
@@ -741,6 +794,12 @@
     };
 
     UI.renderRoster(allBots(), selectedBots);
+    // Stack/blind tweaks update the quick-start hint live.
+    ['cfg-stack', 'cfg-sb', 'cfg-bb'].forEach(function (id) {
+      var el = $(id);
+      if (el) el.addEventListener('input', syncQuickHint);
+    });
+    syncQuickHint();
     var vv = $('app-version');
     if (vv) vv.textContent = 'v' + APP_VERSION + ' · offline · stats stay in this browser';
   }

@@ -268,46 +268,125 @@ var UI = (function () {
     }
   }
 
-  // opts: { lastActions: {idx: str}, winners: [idx], revealed: {idx: true}, acting: idx, button: idx }
+  // ---------- smooth table fx ----------
+  // The table used to rebuild every card on every action, replaying the deal
+  // animation constantly (flashing/bouncing cards). Now cards are diff-synced:
+  // only newly dealt cards are created (and animated); everything else is
+  // patched in place. Value changes pulse subtly; action badges pop.
+  var lastPact = {};
+
+  function cardKey(c, faceUp) { return (faceUp ? 'U' : 'D') + c.r + '-' + c.s; }
+
+  // Diff-sync a card row: the common prefix is left untouched, extras are
+  // removed, new cards are appended (only appended cards play the deal anim).
+  function syncCards(el, cards, faceUp, small) {
+    var want = cards.map(function (c) { return cardKey(c, faceUp); });
+    var p = 0;
+    while (p < want.length && p < el.children.length && el.children[p]._ckey === want[p]) p++;
+    while (el.children.length > p) el.removeChild(el.lastChild);
+    for (var j = p; j < cards.length; j++) {
+      var n = faceUp ? cardEl(cards[j], small) : cardBackEl(small);
+      n._ckey = want[j];
+      el.appendChild(n);
+    }
+  }
+
+  // Set text only when changed; pulse so the update reads as motion, not a snap.
+  function setTextFx(el, txt) {
+    var s = String(txt);
+    if (!el || el.textContent === s) return;
+    el.textContent = s;
+    el.classList.remove('bump');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('bump');
+  }
+
+  // Action badge: pop when the action text changes.
+  function setPact(el, seatIdx, txt) {
+    var s = txt || '';
+    if (lastPact[seatIdx] === s) { if (el.textContent !== s) el.textContent = s; return; }
+    lastPact[seatIdx] = s;
+    el.textContent = s;
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    if (s) el.classList.add('pop');
+  }
+
+  // Chip fly: a chip arcs from the bettor's seat to the pot.
+  function chipFly(seatIdx) {
+    try {
+      var seat = $('seat-' + seatIdx);
+      var pot = $('pot-display');
+      if (!seat || !pot) return;
+      var a = seat.getBoundingClientRect(), b = pot.getBoundingClientRect();
+      if (!a.width || !b.width) return;
+      var chip = document.createElement('div');
+      chip.className = 'chip-fly';
+      chip.setAttribute('aria-hidden', 'true');
+      chip.style.left = (a.left + a.width / 2) + 'px';
+      chip.style.top = (a.top + a.height / 2) + 'px';
+      document.body.appendChild(chip);
+      void chip.offsetWidth; // force layout so the transition runs
+      var dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+      var dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+      chip.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(0.55)';
+      chip.style.opacity = '0.85';
+      setTimeout(function () { if (chip.parentNode) chip.parentNode.removeChild(chip); }, 650);
+    } catch (e) {}
+  }
+
+  // Call at hand start: drop per-hand fx state and stray fx elements.
+  function resetTableFx() {
+    lastPact = {};
+    try {
+      var dead = document.querySelectorAll('.chip-fly');
+      for (var i = 0; i < dead.length; i++) dead[i].parentNode.removeChild(dead[i]);
+    } catch (e) {}
+  }
+
+  // opts: { lastActions: {idx: str}, winners: [idx], revealed: {idx: true}, acting: idx,
+  //         button: idx, handEnd: bool, heroShow: bool }
+  // At hand end (handEnd), every bot's hole cards are revealed face-up — even
+  // folded ones — so the player can study how each bot played (practice mode).
+  // A folded hero sees card backs until they tap "Show my hand" (heroShow).
   function renderTable(table, opts) {
     opts = opts || {};
+    var handEnd = !!opts.handEnd;
     var n = table.players.length;
-    // pot + community
-    $('pot-display').textContent = 'Pot: ' + fmt(table.potTotal());
-    var comm = $('community');
-    comm.innerHTML = '';
-    table.community.forEach(function (c) { comm.appendChild(cardEl(c)); });
+    // pot + community (community is diff-synced: only new streets animate)
+    setTextFx($('pot-display'), 'Pot: ' + fmt(table.potTotal()));
+    syncCards($('community'), table.community, true, false);
     $('street-label').textContent = table.street === 'preflop' ? '' : table.street;
+
+    // dealer button: one persistent element, moved between seats (no rebuild)
+    var db = $('dealer-btn');
+    if (!db) {
+      db = document.createElement('div');
+      db.id = 'dealer-btn'; db.className = 'dealer-btn'; db.textContent = 'D';
+    }
+    var bs = $('seat-' + table.button);
+    if (bs && db.parentNode !== bs) bs.appendChild(db);
 
     table.players.forEach(function (p, i) {
       var s = $('seat-' + i);
       if (!s) return;
       s.querySelector('.avatar').textContent = p.isHero ? '🧑' : (p.archetype ? p.archetype.emoji : '🤖');
       s.querySelector('.pname').textContent = p.name; // hero name set at game start (username or 'You')
-      s.querySelector('.pstack').textContent = fmt(p.stack);
-      s.querySelector('.pbet').textContent = p.bet > 0 ? 'bet ' + fmt(p.bet) : '';
-      var pact = s.querySelector('.pact');
-      pact.textContent = (opts.lastActions && opts.lastActions[i]) || '';
-      var pc = s.querySelector('.pcards');
-      pc.innerHTML = '';
-      var showCards = p.isHero || (opts.revealed && opts.revealed[i]);
-      if (!p.folded && p.hole.length === 2 && !p.sittingOut) {
-        for (var k = 0; k < 2; k++) {
-          pc.appendChild(showCards ? cardEl(p.hole[k], true) : cardBackEl(true));
-        }
+      setTextFx(s.querySelector('.pstack'), fmt(p.stack));
+      setTextFx(s.querySelector('.pbet'), p.bet > 0 ? 'bet ' + fmt(p.bet) : '');
+      setPact(s.querySelector('.pact'), i, (opts.lastActions && opts.lastActions[i]) || '');
+      var hole = [], faceUp = false;
+      if (!p.sittingOut && p.hole.length === 2 && (!p.folded || handEnd)) {
+        hole = p.hole;
+        if (p.isHero) faceUp = p.folded ? !!opts.heroShow : true;
+        else faceUp = handEnd || (opts.revealed && opts.revealed[i]);
       }
+      syncCards(s.querySelector('.pcards'), hole, faceUp, true);
       s.classList.toggle('folded', p.folded);
       s.classList.toggle('to-act', opts.acting === i && !table.handOver);
       s.classList.toggle('thinking', opts.acting === i && !p.isHero && !table.handOver);
       s.classList.toggle('winner', !!(opts.winners && opts.winners.indexOf(i) !== -1));
       s.classList.toggle('out', p.sittingOut || p.stack === 0);
-      var old = s.querySelector('.dealer-btn');
-      if (old) old.remove();
-      if (table.button === i) {
-        var db = document.createElement('div');
-        db.className = 'dealer-btn'; db.textContent = 'D';
-        s.appendChild(db);
-      }
     });
   }
 
@@ -384,11 +463,84 @@ var UI = (function () {
     c.innerHTML = '<div class="coach-head">Coach</div>' + html;
   }
 
+  // Amount the hero (player 0) actually won in a handEnd event: sums each pot
+  // they won, excluding uncalled returns ("takes back"). Falls back to the
+  // total pot when the breakdown is missing.
+  function handWinAmount(e) {
+    var total = 0;
+    (e.winners || []).forEach(function (w) {
+      var ids = w.winners || [w.idx];
+      if (ids.indexOf(0) !== -1 && !w.uncalled) total += (w.each || w.amount);
+    });
+    return total || e.pot;
+  }
+
+  // Total chips won by the winners of the FIRST winner entry across all pots
+  // (side pots included). Used for the compact "Last:" topbar line so a
+  // multi-pot win isn't understated. Falls back to the first entry when
+  // different winners split the pots.
+  function firstWinnersTotal(e) {
+    var w0 = (e.winners || [])[0];
+    if (!w0) return 0;
+    var key = (w0.winners || [w0.idx]).slice().sort().join(',');
+    var total = 0, same = true;
+    (e.winners || []).forEach(function (w) {
+      var k = (w.winners || [w.idx]).slice().sort().join(',');
+      if (k !== key) same = false;
+      else if (!w.uncalled) total += (w.each || w.amount);
+    });
+    return same ? total : (w0.each || w0.amount);
+  }
+
   function winnerBanner(html) {
     var w = $('winner-banner');
+    hideHandEndControls();
     if (!html) { w.hidden = true; return; }
     w.hidden = false;
     w.innerHTML = html;
+  }
+
+  // Hand-end controls: a "Next hand" button plus an auto-deal countdown, and
+  // optionally a "Show my hand" button when the hero folded. The row lives
+  // inside the winner banner so it clears with it; the timer is owned here so
+  // leaving the table (winnerBanner(null)) always cancels the auto-deal.
+  var handEndTimer = null;
+  function showHandEndControls(o) {
+    hideHandEndControls();
+    var w = $('winner-banner');
+    if (!w) { o.onNext(); return; }
+    var row = document.createElement('div');
+    row.id = 'handend-row';
+    if (o.onShowHero) {
+      var sh = document.createElement('button');
+      sh.className = 'ghost'; sh.id = 'btn-show-hero';
+      sh.textContent = '👁 Show my hand';
+      sh.onclick = function () { sh.disabled = true; sh.textContent = 'Hand shown'; o.onShowHero(); };
+      row.appendChild(sh);
+    }
+    var btn = document.createElement('button');
+    btn.className = 'primary'; btn.id = 'btn-next-hand';
+    btn.textContent = 'Next hand ▸';
+    row.appendChild(btn);
+    var hint = document.createElement('span');
+    hint.className = 'fineprint';
+    row.appendChild(hint);
+    w.appendChild(row);
+    var ms = o.autoMs || 6000;
+    var t0 = Date.now();
+    function tick() {
+      var s = Math.ceil((ms - (Date.now() - t0)) / 1000);
+      if (s <= 0) { hideHandEndControls(); o.onNext(); return; }
+      hint.textContent = 'auto-dealing in ' + s + 's';
+    }
+    btn.onclick = function () { hideHandEndControls(); o.onNext(); };
+    tick();
+    handEndTimer = setInterval(tick, 250);
+  }
+  function hideHandEndControls() {
+    if (handEndTimer) { clearInterval(handEndTimer); handEndTimer = null; }
+    var row = $('handend-row');
+    if (row && row.parentNode) row.parentNode.removeChild(row);
   }
 
   function modal(o) {
@@ -453,7 +605,7 @@ var UI = (function () {
       ['Hands', d.hands], ['Win %', d.winRate.toFixed(1)],
       ['bb / 100', bb100], ['VPIP %', d.vpip.toFixed(1)],
       ['PFR %', d.pfr.toFixed(1)], ['Aggr. factor', d.af >= 99 ? '∞' : d.af.toFixed(2)],
-      ['Biggest pot', d.biggestPotBB.toFixed(0) + ' bb']
+      ['Biggest pot', d.biggestPotChips ? fmt(d.biggestPotChips) : d.biggestPotBB.toFixed(0) + ' bb']
     ];
     var box = $('stat-cards');
     box.innerHTML = '';
@@ -477,7 +629,7 @@ var UI = (function () {
       row.innerHTML = '<span class="ae">' + (a.emoji || '🤖') + '</span>' +
         '<span class="an">' + escapeHtml(dispName(a) || id) + '</span>' +
         '<span class="as">' + a.hands + ' hands · won ' + a.won + ' · ' +
-        (a.profitBB >= 0 ? '+' : '') + a.profitBB.toFixed(1) + ' bb</span>';
+        chipDelta(a.profitChips, a.profitBB) + '</span>';
       at.appendChild(row);
     });
     var hl = $('history-list');
@@ -486,10 +638,10 @@ var UI = (function () {
     s.history.slice(0, 20).forEach(function (h) {
       var row = document.createElement('div');
       row.className = 'hist-row';
-      var p = h.profitBB >= 0 ? 'pos' : 'neg';
+      var p = h.profitChips != null ? (h.profitChips > 0 ? 'pos' : h.profitChips < 0 ? 'neg' : '') : (h.profitBB >= 0 ? 'pos' : 'neg');
       row.innerHTML = '<span>#' + h.n + '</span><span class="hc">' + h.hole.join(' ') + '</span>' +
         '<span>' + escapeHtml(h.result || '') + '</span>' +
-        '<span class="' + p + '">' + (h.profitBB >= 0 ? '+' : '') + h.profitBB + ' bb</span>';
+        '<span class="' + p + '">' + chipDelta(h.profitChips, h.profitBB) + '</span>';
       hl.appendChild(row);
     });
   }
@@ -581,8 +733,8 @@ var UI = (function () {
     records.forEach(function (r) {
       var row = document.createElement('div');
       row.className = 'hrow';
-      var net = (r.heroNetBB > 0 ? '+' : '') + r.heroNetBB + ' bb';
-      var netCls = r.heroNetBB > 0 ? 'pos' : r.heroNetBB < 0 ? 'neg' : '';
+      var net = chipDelta(r.heroNet, r.heroNetBB);
+      var netCls = r.heroNet > 0 ? 'pos' : r.heroNet < 0 ? 'neg' : '';
       var left = document.createElement('div');
       left.className = 'hrow-main';
       left.innerHTML = '<span class="hnum">Hand #' + r.handNo + '</span>' +
@@ -616,6 +768,83 @@ var UI = (function () {
       case 'ante': return who + ' posts ante ' + fmt(a.amount);
       default: return who + ' ' + a.action;
     }
+  }
+
+  // ---------- hand story ----------
+  // A clean, phone-readable narrative of a finished hand (PokerStars-style
+  // hand history). No stepping, no board chrome — just scroll and read what
+  // happened. Built from the same timeline the stepper uses.
+  function cardText(c) { return rankChar(c.r) + SUITS[c.s]; }
+
+  function renderHandStory(rec) {
+    var list = $('hand-list'), view = $('replay-view');
+    list.hidden = true; view.hidden = false; view.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'rp-head';
+    head.innerHTML = '<div><div class="rp-title">Hand #' + rec.handNo + '</div>' +
+      '<div class="fineprint">' + escapeHtml(fmtReplayDate(rec.date)) + ' · ' + escapeHtml(rec.mode) +
+      ' · blinds ' + fmt(rec.sb) + '/' + fmt(rec.bb) + '</div></div>';
+    var back = document.createElement('button');
+    back.className = 'ghost'; back.id = 'rp-back'; back.textContent = '← Hands';
+    head.appendChild(back);
+    view.appendChild(head);
+
+    var toggle = document.createElement('div');
+    toggle.className = 'rp-controls';
+    toggle.innerHTML = '<button class="ghost" id="rp-steps">▶️ Step through</button>' +
+      '<span class="fineprint">story view</span>';
+    view.appendChild(toggle);
+
+    var story = document.createElement('div');
+    story.className = 'rp-story';
+    var html = '';
+    if (rec.heroHole && rec.heroHole.length === 2) {
+      html += '<div class="rp-story-hero">Your hand: <b>' +
+        rec.heroHole.map(function (c) { return escapeHtml(cardText(c)); }).join(' ') + '</b></div>';
+    }
+    var streetNames = { preflop: 'Pre-flop', flop: 'Flop', turn: 'Turn', river: 'River' };
+    var sections = [], sec = null;
+    (rec.timeline || []).forEach(function (e) {
+      if (e.t === 'street') {
+        sec = { street: e.street, board: e.community || [], pot: e.pot || 0, lines: [] };
+        sections.push(sec);
+      } else if (e.t === 'action') {
+        var st = e.street || 'preflop';
+        if (!sec || sec.street !== st) { sec = { street: st, board: null, pot: e.pot || 0, lines: [] }; sections.push(sec); }
+        sec.lines.push(describeReplayAction(e));
+        if (e.pot) sec.pot = e.pot;
+      }
+    });
+    sections.forEach(function (s) {
+      html += '<div class="rp-story-sec"><div class="rp-story-street">' +
+        escapeHtml(streetNames[s.street] || s.street);
+      if (s.board && s.board.length) {
+        html += ' ' + s.board.map(function (c) { return escapeHtml(cardText(c)); }).join(' ');
+      }
+      html += ' <span class="hint">· pot ' + fmt(s.pot) + '</span></div>';
+      s.lines.forEach(function (ln) {
+        html += '<div class="rp-story-line">' + escapeHtml(ln) + '</div>';
+      });
+      html += '</div>';
+    });
+    // Result
+    var end = (rec.timeline || []).filter(function (e) { return e.t === 'end'; })[0];
+    if (end && end.winners && end.winners.length) {
+      html += '<div class="rp-story-result">' + end.winners.map(function (w) {
+        var nm = w.names.map(escapeHtml).join(' & ');
+        var label = w.uncalled ? ' takes back (uncalled)' : ' win';
+        return '<div>' + nm + escapeHtml(label) + ' <b>' + fmt(w.amount) + '</b>' +
+          (w.hand ? ' <span class="hint">' + escapeHtml(w.hand) + '</span>' : '') + '</div>';
+      }).join('') + '</div>';
+    }
+    if (rec.heroNet != null) {
+      var hn = rec.heroNet;
+      html += '<div class="rp-story-net ' + (hn > 0 ? 'pos' : hn < 0 ? 'neg' : '') + '">You ' +
+        chipDelta(hn, rec.heroNetBB) + '</div>';
+    }
+    if (!html) html = '<p class="hint">No actions recorded for this hand.</p>';
+    story.innerHTML = html;
+    view.appendChild(story);
   }
 
   // Render the replay viewer for record `rec` at frame `idx`
@@ -705,6 +934,7 @@ var UI = (function () {
     });
     ctl.appendChild(mkBtn('rp-next', 'Next ▶', st.done));
     ctl.appendChild(mkBtn('rp-end', 'End ⏭', st.done));
+    ctl.appendChild(mkBtn('rp-story', '📖 Story', false, 'Read the full hand as a story'));
     view.appendChild(ctl);
 
     var prog = document.createElement('div');
@@ -717,6 +947,13 @@ var UI = (function () {
   function fmt(n) {
     n = Math.round(n);
     return n.toLocaleString('en-US');
+  }
+  // Chip delta: "+1,250" / "-340". Falls back to BB text for records saved
+  // before chip amounts were stored (old localStorage entries).
+  function chipDelta(chips, bb) {
+    if (chips == null || isNaN(chips)) return (bb >= 0 ? '+' : '') + bb + ' bb';
+    var c = Math.round(chips);
+    return (c > 0 ? '+' : '') + fmt(c);
   }
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -735,9 +972,13 @@ var UI = (function () {
     cardEl: cardEl, cardBackEl: cardBackEl,
     setControls: setControls, disableControls: disableControls, openBetPanel: openBetPanel,
     log: log, clearLog: clearLog, coachTip: coachTip, winnerBanner: winnerBanner, modal: modal,
+    showHandEndControls: showHandEndControls, hideHandEndControls: hideHandEndControls,
+    handWinAmount: handWinAmount, firstWinnersTotal: firstWinnersTotal,
     renderArchetypes: renderArchetypes, renderStats: renderStats, renderLearn: renderLearn,
     renderPFScenario: renderPFScenario, renderPFFeedback: renderPFFeedback,
     renderHandList: renderHandList, renderReplay: renderReplay,
+    renderHandStory: renderHandStory,
+    chipFly: chipFly, resetTableFx: resetTableFx,
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
   };
 })();
