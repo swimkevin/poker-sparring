@@ -522,9 +522,9 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   heroCards = d.querySelectorAll('#seat-0 .pcards .card');
   ok(!!heroCards[0].querySelector('.crank'), 'hero cards flip face-up after Show');
 
-  // Mid-hand behavior unchanged: folded cards stay hidden.
+  // Mid-hand: folded hero keeps seeing own cards; folded bots stay hidden.
   UI.renderTable(t, { winners: [], revealed: {}, button: 0 });
-  ok(d.querySelectorAll('#seat-0 .pcards .card').length === 0, 'folded hero cards hidden mid-hand');
+  ok(d.querySelectorAll('#seat-0 .pcards .card').length === 2, 'folded hero keeps own cards mid-hand');
   ok(d.querySelectorAll('#seat-1 .pcards .card').length === 0, 'folded bot cards hidden mid-hand');
 
   // Hand-end controls: Next button + countdown + Show button.
