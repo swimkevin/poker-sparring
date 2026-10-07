@@ -65,6 +65,7 @@ class Room {
     this.lastResult = null; // {winners, revealed, handNo} from the last handEnd
     this.champion = null;
     this.recent = [];
+    this.chat = [];              // [{from, text, ts}] — last 50, broadcast to all
     this.closed = false;
     this.onEvent = opts.onEvent || function () {};
     this._now = opts.now || function () { return Date.now(); };
@@ -121,7 +122,7 @@ class Room {
     var seat = -1;
     for (var s = 0; s < this.config.maxPlayers; s++) if (!taken[s]) { seat = s; break; }
     var isHost = this.players.length === 0;
-    this.players.push({ clientId: clientId, name: name, seat: seat, stack: this.config.startingStack, connected: true, isHost: isHost, sittingOut: false });
+    this.players.push({ clientId: clientId, name: name, seat: seat, stack: this.config.startingStack, connected: true, isHost: isHost, sittingOut: false, buyins: 1 });
     this._emit({ t: 'playerJoined', seat: seat, name: name, isHost: isHost });
     return { ok: true, seat: seat, isHost: isHost, rejoined: false };
   }
@@ -155,12 +156,64 @@ class Room {
     if (!p) return;
     p.connected = connected;
     this._emit({ t: connected ? 'playerRejoined' : 'playerDisconnected', seat: p.seat, name: p.name });
+    // NOTE: host is NOT migrated here. Transient drops (phone sleeps) must not
+    // strip the crown; migration happens lazily in start() when a connected
+    // non-host tries to start a game whose host is gone.
+  }
+
+  _migrateHost() {
+    var cur = this.host();
+    if (cur && cur.connected) return cur;
+    if (cur) cur.isHost = false;
+    var nxt = this.players.filter(function (q) { return q.connected; })
+      .sort(function (a, b) { return a.seat - b.seat; })[0];
+    if (nxt) {
+      nxt.isHost = true;
+      this._emit({ t: 'hostMigrated', seat: nxt.seat, name: nxt.name });
+    }
+    return nxt || null;
+  }
+
+  // ---------- chat ----------
+
+  sendChat(clientId, text) {
+    var p = this.playerByClientId(clientId);
+    if (!p) return { ok: false, error: 'not at this table' };
+    text = String(text == null ? '' : text).trim().slice(0, 200);
+    if (!text) return { ok: false, error: 'empty message' };
+    this.chat.push({ from: p.name, text: text, ts: this._now() });
+    if (this.chat.length > 50) this.chat = this.chat.slice(-50);
+    return { ok: true };
+  }
+
+  // ---------- rebuy ----------
+
+  rebuy(clientId) {
+    var p = this.playerByClientId(clientId);
+    if (!p) return { ok: false, error: 'not at this table' };
+    if (this.state !== 'playing') return { ok: false, error: 'game not running' };
+    var target = this.config.startingStack || 1000;
+    if (p.stack >= target) return { ok: false, error: 'already topped up' };
+    p.stack = target;
+    p.buyins = (p.buyins || 1) + 1;
+    // Sync the live table seat if a hand is running.
+    if (this.table && this.table.players[p.seat]) this.table.players[p.seat].stack = target;
+    this._emit({ t: 'playerRebuy', seat: p.seat, name: p.name, stack: target });
+    return { ok: true };
   }
 
   // ---------- game flow ----------
 
   start(clientId) {
     var p = this.playerByClientId(clientId);
+    // Lazy host migration: if the host is disconnected (app killed, not a
+    // clean leave), a connected player trying to start takes the crown
+    // instead of the room soft-locking.
+    if (p && !p.isHost) {
+      var h = this.host();
+      if (!h || !h.connected) this._migrateHost();
+      p = this.playerByClientId(clientId);
+    }
     if (!p || !p.isHost) return { ok: false, error: 'Only the host can start the game.' };
     if (this.state !== 'lobby') return { ok: false, error: 'Game already running.' };
     if (this.connectedCount() < 2) return { ok: false, error: 'Need at least 2 players to start.' };
@@ -393,11 +446,11 @@ class Room {
       acting: -1, button: -1, hole: null, legal: null,
       timerMsLeft: null, turnTimerSec: this.config.turnTimerSec,
       winners: null, showdown: null, recent: this.recent.slice(-8),
-      champion: this.champion, nextHandInMs: 0
+      champion: this.champion, nextHandInMs: 0, chat: this.chat.slice(-50)
     };
     if (this.state === 'lobby' || !this.table) {
       snap.players = this.players.slice().sort(function (a, b) { return a.seat - b.seat; })
-        .map(function (p) { return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut }; });
+        .map(function (p) { return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut, buyins: p.buyins || 1 }; });
       return snap;
     }
     var t = this.table;
@@ -416,7 +469,8 @@ class Room {
         stack: p.stack, bet: p.bet, folded: p.folded, allIn: p.allIn,
         acted: p.acted, hasCards: p.hole.length === 2 && !p.folded,
         connected: rp ? rp.connected : true, isHost: rp ? rp.isHost : false,
-        sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut
+        sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut,
+        buyins: rp ? (rp.buyins || 1) : 1
       };
     }, this);
     if (me && !t.handOver) {

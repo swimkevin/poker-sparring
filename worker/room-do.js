@@ -117,6 +117,14 @@ export class RoomDO {
       const r = room.setSitOut(meta.clientId, msg.out);
       if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
       else changed = true;
+    } else if (msg.t === 'chat') {
+      const r = room.sendChat(meta.clientId, msg.text);
+      if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
+      else changed = true;
+    } else if (msg.t === 'rebuy') {
+      const r = room.rebuy(meta.clientId);
+      if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
+      else changed = true;
     } else if (msg.t === 'leave') {
       room.removePlayer(meta.clientId);
       changed = true;
