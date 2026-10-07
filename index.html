@@ -69,6 +69,7 @@
       </div>
       <p class="hint">Tap a bot below to swap them in or out.</p>
       <div id="bot-roster" class="roster"></div>
+      <div id="roster-hint" class="roster-hint" aria-live="polite"></div>
 
       <h2>3 · Table settings</h2>
       <details class="settings-details">
@@ -77,6 +78,9 @@
           <label>Starting stack <input id="cfg-stack" type="number" value="1000" step="100" min="200"></label>
           <label>Small blind <input id="cfg-sb" type="number" value="5" step="5" min="1"></label>
           <label>Big blind <input id="cfg-bb" type="number" value="10" step="5" min="2"></label>
+        </div>
+        <div class="settings-row">
+          <label class="check-label"><input id="cfg-botrebuys" type="checkbox" checked> Bot rebuys <span class="hint-inline">(busted bots buy back in, tracked on their seat)</span></label>
         </div>
       </details>
 
@@ -186,6 +190,8 @@
           <label>Aggression <span class="val" id="v-aggr">50</span><input id="cust-aggr" type="range" min="5" max="100" value="50"></label>
           <label>Bluff frequency <span class="val" id="v-bluff">20</span><input id="cust-bluff" type="range" min="0" max="80" value="20"></label>
           <label>Call-down stubbornness <span class="val" id="v-stub">50</span><input id="cust-stub" type="range" min="5" max="100" value="50"></label>
+          <label>Tilt-proneness <span class="val" id="v-tilt">50</span><input id="cust-tilt" type="range" min="0" max="100" value="50"></label>
+          <label>Rebuy tendency <span class="val" id="v-rebuy">70</span><input id="cust-rebuy" type="range" min="0" max="100" value="70"></label>
         </div>
         <button id="btn-add-custom" class="primary">Add custom bot</button>
       </div>

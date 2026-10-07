@@ -711,3 +711,47 @@ label { font-weight: 600; }
   pointer-events: none; margin: -11px 0 0 -11px;
   transition: transform 0.55s cubic-bezier(.3,.7,.3,1), opacity 0.55s ease;
 }
+
+/* Roster selection: pick-order badges + transient cap hints */
+.roster-card { position: relative; }
+.roster-card .sel-num {
+  position: absolute; top: 6px; right: 6px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--gold); color: #1a1408;
+  font-size: 12px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.roster-hint {
+  min-height: 1.4em; margin-top: 0.4rem; font-size: 0.85rem; color: var(--gold);
+  opacity: 0; transition: opacity 0.25s ease; text-align: center;
+}
+.roster-hint.show { opacity: 1; }
+
+/* Coach villain read: the per-opponent exploit line. */
+.coach .coach-v { display: block; margin-top: 0.35rem; color: var(--gold); font-size: 0.85em; }
+
+/* Stat ⓘ popovers: inline definitions on the Stats page. */
+.stat-card { position: relative; }
+.stat-info {
+  background: none; border: none; padding: 0 0 0 0.3rem; cursor: pointer;
+  color: var(--blue); font-size: 0.9em; line-height: 1; vertical-align: baseline;
+}
+.stat-info:hover { color: var(--gold); }
+.stat-tip {
+  display: none; position: absolute; z-index: 6;
+  top: calc(100% + 4px); left: -4px; right: -4px;
+  background: var(--panel); border: 1px solid var(--gold); border-radius: 8px;
+  padding: 0.55rem 0.65rem; font-size: 0.78rem; line-height: 1.45;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); text-align: left;
+}
+.stat-tip.show { display: block; }
+
+/* Seat badges: rebuy counter (PokerNow-style) + tilt meter. */
+.seat .who { position: relative; }
+.seat .badges { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: middle; }
+.seat-badge {
+  font-size: 0.68rem; font-weight: 800; line-height: 1;
+  padding: 2px 5px; border-radius: 8px; white-space: nowrap;
+}
+.seat-badge.rb { background: #2c3a55; color: var(--gold); border: 1px solid #3d4f73; }
+.seat-badge.tilt { background: #5a2323; border: 1px solid #8a3535; }

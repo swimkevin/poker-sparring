@@ -23,44 +23,13 @@ if (typeof module !== 'undefined' && module.exports) {
 // transfers to real tables.
 var ARCHETYPES = [
   {
-    id: 'rock', name: 'The Rock', emoji: '🪨',
-    tagline: 'Only plays monsters. You always know where you stand.',
-    desc: 'Tight-passive: plays ~10% of hands — big pairs and big aces — and only bets with genuine strength. The classic "rock" from every low-stakes game.',
-    beat: 'Pick up their blinds when they let you. When they finally bet or raise, believe them and fold everything but the nuts.',
-    openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
-    aggression: 0.20, bluff: 0.02, stubborn: 0.20, pushTier: 3, callPushTier: 2, limp: 0.05
-  },
-  {
-    id: 'station', name: 'Calling Station', emoji: '📞',
-    tagline: 'Sees every flop with a smile. Folding is not in the vocabulary.',
-    desc: 'Loose-passive: sees ~45% of flops, calls down with middle pair or any draw, almost never raises. The friendliest seat in home games — always in the hand, always having a good time.',
-    beat: 'Value bet big with any decent hand — and never bluff. They love to call, so size up your value bets and enjoy the ride.',
-    openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 2,
-    aggression: 0.20, bluff: 0.03, stubborn: 0.95, pushTier: 4, callPushTier: 4, limp: 0.75
-  },
-  {
-    id: 'maniac', name: 'The Maniac', emoji: '🤪',
-    tagline: 'Raises everything. No fold button found.',
-    desc: 'Loose-aggressive chaos: plays ~65% of hands, 3-bets light, bluffs every street. A total rollercoaster — scary until you realize their range is literally everything, and then it is just plain fun.',
-    beat: 'Tighten up, trap with strong hands, and call down a little lighter than usual. Patience pays off big in this matchup.',
-    openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 5,
-    aggression: 0.95, bluff: 0.55, stubborn: 0.65, pushTier: 6, callPushTier: 4, limp: 0.05
-  },
-  {
-    id: 'shark', name: 'TAG Shark', emoji: '🦈',
-    tagline: 'Tight, aggressive, disciplined. The winning baseline.',
-    desc: 'Tight-aggressive: ~20% of hands, position-aware, value bets and bluffs at balanced frequencies. The style winning players are taught — measure yourself against it.',
-    beat: 'Respect their aggression and avoid marginal spots. Steal their blinds when they show weakness.',
-    openTier: 3, openTierLate: 5, callTier: 3, threeBetTier: 2,
-    aggression: 0.70, bluff: 0.25, stubborn: 0.50, pushTier: 4, callPushTier: 3, limp: 0.10
-  },
-  {
     id: 'lag', name: 'swimkev', emoji: '🏊',
     tagline: 'Wild and unpredictable — wins big or rebuys instantly.',
     desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
     beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
-    aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15
+    aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15,
+    tiltProne: 0.70, rebuy: 0.90
   },
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
@@ -69,6 +38,7 @@ var ARCHETYPES = [
     beat: 'Value bet thin — he will call with worse. Never bluff him; he does not fold pairs.',
     openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.05, stubborn: 0.55, pushTier: 4, callPushTier: 4, limp: 0.9,
+    tiltProne: 0.40, rebuy: 0.80,
     neverRaise: true
   },
   {
@@ -77,7 +47,8 @@ var ARCHETYPES = [
     desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in with monsters (QQ+/AKs) when the moment feels right. Value-heavy, not bluff-heavy — the sizing is the weapon, and it is a blast to play against. Some days Amogh gets super lucky and wins huge; other days he could not catch a card with a net. You never know which Amogh showed up today.',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 3,
-    aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05
+    aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
+    tiltProne: 0.80, rebuy: 0.85
   },
   {
     id: 'nathan', name: 'Nathan', emoji: '🐢',
@@ -86,14 +57,75 @@ var ARCHETYPES = [
     beat: 'Bet your strong hands for value — he will never raise you off them. But when Nathan finally bets the river, believe him.',
     openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.02, stubborn: 0.9, pushTier: 3, callPushTier: 3, limp: 0.6,
+    tiltProne: 0.30, rebuy: 0.50,
     neverRaise: true, riverTrap: true
+  },
+  {
+    id: 'grinder', name: 'The Grinder', emoji: '⏱️',
+    tagline: 'Tournament pro. Tight early, lethal with 20 big blinds.',
+    desc: 'Tournament TAG: folds ~85% of hands, but 3-bets relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
+    beat: 'Steal his blinds early when stacks are deep. Never pay off a shove without a real hand — his all-in range is brutally strong.',
+    openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 2,
+    aggression: 0.65, bluff: 0.12, stubborn: 0.40, pushTier: 5, callPushTier: 2, limp: 0.05,
+    tiltProne: 0.25, rebuy: 0.60
+  },
+  {
+    id: 'bubble', name: 'Bubble Boy', emoji: '🫧',
+    tagline: 'Here to cash, not to win. Folds everything but the nuts.',
+    desc: 'Extreme survival mode: plays ~7% of hands and treats every all-in like the tournament bubble. Will blind down to 5 big blinds waiting for aces — then shove them with total conviction.',
+    beat: 'Rob his blinds with any two cards. When he finally plays back at you, believe the strength and get out of the way.',
+    openTier: 1, openTierLate: 2, callTier: 1, threeBetTier: 1,
+    aggression: 0.30, bluff: 0.02, stubborn: 0.30, pushTier: 2, callPushTier: 1, limp: 0.10,
+    tiltProne: 0.45, rebuy: 0.15
+  },
+  {
+    id: 'shark', name: 'TAG Shark', emoji: '🦈',
+    tagline: 'Tight, aggressive, disciplined. The winning baseline.',
+    desc: 'Tight-aggressive: ~20% of hands, position-aware, value bets and bluffs at balanced frequencies. The style winning players are taught — measure yourself against it.',
+    beat: 'Respect their aggression and avoid marginal spots. Steal their blinds when they show weakness.',
+    openTier: 3, openTierLate: 5, callTier: 3, threeBetTier: 2,
+    aggression: 0.70, bluff: 0.25, stubborn: 0.50, pushTier: 4, callPushTier: 3, limp: 0.10,
+    tiltProne: 0.25, rebuy: 0.70
+  },
+  {
+    id: 'station', name: 'Calling Station', emoji: '📞',
+    tagline: 'Sees every flop with a smile. Folding is not in the vocabulary.',
+    desc: 'Loose-passive: sees ~45% of flops, calls down with middle pair or any draw, almost never raises. The friendliest seat in home games — always in the hand, always having a good time.',
+    beat: 'Value bet big with any decent hand — and never bluff. They love to call, so size up your value bets and enjoy the ride.',
+    openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 2,
+    aggression: 0.20, bluff: 0.03, stubborn: 0.95, pushTier: 4, callPushTier: 4, limp: 0.75,
+    tiltProne: 0.35, rebuy: 0.90
+  },
+  {
+    id: 'maniac', name: 'The Maniac', emoji: '🤪',
+    tagline: 'Raises everything. No fold button found.',
+    desc: 'Loose-aggressive chaos: plays ~65% of hands, 3-bets light, bluffs every street. A total rollercoaster — scary until you realize their range is literally everything, and then it is just plain fun.',
+    beat: 'Tighten up, trap with strong hands, and call down a little lighter than usual. Patience pays off big in this matchup.',
+    openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 5,
+    aggression: 0.95, bluff: 0.55, stubborn: 0.65, pushTier: 6, callPushTier: 4, limp: 0.05,
+    tiltProne: 0.95, rebuy: 1.00
+  },
+  {
+    id: 'rock', name: 'The Rock', emoji: '🪨',
+    tagline: 'Only plays monsters. You always know where you stand.',
+    desc: 'Tight-passive: plays ~10% of hands — big pairs and big aces — and only bets with genuine strength. The classic "rock" from every low-stakes game.',
+    beat: 'Pick up their blinds when they let you. When they finally bet or raise, believe them and fold everything but the nuts.',
+    openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
+    aggression: 0.20, bluff: 0.02, stubborn: 0.20, pushTier: 3, callPushTier: 2, limp: 0.05,
+    tiltProne: 0.20, rebuy: 0.40
   }
+
 ];
 
+// Fallback is by id, not array position, so the display order above can change freely.
 function getArchetype(id, customs) {
   var all = ARCHETYPES.concat(customs || []);
-  for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i];
-  return ARCHETYPES[3];
+  var fb = all[0];
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].id === id) return all[i];
+    if (all[i].id === 'shark') fb = all[i];
+  }
+  return fb;
 }
 
 // Build an archetype from user sliders (0..100 each).
@@ -110,6 +142,8 @@ function customArchetype(opts) {
     openTier: tierFromLooseness(lz * 0.8), openTierLate: tierFromLooseness(lz),
     callTier: tierFromLooseness(lz), threeBetTier: Math.max(1, tierFromLooseness(lz * 0.6) - 1),
     aggression: ag, bluff: bl, stubborn: st, limp: ag < 0.45 ? 0.6 : 0.1,
+    tiltProne: opts.tiltProne != null ? opts.tiltProne / 100 : 0.5,
+    rebuy: opts.rebuy != null ? opts.rebuy / 100 : 0.7,
     pushTier: Math.max(2, tierFromLooseness(lz * 0.7)), callPushTier: Math.max(1, tierFromLooseness(lz * 0.5))
   };
 }
@@ -142,9 +176,26 @@ function clampRaise(table, p, legal, to) {
   return to;
 }
 
+// Tilt morphs a bot's style: tilted players play more hands, blast more, and
+// call down lighter trying to win it back — the classic real-money tell.
+// Returns a shallow copy with shifted params; the base archetype is never mutated.
+function effectiveArchetype(A, tilt) {
+  if (!A || !(tilt > 0.02)) return A;
+  var t = Math.min(1, tilt);
+  return Object.assign({}, A, {
+    openTier: Math.min(6, (A.openTier || 3) + Math.round(t * 2)),
+    openTierLate: Math.min(6, (A.openTierLate || 4) + Math.round(t * 2)),
+    callTier: Math.min(6, (A.callTier || 4) + Math.round(t * 1)),
+    threeBetTier: Math.min(6, (A.threeBetTier || 3) + Math.round(t * 1)),
+    aggression: Math.min(1, (A.aggression == null ? 0.5 : A.aggression) + t * 0.30),
+    bluff: Math.min(1, (A.bluff == null ? 0.2 : A.bluff) + t * 0.25),
+    stubborn: Math.min(1, (A.stubborn == null ? 0.5 : A.stubborn) + t * 0.30)
+  });
+}
+
 function botDecide(table, p) {
   if (!table.canAct(p)) return null;
-  var A = p.archetype || ARCHETYPES[3];
+  var A = effectiveArchetype(p.archetype || getArchetype('shark'), p.tilt || 0);
   var mv = table.street === 'preflop' ? botPreflop(table, p, A) : botPostflop(table, p, A);
   // Strictly passive archetypes never take an aggressive action: convert every
   // bet/raise into a check (when free) or a call. This single gate covers
@@ -350,6 +401,7 @@ function nathanRiver(table, p, A, legal, toCall, pot, ms, eq) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     ARCHETYPES: ARCHETYPES, getArchetype: getArchetype, customArchetype: customArchetype,
+    effectiveArchetype: effectiveArchetype,
     positionScore: positionScore, botDecide: botDecide,
     amoghPostflop: amoghPostflop, nathanRiver: nathanRiver
   };

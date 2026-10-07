@@ -132,7 +132,7 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   UI.renderStats();
   var vals = {};
   document.querySelectorAll('#stat-cards .stat-card').forEach(function (el) {
-    vals[el.querySelector('.sk').textContent] = el.querySelector('.sv').textContent;
+    vals[el.querySelector('.sk').textContent.replace('ⓘ', '')] = el.querySelector('.sv').textContent;
   });
   ok(vals['bb / 100'] === '—', 'bb/100 shows dash below 20 hands, got "' + vals['bb / 100'] + '"');
   ok(vals['Hands'] === '0', 'hands starts at 0');
@@ -148,7 +148,7 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   UI.renderStats();
   var vals2 = {};
   document.querySelectorAll('#stat-cards .stat-card').forEach(function (el) {
-    vals2[el.querySelector('.sk').textContent] = el.querySelector('.sv').textContent;
+    vals2[el.querySelector('.sk').textContent.replace('ⓘ', '')] = el.querySelector('.sv').textContent;
   });
   ok(vals2['Hands'] === '25', '25 hands recorded');
   ok(vals2['bb / 100'] !== '—' && parseFloat(vals2['bb / 100']) === 200,
@@ -272,7 +272,7 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
     'per-archetype row shows chips not bb, got "' + arch.trim().slice(0, 80) + '"');
   var vals = {};
   document.querySelectorAll('#stat-cards .stat-card').forEach(function (el) {
-    vals[el.querySelector('.sk').textContent] = el.querySelector('.sv').textContent;
+    vals[el.querySelector('.sk').textContent.replace('ⓘ', '')] = el.querySelector('.sv').textContent;
   });
   ok(vals['Biggest pot'] === '125', 'biggest pot shows chips, got "' + vals['Biggest pot'] + '"');
 
@@ -624,6 +624,113 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   UI.setBankroll(-340);
   ok(bc.textContent === '-340 session', 'bankroll negative chips, got "' + bc.textContent + '"');
   d.body.removeChild(bc);
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- Roster selection: caps, min, order badges, named-first ----------
+(function () {
+  var testBots = [
+    { id: 'lag', name: 'swimkev', emoji: 'E1', tagline: 't1' },
+    { id: 'rohan', name: 'Rohan', emoji: 'E2', tagline: 't2' },
+    { id: 'shark', name: 'Shark', emoji: 'E3', tagline: 't3' }
+  ];
+  var hints = [];
+  var sel = new Set(['lag']);
+  // Heads-up: max 1 — adding another is refused, removing the last is refused.
+  UI.renderRoster(testBots, sel, 1, function (m) { hints.push(m); });
+  var cards = document.querySelectorAll('#bot-roster .roster-card');
+  ok(cards.length === 3, 'roster renders all bots');
+  ok(cards[0].className.indexOf('selected') !== -1, 'swimkev selected');
+  ok(cards[0].querySelector('.sel-num').textContent === '1', 'pick-order badge shown');
+  cards[1].click(); // try to add Rohan at max 1
+  ok(!sel.has('rohan'), 'over-selection refused in heads-up');
+  ok(hints.length === 1 && /Heads-up/.test(hints[0]), 'hint explains the cap, got "' + hints[0] + '"');
+  cards[0].click(); // try to deselect the only pick
+  ok(sel.has('lag'), 'last pick cannot be deselected');
+  ok(/at least 1/.test(hints[1]), 'hint explains the minimum');
+  // Cash: max 5 — toggle works within bounds.
+  UI.renderRoster(testBots, sel, 5, function (m) { hints.push(m); });
+  document.querySelectorAll('#bot-roster .roster-card')[1].click();
+  ok(sel.has('rohan') && sel.size === 2, 'adding within cap works');
+  var badges = Array.prototype.map.call(
+    document.querySelectorAll('#bot-roster .roster-card.selected .sel-num'),
+    function (el) { return el.textContent; });
+  ok(badges.join(',') === '1,2', 'badges follow roster order, got ' + badges.join(','));
+
+  // Named bots come first in the built-in order.
+  var ids = global.ARCHETYPES.map(function (a) { return a.id; });
+  ok(ids.slice(0, 4).join(',') === 'lag,rohan,amogh,nathan',
+    'named bots lead the roster, got ' + ids.slice(0, 4).join(','));
+  // Fallback still resolves to the shark by id, not by position.
+  ok(bots.getArchetype('nope').id === 'shark', 'unknown id falls back to shark');
+  ok(bots.getArchetype('lag').id === 'lag', 'known id resolves');
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- stats: ⓘ popovers explain each stat inline ----------
+(function () {
+  mem = {};
+  UI.renderStats();
+  var cards = document.querySelectorAll('#stat-cards .stat-card');
+  ok(cards.length === 7, '7 stat cards, got ' + cards.length);
+  var withInfo = 0;
+  cards.forEach(function (el) {
+    var btn = el.querySelector('.stat-info');
+    var tip = el.querySelector('.stat-tip');
+    if (btn && tip) {
+      withInfo++;
+      ok(btn.getAttribute('aria-label').indexOf('What does') === 0, 'info button has aria-label');
+      // Toggle open.
+      btn.click();
+      ok(tip.classList.contains('show'), 'tip opens on tap: ' + btn.getAttribute('aria-label'));
+      // Toggle closed.
+      btn.click();
+      ok(!tip.classList.contains('show'), 'tip closes on second tap');
+    }
+  });
+  ok(withInfo === 7, 'every stat card has an ⓘ explainer, got ' + withInfo);
+  // Content spot-checks: definitions + formulas.
+  var html = document.getElementById('stat-cards').innerHTML;
+  ok(html.indexOf('Voluntarily Put money In Pot') !== -1, 'VPIP defined inline');
+  ok(html.indexOf('(postflop bets + raises)') !== -1, 'Aggression Factor formula inline');
+  ok(html.indexOf('(profit in BB') !== -1, 'bb/100 formula inline');
+  ok(html.indexOf('blinds don\'t count') !== -1 || html.indexOf('blinds don&#39;t count') !== -1 ||
+     html.indexOf("blinds don't count") !== -1, 'VPIP blinds exclusion noted');
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- seats: rebuy counter + tilt badge ----------
+(function () {
+  var d = dom.window.document;
+  function fakeTable2() {
+    return {
+      players: [
+        { isHero: true, name: 'You', archetype: null, stack: 1000, bet: 0,
+          folded: false, sittingOut: false, rebuys: 1, tilt: 0, hole: [] },
+        { isHero: false, name: 'Maniac', archetype: { emoji: '🤪' }, stack: 1000, bet: 0,
+          folded: false, sittingOut: false, rebuys: 2, tilt: 0.8, hole: [] }
+      ],
+      community: [], street: 'preflop', acting: -1, button: 0, handOver: true,
+      potTotal: function () { return 0; }
+    };
+  }
+  UI.buildSeats(2);
+  UI.renderTable(fakeTable2(), { handEnd: true });
+  var b0 = d.querySelector('#seat-0 .badges').innerHTML;
+  var b1 = d.querySelector('#seat-1 .badges').innerHTML;
+  ok(b0.indexOf('×1') !== -1, 'hero rebuy count shown, got "' + b0 + '"');
+  ok(b0.indexOf('🌡️') === -1, 'no tilt badge when calm');
+  ok(b1.indexOf('×2') !== -1, 'bot rebuy count shown, got "' + b1 + '"');
+  ok(b1.indexOf('🌡️') !== -1, 'tilt badge shown when steaming');
+  // Calm bot with no rebuys: no badges.
+  var t = fakeTable2();
+  t.players[1].rebuys = 0; t.players[1].tilt = 0.2;
+  UI.renderTable(t, { handEnd: true });
+  var b2 = d.querySelector('#seat-1 .badges').innerHTML;
+  ok(b2 === '', 'no badges when calm with no rebuys, got "' + b2 + '"');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
