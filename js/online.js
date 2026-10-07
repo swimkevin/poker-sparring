@@ -394,6 +394,17 @@ var Online = (function () {
     };
     nc.connect(url + '/room/' + code + '/ws?name=' + encodeURIComponent(name) + (emoji ? '&emoji=' + encodeURIComponent(emoji) : ''),
                { autoReconnect: true, maxTries: 12 });
+    // If the tab was backgrounded (mobile app switch), the socket may have
+    // died silently. On return, nudge a reconnect — the server reclaims the
+    // seat by name, so the player lands back in their seat.
+    if (!window.__psVisHandler) {
+      window.__psVisHandler = true;
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && mode === 'live' && client && client.reconnect) {
+          try { client.reconnect(); } catch (e) {}
+        }
+      });
+    }
     mode = 'live';
     setConn('Live relay — ' + relayHost);
     roomCode = code;
