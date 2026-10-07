@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.11] — 2026-10-07
+
+### Added
+- Phone bottom tab bar: 🃏 Table, 💡 Coach, 📖 History, ☰ Menu with slide-up panels. No more scrolling to find the hand log or coach tips.
+
+### Fixed
+- Folded cards are no longer removed — you always see your own hand, even mid-hand after folding.
+- Compact phone table: smaller cards/text that fits the viewport (PokerNow-style).
+- Fixed dead CSS selectors that left the action bar covering content.
+
 ## [1.8.10] — 2026-10-07
 
 ### Fixed
