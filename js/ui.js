@@ -1301,24 +1301,40 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
   // Pull the hand log HTML into the panel (offline or online).
   function fillHistory(body) {
     var src = document.getElementById('hand-log') || document.getElementById('on-feed');
-    var chat = document.querySelector('#screen-online .online-chat');
     var wrap = document.createElement('div');
     wrap.className = 'hand-log';
     if (src) wrap.innerHTML = src.innerHTML;
     if (!wrap.innerHTML.trim()) wrap.innerHTML = '<p class="fineprint">No hands yet.</p>';
     body.appendChild(wrap);
-    // Include table chat on online tables.
-    if (chat) {
-      var chatClone = chat.cloneNode(true);
-      chatClone.style.display = 'block';
-      chatClone.style.marginTop = '0.75rem';
-      body.appendChild(chatClone);
-    }
     var replay = document.createElement('button');
     replay.className = 'ghost'; replay.style.marginTop = '0.75rem';
     replay.textContent = '📖 Open full hand replayer';
     replay.onclick = function () { closePanel(); UI.showScreen('hands'); };
     body.appendChild(replay);
+  }
+
+  // Table chat gets its own tab (online games).
+  function fillChat(body) {
+    var chat = document.querySelector('#screen-online .online-chat');
+    if (chat) {
+      var clone = chat.cloneNode(true);
+      clone.style.display = 'block';
+      clone.removeAttribute('hidden');
+      // Rewire the send button in the clone.
+      var input = clone.querySelector('input');
+      var sendBtn = clone.querySelector('button');
+      var origInput = chat.querySelector('input');
+      var origSend = chat.querySelector('button');
+      if (sendBtn && origSend) sendBtn.onclick = function () { origSend.click(); };
+      if (input && origInput) {
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { origInput.value = input.value; origSend.click(); input.value = ''; }
+        });
+      }
+      body.appendChild(clone);
+    } else {
+      body.innerHTML = '<p class="fineprint">Chat is available in online games.</p>';
+    }
   }
 
   // Menu: quick actions (leave, skip, settings-ish). Works offline + online.
@@ -1351,6 +1367,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     if (tab === 'table' || isActive) { closePanel(); return; }
     if (tab === 'coach') { openPanel('coach', '💡 Coach', fillCoach); return; }
     if (tab === 'history') { openPanel('history', '📖 Hand history', fillHistory); return; }
+    if (tab === 'chat') { openPanel('chat', '💬 Table chat', fillChat); return; }
     if (tab === 'menu') { openPanel('menu', '☰ Menu', fillMenu); return; }
   });
   if (closeBtn) closeBtn.onclick = closePanel;
@@ -1362,5 +1379,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     if (!active) return;
     if (active.dataset.tab === 'coach') fillCoach(panelBody);
     if (active.dataset.tab === 'history') fillHistory(panelBody);
+    if (active.dataset.tab === 'chat') fillChat(panelBody);
   }, 1500);
 })();
