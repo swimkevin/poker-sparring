@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.9] — 2026-10-07
+
+### Fixed
+- Online "Show my cards" button now appears correctly (hole cards cached).
+- Online seats show emoji in mock mode too.
+- Bankroll chip now actually shows lifetime profit (was stuck at 0).
+- Hand history grid renders everyone's cards correctly (was blank).
+- "Pair of Sixes" typo fixed.
+
 ## [1.8.8] — 2026-10-07
 
 ### Added
