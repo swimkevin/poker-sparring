@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.8';
+  var APP_VERSION = '1.8.9';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -85,7 +85,7 @@
   // refreshes. (Session-only profit reset to 0 on every page load.)
   function refreshBankroll() {
     try {
-      var st = (typeof Stats !== 'undefined' && Stats.get) ? Stats.get() : null;
+      var st = (typeof loadStats === 'function') ? loadStats() : null;
       UI.setBankroll(st ? (st.profitChips || 0) : 0);
     } catch (e) { UI.setBankroll(0); }
   }
