@@ -3,6 +3,18 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.6] — 2026-10-07
+
+### Added
+- **Tournament blind interval** — choose how often blinds go up (default 8 hands).
+- **Tournament rebuys** — optional; busted players (you + bots) can buy back in.
+
+### Fixed
+- **Collapsible result banner** — hand results now start as a slim bar; tap to
+  expand details, tap again to collapse. Never blocks the board, never
+  disappears until the next hand. Same for online.
+- Round-bets example now uses 27 (not 67).
+
 ## [1.8.5] — 2026-10-07
 
 ### Fixed (mobile UX audit)
