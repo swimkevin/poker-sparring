@@ -372,6 +372,18 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   border: 1px solid #232c3d; border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
 }
+.hist-row.expandable { display: block; padding: 0; overflow: hidden; }
+.hist-main {
+  display: flex; gap: 0.8rem; align-items: center; width: 100%;
+  background: none; border: none; color: inherit; cursor: pointer;
+  padding: 0.5rem 0.7rem; font-size: inherit; text-align: left;
+  min-height: 44px;
+}
+.hist-main .wchevron { margin-left: auto; color: var(--muted); transition: transform 0.2s; }
+.hist-row.expanded .hist-main .wchevron { transform: rotate(180deg); }
+.hist-details { padding: 0.5rem 0.7rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.hist-meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.4rem; }
+.hist-replay { margin-top: 0.2rem; }
 .hist-row .hc { font-family: monospace; }
 .hist-row .pos { color: var(--green); margin-left: auto; font-weight: 700; }
 .hist-row .neg { color: var(--red); margin-left: auto; font-weight: 700; }
