@@ -1251,15 +1251,21 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
   var closeBtn = document.getElementById('mp-close');
   if (!tabs || !panel) return;
 
-  // Show the tab bar only on the game screen (mobile CSS handles visibility).
+  // Show the tab bar only on game screens (mobile CSS handles visibility).
   function syncTabBar() {
-    var el = document.getElementById('screen-table');
-    var onGame = el && !el.hidden;
+    var t = document.getElementById('screen-table');
+    var o = document.getElementById('screen-online');
+    var onGame = (t && !t.hidden) || (o && !o.hidden);
     tabs.style.display = onGame ? '' : 'none';
+    if (!onGame) closePanel();
   }
   // Sync on screen changes.
   if (typeof MutationObserver !== 'undefined') {
-    new MutationObserver(syncTabBar).observe(document.getElementById('screen-table'), { attributes: true, attributeFilter: ['hidden'] });
+    var obs = new MutationObserver(syncTabBar);
+    ['screen-table', 'screen-online'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) obs.observe(el, { attributes: true, attributeFilter: ['hidden'] });
+    });
   }
   syncTabBar();
 
@@ -1292,14 +1298,22 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     }
   }
 
-  // Pull the hand log HTML into the panel.
+  // Pull the hand log HTML into the panel (offline or online).
   function fillHistory(body) {
-    var src = document.getElementById('hand-log');
+    var src = document.getElementById('hand-log') || document.getElementById('on-feed');
+    var chat = document.querySelector('#screen-online .online-chat');
     var wrap = document.createElement('div');
     wrap.className = 'hand-log';
     if (src) wrap.innerHTML = src.innerHTML;
     if (!wrap.innerHTML.trim()) wrap.innerHTML = '<p class="fineprint">No hands yet.</p>';
     body.appendChild(wrap);
+    // Include table chat on online tables.
+    if (chat) {
+      var chatClone = chat.cloneNode(true);
+      chatClone.style.display = 'block';
+      chatClone.style.marginTop = '0.75rem';
+      body.appendChild(chatClone);
+    }
     var replay = document.createElement('button');
     replay.className = 'ghost'; replay.style.marginTop = '0.75rem';
     replay.textContent = '📖 Open full hand replayer';
@@ -1307,7 +1321,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     body.appendChild(replay);
   }
 
-  // Menu: quick actions (leave, skip, settings-ish).
+  // Menu: quick actions (leave, skip, settings-ish). Works offline + online.
   function fillMenu(body) {
     var mk = function (label, fn) {
       var b = document.createElement('button');
@@ -1316,9 +1330,16 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
       b.textContent = label; b.onclick = function () { closePanel(); fn(); };
       body.appendChild(b);
     };
-    mk('⏩ Skip to next hand', function () { var b = document.getElementById('btn-skip'); if (b) b.click(); });
-    mk('📊 View stats', function () { UI.showScreen('stats'); if (UI.renderStats) UI.renderStats(); });
-    mk('← Leave table', function () { var b = document.getElementById('btn-leave'); if (b) b.click(); });
+    var online = document.getElementById('screen-online') && !document.getElementById('screen-online').hidden;
+    if (online) {
+      mk('⏸ Sit out / back in', function () { var b = document.getElementById('on-sitout'); if (b) b.click(); });
+      mk('💰 Rebuy', function () { var b = document.getElementById('on-rebuy'); if (b) b.click(); });
+      mk('← Leave table', function () { var b = document.getElementById('on-tleave'); if (b) b.click(); });
+    } else {
+      mk('⏩ Skip to next hand', function () { var b = document.getElementById('btn-skip'); if (b) b.click(); });
+      mk('📊 View stats', function () { UI.showScreen('stats'); if (UI.renderStats) UI.renderStats(); });
+      mk('← Leave table', function () { var b = document.getElementById('btn-leave'); if (b) b.click(); });
+    }
   }
 
   tabs.addEventListener('click', function (e) {
