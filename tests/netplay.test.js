@@ -64,12 +64,39 @@ function lastState(client) {
   var dan = srv.connect(code, 'Dan');
   ok(dan.error && /full/i.test(dan.error), 'fourth player rejected at maxPlayers=3');
   var dup = srv.connect(code, 'Ann');
-  ok(dup.error && /taken/i.test(dup.error), 'duplicate name rejected');
+  // Same name takes over the session: a fast redial before the server has
+  // processed the old socket's close must rebind the seat, not strand the
+  // player with "name taken".
+  ok(!dup.error && dup.rejoined && dup.client.seat === 0, 'duplicate name takes over the seat');
   var bad = srv.connect('ZZZZZ9', 'Zed');
   ok(bad.error, 'unknown room code rejected');
   var lob = host.last;
   ok(lob.t === 'lobby' && lob.players.length === 3, 'lobby lists 3 players');
   ok(lob.players[0].isHost && lob.code === code, 'lobby marks host and code');
+  srv.close();
+})();
+
+// ---------- session takeover on fast redial ----------
+(function () {
+  var clock = testClock();
+  var srv = mockServer(clock);
+  var created = srv.createRoom({ maxPlayers: 6, startingStack: 1000, sb: 5, bb: 10, turnTimerSec: 0 }, 'Ann');
+  var code = created.code;
+  var ann = created.client;
+  var bob = srv.connect(code, 'Bob').client;
+  ann.send({ t: 'start' });
+  ok(lastState(ann).state === 'playing', 'game started');
+  // Ann's old socket is still "connected" (server hasn't seen the drop yet).
+  // A fast redial with the same name takes over the seat instead of erroring.
+  var ann2 = srv.connect(code, 'Ann');
+  ok(!ann2.error, 'fast redial with same name is not rejected');
+  ok(ann2.rejoined && ann2.client.seat === 0, 'redial rebinds to seat 0');
+  var st = ann2.client.last;
+  ok(st && (st.t === 'state' || st.t === 'lobby'), 'takeover receives a snapshot');
+  // The stale socket's clientId no longer maps to a player: its actions are ignored.
+  var room = srv.rooms[code].room;
+  ok(!room.playerByClientId(ann.id), 'stale clientId no longer maps to a player');
+  ok(room.playerByClientId(ann2.client.id).name === 'Ann', 'new clientId owns the seat');
   srv.close();
 })();
 

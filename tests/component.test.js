@@ -58,6 +58,8 @@ global.ARCHETYPES = bots.ARCHETYPES;
 global.loadStats = stats.loadStats;
 global.derivedStats = stats.derivedStats;
 global.rankChar = cards.rankChar;
+global.rankName = cards.rankName;
+global.SUIT_NAMES = cards.SUIT_NAMES;
 global.isRed = cards.isRed;
 global.SUITS = cards.SUITS;
 global.replayState = replay.replayState;
@@ -245,4 +247,86 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
-process.exit(fail ? 1 : 0);
+
+// ---------- audit-driven UI fixes ----------
+// Cards must announce themselves to screen readers; the new one-tap start,
+// skip, turn-status, and last-result elements must exist in the markup.
+(function () {
+  ok(UI.cardEl({ r: 14, s: 0 }, true).getAttribute('aria-label') === 'Ace of spades',
+    'card aria-label: Ace of spades');
+  ok(UI.cardEl({ r: 11, s: 1 }, true).getAttribute('aria-label') === 'Jack of hearts',
+    'card aria-label: Jack of hearts');
+  ok(UI.cardEl({ r: 9, s: 2 }, true).getAttribute('aria-label') === 'Nine of diamonds',
+    'card aria-label: Nine of diamonds');
+  ok(UI.cardBackEl(true).getAttribute('aria-label') === 'Face-down card',
+    'card back aria-label');
+
+  var html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  ['btn-quick', 'btn-skip', 'turn-status', 'last-result'].forEach(function (id) {
+    ok(html.indexOf('id="' + id + '"') !== -1, 'index.html contains #' + id);
+  });
+  ok(/id="bet-slider"[^>]*aria-label="Raise amount"/.test(html), 'raise slider has accessible name');
+})();
+
+// ---------- update-check.js (separate jsdom, stubbed fetch/timers) ----------
+// The page must notice a new release without a hard refresh: a version bump
+// on the server shows a calm toast with a Refresh button; matching versions
+// and fetch failures stay silent.
+(function () {
+  var fs = require('fs');
+  var src = fs.readFileSync(path.join(__dirname, '..', 'js', 'update-check.js'), 'utf8');
+
+  function loadUpdateCheck(pageVersion, serverVersion, fetchOk) {
+    var d = new jsdom.JSDOM('<!DOCTYPE html><html><body></body></html>',
+      { runScripts: 'outside-only', pretendToBeVisual: true });
+    var win = d.window;
+    win.APP_VERSION = pageVersion;
+    var timers = [];
+    win.setInterval = function (fn) { timers.push({ fn: fn, every: true }); return timers.length; };
+    win.setTimeout = function (fn) { timers.push({ fn: fn, every: false }); return timers.length; };
+    win.fetch = function () {
+      return Promise.resolve({
+        ok: fetchOk !== false,
+        text: function () { return Promise.resolve(serverVersion + '\n'); }
+      });
+    };
+    win.eval(src);
+    return { win: win, timers: timers, fire: function () { timers.forEach(function (t) { t.fn(); }); } };
+  }
+
+  function tick() { return new Promise(function (res) { setTimeout(res, 10); }); }
+
+  (async function () {
+    // New version on server -> toast appears with Refresh button.
+    var t1 = loadUpdateCheck('1.5.1', '1.5.2', true);
+    t1.fire();
+    await tick();
+    var toast = t1.win.document.querySelector('.update-toast');
+    ok(!!toast, 'update toast appears when server version differs');
+    ok(toast && toast.textContent.indexOf('1.5.2') !== -1, 'toast names the new version');
+    var btn = toast && toast.querySelector('.update-toast-btn');
+    ok(!!btn && btn.textContent === 'Refresh', 'toast has a Refresh button');
+
+    // Same version -> silent.
+    var t2 = loadUpdateCheck('1.5.1', '1.5.1', true);
+    t2.fire();
+    await tick();
+    ok(!t2.win.document.querySelector('.update-toast'), 'no toast when versions match');
+
+    // Fetch failure (offline) -> silent, no crash.
+    var t3 = loadUpdateCheck('1.5.1', '9.9.9', false);
+    t3.fire();
+    await tick();
+    ok(!t3.win.document.querySelector('.update-toast'), 'no toast when version fetch fails');
+
+    // Version string is escaped (no HTML injection via version.txt).
+    var t4 = loadUpdateCheck('1.5.1', '<img src=x onerror=alert(1)>', true);
+    t4.fire();
+    await tick();
+    var evil = t4.win.document.querySelector('.update-toast');
+    ok(!!evil && evil.innerHTML.indexOf('<img src=x') === -1, 'server version escaped in toast');
+
+    console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+    process.exit(fail ? 1 : 0);
+  })();
+})();

@@ -35,17 +35,27 @@ function click(id) {
   else if (el && !el.disabled) el.click();
 }
 
-// Start a cash game with default bots.
-click('btn-start');
+// Start via the one-tap quick-start button (exercises the btn-quick wiring);
+// falls back to btn-start if the quick button is ever removed.
+if (d.getElementById('btn-quick')) click('btn-quick');
+else click('btn-start');
 
 var handsSeen = {};
 var ticks = 0;
+var skipped = false;
 var iv = setInterval(function () {
   ticks++;
   try {
     var hi = d.getElementById('hand-info').textContent;
     var m = hi.match(/#(\d+)/);
     if (m) handsSeen[m[1]] = 1;
+    // Exercise ⏩ Skip once mid-run: fast-forwards the hand without errors.
+    if (ticks === 15 && !skipped) {
+      skipped = true;
+      var skipBtn = d.getElementById('btn-skip');
+      if (skipBtn && !skipBtn.hidden) { skipBtn.click(); console.log('skip clicked'); }
+      else errors.push('smoke: btn-skip missing or hidden mid-hand');
+    }
     // Hero auto-play: prefer check/call, fold sometimes, bet rarely.
     var foldBtn = d.getElementById('btn-fold');
     if (foldBtn && !foldBtn.disabled) {

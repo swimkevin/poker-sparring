@@ -771,20 +771,16 @@ var require_room_server = __commonJS({
         if (!name) return { ok: false, error: "Enter a name to join." };
         var existing = this.playerByClientId(clientId);
         if (existing) return { ok: true, seat: existing.seat, isHost: existing.isHost, rejoined: true };
-        var ghost = this.players.filter(function(p) {
-          return !p.connected && p.name === name;
+        var sameName = this.players.filter(function(p) {
+          return p.name === name;
         })[0];
-        if (ghost) {
-          ghost.clientId = clientId;
-          ghost.connected = true;
-          this._emit({ t: "playerRejoined", seat: ghost.seat, name });
-          return { ok: true, seat: ghost.seat, isHost: ghost.isHost, rejoined: true };
+        if (sameName) {
+          sameName.clientId = clientId;
+          sameName.connected = true;
+          this._emit({ t: "playerRejoined", seat: sameName.seat, name });
+          return { ok: true, seat: sameName.seat, isHost: sameName.isHost, rejoined: true };
         }
         if (this.state !== "lobby") return { ok: false, error: "Game in progress \u2014 wait for the next one." };
-        if (this.players.some(function(p) {
-          return p.connected && p.name === name;
-        }))
-          return { ok: false, error: "That name is taken at this table." };
         if (this.players.length >= this.config.maxPlayers)
           return { ok: false, error: "Table is full (" + this.config.maxPlayers + ")." };
         var taken = {};
