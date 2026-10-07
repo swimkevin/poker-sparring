@@ -512,12 +512,12 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(botCards.length === 2, 'folded bot shows 2 cards at hand end');
   ok(!!botCards[0].querySelector('.crank'), 'folded bot cards are face-up');
 
-  // Folded hero sees backs until Show.
+  // Folded hero always sees their own cards (folding hides from table, not self).
   t = endTable(true, true);
   UI.renderTable(t, { handEnd: true, winners: [1], revealed: {}, button: 0 });
   var heroCards = d.querySelectorAll('#seat-0 .pcards .card');
   ok(heroCards.length === 2, 'folded hero shows 2 cards at hand end');
-  ok(!heroCards[0].querySelector('.crank'), 'folded hero cards are face-down (mucked)');
+  ok(!!heroCards[0].querySelector('.crank'), 'folded hero cards are face-up to hero');
   UI.renderTable(t, { handEnd: true, winners: [1], revealed: {}, button: 0, heroShow: true });
   heroCards = d.querySelectorAll('#seat-0 .pcards .card');
   ok(!!heroCards[0].querySelector('.crank'), 'hero cards flip face-up after Show');
