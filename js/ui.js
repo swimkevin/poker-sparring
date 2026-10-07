@@ -50,7 +50,7 @@ var UI = (function () {
     ['Expected Value (EV)', 'The average outcome of a decision repeated many times. Winning poker = making +EV decisions, even when individual results sting.'],
     ['Bankroll Management', 'Only risking a small fraction of your poker money in any game, so bad luck (variance) can\'t wipe you out. Pros use 20-50 buy-ins.'],
     ['Variance', 'Short-term luck. You can play perfectly and lose for weeks; you can play badly and win tonight. Skill shows over thousands of hands.'],
-    ['Tilt', 'Emotional play after bad beats — the #1 bankroll killer. The bots never tilt. Learn from them.'],
+    ['Tilt', 'Emotional play after bad beats — the #1 bankroll killer. Here the bots DO tilt (watch for the 🌡️ badge): bad beats and big losses make them play looser and call down lighter. Punish it with value bets, and keep your own cool.'],
     ['Position', 'Acting last is the biggest edge in poker: you see what everyone does first. Play tighter early, wider late.'],
     ['Blinds', 'Forced bets that start the action: the small blind and big blind. Stealing blinds is how tight players stay profitable.'],
     ['Ante', 'A small forced bet from everyone, used in later tournament stages to build pots and force action.'],
@@ -160,7 +160,7 @@ var UI = (function () {
   // Opponent roster. `selected` is a Set of bot ids; `max` caps how many can be
   // picked for the current mode (1 for heads-up). `onHint` shows a transient
   // message when a toggle is refused. Selected cards show their pick order.
-  function renderRoster(allBots, selected, max, onHint) {
+  function renderRoster(allBots, selected, max, onHint, onChange) {
     max = max || 5;
     var box = $('bot-roster');
     box.innerHTML = '';
@@ -197,7 +197,8 @@ var UI = (function () {
           }
           selected.add(b.id);
         }
-        renderRoster(allBots, selected, max, onHint);
+        renderRoster(allBots, selected, max, onHint, onChange);
+        if (onChange) onChange();
       };
       var rbtn = btn.querySelector('.rename-btn');
       rbtn.onclick = function (e) { e.stopPropagation(); openRename(btn, b); };
@@ -693,10 +694,10 @@ var UI = (function () {
       var a = s.perArchetype[id];
       var row = document.createElement('div');
       row.className = 'arch-table-row';
+      var wr = a.hands ? Math.round(100 * a.won / a.hands) : 0;
       row.innerHTML = '<span class="ae">' + (a.emoji || '🤖') + '</span>' +
         '<span class="an">' + escapeHtml(dispName(a) || id) + '</span>' +
-        '<span class="as">' + a.hands + ' hands · won ' + a.won + ' · ' +
-        chipDelta(a.profitChips, a.profitBB) + '</span>';
+        '<span class="as">' + a.hands + ' hands · won ' + a.won + ' (' + wr + '%)</span>';
       at.appendChild(row);
     });
     var hl = $('history-list');
@@ -1138,6 +1139,7 @@ var UI = (function () {
     openFeedbackModal: openFeedbackModal, closeFeedbackModal: closeFeedbackModal,
     submitFeedback: submitFeedback,
     renderHandStory: renderHandStory,
+    dispName: dispName,
     chipFly: chipFly, resetTableFx: resetTableFx,
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
   };

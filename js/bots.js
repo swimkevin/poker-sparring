@@ -37,7 +37,7 @@ var ARCHETYPES = [
     desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — neverRaise converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair. Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
     beat: 'Value bet thin — he will call with worse. Never bluff him; he does not fold pairs.',
     openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
-    aggression: 0.05, bluff: 0.05, stubborn: 0.55, pushTier: 4, callPushTier: 4, limp: 0.9,
+    aggression: 0.05, bluff: 0.05, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
     tiltProne: 0.40, rebuy: 0.80,
     neverRaise: true
   },
@@ -253,6 +253,12 @@ function botPreflop(table, p, A) {
     }
     // Over-limp behind existing limpers, or first-in limp for limpy archetypes.
     if (tier <= A.callTier + 1 && (limpers > 0 || (A.limp || 0) > 0.5)) return { a: 'call' };
+    // SB completion: facing only the blinds is 3:1+ — maniacs complete nearly
+    // everything, tighter bots stick closer to their calling range.
+    if (toCall > 0 && toCall <= table.bb) {
+      var wide = (A.aggression || 0) >= 0.8 ? 6 : A.callTier + 1;
+      if (tier <= wide) return { a: 'call' };
+    }
     return { a: 'fold' };
   }
 
@@ -277,6 +283,10 @@ function botPreflop(table, p, A) {
   }
   var callLine = A.callTier + (pos >= 0.75 ? 1 : 0);
   if (tier <= callLine && (need < 0.33 || tier <= 2 || Math.random() < (A.callTier / 12)))
+    return { a: 'call' };
+  // Min-raise defense: a 2bb open lays ~2.5:1, too good a price to fold
+  // speculative hands. Without this every bot over-folds to min-raises.
+  if (table.currentBet <= table.bb * 2.5 && tier <= callLine + 1 && need < 0.42)
     return { a: 'call' };
   // SB completing vs a limp-ish price
   if (need < 0.12 && tier <= 5) return { a: 'call' };
@@ -402,7 +412,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     ARCHETYPES: ARCHETYPES, getArchetype: getArchetype, customArchetype: customArchetype,
     effectiveArchetype: effectiveArchetype,
-    positionScore: positionScore, botDecide: botDecide,
+    positionScore: positionScore, botDecide: botDecide, holeTier: holeTier,
     amoghPostflop: amoghPostflop, nathanRiver: nathanRiver
   };
 }

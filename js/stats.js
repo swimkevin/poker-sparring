@@ -73,11 +73,13 @@ function recordHand(ctx) {
   var potChips = Math.round(ctx.potBB * ctx.bb);
   if (!s.biggestPotChips || potChips > s.biggestPotChips) s.biggestPotChips = potChips;
   (ctx.opponents || []).forEach(function (o) {
-    var a = s.perArchetype[o.id] || (s.perArchetype[o.id] = { hands: 0, won: 0, profitBB: 0, profitChips: 0, name: o.name, emoji: o.emoji });
+    var a = s.perArchetype[o.id] || (s.perArchetype[o.id] = { hands: 0, won: 0, name: o.name, emoji: o.emoji });
     a.hands++;
     if (ctx.wonHand) a.won++;
-    a.profitBB += profitBB / Math.max(1, (ctx.opponents || []).length);
-    a.profitChips = (a.profitChips || 0) + profitChips / Math.max(1, (ctx.opponents || []).length);
+    // NOTE: no profit attribution here. Splitting hero's multi-way profit
+    // across archetypes produced misleading identical figures; the honest
+    // per-archetype signal is hands and win rate. Overall profit is shown
+    // at the top of Stats.
   });
   s.history.unshift({
     n: s.hands, hole: (ctx.heroHole || []).map(function (c) { return rankChar(c.r) + ' sdhc'[c.s + 1] || ''; }),
