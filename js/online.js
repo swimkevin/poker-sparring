@@ -329,7 +329,7 @@ var Online = (function () {
     if (wsUrl) { hostLive(readConfig(), name); return; }
     mode = 'mock';
     setConn('Local mock — no server needed');
-    var res = ensureMock().createRoom(readConfig(), name);
+    var res = ensureMock().createRoom(readConfig(), name, myEmoji());
     if (res.error) { errBox.textContent = res.error; errBox.hidden = false; return; }
     roomCode = res.code;
     attachClient(res.client);
@@ -604,15 +604,21 @@ var Online = (function () {
 
     // "Show cards" button (PokerNow-style): after a hand, if your cards weren't
     // revealed at showdown, offer to show them to the table voluntarily.
+    // Cache hole cards: the server clears s.hole when the hand ends.
+    if (s.hole && s.hole.length === 2) {
+      try { window.__lastHole = JSON.stringify(s.hole); } catch (e) {}
+    }
+    var cachedHole = null;
+    try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch (e) {}
     var showBtn = $('on-show-btn');
-    var canShow = s.state === 'playing' && s.hole && s.hole.length === 2 &&
+    var canShow = s.state === 'playing' && cachedHole && cachedHole.length === 2 &&
       !(s.showdown && s.showdown.some(function (r) { return r.seat === s.mySeat; })) &&
       !(s.shown && s.shown.some(function (r) { return r.seat === s.mySeat; })) &&
       (s.winners || (function () { var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0]; return me && me.folded; })());
     if (showBtn) {
       showBtn.hidden = !canShow;
       showBtn.onclick = function () {
-        client.send({ t: 'show', hole: s.hole });
+        client.send({ t: 'show', hole: cachedHole });
         showBtn.hidden = true;
       };
     }
