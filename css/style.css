@@ -430,7 +430,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   /* Make room for the fixed bar so it doesn't cover content */
-  #screen-table, #screen-game { padding-bottom: 140px; }
+  #screen-table, #screen-table { padding-bottom: 140px; }
 }
 
 /* Opponent count stepper */
@@ -947,35 +947,35 @@ label { font-weight: 600; }
 
 @media (max-width: 900px) {
   /* Compact game screen: no page scroll, everything fits the viewport */
-  #screen-game {
+  #screen-table {
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   }
-  #screen-game .table-topbar { flex: 0 0 auto; padding: 0.4rem 0.5rem; }
-  #screen-game .table-topbar .hand-info { font-size: 0.95rem; }
-  #screen-game .table-topbar .blinds-info,
-  #screen-game .table-topbar .last-result { font-size: 0.8rem; }
-  #screen-game .table-layout {
+  #screen-table .table-topbar { flex: 0 0 auto; padding: 0.4rem 0.5rem; }
+  #screen-table .table-topbar .hand-info { font-size: 0.95rem; }
+  #screen-table .table-topbar .blinds-info,
+  #screen-table .table-topbar .last-result { font-size: 0.8rem; }
+  #screen-table .table-layout {
     flex: 1 1 auto; min-height: 0; display: block; overflow: hidden;
     padding: 0 0.4rem;
   }
-  #screen-game .felt-wrap { height: 100%; }
+  #screen-table .felt-wrap { height: 100%; }
   /* Smaller felt + cards on phones (PokerNow-style compactness) */
-  #screen-game .felt { height: 100%; min-height: 0; border-radius: 24px; }
-  #screen-game .card { width: 34px; height: 48px; font-size: 0.85rem; border-radius: 6px; }
-  #screen-game .card .crank { font-size: 0.8rem; }
-  #screen-game .community { gap: 4px; }
-  #screen-game .pot { font-size: 0.95rem; padding: 0.2rem 0.7rem; }
-  #screen-game .street-label { font-size: 0.7rem; }
+  #screen-table .felt { height: 100%; min-height: 0; border-radius: 24px; }
+  #screen-table .card { width: 34px; height: 48px; font-size: 0.85rem; border-radius: 6px; }
+  #screen-table .card .crank { font-size: 0.8rem; }
+  #screen-table .community { gap: 4px; }
+  #screen-table .pot { font-size: 0.95rem; padding: 0.2rem 0.7rem; }
+  #screen-table .street-label { font-size: 0.7rem; }
   /* Compact seats */
-  #screen-game .seat { padding: 0.3rem 0.4rem; font-size: 0.8rem; border-radius: 10px; }
-  #screen-game .seat .pname { font-size: 0.8rem; }
-  #screen-game .seat .pstack { font-size: 0.75rem; }
-  #screen-game .seat .pcards .card { width: 26px; height: 36px; font-size: 0.7rem; }
-  #screen-game .pos-badge { font-size: 0.6rem; padding: 0.05rem 0.3rem; }
+  #screen-table .seat { padding: 0.3rem 0.4rem; font-size: 0.8rem; border-radius: 10px; }
+  #screen-table .seat .pname { font-size: 0.8rem; }
+  #screen-table .seat .pstack { font-size: 0.75rem; }
+  #screen-table .seat .pcards .card { width: 26px; height: 36px; font-size: 0.7rem; }
+  #screen-table .pos-badge { font-size: 0.6rem; padding: 0.05rem 0.3rem; }
   /* Hide the desktop side panel on phones — Coach/History live in tab panels */
-  #screen-game .side-panel { display: none; }
+  #screen-table .side-panel { display: none; }
   /* Hero bar sits above the tab bar */
-  #screen-game .hero-bar {
+  #screen-table .hero-bar {
     flex: 0 0 auto;
     position: fixed; bottom: 64px; left: 0; right: 0; z-index: 60;
     margin: 0; border-radius: 14px 14px 0 0;
@@ -983,9 +983,9 @@ label { font-weight: 600; }
     box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
     background: var(--panel);
   }
-  #screen-game .hero-bar .controls { gap: 0.4rem; }
-  #screen-game .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; }
-  #screen-game .hero-cards .card { width: 40px; height: 56px; }
+  #screen-table .hero-bar .controls { gap: 0.4rem; }
+  #screen-table .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; }
+  #screen-table .hero-cards .card { width: 40px; height: 56px; }
 
   /* Bottom tab bar */
   .mobile-tabs {
