@@ -742,15 +742,45 @@ var UI = (function () {
     var hl = $('history-list');
     hl.innerHTML = '';
     if (!s.history.length) hl.innerHTML = '<p class="subtitle">No hands yet.</p>';
-    s.history.slice(0, 20).forEach(function (h) {
+    // Last 10 hands, each expandable for details + replay.
+    s.history.slice(0, 10).forEach(function (h) {
       var row = document.createElement('div');
-      row.className = 'hist-row';
+      row.className = 'hist-row expandable';
       var p = h.profitChips != null ? (h.profitChips > 0 ? 'pos' : h.profitChips < 0 ? 'neg' : '') : (h.profitBB >= 0 ? 'pos' : 'neg');
-      row.innerHTML = '<span>#' + h.n + '</span><span class="hc">' + h.hole.join(' ') + '</span>' +
-        '<span>' + escapeHtml(h.result || '') + '</span>' +
-        '<span class="' + p + '">' + chipDelta(h.profitChips, h.profitBB) + '</span>';
+      var modeLabel = { cash: 'Cash', hu: 'Heads-up', tourney: 'Tournament', pushfold: 'Push/Fold' }[h.mode] || h.mode || '';
+      row.innerHTML =
+        '<button class="hist-main" aria-expanded="false">' +
+          '<span>#' + h.n + '</span><span class="hc">' + h.hole.join(' ') + '</span>' +
+          '<span>' + escapeHtml(h.result || '') + '</span>' +
+          '<span class="' + p + '">' + chipDelta(h.profitChips, h.profitBB) + '</span>' +
+          '<span class="wchevron" aria-hidden="true">▾</span>' +
+        '</button>' +
+        '<div class="hist-details" hidden>' +
+          '<div class="hist-meta">' + escapeHtml(modeLabel) +
+            (h.board ? ' · saw ' + ['preflop', 'flop', 'turn', 'river'][Math.min(3, Math.floor(h.board / 2))] : '') +
+          '</div>' +
+          (h.recId ? '<button class="ghost hist-replay" data-rec="' + escapeHtml(h.recId) + '">▶ Replay hand</button>' : '') +
+        '</div>';
+      var main = row.querySelector('.hist-main');
+      var det = row.querySelector('.hist-details');
+      main.onclick = function () {
+        var exp = row.classList.toggle('expanded');
+        main.setAttribute('aria-expanded', exp ? 'true' : 'false');
+        det.hidden = !exp;
+      };
+      var rp = row.querySelector('.hist-replay');
+      if (rp) rp.onclick = function (e) {
+        e.stopPropagation();
+        if (typeof window.__openReplay === 'function') window.__openReplay(rp.dataset.rec);
+      };
       hl.appendChild(row);
     });
+    if (s.history.length > 10) {
+      var more = document.createElement('p');
+      more.className = 'subtitle';
+      more.textContent = 'Showing last 10 of ' + s.history.length + ' — full list in the Hands tab.';
+      hl.appendChild(more);
+    }
   }
 
   function drawSparkline(data) {
@@ -1178,7 +1208,7 @@ var UI = (function () {
   function setBankroll(chips) {
     var el = $('bankroll-chip');
     var c = Math.round(chips);
-    el.textContent = (c > 0 ? '+' : '') + fmt(c) + ' session';
+    el.textContent = (c > 0 ? '+' : '') + fmt(c);
     el.className = 'bankroll ' + (c > 0 ? 'pos' : c < 0 ? 'neg' : '');
   }
 
