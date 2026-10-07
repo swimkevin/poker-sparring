@@ -3,6 +3,18 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.5] — 2026-10-07
+
+### Fixed (mobile UX audit)
+- Logo now taps back to home.
+- Action buttons stick to the bottom on phones — no more scrolling to find
+  Fold/Call/Raise.
+- Nav tabs get a fade hint so it's obvious they scroll.
+- Bigger touch targets: bet slider thumb, bot rename, stat info, banner
+  dismiss.
+- In-game topbar wraps cleanly on small screens.
+- Escape closes the Feedback modal.
+
 ## [1.8.4] — 2026-10-07
 
 ### Fixed
