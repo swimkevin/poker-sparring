@@ -1147,8 +1147,8 @@ var RoomDO = class {
     const [client, server] = Object.values(pair);
     this.state.acceptWebSocket(server);
     const clientId = "c" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    server.serializeAttachment({ clientId, name, code });
-    this.sessions.set(server, { clientId, name });
+    server.serializeAttachment({ clientId, name });
+    this.sessions.set(server, { clientId, name, code });
     return new Response(null, { status: 101, webSocket: client });
   }
   _meta(ws) {

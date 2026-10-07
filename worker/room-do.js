@@ -32,8 +32,8 @@ export class RoomDO {
     // rides along via serializeAttachment.
     this.state.acceptWebSocket(server);
     const clientId = 'c' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    server.serializeAttachment({ clientId: clientId, name: name, code: code });
-    this.sessions.set(server, { clientId: clientId, name: name });
+    server.serializeAttachment({ clientId: clientId, name: name });
+    this.sessions.set(server, { clientId: clientId, name: name, code: code });
     return new Response(null, { status: 101, webSocket: client });
   }
 
