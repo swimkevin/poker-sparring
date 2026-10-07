@@ -4,7 +4,7 @@
 
 ▶️ **Play it:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.10-blue)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.11-blue)
 
 ## Why I built this
 
