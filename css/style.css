@@ -226,12 +226,22 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 
 .winner-banner {
   /* Docked at the bottom of the felt so the board and every revealed hand
-     stay visible during the results pause. */
+     stay visible during the results pause. Collapsed by default: slim bar. */
   position: absolute; left: 50%; top: auto; bottom: 5%; transform: translate(-50%, 0);
   background: rgba(8, 12, 18, 0.94); border: 2px solid var(--gold); border-radius: 14px;
-  padding: 1rem 1.6rem; text-align: center; z-index: 20; max-width: 86%;
+  padding: 0.6rem 1rem; text-align: center; z-index: 20; max-width: 86%;
   box-shadow: 0 10px 40px rgba(0,0,0,0.6);
 }
+.winner-banner .wmain {
+  background: none; border: none; color: inherit; cursor: pointer;
+  display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+  padding: 0.25rem 0.5rem; border-radius: 8px; width: 100%;
+  min-height: 44px;
+}
+.winner-banner .wmain:hover { background: rgba(255,255,255,0.06); }
+.winner-banner .wchevron { color: var(--muted); font-size: 1.1rem; transition: transform 0.2s; }
+.winner-banner.expanded .wchevron { transform: rotate(180deg); }
+.winner-banner .wdetails { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
 .winner-banner .wtitle { font-size: 1.25rem; font-weight: 800; color: var(--gold); }
 .winner-banner .wsub { color: var(--muted); margin-top: 0.3rem; font-size: 0.9rem; }
 #handend-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; flex-wrap: wrap; }
@@ -581,12 +591,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   }
   .winner-banner .wtitle { font-size: 1rem; }
   .winner-banner .wsub { font-size: 0.8rem; }
-  .winner-banner .dismiss-btn {
-    position: absolute; top: 4px; right: 8px;
-    background: none; border: none; color: var(--muted);
-    font-size: 1.1rem; cursor: pointer; padding: 10px 12px;
-    min-width: 44px; min-height: 44px;
-  }
+  /* dismiss-btn removed: banner is now collapsible, not dismissible */
 }
 
 @media (max-width: 560px) {
