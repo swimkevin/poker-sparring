@@ -603,10 +603,13 @@ var Online = (function () {
     if (s.winners && s.winners.length) {
       var w = s.winners[0];
       var pl = s.players.filter(function (p) { return p.seat === w.idx; })[0];
-      banner.innerHTML = '<div class="wtitle">' + esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>' +
+      banner.innerHTML = '<button class="dismiss-btn" aria-label="Dismiss">✕</button>' +
+        '<div class="wtitle">' + esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>' +
         (w.hand ? '<div class="wsub">' + esc(w.hand) + '</div>' : '') +
         (s.nextHandInMs > 0 ? '<div class="wsub">Next hand soon…</div>' : '');
       banner.hidden = false;
+      var odb = banner.querySelector('.dismiss-btn');
+      if (odb) odb.onclick = function () { banner.hidden = true; };
     } else {
       banner.hidden = true;
     }
