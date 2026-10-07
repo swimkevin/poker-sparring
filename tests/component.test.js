@@ -268,8 +268,8 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   ok(delta && delta.textContent === '+125',
     'history row shows chip delta "+125", got "' + (delta && delta.textContent) + '"');
   var arch = document.getElementById('arch-table').textContent;
-  ok(arch.indexOf('+125') !== -1 && arch.indexOf('bb') === -1,
-    'per-archetype row shows chips not bb, got "' + arch.trim().slice(0, 80) + '"');
+  ok(arch.indexOf('1 hands · won 1 (100%)') !== -1,
+    'per-archetype row shows hands/won/win% (no misleading split profit), got "' + arch.trim().slice(0, 80) + '"');
   var vals = {};
   document.querySelectorAll('#stat-cards .stat-card').forEach(function (el) {
     vals[el.querySelector('.sk').textContent.replace('ⓘ', '')] = el.querySelector('.sv').textContent;

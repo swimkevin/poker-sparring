@@ -933,6 +933,42 @@ function heroPolicy(table, idx) {
   ok(c2.tiltProne === 0.5 && c2.rebuy === 0.7, 'custom tilt/rebuy default when unset');
 })();
 
+(function () {
+  // B8 regression: bots must not over-fold to good prices.
+  function mkTable(players) {
+    return new EN.PokerTable({ players: players, sb: 5, bb: 10, startingStack: 1000, onEvent: function () {} });
+  }
+  // Maniac SB heads-up with Q3o (tier 6): completing 5 to win 15 is mandatory.
+  var folds = 0, N = 30;
+  for (var i = 0; i < N; i++) {
+    var t = mkTable([{ name: 'You', isHero: true }, { name: 'Amogh', archetype: BOTS.getArchetype('amogh') }]);
+    t.button = 0; // startHand rotates to 1: Amogh = button = SB heads-up
+    t.startHand();
+    if (t.sbIdx !== 1) { i--; continue; } // safety: only test Amogh as SB
+    t.players[1].hole = [{ r: 12, s: 1 }, { r: 3, s: 3 }];
+    var mv = BOTS.botDecide(t, t.players[1]);
+    if (mv && mv.a === 'fold') folds++;
+  }
+  ok(folds === 0, 'maniac never folds SB heads-up getting 3:1 (folded ' + folds + '/' + N + ')');
+  // Min-raise defense: 9Ts (tier 3) in BB vs a 20-chip open should usually continue.
+  var folds2 = 0;
+  for (var j = 0; j < N; j++) {
+    var t2 = mkTable([
+      { name: 'You', isHero: true },
+      { name: 'Station', archetype: BOTS.getArchetype('station') },
+      { name: 'Rock', archetype: BOTS.getArchetype('rock') }
+    ]);
+    t2.startHand();
+    t2.act(0, 'raise', 20); // hero min-opens
+    // Find a bot facing the open and give it 9Ts.
+    var bi = t2.acting;
+    t2.players[bi].hole = [{ r: 9, s: 0 }, { r: 10, s: 0 }];
+    var mv2 = BOTS.botDecide(t2, t2.players[bi]);
+    if (mv2 && mv2.a === 'fold') folds2++;
+  }
+  ok(folds2 < N / 2, 'bots defend vs min-raises (folded ' + folds2 + '/' + N + ' with 9Ts)');
+})();
+
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

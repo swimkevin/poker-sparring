@@ -3,6 +3,27 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.7.3] — 2026-10-07
+
+### Fixed — hiring-manager review round (10 bugs)
+- **Stats "Record vs archetypes"**: dropped the misleading split-profit
+  attribution (identical figures across archetypes) — rows now show
+  hands / won / win%, which is the honest per-archetype signal.
+- **Roster selection persists** across reloads (mode/username/renames already
+  did); stale ids are dropped. Roster card clicks now notify the app so the
+  count, quick-start hint, and saved selection stay in sync.
+- **Coach vs stations**: pure-bluff suggestions are suppressed when the
+  villain rarely folds; Rohan's stubbornness raised (0.55 → 0.80) to match
+  his "calls everything, never bluff him" persona.
+- **Bot preflop defense**: maniacs complete the SB heads-up getting 3:1
+  instead of folding trash; all bots defend vs min-raises instead of
+  over-folding speculative hands.
+- **Duplicate bot names rejected** in the custom-bot builder (roster rename
+  already guarded).
+- **CSS**: defined the missing `--line` variable (hand-history modal borders).
+- **Glossary**: Tilt entry no longer claims "the bots never tilt" — they do
+  (🌡️ badge), and that's the lesson.
+
 ## [1.7.2] — 2026-10-07
 
 ### Added

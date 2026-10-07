@@ -20,7 +20,7 @@ It's also my engineering playground: I use it to practice AI-assisted developmen
 
 ## What you can do
 
-- **Spar vs bots** — cash games, heads-up, and full tournaments against 5 built-in archetypes (The Rock 🪨, Calling Station 📞, The Maniac 🤪, TAG Shark 🦈, Tricky LAG 🎭), each with a "how to beat them" tip from classic poker literature
+- **Spar vs bots** — cash games, heads-up, and full tournaments against 10 built-in opponents (Tricky LAG 🎭, Rohan 🙂, The Maniac 🤪, Nathan 🪤, TAG Shark 🦈, The Grinder 💪, Bubble Boy 🫧, The Rock 🪨, Calling Station 📞, plus custom bots you design), each with a "how to beat them" tip from classic poker literature
 - **Build your own opponent** — sliders for looseness, aggression, bluff frequency, and stubbornness; rename them after your friends
 - **Play online with friends** — host a table, share a 6-letter code, up to 8 players. Live on a Cloudflare Durable Object relay: rooms survive disconnects, dropped connections auto-reconnect and resync mid-hand
 - **Push/fold trainer** — short-stack shove-or-fold drills with instant, range-based feedback
