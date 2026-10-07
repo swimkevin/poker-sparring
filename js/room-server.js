@@ -121,7 +121,7 @@ class Room {
     var seat = -1;
     for (var s = 0; s < this.config.maxPlayers; s++) if (!taken[s]) { seat = s; break; }
     var isHost = this.players.length === 0;
-    this.players.push({ clientId: clientId, name: name, seat: seat, stack: this.config.startingStack, connected: true, isHost: isHost });
+    this.players.push({ clientId: clientId, name: name, seat: seat, stack: this.config.startingStack, connected: true, isHost: isHost, sittingOut: false });
     this._emit({ t: 'playerJoined', seat: seat, name: name, isHost: isHost });
     return { ok: true, seat: seat, isHost: isHost, rejoined: false };
   }
@@ -166,7 +166,7 @@ class Room {
     if (this.connectedCount() < 2) return { ok: false, error: 'Need at least 2 players to start.' };
     // Fresh game: everyone buys in at the configured stack.
     var self = this;
-    this.players.forEach(function (q) { q.stack = self.config.startingStack; });
+    this.players.forEach(function (q) { q.stack = self.config.startingStack; q.sittingOut = false; });
     var seated = this.players.slice().sort(function (a, b) { return a.seat - b.seat; });
     this.table = new PokerTableCtor({
       players: seated.map(function (q) { return { name: q.name }; }),
@@ -188,6 +188,14 @@ class Room {
 
   _startHand() {
     if (this.table.activeCount() < 2) return false;
+    // The Room flag is the source of truth; mirror it onto the engine seats so
+    // blinds, action order, and pots skip sitters-out. (Mid-hand the engine
+    // flag is left alone so an all-in sitter keeps pot eligibility.)
+    var self = this;
+    this.players.forEach(function (p) {
+      var ep = self.table.players[p.seat];
+      if (ep) ep.sittingOut = !!p.sittingOut;
+    });
     this._lastActing = -1;
     this.turnDeadline = 0;
     if (!this.table.startHand()) return false;
@@ -256,6 +264,26 @@ class Room {
       this.table = null;
       this._emit({ t: 'gameOver', champion: this.champion });
     }
+  }
+
+  // Sit out (or back in). Sitting out mid-hand kills the hand immediately;
+  // sitters are skipped for blinds and action until they return. An all-in
+  // player's pot eligibility is untouched: only the Room flag is set and the
+  // engine picks it up next hand.
+  setSitOut(clientId, out) {
+    var p = this.playerByClientId(clientId);
+    if (!p) return { ok: false, error: 'You are not seated.' };
+    out = !!out;
+    if (!!p.sittingOut === out) return { ok: true };
+    p.sittingOut = out;
+    var ep = this.table && this.table.players[p.seat];
+    if (out && this.table && !this.table.handOver && ep && !ep.folded && !ep.allIn) {
+      try { this.table.act(p.seat, 'fold'); }
+      catch (e) { ep.folded = true; ep.acted = true; } // not their turn: engine skips folded seats
+    }
+    this._pushRecent(p.name + (out ? ' sits out.' : ' is back in.'));
+    this._afterTableChange();
+    return { ok: true };
   }
 
   _autoAction(seat, reason) {
@@ -349,7 +377,7 @@ class Room {
       config: Object.assign({}, this.config),
       champion: this.champion,
       players: this.players.slice().sort(function (a, b) { return a.seat - b.seat; })
-        .map(function (p) { return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost }; })
+        .map(function (p) { return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut }; })
     };
   }
 
@@ -369,7 +397,7 @@ class Room {
     };
     if (this.state === 'lobby' || !this.table) {
       snap.players = this.players.slice().sort(function (a, b) { return a.seat - b.seat; })
-        .map(function (p) { return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost }; });
+        .map(function (p) { return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut }; });
       return snap;
     }
     var t = this.table;
@@ -387,7 +415,8 @@ class Room {
         seat: p.idx, name: rp ? rp.name : p.name,
         stack: p.stack, bet: p.bet, folded: p.folded, allIn: p.allIn,
         acted: p.acted, hasCards: p.hole.length === 2 && !p.folded,
-        connected: rp ? rp.connected : true, isHost: rp ? rp.isHost : false
+        connected: rp ? rp.connected : true, isHost: rp ? rp.isHost : false,
+        sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut
       };
     }, this);
     if (me && !t.handOver) {

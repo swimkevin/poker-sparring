@@ -405,6 +405,7 @@ var Online = (function () {
       '<div class="hand-info">' + esc(s.config.tableName) + (s.handNo ? ' · Hand #' + s.handNo : '') + '</div>' +
       '<div class="blinds-info">' + fmt(s.config.sb) + '/' + fmt(s.config.bb) + '</div>' +
       (s.isHost && s.state === 'playing' ? '<button id="on-pause" class="ghost">' + (s.paused ? 'Resume' : 'Pause') + '</button>' : '') +
+      (s.state === 'playing' ? '<button id="on-sitout" class="ghost">' + (meSittingOut(s) ? 'Back in' : 'Sit out') + '</button>' : '') +
       '<button id="on-tleave" class="ghost">Leave</button>' +
       '</div>' +
       '<div class="felt online-felt" id="online-felt">' +
@@ -424,6 +425,8 @@ var Online = (function () {
     updateTableState(s);
 
     $('on-tleave').onclick = leave;
+    var sob = $('on-sitout');
+    if (sob) sob.onclick = function () { client.send({ t: 'sitout', out: !meSittingOut(lastState) }); };
     var pb = $('on-pause');
     if (pb) pb.onclick = function () { client.send({ t: s.paused ? 'resume' : 'pause' }); };
   }
@@ -468,6 +471,13 @@ var Online = (function () {
         else { pc.appendChild(UI.cardBackEl(true)); pc.appendChild(UI.cardBackEl(true)); }
       }
       if (!p.connected) d.classList.add('disconnected');
+      if (p.sittingOut) {
+        d.classList.add('sitting-out');
+        var so = document.createElement('div');
+        so.className = 'sitout-badge';
+        so.textContent = 'Sitting out';
+        d.appendChild(so);
+      }
       wrap.appendChild(d);
     });
 
@@ -527,6 +537,12 @@ var Online = (function () {
     }
   }
 
+  function meSittingOut(s) {
+    if (!s || s.mySeat == null) return false;
+    var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0];
+    return !!(me && me.sittingOut);
+  }
+
   function renderControls(s) {
     var c = $('on-controls');
     c.innerHTML = '';
@@ -539,6 +555,7 @@ var Online = (function () {
     }
     if (s.paused) { status('Paused by ' + s.pausedBy + ' — hang tight.'); return; }
     if (s.state !== 'playing') { status('Waiting…'); return; }
+    if (meSittingOut(s)) { status('You are sitting out — tap "Back in" up top to rejoin.'); return; }
     if (!s.legal) {
       if (s.acting >= 0) {
         var ap = s.players.filter(function (p) { return p.seat === s.acting; })[0];
