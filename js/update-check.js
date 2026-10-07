@@ -25,11 +25,22 @@
     var el = document.createElement('div');
     el.className = 'update-toast';
     el.setAttribute('role', 'status');
+    // Dismissible: the X just hides the toast so you can finish your hand.
+    // Online tables auto-rejoin by name after refresh; offline hands are lost
+    // on refresh (history is kept, the live hand is not).
     el.innerHTML =
       '<span class="update-toast-msg">New version available (v' + esc(serverVersion) + ')</span>' +
-      '<button type="button" class="update-toast-btn">Refresh</button>';
-    var btn = el.querySelector('button');
+      '<button type="button" class="update-toast-btn">Refresh</button>' +
+      '<button type="button" class="update-toast-x" aria-label="Dismiss">✕</button>';
+    var btn = el.querySelector('.update-toast-btn');
     if (btn) btn.addEventListener('click', function () { location.reload(); });
+    var x = el.querySelector('.update-toast-x');
+    if (x) x.addEventListener('click', function () {
+      el.classList.remove('show');
+      setTimeout(function () { el.remove(); }, 300);
+      // Remind again in 30 minutes, not never — the update still matters.
+      setTimeout(function () { toastShown = false; }, 30 * 60 * 1000);
+    });
     document.body.appendChild(el);
     var raf = window.requestAnimationFrame || function (fn) { fn(); };
     raf(function () { el.classList.add('show'); });
