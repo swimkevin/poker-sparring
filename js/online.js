@@ -168,7 +168,7 @@ var Online = (function () {
     v.innerHTML =
       '<div class="online-cards">' +
       '<div class="online-card"><h3>Host a table</h3>' +
-      '<label>Your name<input id="on-host-name" maxlength="18" placeholder="e.g. Kevin"></label>' +
+      '<label>Your name<input type="text" id="on-host-name" maxlength="18" placeholder="e.g. Kevin"></label>' +
       '<label>Table name<input id="on-table-name" maxlength="30" value="Poker Night"></label>' +
       '<div class="online-row">' +
       '<label>Players (2–8)<input id="on-max" type="number" min="2" max="8" value="6"></label>' +
@@ -187,7 +187,7 @@ var Online = (function () {
       '</div>' +
       '<div class="online-card"><h3>Join a table</h3>' +
       '<label>Room code<input id="on-code" class="code-input" maxlength="6" placeholder="A3F9K2" autocapitalize="characters"></label>' +
-      '<label>Your name<input id="on-join-name" maxlength="18" placeholder="e.g. Sam"></label>' +
+      '<label>Your name<input type="text" id="on-join-name" maxlength="18" placeholder="e.g. Sam"></label>' +
       '<button id="on-join" class="primary">Join →</button>' +
       '<div id="online-error2" class="on-error" hidden></div>' +
       '<details class="settings-details"><summary>Advanced: live server</summary>' +
