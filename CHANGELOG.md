@@ -3,6 +3,25 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.2] — 2026-10-07
+
+### Added
+- **SB/BB position badges**: the small blind and big blind seats now show
+  SB/BB pills next to the name (offline and online), matching the dealer
+  button style — no more guessing who posted.
+- **Pick your emoji**: choose the avatar shown above your seat — a picker on
+  the home screen and in the online lobby (30 options, saved locally). Your
+  pick travels with you to online tables via the relay.
+
+### Fixed
+- **Bet panel opens at the minimum**: tapping Bet/Raise now starts the slider
+  at the min legal amount instead of ¾ pot — slide up from there.
+- **Worker: chat in lobby snapshots** (`getLobby` now includes the last 50
+  messages, like the game snapshot) and **no more double feed lines** on
+  timer auto-actions.
+- **Worker: `sbIdx`/`bbIdx` in snapshots** so online clients can render
+  blind badges; player `emoji` round-trips through join → snapshot.
+
 ## [1.8.0] — 2026-10-07
 
 ### Added — multiplayer round (PokerNow comparison)

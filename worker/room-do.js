@@ -26,6 +26,7 @@ export class RoomDO {
     const code = m[1].toUpperCase();
     if (!isValidRoomCode(code)) return new Response('bad room code', { status: 400 });
     const name = (url.searchParams.get('name') || 'Player').slice(0, 18);
+    const emoji = (url.searchParams.get('emoji') || '').slice(0, 8) || null;
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     // Hibernation API: the socket survives DO eviction; per-socket metadata
@@ -35,8 +36,8 @@ export class RoomDO {
     // The attachment must carry the room code: after a DO restart the sessions
     // map is empty and _meta() falls back to deserializeAttachment() — without
     // `code`, every message on a hibernated socket fails "Room not found".
-    server.serializeAttachment({ clientId: clientId, name: name, code: code });
-    this.sessions.set(server, { clientId: clientId, name: name, code: code });
+    server.serializeAttachment({ clientId: clientId, name: name, code: code, emoji: emoji });
+    this.sessions.set(server, { clientId: clientId, name: name, code: code, emoji: emoji });
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -98,7 +99,7 @@ export class RoomDO {
     let changed = false;
 
     if (msg.t === 'join') {
-      const r = room.addPlayer(meta.clientId, meta.name);
+      const r = room.addPlayer(meta.clientId, meta.name, { emoji: msg.emoji || meta.emoji || null });
       if (!r.ok) { ws.send(JSON.stringify({ t: 'error', message: r.error })); return; }
       changed = true;
     } else if (msg.t === 'start') {
