@@ -503,6 +503,7 @@ var Online = (function () {
       '<div id="online-seats"></div>' +
       '<div class="online-paused" id="on-paused" hidden><div>⏸ Paused<span class="hint" id="on-paused-by"></span></div></div>' +
       '<div class="winner-banner" id="on-banner" hidden></div>' +
+      '<button class="ghost" id="on-show-btn" hidden>👁 Show my cards</button>' +
       '</div>' +
       '<div class="hero-bar"><div class="hero-cards" id="on-hero"></div>' +
       '<div class="controls online-controls-row" id="on-controls"></div></div>' +
@@ -565,10 +566,13 @@ var Online = (function () {
       if (p.hasCards) {
         var revealed = s.showdown && s.showdown.some(function (r) { return r.seat === p.seat; });
         var sd = revealed ? s.showdown.filter(function (r) { return r.seat === p.seat; })[0] : null;
+        // Voluntarily shown cards (PokerNow-style "Show").
+        var sh = !sd && s.shown && s.shown.filter(function (r) { return r.seat === p.seat; })[0];
         // Hero's own seat shows their real cards (like the offline table);
         // everyone else shows backs until the showdown reveals them.
-        var mine = !sd && p.seat === s.mySeat && s.hole && s.hole.length === 2;
+        var mine = !sd && !sh && p.seat === s.mySeat && s.hole && s.hole.length === 2;
         if (sd) { sd.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
+        else if (sh) { sh.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
         else if (mine) { s.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
         else { pc.appendChild(UI.cardBackEl(true)); pc.appendChild(UI.cardBackEl(true)); }
       }
@@ -598,6 +602,20 @@ var Online = (function () {
     pausedEl.hidden = !s.paused;
     if (s.paused) $('on-paused-by').textContent = 'by ' + s.pausedBy;
 
+    // "Show cards" button (PokerNow-style): after a hand, if your cards weren't
+    // revealed at showdown, offer to show them to the table voluntarily.
+    var showBtn = $('on-show-btn');
+    var canShow = s.state === 'playing' && s.hole && s.hole.length === 2 &&
+      !(s.showdown && s.showdown.some(function (r) { return r.seat === s.mySeat; })) &&
+      !(s.shown && s.shown.some(function (r) { return r.seat === s.mySeat; })) &&
+      (s.winners || (function () { var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0]; return me && me.folded; })());
+    if (showBtn) {
+      showBtn.hidden = !canShow;
+      showBtn.onclick = function () {
+        client.send({ t: 'show', hole: s.hole });
+        showBtn.hidden = true;
+      };
+    }
     // Winner banner: collapsible (same pattern as offline). Starts as a slim
     // bar; tap to expand details. Never fully disappears until next hand.
     var banner = $('on-banner');
