@@ -789,3 +789,16 @@ label { font-weight: 600; }
 .modal-list { overflow-y: auto; padding: 0.6rem; }
 .modal-list .hrow { margin-bottom: 0.5rem; }
 .hm-story { margin-top: 0.5rem; border-top: 1px dashed var(--line); padding-top: 0.5rem; }
+
+/* Feedback form */
+.fb-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.fb-types { display: flex; gap: 0.5rem; }
+.fb-type.sel { border-color: var(--gold); color: var(--gold); }
+.fb-label { font-weight: 700; font-size: 0.9rem; }
+.fb-input {
+  width: 100%; box-sizing: border-box; padding: 0.55rem 0.7rem;
+  background: var(--felt); border: 1px solid var(--line); border-radius: 10px;
+  color: inherit; font: inherit; resize: vertical;
+}
+.fb-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+#fb-submit { margin-top: 0.25rem; }
