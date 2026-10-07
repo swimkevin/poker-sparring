@@ -3,6 +3,47 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.6.0] — 2026-10-07
+
+### Fixed (player-reported)
+- **Hand-end results no longer flash by:** the table now pauses 6 seconds after
+  every hand with a "Next hand ▸" button and an auto-deal countdown, so the
+  winner banner, board, and revealed hands can actually be read. Skipped
+  (fast-forward) hands still advance instantly, and ⏩ Skip during the pause
+  jumps straight to the next hand.
+- **Win amounts are exact:** the "🏆 You win N!" banner and the persistent
+  "Last:" topbar line now total what the winner actually took across main and
+  side pots (previously the topbar showed only the first pot's share, e.g.
+  "+40" on a 685 win). Verified live: banner matched the pot exactly on
+  real hands.
+- **All bot hole cards revealed at hand end:** every bot shows its cards
+  face-up when a hand ends — even folded ones — so you can study how each bot
+  played (practice mode). A folded hero sees card backs with a "👁 Show my
+  hand" choice, PokerNow-style.
+- **Results shown in chips, not BB:** every +/- result (hand list, history,
+  per-archetype rows, biggest pot) now reads "+1,250" / "-340" instead of
+  "+125 bb". Records saved before this release fall back to BB text.
+
+### Added
+- **📖 Hand Story view:** each saved hand now has a clean, phone-readable
+  text narrative (streets, actions, board, result, your net) alongside the
+  step-through replayer. Hand rows are tidied for narrow screens.
+- **Quick-start mirrors your setup:** "♠️ Deal me in" now starts exactly what
+  you configured (mode, opponents, stacks, blinds) with a live hint line,
+  instead of forcing a fixed 3-bot cash game.
+
+### Changed
+- **Smoother bot action flow:** community and hole cards are diff-synced, so
+  only newly dealt cards animate — the flop no longer rebuilds when the turn
+  lands. Bets fly a chip to the pot, action badges pop, and changed
+  pot/stack/bet values pulse instead of snapping.
+
+### Tests
+- 1,400 unit + 478 component + 62 netplay + 16 worker assertions green;
+  smoke test drives the real app through the new hand-end flow with no JS
+  errors. New regression coverage: chip deltas, hand story, bot reveal,
+  hero show/muck, next-hand controls, win-amount math, legacy BB fallback.
+
 ## [1.5.2] — 2026-10-07
 
 ### Fixed

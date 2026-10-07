@@ -26,6 +26,7 @@ var dom = new jsdom.JSDOM('<!DOCTYPE html><html><body>' +
   '<div id="book-list"></div><div id="site-list"></div>' +
   '<div id="preset-list"></div><div id="custom-list"></div>' +
   '<div id="hand-list"></div><div id="replay-view" hidden></div>' +
+  '<div id="pot-display"></div><div id="community"></div><div id="street-label"></div><div id="seats"></div>' +
   '</body></html>');
 
 global.window = dom.window;
@@ -244,6 +245,85 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   var rvHtml = document.getElementById('replay-view').innerHTML;
   ok(rvHtml.indexOf('<img src=x') === -1, 'replay action names escaped');
   ok(rvHtml.indexOf('&lt;img') !== -1, 'escaped name present as text');
+
+  // Chip deltas, not BB: the hand-list row must show +40 chips, not "+4 bb".
+  UI.renderHandList([rec], function () {});
+  var hres = document.querySelector('#hand-list .hres');
+  ok(hres && hres.textContent === '+40', 'hand list shows chip delta "+40", got "' + (hres && hres.textContent) + '"');
+})();
+
+// ---------- chip amounts instead of BB in stats/history ----------
+(function () {
+  mem = {}; // reset storage
+  stats.recordHand({
+    mode: 'cash', bb: 10, heroHole: [], community: [], profitChips: 125,
+    wonHand: true, vpip: true, pfr: false, postBet: 0, postCall: 0,
+    opponents: [{ id: 'shark', name: 'Shark', emoji: '🦈' }],
+    heroStackBB: 100, potBB: 12.5, resultText: 'Won 125'
+  });
+  UI.renderStats();
+  var rows = document.querySelectorAll('#history-list .hist-row');
+  ok(rows.length === 1, 'one history row recorded');
+  var delta = rows[0].querySelector('.pos, .neg');
+  ok(delta && delta.textContent === '+125',
+    'history row shows chip delta "+125", got "' + (delta && delta.textContent) + '"');
+  var arch = document.getElementById('arch-table').textContent;
+  ok(arch.indexOf('+125') !== -1 && arch.indexOf('bb') === -1,
+    'per-archetype row shows chips not bb, got "' + arch.trim().slice(0, 80) + '"');
+  var vals = {};
+  document.querySelectorAll('#stat-cards .stat-card').forEach(function (el) {
+    vals[el.querySelector('.sk').textContent] = el.querySelector('.sv').textContent;
+  });
+  ok(vals['Biggest pot'] === '125', 'biggest pot shows chips, got "' + vals['Biggest pot'] + '"');
+
+  // Legacy records without chip fields fall back to BB text instead of NaN.
+  mem['ps_stats_v1'] = JSON.stringify({
+    hands: 1, won: 0, profitBB: -2, vpipHands: 1, vpip: 0, pfr: 0, postBet: 0, postCall: 0,
+    biggestPotBB: 10, perArchetype: { shark: { hands: 1, won: 0, profitBB: -2, name: 'Shark', emoji: '🦈' } },
+    history: [{ n: 1, hole: [], board: 0, profitBB: -2, won: false, mode: 'cash', result: '' }]
+  });
+  UI.renderStats();
+  var legacy = document.querySelector('#history-list .hist-row .neg');
+  ok(legacy && legacy.textContent === '-2 bb', 'legacy history falls back to bb, got "' + (legacy && legacy.textContent) + '"');
+})();
+
+// ---------- hand story view ----------
+(function () {
+  function C(r, s) { return { r: r, s: s }; }
+  var rec = {
+    id: 'story1', handNo: 3, date: new Date().toISOString(), mode: 'cash', sb: 5, bb: 10,
+    heroHole: [C(14, 0), C(13, 1)],
+    timeline: [
+      { t: 'action', street: 'preflop', player: 0, name: 'You', emoji: '🧑', action: 'sb', amount: 5, pot: 5 },
+      { t: 'action', street: 'preflop', player: 1, name: 'Maniac', emoji: '🤪', action: 'bb', amount: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 0, name: 'You', emoji: '🧑', action: 'call', amount: 5, bet: 10, pot: 20 },
+      { t: 'street', street: 'flop', community: [C(2, 2), C(7, 1), C(11, 0)], pot: 20 },
+      { t: 'action', street: 'flop', player: 0, name: 'You', emoji: '🧑', action: 'check', pot: 20 },
+      { t: 'action', street: 'flop', player: 1, name: 'Maniac', emoji: '🤪', action: 'fold', pot: 20 },
+      { t: 'end', pot: 20, community: [C(2, 2), C(7, 1), C(11, 0)],
+        winners: [{ names: ['You'], amount: 20, hand: null, uncalled: false, byFold: true, potIndex: 0 }] }
+    ],
+    heroNet: 10, heroNetBB: 1
+  };
+  UI.renderHandStory(rec);
+  var view = document.getElementById('replay-view');
+  ok(!view.hidden, 'story view visible');
+  ok(document.getElementById('rp-back'), 'story has back button');
+  ok(document.getElementById('rp-steps'), 'story has step-through toggle');
+  var secs = view.querySelectorAll('.rp-story-sec');
+  ok(secs.length === 2, 'two street sections, got ' + secs.length);
+  ok(secs[0].textContent.indexOf('Pre-flop') !== -1, 'first section is pre-flop');
+  ok(secs[1].textContent.indexOf('Flop') !== -1, 'second section is flop');
+  ok(view.textContent.indexOf('posts small blind 5') !== -1, 'blind action narrated');
+  ok(view.textContent.indexOf('Maniac 🤪 folds') !== -1 || view.textContent.indexOf('folds') !== -1, 'fold narrated');
+  ok(view.textContent.indexOf('A♠') !== -1 && view.textContent.indexOf('K♥') !== -1, 'hero hole cards shown');
+  var net = view.querySelector('.rp-story-net');
+  ok(net && net.textContent.indexOf('+10') !== -1, 'story shows hero net +10, got "' + (net && net.textContent) + '"');
+  // hostile names stay escaped in story view
+  var evil = JSON.parse(JSON.stringify(rec));
+  evil.timeline[1].name = '<script>alert(1)</script>';
+  UI.renderHandStory(evil);
+  ok(document.getElementById('replay-view').innerHTML.indexOf('<script>') === -1, 'story escapes hostile names');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
@@ -266,6 +346,76 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     ok(html.indexOf('id="' + id + '"') !== -1, 'index.html contains #' + id);
   });
   ok(/id="bet-slider"[^>]*aria-label="Raise amount"/.test(html), 'raise slider has accessible name');
+})();
+
+// ---------- smooth table fx ----------
+// Cards must be diff-synced (same DOM nodes across renders) so the deal
+// animation only plays for newly dealt cards — never a full-table flash.
+(function () {
+  function fakeTable() {
+    return {
+      players: [
+        { isHero: true, name: 'You', stack: 990, bet: 10, folded: false, sittingOut: false,
+          hole: [{ r: 14, s: 0 }, { r: 13, s: 1 }] },
+        { isHero: false, name: 'Bot', archetype: { emoji: '🤖' }, stack: 1000, bet: 0,
+          folded: false, sittingOut: false, hole: [{ r: 2, s: 2 }, { r: 7, s: 3 }] }
+      ],
+      community: [], street: 'preflop', acting: 1, button: 0, handOver: false,
+      potTotal: function () { return 10; }
+    };
+  }
+  var d = dom.window.document;
+  UI.buildSeats(2);
+  var t = fakeTable();
+  UI.renderTable(t, {});
+  var heroCards1 = Array.prototype.slice.call(d.querySelector('#seat-0 .pcards').children);
+  var botCards1 = Array.prototype.slice.call(d.querySelector('#seat-1 .pcards').children);
+  ok(heroCards1.length === 2 && botCards1.length === 2, 'hole cards rendered (hero face-up, bot face-down)');
+  ok(botCards1[0].classList.contains('back'), 'bot hole cards are face-down');
+
+  // Re-render with identical state: the SAME nodes must survive (no rebuild).
+  UI.renderTable(t, {});
+  var heroCards2 = Array.prototype.slice.call(d.querySelector('#seat-0 .pcards').children);
+  var botCards2 = Array.prototype.slice.call(d.querySelector('#seat-1 .pcards').children);
+  ok(heroCards2[0] === heroCards1[0] && heroCards2[1] === heroCards1[1], 'hero cards not rebuilt on re-render');
+  ok(botCards2[0] === botCards1[0] && botCards2[1] === botCards1[1], 'bot cards not rebuilt on re-render');
+
+  // Flop: 3 new community cards appear; a second render keeps them stable.
+  t.community = [{ r: 14, s: 2 }, { r: 8, s: 2 }, { r: 6, s: 3 }];
+  t.street = 'flop';
+  UI.renderTable(t, {});
+  var flop1 = Array.prototype.slice.call(d.querySelector('#community').children);
+  ok(flop1.length === 3, 'flop dealt (3 community cards)');
+  UI.renderTable(t, {});
+  var flop2 = Array.prototype.slice.call(d.querySelector('#community').children);
+  ok(flop2[0] === flop1[0] && flop2[2] === flop1[2], 'community cards stable across renders');
+  // Turn: only the 4th card is new; the flop trio is untouched.
+  t.community.push({ r: 2, s: 1 }); t.street = 'turn';
+  UI.renderTable(t, {});
+  var turn = Array.prototype.slice.call(d.querySelector('#community').children);
+  ok(turn.length === 4 && turn[0] === flop1[0] && turn[2] === flop1[2], 'turn adds one card, flop untouched');
+
+  // Fold: bot cards are removed (not left stale).
+  t.players[1].folded = true;
+  UI.renderTable(t, {});
+  ok(d.querySelector('#seat-1 .pcards').children.length === 0, 'folded player cards removed');
+
+  // Action badge pops when the action text changes.
+  UI.renderTable(t, { lastActions: { 0: 'bets 20' } });
+  var pact = d.querySelector('#seat-0 .pact');
+  ok(pact.textContent === 'bets 20' && pact.classList.contains('pop'), 'action badge pops on new action');
+  var clsBefore = pact.className;
+  UI.renderTable(t, { lastActions: { 0: 'bets 20' } });
+  ok(pact.className === clsBefore, 'same action leaves badge untouched (no re-pop)');
+
+  // Chip fly: a chip element arcs from seat to pot (mocked geometry).
+  var seat0 = d.querySelector('#seat-0'), pot = d.querySelector('#pot-display');
+  seat0.getBoundingClientRect = function () { return { left: 100, top: 400, width: 80, height: 60 }; };
+  pot.getBoundingClientRect = function () { return { left: 400, top: 200, width: 120, height: 30 }; };
+  UI.chipFly(0);
+  ok(!!d.querySelector('.chip-fly'), 'chip-fly element spawned');
+  UI.resetTableFx();
+  ok(!d.querySelector('.chip-fly'), 'resetTableFx clears stray chips');
 })();
 
 // ---------- update-check.js (separate jsdom, stubbed fetch/timers) ----------
@@ -330,3 +480,111 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     process.exit(fail ? 1 : 0);
   })();
 })();
+
+// ---------- hand end: results pause, bot reveal, hero show/muck ----------
+// Bots always show their hole cards at hand end (practice mode); a folded
+// hero sees backs with a Show choice; the banner carries Next-hand controls.
+(function () {
+  var d = dom.window.document;
+  var wb = d.createElement('div');
+  wb.id = 'winner-banner'; wb.hidden = true;
+  d.body.appendChild(wb);
+
+  function endTable(heroFolded, botFolded) {
+    return {
+      players: [
+        { isHero: true, name: 'You', stack: 1010, bet: 0, folded: heroFolded, sittingOut: false,
+          hole: [{ r: 14, s: 0 }, { r: 13, s: 1 }] },
+        { isHero: false, name: 'Maniac', archetype: { emoji: '🤪' }, stack: 990, bet: 0,
+          folded: botFolded, sittingOut: false, hole: [{ r: 2, s: 2 }, { r: 7, s: 3 }] }
+      ],
+      community: [{ r: 5, s: 0 }, { r: 9, s: 1 }, { r: 11, s: 2 }], street: 'river',
+      acting: -1, button: 0, handOver: true,
+      potTotal: function () { return 0; }
+    };
+  }
+  UI.buildSeats(2);
+
+  // Folded bot's cards are revealed face-up at hand end.
+  var t = endTable(false, true);
+  UI.renderTable(t, { handEnd: true, winners: [0], revealed: {}, button: 0 });
+  var botCards = d.querySelectorAll('#seat-1 .pcards .card');
+  ok(botCards.length === 2, 'folded bot shows 2 cards at hand end');
+  ok(!!botCards[0].querySelector('.crank'), 'folded bot cards are face-up');
+
+  // Folded hero sees backs until Show.
+  t = endTable(true, true);
+  UI.renderTable(t, { handEnd: true, winners: [1], revealed: {}, button: 0 });
+  var heroCards = d.querySelectorAll('#seat-0 .pcards .card');
+  ok(heroCards.length === 2, 'folded hero shows 2 cards at hand end');
+  ok(!heroCards[0].querySelector('.crank'), 'folded hero cards are face-down (mucked)');
+  UI.renderTable(t, { handEnd: true, winners: [1], revealed: {}, button: 0, heroShow: true });
+  heroCards = d.querySelectorAll('#seat-0 .pcards .card');
+  ok(!!heroCards[0].querySelector('.crank'), 'hero cards flip face-up after Show');
+
+  // Mid-hand behavior unchanged: folded cards stay hidden.
+  UI.renderTable(t, { winners: [], revealed: {}, button: 0 });
+  ok(d.querySelectorAll('#seat-0 .pcards .card').length === 0, 'folded hero cards hidden mid-hand');
+  ok(d.querySelectorAll('#seat-1 .pcards .card').length === 0, 'folded bot cards hidden mid-hand');
+
+  // Hand-end controls: Next button + countdown + Show button.
+  var nextFired = false, showFired = false;
+  UI.winnerBanner('<div class="wtitle">x</div>');
+  UI.showHandEndControls({
+    autoMs: 60000,
+    onNext: function () { nextFired = true; },
+    onShowHero: function () { showFired = true; }
+  });
+  ok(!!d.getElementById('btn-next-hand'), 'Next hand button rendered');
+  ok(!!d.getElementById('btn-show-hero'), 'Show my hand button rendered');
+  ok(d.getElementById('handend-row').textContent.indexOf('auto-dealing') !== -1, 'countdown shown');
+  d.getElementById('btn-show-hero').click();
+  ok(showFired, 'Show button fires onShowHero');
+  d.getElementById('btn-next-hand').click();
+  ok(nextFired, 'Next button fires onNext');
+  ok(!d.getElementById('handend-row'), 'controls removed after Next');
+  UI.hideHandEndControls();
+  d.body.removeChild(wb);
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- handWinAmount: banner shows the pot won, never the stack ----------
+(function () {
+  // Simple win-by-fold: hero takes the whole pot.
+  ok(UI.handWinAmount({ pot: 50, winners: [{ idx: 0, amount: 50, byFold: true }] }) === 50,
+    'win-by-fold amounts to the pot');
+  // Showdown, hero wins main pot only; side pot goes to a bot.
+  ok(UI.handWinAmount({ pot: 450, winners: [
+    { potIndex: 0, amount: 50, winners: [0], each: 50 },
+    { potIndex: 1, amount: 400, winners: [2], each: 400 }
+  ] }) === 50, 'side-pot win counts only the hero\'s pot');
+  // Split pot.
+  ok(UI.handWinAmount({ pot: 100, winners: [
+    { potIndex: 0, amount: 100, winners: [0, 1], each: 50 }
+  ] }) === 50, 'split pot counts the hero\'s share');
+  // Uncalled returns don't inflate winnings; fall back to pot when only takes-back.
+  ok(UI.handWinAmount({ pot: 80, winners: [{ idx: 1, amount: 80, byFold: true }] }) === 80,
+    'hero loss falls back to pot total');
+  ok(UI.handWinAmount({ pot: 0, winners: [] }) === 0, 'empty winners -> 0');
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- firstWinnersTotal: topbar never understates a multi-pot win ----------
+(function () {
+  // Hero sweeps main + two side pots: total, not just the first entry.
+  ok(UI.firstWinnersTotal({ winners: [
+    { potIndex: 0, amount: 40, winners: [0], each: 40 },
+    { potIndex: 1, amount: 75, winners: [0], each: 75 },
+    { potIndex: 2, amount: 570, winners: [0], each: 570 }
+  ] }) === 685, 'multi-pot sweep totals to 685');
+  // Split pots between different winners: fall back to the first entry.
+  ok(UI.firstWinnersTotal({ winners: [
+    { potIndex: 0, amount: 50, winners: [0], each: 50 },
+    { potIndex: 1, amount: 400, winners: [2], each: 400 }
+  ] }) === 50, 'split winners fall back to first entry');
+  ok(UI.firstWinnersTotal({ winners: [] }) === 0, 'no winners -> 0');
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');

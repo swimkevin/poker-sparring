@@ -21,6 +21,8 @@ function blankStats() {
     vpip: 0, pfr: 0, vpipHands: 0,
     postBet: 0, postCall: 0,          // postflop aggression
     biggestPotBB: 0,
+    biggestPotChips: 0,              // chip-denominated aggregates (BB ones kept for legacy)
+    profitChips: 0,
     perArchetype: {},                 // id -> { hands, won, profitBB }
     history: [],                      // recent hands (max 60)
     graph: [],                        // hero stack in bb after each hand (max 200)
@@ -59,23 +61,29 @@ function recordHand(ctx) {
   s.hands++;
   if (ctx.wonHand) s.won++;
   var profitBB = ctx.profitChips / ctx.bb;
+  var profitChips = Math.round(ctx.profitChips);
   s.profitBB += profitBB;
+  s.profitChips = (s.profitChips || 0) + profitChips;
   s.vpipHands++;
   if (ctx.vpip) s.vpip++;
   if (ctx.pfr) s.pfr++;
   s.postBet += ctx.postBet || 0;
   s.postCall += ctx.postCall || 0;
   if (ctx.potBB > s.biggestPotBB) s.biggestPotBB = ctx.potBB;
+  var potChips = Math.round(ctx.potBB * ctx.bb);
+  if (!s.biggestPotChips || potChips > s.biggestPotChips) s.biggestPotChips = potChips;
   (ctx.opponents || []).forEach(function (o) {
-    var a = s.perArchetype[o.id] || (s.perArchetype[o.id] = { hands: 0, won: 0, profitBB: 0, name: o.name, emoji: o.emoji });
+    var a = s.perArchetype[o.id] || (s.perArchetype[o.id] = { hands: 0, won: 0, profitBB: 0, profitChips: 0, name: o.name, emoji: o.emoji });
     a.hands++;
     if (ctx.wonHand) a.won++;
     a.profitBB += profitBB / Math.max(1, (ctx.opponents || []).length);
+    a.profitChips = (a.profitChips || 0) + profitChips / Math.max(1, (ctx.opponents || []).length);
   });
   s.history.unshift({
     n: s.hands, hole: (ctx.heroHole || []).map(function (c) { return rankChar(c.r) + ' sdhc'[c.s + 1] || ''; }),
     board: (ctx.community || []).length,
     profitBB: Math.round(profitBB * 10) / 10,
+    profitChips: profitChips,
     won: !!ctx.wonHand, mode: ctx.mode, result: ctx.resultText || ''
   });
   s.history = s.history.slice(0, 60);
@@ -93,7 +101,8 @@ function derivedStats(s) {
     vpip: s.vpipHands ? (100 * s.vpip / s.vpipHands) : 0,
     pfr: s.vpipHands ? (100 * s.pfr / s.vpipHands) : 0,
     af: s.postCall ? (s.postBet / s.postCall) : (s.postBet ? 99 : 0),
-    biggestPotBB: s.biggestPotBB
+    biggestPotBB: s.biggestPotBB,
+    biggestPotChips: s.biggestPotChips || 0
   };
 }
 
