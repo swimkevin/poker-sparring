@@ -24,8 +24,6 @@ body {
 }
 h1 { font-size: 2.4rem; margin: 0.5em 0 0.3em; letter-spacing: -0.5px; }
 h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing: -0.2px; }
-/* offline-safe display serif + system stacks (no web fonts: the app is offline-first) */
-.brand, h1, h2, .rp-title { font-family: Georgia, 'Times New Roman', serif; }
 .subtitle { color: var(--muted); max-width: 640px; font-size: 1.02rem; }
 .accent { color: var(--gold); }
 .hint { color: var(--muted); font-size: 0.8em; font-weight: normal; }
@@ -100,7 +98,7 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 
 .settings-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; }
 .settings-row label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem; color: var(--muted); }
-input[type=number], input[type=text] {
+input[type=number], input[type=text], input:not([type]) {
   background: var(--panel2); border: 1px solid #2b3547; color: var(--text);
   border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 1rem; width: 160px;
 }
@@ -618,7 +616,7 @@ button.ghost { border-radius: 10px; font-weight: 600; }
 .settings-details { border-radius: 12px; }
 
 /* Inputs: 16px kills iOS auto-zoom; visible focus ring */
-input[type=number], input[type=text], input[type=text].code-input, select {
+input[type=number], input[type=text], input:not([type]), select {
   font-size: 16px; border-radius: 10px;
 }
 input:focus, select:focus, button:focus-visible {
