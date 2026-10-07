@@ -3,6 +3,21 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.0] — 2026-10-07
+
+### Added — multiplayer round (PokerNow comparison)
+- **💬 Table chat** in online lobbies and games: 200-char messages, server
+  relayed, last 50 kept. The #1 thing that makes multiplayer feel alive.
+- **Online rebuy**: busted (or short) players top back up to the starting
+  stack mid-game; buy-in count tracked per player.
+- **📊 Session ledger** (online): per-player buy-ins, stack, and net — the
+  trust layer for settling up with friends.
+- **"Join sitting out"** checkbox: join a running table as a spectator without
+  being dealt in.
+- **Host migration**: if the host's connection drops (not a clean leave), a
+  connected player who hits Start takes the crown instead of the room
+  soft-locking. Transient drops don't strip the host.
+
 ## [1.7.3] — 2026-10-07
 
 ### Fixed — hiring-manager review round (10 bugs)
