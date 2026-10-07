@@ -3,6 +3,19 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.6.1] — 2026-10-07
+
+### Fixed
+- **Topbar "Last:" totals multi-pot wins:** uncalled "takes back" entries no
+  longer break the winner grouping, so "Last: You +1,143" is shown instead of
+  just the main pot's "+40".
+- **Session bankroll in chips:** the topbar pill now reads "+1,250 session"
+  instead of "+125 bb session".
+- **Legacy BB fallback rounding:** old hand records without chip amounts show
+  "-13.4 bb" instead of float garbage like "-13.437999999999999 bb".
+- **Stale "Waiting for X…" cleared** from the action bar during the results
+  pause.
+
 ## [1.6.0] — 2026-10-07
 
 ### Fixed (player-reported)

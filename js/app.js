@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.6.0';
+  var APP_VERSION = '1.6.1';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -52,7 +52,7 @@
   var handCtx = null;
   var handRec = null; // in-progress hand record for the replayer (js/replay.js)
   var replay = null;  // { rec, idx } while the replay viewer is open
-  var sessionStartBB = 0;
+  var sessionStartChips = 0;
   var tourney = null; // { levelIdx }
   var gameMode = 'cash';
   var cfg = { stack: 10000, sb: 50, bb: 100 };
@@ -211,6 +211,7 @@
   function onHandEnd(e) {
     UI.disableControls();
     UI.coachTip(null);
+    setTurnStatus('', false); // drop any stale "Waiting for X…" during the results pause
     var hero = table.players[0];
     var won = heroWon(e);
     var revealed = {};
@@ -292,7 +293,7 @@
         }),
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
-    UI.setBankroll(sessionProfitBB(hero.stack, sessionStartBB, table.bb));
+    UI.setBankroll(hero.stack - sessionStartChips);
 
     // Give the result room to breathe: a Next-hand button plus a 6s auto-deal
     // countdown, so the banner, board, and revealed hands can actually be read.
@@ -576,7 +577,7 @@
       table.setBlinds(TOUR_LEVELS[0].sb, TOUR_LEVELS[0].bb, 0);
     } else tourney = null;
 
-    sessionStartBB = table.players[0].stack / table.bb;
+    sessionStartChips = table.players[0].stack;
     UI.setBankroll(0);
     evtQueue = []; pumping = false; waitingForHero = false;
     UI.buildSeats(players.length);

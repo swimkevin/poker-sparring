@@ -477,17 +477,19 @@ var UI = (function () {
 
   // Total chips won by the winners of the FIRST winner entry across all pots
   // (side pots included). Used for the compact "Last:" topbar line so a
-  // multi-pot win isn't understated. Falls back to the first entry when
-  // different winners split the pots.
+  // multi-pot win isn't understated. Uncalled "takes back" entries are not
+  // winnings and don't affect the grouping. Falls back to the first entry
+  // when different winners split the pots.
   function firstWinnersTotal(e) {
-    var w0 = (e.winners || [])[0];
+    var winners = (e.winners || []).filter(function (w) { return !w.uncalled; });
+    var w0 = winners[0] || (e.winners || [])[0];
     if (!w0) return 0;
     var key = (w0.winners || [w0.idx]).slice().sort().join(',');
     var total = 0, same = true;
-    (e.winners || []).forEach(function (w) {
+    winners.forEach(function (w) {
       var k = (w.winners || [w.idx]).slice().sort().join(',');
       if (k !== key) same = false;
-      else if (!w.uncalled) total += (w.each || w.amount);
+      else total += (w.each || w.amount);
     });
     return same ? total : (w0.each || w0.amount);
   }
@@ -951,7 +953,10 @@ var UI = (function () {
   // Chip delta: "+1,250" / "-340". Falls back to BB text for records saved
   // before chip amounts were stored (old localStorage entries).
   function chipDelta(chips, bb) {
-    if (chips == null || isNaN(chips)) return (bb >= 0 ? '+' : '') + bb + ' bb';
+    if (chips == null || isNaN(chips)) {
+      var b = Math.round((bb || 0) * 10) / 10; // no float garbage like -13.437999999999999
+      return (b >= 0 ? '+' : '') + b + ' bb';
+    }
     var c = Math.round(chips);
     return (c > 0 ? '+' : '') + fmt(c);
   }
@@ -960,10 +965,11 @@ var UI = (function () {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function setBankroll(bb) {
+  function setBankroll(chips) {
     var el = $('bankroll-chip');
-    el.textContent = (bb >= 0 ? '+' : '') + Math.round(bb) + ' bb session';
-    el.className = 'bankroll ' + (bb > 0 ? 'pos' : bb < 0 ? 'neg' : '');
+    var c = Math.round(chips);
+    el.textContent = (c > 0 ? '+' : '') + fmt(c) + ' session';
+    el.className = 'bankroll ' + (c > 0 ? 'pos' : c < 0 ? 'neg' : '');
   }
 
   return {

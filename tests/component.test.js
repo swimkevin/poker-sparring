@@ -588,3 +588,42 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- QA follow-ups: uncalled entries, float BB fallback, chip bankroll ----------
+(function () {
+  // Uncalled "takes back" entries must not break the multi-pot total.
+  ok(UI.firstWinnersTotal({ winners: [
+    { potIndex: 0, amount: 40, winners: [0], each: 40 },
+    { potIndex: 1, amount: 45, winners: [0], each: 45 },
+    { potIndex: 2, amount: 1058, winners: [0], each: 1058 },
+    { potIndex: 3, amount: 1241, winners: [1], uncalled: true }
+  ] }) === 1143, 'uncalled takes-back ignored in winners total');
+
+  // Legacy BB fallback never prints float garbage.
+  var d = dom.window.document;
+  var wb = d.createElement('div'); wb.id = 'winner-banner'; wb.hidden = true;
+  d.body.appendChild(wb);
+  // Exercise chipDelta indirectly via a legacy history row.
+  mem = {};
+  mem['ps_stats_v1'] = JSON.stringify({
+    hands: 1, won: 0, profitBB: -13.437999999999999, vpipHands: 1, vpip: 0, pfr: 0,
+    postBet: 0, postCall: 0, biggestPotBB: 10, perArchetype: {},
+    history: [{ n: 1, hole: [], board: 0, profitBB: -13.437999999999999, won: false, mode: 'cash', result: '' }]
+  });
+  UI.renderStats();
+  var legacy = document.querySelector('#history-list .hist-row .neg');
+  ok(legacy && legacy.textContent === '-13.4 bb',
+    'legacy BB fallback rounded, got "' + (legacy && legacy.textContent) + '"');
+  d.body.removeChild(wb);
+
+  // Bankroll chip shows chips, not bb.
+  var bc = d.createElement('div'); bc.id = 'bankroll-chip'; d.body.appendChild(bc);
+  UI.setBankroll(1250);
+  ok(bc.textContent === '+1,250 session', 'bankroll shows chips, got "' + bc.textContent + '"');
+  ok(bc.className.indexOf('pos') !== -1, 'bankroll pos class');
+  UI.setBankroll(-340);
+  ok(bc.textContent === '-340 session', 'bankroll negative chips, got "' + bc.textContent + '"');
+  d.body.removeChild(bc);
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
