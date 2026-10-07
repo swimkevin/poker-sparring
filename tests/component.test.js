@@ -619,10 +619,10 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   // Bankroll chip shows chips, not bb.
   var bc = d.createElement('div'); bc.id = 'bankroll-chip'; d.body.appendChild(bc);
   UI.setBankroll(1250);
-  ok(bc.textContent === '+1,250 session', 'bankroll shows chips, got "' + bc.textContent + '"');
+  ok(bc.textContent === '+1,250', 'bankroll shows chips, got "' + bc.textContent + '"');
   ok(bc.className.indexOf('pos') !== -1, 'bankroll pos class');
   UI.setBankroll(-340);
-  ok(bc.textContent === '-340 session', 'bankroll negative chips, got "' + bc.textContent + '"');
+  ok(bc.textContent === '-340', 'bankroll negative chips, got "' + bc.textContent + '"');
   d.body.removeChild(bc);
 })();
 
@@ -761,11 +761,11 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   document.getElementById('btn-bet-confirm').click();
   ok(got === 40, 'confirming untouched raise panel bets the min, got ' + got);
 
-  // Opening bet: keeps the 3/4-pot default (pot 200 -> 150).
+  // Opening bet: opens at the minimum (v1.8.9 changed from 3/4-pot default).
   got = null;
   UI.openBetPanel(10, 1000, 200, false, function (amt) { got = amt; });
-  ok(document.getElementById('bet-amount').textContent === '150',
-    'bet panel keeps 3/4-pot default, got "' + document.getElementById('bet-amount').textContent + '"');
+  ok(document.getElementById('bet-amount').textContent === '10',
+    'bet panel opens at minimum, got "' + document.getElementById('bet-amount').textContent + '"');
 
   // Min quick button jumps a raise back to the floor.
   var minBtn = panel.querySelector('[data-frac="0"]');
