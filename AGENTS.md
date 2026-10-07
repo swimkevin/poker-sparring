@@ -14,3 +14,16 @@ first; this file is the 30-second version.
   with every engine/bot/equity change.
 - Never `innerHTML` user-controlled strings without `UI.escapeHtml`.
 - Keep functions small, comment the decision points, no emojis in code comments.
+
+## Release checklist (GitHub Pages)
+- Bump the version in three places: `APP_VERSION` in `js/app.js`, `"version"` in
+  `package.json`, and the bare number in `version.txt`. The update toast compares
+  `version.txt` against the page's `APP_VERSION`; if they drift, users get a
+  phantom "update available" (or none at all).
+- Add a CHANGELOG.md entry under the new version.
+- Push via the GitHub connector (`push_files`); keep each push payload well
+  under ~150 KB or it silently fails. Verify the commit and the live file after.
+- Worker changes need a separate `wrangler deploy` by Kevin from the
+  `worker/` folder (plus `js/room-server.js`, `js/engine.js`, `js/evaluator.js`,
+  `js/cards.js` which the bundle imports). The app and the worker deploy
+  independently — a worker-only fix needs no app push and vice versa.

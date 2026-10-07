@@ -131,6 +131,8 @@ var UI = (function () {
   function cardEl(c, small) {
     var d = document.createElement('div');
     d.className = 'card' + (small ? ' small' : '') + (isRed(c) ? ' red' : '');
+    // Screen readers: announce "Ace of spades", not silence.
+    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', rankName(c.r) + ' of ' + SUIT_NAMES[c.s]); } catch (e) {}
     var crank = document.createElement('div');
     crank.className = 'crank'; crank.textContent = rankChar(c.r);
     var csuit = document.createElement('div');
@@ -141,6 +143,7 @@ var UI = (function () {
   function cardBackEl(small) {
     var d = document.createElement('div');
     d.className = 'card back' + (small ? ' small' : '');
+    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', 'Face-down card'); } catch (e) {}
     return d;
   }
 
@@ -185,7 +188,8 @@ var UI = (function () {
   }
 
   // Inline rename: swaps the name row for an input. Enter/blur saves (empty
-  // resets to the default name), Escape cancels. Re-renders the roster after.
+  // resets to the default name), Escape cancels. Duplicate names are rejected
+  // inline — two "Doyle"s at one table is confusing. Re-renders the roster after.
   function openRename(cardBtn, b) {
     var nmRow = cardBtn.querySelector('.nm-row');
     if (!nmRow || nmRow.querySelector('input')) return;
@@ -196,9 +200,32 @@ var UI = (function () {
     input.maxLength = 18;
     input.setAttribute('aria-label', 'Rename ' + b.name + ' (empty resets)');
     var done = false;
+    function nameTaken(v) {
+      var low = v.trim().toLowerCase();
+      if (!low) return false;
+      var bots = ($('bot-roster') && $('bot-roster')._bots) || [];
+      for (var i = 0; i < bots.length; i++) {
+        if (bots[i].id !== b.id && dispName(bots[i]).toLowerCase() === low) return true;
+      }
+      if (typeof NamePrefs !== 'undefined' && NamePrefs) {
+        var un = (NamePrefs.getUsername() || '').trim().toLowerCase();
+        if (un && un === low) return true;
+      }
+      return false;
+    }
     function finish(save) {
       if (done) return; done = true;
-      if (save && typeof NamePrefs !== 'undefined' && NamePrefs) NamePrefs.setBotOverride(b.id, input.value);
+      if (save && typeof NamePrefs !== 'undefined' && NamePrefs) {
+        if (nameTaken(input.value)) {
+          done = false; // keep editing; flag the conflict
+          input.classList.add('rename-dup');
+          input.setAttribute('aria-invalid', 'true');
+          input.title = 'That name is already taken at this table';
+          input.focus();
+          return;
+        }
+        NamePrefs.setBotOverride(b.id, input.value);
+      }
       var box = $('bot-roster');
       renderRoster(box._bots || [], box._selected || new Set());
     }

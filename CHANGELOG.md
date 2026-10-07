@@ -3,6 +3,20 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.5.1] — 2026-10-06
+
+### Fixed
+- **Dropped connections now auto-reconnect:** a lost relay socket redials with
+  backoff and re-sends join, so the Room reclaims the seat and the client
+  resyncs to the live table instead of stranding on a stale lobby.
+- **Rooms survive host disconnects + worker eviction:** room state persists to
+  Durable Object storage (`Room.toJSON`/`fromJSON`); a guest joining minutes
+  after the host vanished finds the room intact.
+
+### Added
+- **Update-available toast:** a long-open tab polls `version.txt`; when a new
+  release lands it offers one-click Refresh instead of needing a hard refresh.
+
 ## [1.5.0] — 2026-10-05
 
 ### Added

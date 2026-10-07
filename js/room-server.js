@@ -100,17 +100,20 @@ class Room {
     if (!name) return { ok: false, error: 'Enter a name to join.' };
     var existing = this.playerByClientId(clientId);
     if (existing) return { ok: true, seat: existing.seat, isHost: existing.isHost, rejoined: true };
-    // Rejoin: same name as a disconnected player reclaims their seat.
-    var ghost = this.players.filter(function (p) { return !p.connected && p.name === name; })[0];
-    if (ghost) {
-      ghost.clientId = clientId;
-      ghost.connected = true;
-      this._emit({ t: 'playerRejoined', seat: ghost.seat, name: name });
-      return { ok: true, seat: ghost.seat, isHost: ghost.isHost, rejoined: true };
+    // Session takeover: the same name rebinds to the new connection, whether the
+    // old seat is a disconnected ghost or its socket hasn't been recognized as
+    // closed yet (a fast redial would otherwise be rejected as "name taken",
+    // stranding the player with no seat). Names are unique per table, so the
+    // newcomer is the name-holder; the stale socket's later actions/close are
+    // no-ops once the clientId is rebound.
+    var sameName = this.players.filter(function (p) { return p.name === name; })[0];
+    if (sameName) {
+      sameName.clientId = clientId;
+      sameName.connected = true;
+      this._emit({ t: 'playerRejoined', seat: sameName.seat, name: name });
+      return { ok: true, seat: sameName.seat, isHost: sameName.isHost, rejoined: true };
     }
     if (this.state !== 'lobby') return { ok: false, error: 'Game in progress — wait for the next one.' };
-    if (this.players.some(function (p) { return p.connected && p.name === name; }))
-      return { ok: false, error: 'That name is taken at this table.' };
     if (this.players.length >= this.config.maxPlayers)
       return { ok: false, error: 'Table is full (' + this.config.maxPlayers + ').' };
     var taken = {};
