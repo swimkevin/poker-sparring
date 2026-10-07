@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.7.2';
+  var APP_VERSION = '1.7.3';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -41,8 +41,21 @@
   // Invariants: 1 <= size <= maxOpp() (1 for heads-up, 5 otherwise).
   // The stepper, mode cards, and roster cards all mutate this set; the count
   // display derives from it, so the number and the highlighted cards can
-  // never disagree.
-  var selectedBots = new Set(['lag', 'rohan', 'amogh']);
+  // never disagree. Persisted across reloads (stale ids are dropped).
+  var ROSTER_KEY = 'ps_roster_v1';
+  function loadRoster() {
+    try {
+      var raw = localStorage.getItem(ROSTER_KEY);
+      if (!raw) return null;
+      var ids = JSON.parse(raw).filter(function (id) { return botById(id); });
+      return ids.length ? ids : null;
+    } catch (e) { return null; }
+  }
+  function saveRoster() {
+    try { localStorage.setItem(ROSTER_KEY, JSON.stringify(Array.from(selectedBots))); }
+    catch (e) {}
+  }
+  var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
   var preHuSelection = null; // full table remembered across a heads-up detour
   function maxOpp() { return mode === 'hu' ? 1 : 5; }
   function rosterOrderIds() { return allBots().map(function (b) { return b.id; }); }
@@ -736,7 +749,9 @@
         if (canBet) {
           var scare = scareCardRank();
           var spot = (pos > 0.6 ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) - (foldy < 0.3 ? 2 : 0);
-          if (spot >= 2) {
+          // Never suggest a pure bluff into a station: if they don't fold,
+          // the "Bluff" line would contradict the per-opponent "never bluff" tail.
+          if (spot >= 2 && foldy >= 0.4) {
             var why = [];
             if (scare) why.push('the ' + esc(scare) + ' is a scare card');
             if (pos > 0.6) why.push('you have position');
@@ -977,8 +992,16 @@
     // and the highlighted cards can never disagree.
     function syncOppUI() {
       $('opp-count').textContent = selectedBots.size;
-      UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
+      UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint, onRosterChange);
       syncQuickHint();
+      saveRoster();
+    }
+    // Roster card clicks mutate the set inside UI; this keeps the count,
+    // hint, and persisted selection in sync.
+    function onRosterChange() {
+      $('opp-count').textContent = selectedBots.size;
+      syncQuickHint();
+      saveRoster();
     }
     // Select a bot, enforcing the cap by swapping out the last-picked bot.
     // Used when a newly created custom bot should join the table immediately.
@@ -1019,6 +1042,20 @@
       });
     $('btn-add-custom').onclick = function () {
       var name = $('cust-name').value.trim() || 'My Bot';
+      // Reject duplicate display names — two "Doyle"s at one table is confusing.
+      var low = name.toLowerCase();
+      var taken = allBots().some(function (b) {
+        var dn = (typeof UI !== 'undefined' && UI.dispName ? UI.dispName(b) : b.name) || '';
+        return dn.trim().toLowerCase() === low;
+      });
+      if (taken) {
+        var ne = $('cust-name');
+        ne.classList.add('rename-dup');
+        ne.setAttribute('aria-invalid', 'true');
+        ne.title = 'That name is already taken — pick another';
+        ne.focus();
+        return;
+      }
       var emoji = $('cust-emoji').value.trim() || '🤖';
       var a = customArchetype({
         name: name, emoji: emoji,
@@ -1073,7 +1110,12 @@
     selectedBots.delete(id);
     if (!selectedBots.size) selectedBots.add('lag'); // never drop to zero
     UI.renderArchetypes(loadCustomBots(), deleteCustom);
-    UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
+    UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint, function () {
+      var oc = document.getElementById('opp-count');
+      if (oc) oc.textContent = selectedBots.size;
+      saveRoster();
+    });
+    saveRoster();
   }
 
   document.addEventListener('DOMContentLoaded', wire);
