@@ -537,10 +537,41 @@ var UI = (function () {
     hideHandEndControls();
     if (!html) { w.hidden = true; return; }
     w.hidden = false;
-    // Dismiss button: lets users see the board behind the banner on mobile.
-    w.innerHTML = '<button class="dismiss-btn" aria-label="Dismiss">✕</button>' + html;
-    var db = w.querySelector('.dismiss-btn');
-    if (db) db.onclick = function () { w.hidden = true; };
+    // Collapsible result bar (PokerNow-style): starts collapsed as a slim
+    // one-line summary so it never blocks the board. Tap to expand the full
+    // breakdown, tap again to collapse. Never fully disappears until the next
+    // hand — no more "X'd it away and can't get it back".
+    w.classList.remove('expanded');
+    w.innerHTML =
+      '<button class="wmain" aria-expanded="false">' +
+        '<span class="wtitle-wrap"></span>' +
+        '<span class="wchevron" aria-hidden="true">▾</span>' +
+      '</button>' +
+      '<div class="wdetails" hidden></div>';
+    var main = w.querySelector('.wmain');
+    var titleWrap = w.querySelector('.wtitle-wrap');
+    var details = w.querySelector('.wdetails');
+    // Split the html into title (first .wtitle div) and the rest (details).
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    var titleEl = tmp.querySelector('.wtitle');
+    if (titleEl) {
+      titleWrap.innerHTML = titleEl.outerHTML;
+      titleEl.remove();
+      details.innerHTML = tmp.innerHTML;
+    } else {
+      titleWrap.innerHTML = html;
+      details.innerHTML = '';
+    }
+    // Only show the chevron if there are details to expand.
+    var hasDetails = details.innerHTML.trim().length > 0;
+    main.querySelector('.wchevron').style.display = hasDetails ? '' : 'none';
+    main.onclick = function () {
+      if (!hasDetails) return;
+      var exp = w.classList.toggle('expanded');
+      main.setAttribute('aria-expanded', exp ? 'true' : 'false');
+      details.hidden = !exp;
+    };
   }
 
   // Hand-end controls: a "Next hand" button plus an auto-deal countdown, and
