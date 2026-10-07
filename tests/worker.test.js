@@ -173,5 +173,17 @@ function upgradeRequest(roomUrl) {
   var hibState = hibHost.sent.filter(function (m) { return m.t === 'state'; })[0];
   ok(!!hibState && hibState.state === 'playing', 'hibernated host can still start the game after restart');
 
+  // --- sitout message routes through the DO to Room.setSitOut ---
+  hibGuest.sent.length = 0;
+  await doB.webSocketMessage(hibGuest, JSON.stringify({ t: 'sitout', out: true }));
+  var soErrs = hibGuest.sent.filter(function (m) { return m.t === 'error'; });
+  ok(soErrs.length === 0, 'sitout routes without error (got: ' + JSON.stringify(soErrs.map(function (e) { return e.message; })) + ')');
+  var soState = hibGuest.sent.filter(function (m) { return m.t === 'state'; }).pop();
+  var guestSeat = soState.players.filter(function (p) { return p.name === 'GuestH'; })[0];
+  ok(!!guestSeat && guestSeat.sittingOut === true, 'sitout flag visible in snapshot after DO route');
+  await doB.webSocketMessage(hibGuest, JSON.stringify({ t: 'sitout', out: false }));
+  ok(doB.room.playerBySeat(guestSeat.seat).sittingOut === false, 'back-in clears the flag');
+
+
   console.log(pass + ' worker assertions passed');
 })().catch(function (e) { console.log('FAIL: ' + (e && e.stack || e)); process.exitCode = 1; });

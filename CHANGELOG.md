@@ -3,6 +3,22 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.7.1] — 2026-10-07
+
+### Fixed — restored features lost in a stash mishap
+- **Multiplayer sit-out/back-in:** the Sit out button, seat badges, blind/action
+  skipping, mid-hand fold, and all-in pot eligibility are back, with the worker
+  protocol (`{t:'sitout'}`) and 32 netplay + 3 worker regression tests.
+- **In-table hand history:** the 📖 button opens past hands mid-game again;
+  the story HTML is now one shared function used by both the modal and the
+  Hands tab.
+- **Raise UX:** the raise panel again opens at the minimum legal raise with a
+  Min quick button; opening bets still default to ¾ pot.
+- **Results pacing:** the hand-end pause is 16 seconds again (was 6), and the
+  winner banner is docked at the bottom so the board stays visible.
+- **Bankroll pill:** Reset Stats and hero rebuy now zero the session pill
+  immediately.
+
 ## [1.7.0] — 2026-10-07
 
 ### Added — bot realism: rebuys, tilt, tournament pros, thinking explainer

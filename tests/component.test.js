@@ -733,4 +733,101 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(b2 === '', 'no badges when calm with no rebuys, got "' + b2 + '"');
 })();
 
+
+// ---------- Raise panel defaults to the minimum legal raise ----------
+(function () {
+  var d = dom.window.document;
+  // Build the bet panel DOM the same shape as index.html.
+  var panel = d.createElement('div'); panel.id = 'bet-panel'; panel.hidden = true;
+  panel.innerHTML =
+    '<div class="bet-row"><input id="bet-slider" type="range" min="0" max="100" value="50">' +
+    '<span id="bet-amount" class="bet-amount">0</span></div>' +
+    '<div class="bet-row quicks">' +
+    '<button class="chip-btn" data-frac="0">Min</button>' +
+    '<button class="chip-btn" data-frac="0.5">\u00bd Pot</button>' +
+    '<button class="chip-btn" data-frac="0.75">\u00be Pot</button>' +
+    '<button class="chip-btn" data-frac="1">Pot</button>' +
+    '<button class="chip-btn" data-frac="1.5">1.5\u00d7</button></div>' +
+    '<div class="bet-row"><button id="btn-bet-confirm">Confirm</button>' +
+    '<button id="btn-bet-cancel">Cancel</button></div>';
+  d.body.appendChild(panel);
+
+  // Raise: facing a 20 bet with lastRaiseSize 20 -> min raise to 40.
+  var got = null;
+  UI.openBetPanel(40, 1000, 150, true, function (amt) { got = amt; });
+  ok(document.getElementById('bet-amount').textContent === '40',
+    'raise panel opens at min raise, got "' + document.getElementById('bet-amount').textContent + '"');
+  ok(document.getElementById('bet-slider').value === '0', 'raise slider starts at min position');
+  document.getElementById('btn-bet-confirm').click();
+  ok(got === 40, 'confirming untouched raise panel bets the min, got ' + got);
+
+  // Opening bet: keeps the 3/4-pot default (pot 200 -> 150).
+  got = null;
+  UI.openBetPanel(10, 1000, 200, false, function (amt) { got = amt; });
+  ok(document.getElementById('bet-amount').textContent === '150',
+    'bet panel keeps 3/4-pot default, got "' + document.getElementById('bet-amount').textContent + '"');
+
+  // Min quick button jumps a raise back to the floor.
+  var minBtn = panel.querySelector('[data-frac="0"]');
+  minBtn.click();
+  ok(document.getElementById('bet-amount').textContent === '10',
+    'Min button targets the floor, got "' + document.getElementById('bet-amount').textContent + '"');
+  d.body.removeChild(panel);
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- In-game history modal + extracted story HTML ----------
+(function () {
+  var d = dom.window.document;
+  // Modal shell like index.html.
+  var ov = d.createElement('div'); ov.id = 'hands-modal'; ov.hidden = true;
+  ov.innerHTML = '<div class="modal-panel"><div class="modal-head">' +
+    '<div class="modal-title">History</div>' +
+    '<button id="hands-modal-close" class="ghost">Close</button></div>' +
+    '<div id="hands-modal-list" class="modal-list"></div></div>';
+  d.body.appendChild(ov);
+
+  var rec = {
+    id: 'r1', handNo: 7, date: Date.now(), mode: 'cash', sb: 5, bb: 10,
+    heroHole: [{ r: 'A', s: 's' }, { r: 'K', s: 's' }],
+    heroNet: 250, heroNetBB: 25,
+    timeline: [
+      { t: 'street', street: 'preflop', pot: 15 },
+      { t: 'action', action: 'raises', street: 'preflop', amount: 30, pot: 45 },
+      { t: 'street', street: 'flop', community: [{ r: 'Q', s: 's' }, { r: 'J', s: 'h' }, { r: '2', s: 'd' }], pot: 60 },
+      { t: 'end', winners: [{ names: ['You'], amount: 250, hand: 'Pair of Aces' }] }
+    ]
+  };
+  UI.openHandsModal([rec]);
+  ok(ov.hidden === false, 'modal opens');
+  var rows = ov.querySelectorAll('#hands-modal-list .hrow');
+  ok(rows.length === 1, 'one hand row rendered');
+  ok(rows[0].textContent.indexOf('Hand #7') !== -1, 'row shows hand number');
+  ok(rows[0].textContent.indexOf('+250') !== -1, 'row shows chip net');
+  // Expand the story inline.
+  rows[0].click();
+  var story = rows[0].querySelector('.hm-story');
+  ok(story.hidden === false, 'story expands on tap');
+  ok(story.innerHTML.indexOf('Pre-flop') !== -1, 'story has preflop section');
+  ok(story.innerHTML.indexOf('Pair of Aces') !== -1, 'story shows result');
+  // Second tap collapses.
+  rows[0].click();
+  ok(story.hidden === true, 'story collapses on second tap');
+  UI.closeHandsModal();
+  ok(ov.hidden === true, 'modal closes');
+  d.body.removeChild(ov);
+
+  // Empty state.
+  var ov2 = d.createElement('div'); ov2.id = 'hands-modal'; ov2.hidden = true;
+  ov2.innerHTML = '<div id="hands-modal-list"></div>';
+  d.body.appendChild(ov2);
+  UI.openHandsModal([]);
+  ok(ov2.querySelector('#hands-modal-list').textContent.indexOf('No saved hands') !== -1,
+    'modal shows empty state');
+  d.body.removeChild(ov2);
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');

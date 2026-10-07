@@ -347,5 +347,173 @@ function lastState(client) {
   global.setTimeout = realST;
 })();
 
+// ---------- sit out / back in ----------
+(function () {
+  var clock = testClock();
+  var srv = mockServer(clock);
+  var created = srv.createRoom({ maxPlayers: 6, startingStack: 1000, sb: 5, bb: 10, turnTimerSec: 0 }, 'Ann');
+  var code = created.code;
+  var ann = created.client, bob = srv.connect(code, 'Bob').client, cid = srv.connect(code, 'Cid').client;
+  var clients = [ann, bob, cid];
+  watchStates(ann); watchStates(bob); watchStates(cid);
+  ann.send({ t: 'start' });
+  var room = srv.rooms[code].room;
+  ok(lastState(ann).state === 'playing', 'game started for sitout test');
+
+  // Bob sits out mid-hand: his live hand dies, flag visible to everyone.
+  bob.send({ t: 'sitout', out: true });
+  ok(room.playerByClientId(bob.id).sittingOut === true, 'room flags bob sitting out');
+  var bseat = lastState(cid).players.filter(function (p) { return p.seat === 1; })[0];
+  ok(bseat && bseat.sittingOut === true, 'snapshot exposes sittingOut to others');
+  ok(room.table.players[1].folded === true, 'bob folded out of the live hand');
+  bob.send({ t: 'sitout', out: true });
+  ok(bob.last.t !== 'error', 'repeat sitout is idempotent');
+
+  // Finish the hand with folds.
+  var guard = 0;
+  while (room.table && !room.table.handOver && guard++ < 100) {
+    var seat = room.table.acting;
+    var cli = clients.filter(function (c) { return c.seat === seat; })[0];
+    room.applyAction(cli.id, 'fold');
+  }
+  ok(room.table.handOver === true, 'hand finished after folds');
+
+  // Next hand: the sitter is skipped entirely (no cards, no blinds).
+  clock.t = room.nextHandAt + 1;
+  srv.tickAll(clock.t);
+  var st = lastState(ann);
+  ok(st.handNo === 2, 'next hand dealt, got hand #' + st.handNo);
+  var bs = st.players.filter(function (p) { return p.seat === 1; })[0];
+  ok(bs.hasCards === false, 'sitter is not dealt in');
+  ok(bs.bet === 0, 'sitter posts no blinds');
+
+  // Bob returns: dealt back in on the following hand.
+  bob.send({ t: 'sitout', out: false });
+  ok(room.playerByClientId(bob.id).sittingOut === false, 'room clears sittingOut');
+  guard = 0;
+  while (room.table && !room.table.handOver && guard++ < 100) {
+    var seat2 = room.table.acting;
+    var cli2 = clients.filter(function (c) { return c.seat === seat2; })[0];
+    room.applyAction(cli2.id, 'fold');
+  }
+  clock.t = room.nextHandAt + 1;
+  srv.tickAll(clock.t);
+  var bs2 = lastState(ann).players.filter(function (p) { return p.seat === 1; })[0];
+  ok(bs2.hasCards === true, 'returned player is dealt in again');
+  srv.close();
+})();
+
+// ---------- all-in sitter keeps pot eligibility ----------
+(function () {
+  var clock = testClock();
+  var srv = mockServer(clock);
+  var created = srv.createRoom({ maxPlayers: 6, startingStack: 100, sb: 5, bb: 10, turnTimerSec: 0 }, 'Ann');
+  var code = created.code;
+  var ann = created.client, bob = srv.connect(code, 'Bob').client, cid = srv.connect(code, 'Cid').client;
+  watchStates(ann); watchStates(bob);
+  ann.send({ t: 'start' });
+  var room = srv.rooms[code].room;
+  // Whoever acts first shoves.
+  var seat = room.table.acting;
+  var cli = [ann, bob, cid].filter(function (c) { return c.seat === seat; })[0];
+  var p = room.table.players[seat];
+  var r = room.applyAction(cli.id, 'raise', p.bet + p.stack);
+  ok(r.ok, 'shove accepted, ' + (r.error || 'ok'));
+  ok(room.table.players[seat].allIn === true, 'shover is all-in');
+  // Sitting out now must not kill their live hand or pot eligibility.
+  cli.send({ t: 'sitout', out: true });
+  var ep = room.table.players[seat];
+  ok(ep.folded === false, 'all-in sitter is not folded');
+  ok(ep.sittingOut === false, 'engine sittingOut untouched mid-hand for all-in');
+  ok(room.playerByClientId(cli.id).sittingOut === true, 'room flag set for next hand');
+  srv.close();
+})();
+
+
+
+// ---------- sit out / back in ----------
+(function () {
+  var clock = testClock();
+  var srv = mockServer(clock);
+  var created = srv.createRoom({ maxPlayers: 6, startingStack: 1000, sb: 5, bb: 10, turnTimerSec: 0 }, 'Ann');
+  var code = created.code;
+  var ann = created.client, bob = srv.connect(code, 'Bob').client, cid = srv.connect(code, 'Cid').client;
+  var clients = [ann, bob, cid];
+  watchStates(ann); watchStates(bob); watchStates(cid);
+  ann.send({ t: 'start' });
+  var room = srv.rooms[code].room;
+  ok(lastState(ann).state === 'playing', 'game started for sitout test');
+
+  // Bob sits out mid-hand: his live hand dies, flag visible to everyone.
+  bob.send({ t: 'sitout', out: true });
+  ok(room.playerByClientId(bob.id).sittingOut === true, 'room flags bob sitting out');
+  var bseat = lastState(cid).players.filter(function (p) { return p.seat === 1; })[0];
+  ok(bseat && bseat.sittingOut === true, 'snapshot exposes sittingOut to others');
+  ok(room.table.players[1].folded === true, 'bob folded out of the live hand');
+  bob.send({ t: 'sitout', out: true });
+  ok(bob.last.t !== 'error', 'repeat sitout is idempotent');
+
+  // Finish the hand with folds.
+  var guard = 0;
+  while (room.table && !room.table.handOver && guard++ < 100) {
+    var seat = room.table.acting;
+    var cli = clients.filter(function (c) { return c.seat === seat; })[0];
+    room.applyAction(cli.id, 'fold');
+  }
+  ok(room.table.handOver === true, 'hand finished after folds');
+
+  // Next hand: the sitter is skipped entirely (no cards, no blinds).
+  clock.t = room.nextHandAt + 1;
+  srv.tickAll(clock.t);
+  var st = lastState(ann);
+  ok(st.handNo === 2, 'next hand dealt, got hand #' + st.handNo);
+  var bs = st.players.filter(function (p) { return p.seat === 1; })[0];
+  ok(bs.hasCards === false, 'sitter is not dealt in');
+  ok(bs.bet === 0, 'sitter posts no blinds');
+
+  // Bob returns: dealt back in on the following hand.
+  bob.send({ t: 'sitout', out: false });
+  ok(room.playerByClientId(bob.id).sittingOut === false, 'room clears sittingOut');
+  guard = 0;
+  while (room.table && !room.table.handOver && guard++ < 100) {
+    var seat2 = room.table.acting;
+    var cli2 = clients.filter(function (c) { return c.seat === seat2; })[0];
+    room.applyAction(cli2.id, 'fold');
+  }
+  clock.t = room.nextHandAt + 1;
+  srv.tickAll(clock.t);
+  var bs2 = lastState(ann).players.filter(function (p) { return p.seat === 1; })[0];
+  ok(bs2.hasCards === true, 'returned player is dealt in again');
+  srv.close();
+})();
+
+// ---------- all-in sitter keeps pot eligibility ----------
+(function () {
+  var clock = testClock();
+  var srv = mockServer(clock);
+  var created = srv.createRoom({ maxPlayers: 6, startingStack: 100, sb: 5, bb: 10, turnTimerSec: 0 }, 'Ann');
+  var code = created.code;
+  var ann = created.client, bob = srv.connect(code, 'Bob').client, cid = srv.connect(code, 'Cid').client;
+  watchStates(ann); watchStates(bob);
+  ann.send({ t: 'start' });
+  var room = srv.rooms[code].room;
+  // Whoever acts first shoves.
+  var seat = room.table.acting;
+  var cli = [ann, bob, cid].filter(function (c) { return c.seat === seat; })[0];
+  var p = room.table.players[seat];
+  var r = room.applyAction(cli.id, 'raise', p.bet + p.stack);
+  ok(r.ok, 'shove accepted, ' + (r.error || 'ok'));
+  ok(room.table.players[seat].allIn === true, 'shover is all-in');
+  // Sitting out now must not kill their live hand or pot eligibility.
+  cli.send({ t: 'sitout', out: true });
+  var ep = room.table.players[seat];
+  ok(ep.folded === false, 'all-in sitter is not folded');
+  ok(ep.sittingOut === false, 'engine sittingOut untouched mid-hand for all-in');
+  ok(room.playerByClientId(cli.id).sittingOut === true, 'room flag set for next hand');
+  srv.close();
+})();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (netplay)');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
