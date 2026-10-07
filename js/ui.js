@@ -829,6 +829,46 @@ var UI = (function () {
 
   function closeHandsModal() { $('hands-modal').hidden = true; }
 
+  // Feedback modal: collects type/title/details and opens a pre-filled
+  // GitHub issue in a new tab. Zero backend — nothing is sent automatically.
+  var fbType = 'general';
+  function openFeedbackModal() {
+    var ov = $('feedback-modal');
+    if (!ov) return;
+    fbType = 'general';
+    ov.querySelectorAll('.fb-type').forEach(function (b) {
+      b.classList.toggle('sel', b.dataset.fbtype === fbType);
+      b.onclick = function () {
+        fbType = b.dataset.fbtype;
+        ov.querySelectorAll('.fb-type').forEach(function (x) { x.classList.toggle('sel', x === b); });
+      };
+    });
+    $('fb-title').value = '';
+    $('fb-body').value = '';
+    ov.hidden = false;
+    setTimeout(function () { $('fb-title').focus(); }, 50);
+  }
+  function closeFeedbackModal() { var ov = $('feedback-modal'); if (ov) ov.hidden = true; }
+  function submitFeedback() {
+    var title = ($('fb-title').value || '').trim();
+    var body = ($('fb-body').value || '').trim();
+    if (!title) { $('fb-title').focus(); return; }
+    var prefix = fbType === 'bug' ? '[Bug] ' : fbType === 'idea' ? '[Idea] ' : '[Feedback] ';
+    var lines = [
+      body,
+      '',
+      '---',
+      'App version: ' + (window.APP_VERSION || 'unknown'),
+      'Browser: ' + navigator.userAgent,
+      'Screen: ' + window.innerWidth + 'x' + window.innerHeight
+    ];
+    var url = 'https://github.com/swimkevin/poker-sparring/issues/new' +
+      '?title=' + encodeURIComponent(prefix + title) +
+      '&body=' + encodeURIComponent(lines.join('\n'));
+    window.open(url, '_blank', 'noopener');
+    closeFeedbackModal();
+  }
+
   function renderHandList(records, onOpen) {
     var list = $('hand-list'), view = $('replay-view');
     view.hidden = true; view.innerHTML = '';
@@ -1095,6 +1135,8 @@ var UI = (function () {
     renderPFScenario: renderPFScenario, renderPFFeedback: renderPFFeedback,
     renderHandList: renderHandList, renderReplay: renderReplay,
     openHandsModal: openHandsModal, closeHandsModal: closeHandsModal,
+    openFeedbackModal: openFeedbackModal, closeFeedbackModal: closeFeedbackModal,
+    submitFeedback: submitFeedback,
     renderHandStory: renderHandStory,
     chipFly: chipFly, resetTableFx: resetTableFx,
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
