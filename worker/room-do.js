@@ -122,6 +122,10 @@ export class RoomDO {
       const r = room.sendChat(meta.clientId, msg.text);
       if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
       else changed = true;
+    } else if (msg.t === 'show') {
+      const r = room.showCards(meta.clientId, msg.hole);
+      if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
+      else changed = true;
     } else if (msg.t === 'rebuy') {
       const r = room.rebuy(meta.clientId);
       if (!r.ok) ws.send(JSON.stringify({ t: 'error', message: r.error }));
