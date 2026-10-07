@@ -55,7 +55,7 @@
         </button>
         <button class="mode-card" data-mode="tourney">
           <div class="mode-emoji">🏆</div><div class="mode-name">Tournament</div>
-          <div class="mode-desc">Blinds rise every 8 hands. Last player standing wins.</div>
+          <div class="mode-desc">Blinds rise on your schedule. Last player standing wins.</div>
         </button>
         <button class="mode-card" data-mode="pushfold">
           <div class="mode-emoji">🚀</div><div class="mode-name">Push / Fold Trainer</div>
@@ -80,10 +80,12 @@
           <label>Starting stack <input id="cfg-stack" type="number" value="1000" step="100" min="200"></label>
           <label>Small blind <input id="cfg-sb" type="number" value="5" step="5" min="1"></label>
           <label>Big blind <input id="cfg-bb" type="number" value="10" step="5" min="2"></label>
+          <label title="Tournament only: how often blinds go up">Blinds up every <input id="cfg-blindint" type="number" value="8" step="1" min="2" max="30" style="width:4em"> hands</label>
         </div>
         <div class="settings-row">
           <label class="check-label"><input id="cfg-botrebuys" type="checkbox" checked> Bot rebuys <span class="hint-inline">(busted bots buy back in, tracked on their seat)</span></label>
-          <label class="check-label"><input id="cfg-roundbets" type="checkbox"> Round bets to 5s <span class="hint-inline">(off = bet any exact amount like 67)</span></label>
+          <label class="check-label"><input id="cfg-roundbets" type="checkbox"> Round bets to 5s <span class="hint-inline">(off = bet any exact amount like 27; on = 27 rounds to 25, 28 rounds to 30)</span></label>
+          <label class="check-label"><input id="cfg-tourneyrebuys" type="checkbox"> Tournament rebuys <span class="hint-inline">(busted players can buy back in)</span></label>
         </div>
       </details>
 
