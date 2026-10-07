@@ -31,6 +31,11 @@
       <h1>Train against poker AI, <span class="accent">offline</span>.</h1>
       <p class="subtitle">Pick a mode, pick your opponents, and practice real spots — cash games, heads-up, tournaments, and push/fold drills.</p>
 
+      <div class="quick-start-wrap">
+        <button id="btn-quick" class="primary big">♠️ Deal me in</button>
+        <p class="hint-inline">One tap: cash game vs 3 bots, 1,000-chip stacks, 5/10 blinds. Customize below if you like.</p>
+      </div>
+
       <div class="name-row">
         <label>Your name <input type="text" id="cfg-username" maxlength="18" placeholder="e.g. Kevin" autocomplete="nickname"></label>
         <span class="hint-inline">Shows on your seat. Tap ✎ on a bot card to rename it.</span>
@@ -87,6 +92,8 @@
       <button id="btn-leave" class="ghost">← Lobby</button>
       <div id="hand-info" class="hand-info">Hand #1</div>
       <div id="blinds-info" class="blinds-info"></div>
+      <div id="last-result" class="last-result" aria-live="polite"></div>
+      <button id="btn-skip" class="ghost" title="Fold your hand (if live) and fast-forward to the next hand">⏩ Skip</button>
     </div>
     <div class="table-layout">
       <div class="felt-wrap">
@@ -116,9 +123,10 @@
         <button id="btn-checkcall" class="ctl">Check</button>
         <button id="btn-betraise" class="ctl primary">Bet</button>
         <button id="btn-allin" class="ctl warn">All-in</button>
+        <div id="turn-status" class="turn-status" aria-live="polite"></div>
         <div id="bet-panel" class="bet-panel" hidden>
           <div class="bet-row">
-            <input id="bet-slider" type="range" min="0" max="100" value="50">
+            <input id="bet-slider" type="range" min="0" max="100" value="50" aria-label="Raise amount">
             <span id="bet-amount" class="bet-amount">0</span>
           </div>
           <div class="bet-row quicks">
@@ -255,5 +263,6 @@
 <script src="js/ui.js"></script>
 <script src="js/online.js"></script>
 <script src="js/app.js"></script>
+<script src="js/update-check.js"></script>
 </body>
 </html>

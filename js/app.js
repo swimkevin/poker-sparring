@@ -5,7 +5,9 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.5.0';
+  var APP_VERSION = '1.5.1';
+  // Read-only copy for update-check.js (this file's scope is an IIFE).
+  try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
   // Last-resort error boundary: a UI glitch must never take down the table or
   // lose the player's stats. Surfaces a calm notice instead of failing silently.
@@ -44,6 +46,7 @@
   var table = null;
   var evtQueue = [];
   var pumping = false;
+  var fastForward = false; // skip: collapse all hand-animation delays to ~instant
   var waitingForHero = false;
   var lastActions = {};
   var handCtx = null;
@@ -73,6 +76,7 @@
     pumping = true;
     var e = evtQueue.shift();
     var delay = handleEvent(e);
+    if (fastForward) delay = Math.min(delay, 60);
     setTimeout(function () {
       pumping = false;
       pump();
@@ -81,6 +85,14 @@
 
   function pauseForHero() { waitingForHero = true; }
   function resumeFromHero() { waitingForHero = false; pump(); }
+
+  // Explicit turn status so it's never ambiguous why the buttons are dead.
+  function setTurnStatus(text, yours) {
+    var el = $('turn-status');
+    if (!el) return;
+    el.textContent = text || '';
+    el.classList.toggle('yours', !!yours);
+  }
 
   function handleEvent(e) {
     switch (e.t) {
@@ -97,6 +109,10 @@
   // ================= event handlers =================
   function onHandStart(e) {
     lastActions = {};
+    fastForward = false; // a new hand always starts at full speed
+    setTurnStatus('', false);
+    var skipBtn = $('btn-skip');
+    if (skipBtn) skipBtn.hidden = false;
     UI.winnerBanner(null);
     UI.coachTip(null);
     UI.clearLog();
@@ -119,18 +135,20 @@
     if (p.isHero) {
       pauseForHero();
       enableHeroControls();
+      setTurnStatus('Your turn — action is on you.', true);
       UI.coachTip(coachTip());
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
     } else {
       // Bot thinks, then acts.
       pumping = true; // hold the pump until the bot moves
+      setTurnStatus('Waiting for ' + p.name + '…', false);
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
       setTimeout(function () {
         var mv = botDecide(table, p);
         pumping = false;
         if (mv) table.act(e.player, mv.a, mv.amount);
         else pump();
-      }, 650 + Math.random() * 750);
+      }, fastForward ? 0 : 650 + Math.random() * 750);
     }
   }
 
@@ -216,6 +234,20 @@
       '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
     UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
     UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
+    // Compact persistent result in the topbar — the banner flashes by, but this
+    // stays glanceable until the next hand ends.
+    try {
+      var lr = $('last-result');
+      if (lr && e.winners.length) {
+        var w0 = e.winners[0];
+        var wn = (w0.winners || [w0.idx]).map(function (i) {
+          return table.players[i].isHero ? 'You' : table.players[i].name;
+        }).join(' & ');
+        lr.textContent = w0.uncalled
+          ? 'Last: ' + wn + ' takes back ' + UI.fmt(w0.amount)
+          : 'Last: ' + wn + ' +' + UI.fmt(w0.each || w0.amount) + (w0.hand ? ' · ' + w0.hand : '');
+      }
+    } catch (err) {}
 
     UI.renderTable(table, { lastActions: {}, winners: winnerIdx, revealed: revealed, acting: -1, button: table.button });
 
@@ -242,7 +274,20 @@
     });
     UI.setBankroll(sessionProfitBB(hero.stack, sessionStartBB, table.bb));
 
-    setTimeout(prepareNextHand, 600);
+    setTimeout(prepareNextHand, fastForward ? 500 : 600);
+  }
+
+  // ⏩ Skip: fold the hero's live hand (if it's their turn), then collapse all
+  // remaining hand-animation delays so bot-vs-bot streets resolve ~instantly.
+  function skipHand() {
+    if (!table) return;
+    var hero = table.players[0];
+    if (waitingForHero && hero && !hero.folded && hero.hole.length === 2) {
+      try { table.act(0, 'fold'); } catch (e) { /* already unplayable; just fast-forward */ }
+      waitingForHero = false;
+    }
+    fastForward = true;
+    pump();
   }
 
   function onTableBroken() {
@@ -441,7 +486,10 @@
     try {
       if (table.street === 'preflop') {
         var tier = holeTier(hero.hole);
-        var nm = hero.hole.map(function (c) { return rankName(c.r); }).join(' ');
+        // Name high-card first ("Ace King", "Jack Nine") — deal order is random
+        // and "Nine Jack" reads like a different hand.
+        var nm = hero.hole.slice().sort(function (a, b) { return b.r - a.r; })
+          .map(function (c) { return rankName(c.r); }).join(' ');
         if (toCall === 0) {
           return '<b>' + UI.escapeHtml(nm) + '</b> — ' + tierName(tier) + '. ' +
             (tier <= 3 ? 'Strong. Open it up.' : tier <= 4 ? 'Playable — open in late position, fold early.' : 'Just fold and wait.');
@@ -606,7 +654,21 @@
       };
     });
     $('btn-start').onclick = startGame;
+    // One-tap start: sensible defaults, no configuration wall. Forces cash
+    // mode with the default 3 opponents — the single biggest first-impression
+    // win is reaching a hand in one tap.
+    var bq = $('btn-quick');
+    if (bq) bq.onclick = function () {
+      document.querySelectorAll('.mode-card').forEach(function (x) {
+        x.classList.toggle('selected', x.dataset.mode === 'cash');
+      });
+      mode = 'cash';
+      $('opp-count').textContent = oppCount;
+      startGame();
+    };
     $('btn-leave').onclick = leaveToLobby;
+    var sk = $('btn-skip');
+    if (sk) sk.onclick = skipHand;
     $('btn-pf-leave').onclick = leaveToLobby;
 
     // username: persisted, applied to the hero seat at game start

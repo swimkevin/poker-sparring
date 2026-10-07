@@ -88,9 +88,22 @@ var Online = (function () {
       '<h1>Play online <span class="beta-tag">BETA</span></h1>' +
       '<p class="subtitle">Host a table, share the room code, and play real hands with friends — up to 8 players. ' +
       'Turn timers and host pause included.</p>' +
-      '<div class="conn-pill"><span class="dot">●</span> <span id="online-conn-text">Local mock — no server needed</span></div>' +
+      '<div class="conn-pill"><span class="dot">●</span> <span id="online-conn-text"></span></div>' +
       '<div id="online-view"></div>' +
       '</div>';
+  }
+
+  // The home screen's connection pill must describe the CURRENT default: the
+  // relay URL is prefilled, so hosting/joining uses the live relay unless the
+  // user clears the field (mock mode). It used to hardcode "Local mock", which
+  // contradicted the prefilled relay and killed trust in friend invites.
+  function updateHomeConn() {
+    var wu = $('on-wsurl');
+    var live = !wu || wu.value.trim() !== '';
+    var txt = $('online-conn-text');
+    if (txt) txt.textContent = live ? 'Live relay — friends join over the internet' : 'Local mock — this page only';
+    var pill = txt && txt.closest('.conn-pill');
+    if (pill) pill.classList.toggle('mock', !live);
   }
 
   function setConn(text) {
@@ -211,6 +224,8 @@ var Online = (function () {
     }
     var wu = $('on-wsurl'), savedWu = loadWsUrl();
     if (wu && !wu.value) wu.value = savedWu || DEFAULT_WS_URL;
+    updateHomeConn();
+    if (wu) wu.addEventListener('input', updateHomeConn);
   }
 
   function readConfig() {
