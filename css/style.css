@@ -172,6 +172,23 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
 }
 
+/* position badges (online): D / SB / BB next to the name */
+.pos-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px;
+  font-size: 0.65rem; font-weight: 800; margin-left: 4px; vertical-align: middle;
+}
+.pos-badge.dealer { background: #fff; color: #000; }
+.pos-badge.sb { background: #3b82f6; color: #fff; }
+.pos-badge.bb { background: #ef4444; color: #fff; }
+
+/* emoji picker */
+.emoji-pick {
+  font-size: 1.2rem; padding: 4px 8px; border-radius: 8px;
+  background: var(--card); color: var(--text); border: 1px solid var(--line);
+  cursor: pointer; max-width: 80px;
+}
+
 /* cards */
 .card {
   width: 52px; height: 72px; background: #f7f9fc; border-radius: 7px; color: #111;
