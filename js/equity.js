@@ -198,10 +198,50 @@ var TIER_NAMES = {
 };
 function tierName(t) { return TIER_NAMES[t] || 'Unknown'; }
 
+// ---------- coach theory helpers (pure; also used by the in-app coach) ----------
+// Bluff break-even: the fold % a bet of `size` into `pot` needs to profit on
+// fold equity alone. Half-pot = 33%, third-pot = 25%, full pot = 50%.
+function bluffBE(size, pot) { return size / (size + pot); }
+
+// How often a villain folds to pressure, from their stubbornness slider.
+function villainFoldy(archetype) {
+  var a = archetype || {};
+  return 1 - ((typeof a.stubborn === 'number') ? a.stubborn : 0.5);
+}
+function villainBluffy(archetype) {
+  var a = archetype || {};
+  return (typeof a.bluff === 'number') ? a.bluff : 0.3;
+}
+
+// One-line exploit per bot id; custom bots get a read from their sliders.
+var EXPLOIT_LINES = {
+  lag: 'brings constant pressure — 3-bet strong hands, never float light',
+  rohan: 'calls everything, raises nothing — value bet, never bluff',
+  amogh: 'bombs pots with real hands — let him bet into you, don\'t bluff-catch light',
+  nathan: 'never raises before the river — value bet relentlessly, believe his river bet',
+  grinder: 'tournament TAG — steal blinds deep, never pay off a shove light',
+  bubble: 'folds everything but the nuts — rob his blinds, believe his shoves',
+  shark: 'solid TAG — stay balanced, steal when he shows weakness',
+  station: 'calls down with anything — value bet big, never bluff',
+  maniac: 'raises everything — trap strong hands, call down lighter, never bluff',
+  rock: 'only plays monsters — steal his blinds, fold when he bets'
+};
+function exploitLine(archetype) {
+  var a = archetype || {};
+  if (EXPLOIT_LINES[a.id]) return EXPLOIT_LINES[a.id];
+  var st = (typeof a.stubborn === 'number') ? a.stubborn : 0.5;
+  var bl = (typeof a.bluff === 'number') ? a.bluff : 0.3;
+  return st > 0.75 ? 'calls down a lot — value bet, rarely bluff'
+    : st < 0.35 ? 'folds too much — a good bluff target'
+    : bl > 0.5 ? 'bluffs a lot — call down lighter, trap your monsters' : 'unreadable — play solid TAG';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
     madeStrength: madeStrength,
-    detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES
+    detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
+    bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,
+    exploitLine: exploitLine, EXPLOIT_LINES: EXPLOIT_LINES
   };
 }

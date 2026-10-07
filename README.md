@@ -40,7 +40,7 @@ Key decisions are recorded as ADRs in `docs/adr/` — vanilla JS, local-first st
 
 ## Verification
 
-**~1,500 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
+**~1,700 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
 
 ```bash
 npm test          # unit + component + smoke + netplay + worker

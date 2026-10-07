@@ -18,7 +18,9 @@ class PokerTable {
         idx: i, name: p.name, isHero: !!p.isHero, archetype: p.archetype || null,
         stack: opts.startingStack != null ? opts.startingStack : 10000,
         hole: [], folded: false, allIn: false, bet: 0, totalBet: 0,
-        acted: false, sittingOut: false
+        acted: false, sittingOut: false,
+        rebuys: 0,   // times this player has bought back in after busting
+        tilt: 0      // 0..1 — rises on bad beats, decays per hand; loosens play
       };
     });
     this.sb = opts.sb || 50;
