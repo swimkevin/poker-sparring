@@ -449,7 +449,11 @@ var UI = (function () {
   }
 
   // Bet panel: cb(amountChips). Range in chips [minTo, maxTo].
-  function openBetPanel(minTo, maxTo, pot, isRaise, cb) {
+  // opts.roundBets: when true, snap the slider to multiples of 5.
+  function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
+    opts = opts || {};
+    var roundBets = !!opts.roundBets;
+    function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
     var panel = $('bet-panel');
     panel.hidden = false;
     var slider = $('bet-slider'), amtEl = $('bet-amount');
@@ -462,9 +466,7 @@ var UI = (function () {
     function paint(v) { amtEl.textContent = fmt(v); }
     slider.oninput = function () {
       var t = minTo + (maxTo - minTo) * (slider.value / 1000);
-      // round to 5s for sanity
-      t = Math.round(t / 5) * 5;
-      paint(Math.max(minTo, Math.min(maxTo, t)));
+      paint(Math.max(minTo, Math.min(maxTo, snap(t))));
     };
     panel.querySelectorAll('.chip-btn').forEach(function (b) {
       b.onclick = function () { setFromFrac(parseFloat(b.dataset.frac)); };
@@ -474,7 +476,7 @@ var UI = (function () {
     slider.value = 0; paint(minTo);
     $('btn-bet-confirm').onclick = function () {
       var t = minTo + (maxTo - minTo) * (slider.value / 1000);
-      t = Math.max(minTo, Math.min(maxTo, Math.round(t / 5) * 5));
+      t = Math.max(minTo, Math.min(maxTo, snap(t)));
       panel.hidden = true;
       cb(t);
     };
