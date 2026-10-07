@@ -13,6 +13,46 @@ var Online = (function () {
   function esc(s) { return UI.escapeHtml(String(s == null ? '' : s)); }
   function fmt(n) { n = Math.round(n); return n.toLocaleString('en-US'); }
 
+  // ---------- table chat ----------
+  // Shared by the lobby and table views. Messages come from the server
+  // snapshot (s.chat); never innerHTML user text without esc().
+  function chatHtml() {
+    return '<div class="online-chat"><div class="chat-head">💬 Table chat</div>' +
+      '<div class="chat-msgs" id="on-chat-msgs"></div>' +
+      '<div class="chat-input-row"><input id="on-chat-input" maxlength="200" placeholder="Say something…" autocomplete="off">' +
+      '<button id="on-chat-send" class="ghost">Send</button></div></div>';
+  }
+  function renderChat(s) {
+    var box = $('on-chat-msgs');
+    if (!box || !s) return;
+    var msgs = s.chat || [];
+    box.innerHTML = msgs.length ? '' : '<div class="hint">No messages yet — say hi!</div>';
+    msgs.forEach(function (m) {
+      var div = document.createElement('div');
+      div.className = 'chat-msg';
+      var who = document.createElement('b');
+      who.textContent = m.from + ': ';
+      var txt = document.createElement('span');
+      txt.textContent = m.text;
+      div.appendChild(who);
+      div.appendChild(txt);
+      box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+  function wireChat() {
+    var input = $('on-chat-input'), btn = $('on-chat-send');
+    if (!input || !btn) return;
+    var send = function () {
+      var t = input.value.trim();
+      if (!t) return;
+      client.send({ t: 'chat', text: t });
+      input.value = '';
+    };
+    btn.onclick = send;
+    input.onkeydown = function (e) { if (e.key === 'Enter') send(); };
+  }
+
   var inited = false;
   var view = 'home';            // home | lobby | table
   var mode = 'mock';            // 'mock' | 'live'
@@ -50,6 +90,7 @@ var Online = (function () {
     _wsMem = u;
   }
   var mySeat = -1, isHost = false, myName = '';
+  var pendingAway = false; // join-with-away: sit out on first snapshot
   var roomCode = '';
   var lastState = null, lastLobby = null;
   var betOpen = false;
@@ -140,6 +181,11 @@ var Online = (function () {
       mySeat = m.mySeat;
       isHost = !!m.isHost;
       view = (m.state === 'lobby') ? 'lobby' : 'table';
+      // Honor "join sitting out": fire once on the first snapshot.
+      if (pendingAway && client) {
+        pendingAway = false;
+        client.send({ t: 'sitout', out: true });
+      }
       render();
     } else if (m.t === 'timer') {
       updateTimerBar(m.msLeft);
@@ -201,6 +247,7 @@ var Online = (function () {
       '<div class="online-card"><h3>Join a table</h3>' +
       '<label>Room code<input id="on-code" class="code-input" maxlength="6" placeholder="A3F9K2" autocapitalize="characters"></label>' +
       '<label>Your name<input type="text" id="on-join-name" maxlength="18" placeholder="e.g. Sam"></label>' +
+      '<label class="check-row"><input type="checkbox" id="on-join-away"> Join sitting out (watch first)</label>' +
       '<button id="on-join" class="primary">Join →</button>' +
       '<div id="online-error2" class="on-error" hidden></div>' +
       '<details class="settings-details"><summary>Advanced: live server</summary>' +
@@ -271,6 +318,8 @@ var Online = (function () {
     wsUrl = normalizeWsUrl(fieldVal('on-wsurl', ''));
     saveWsUrl(fieldVal('on-wsurl', '').trim().replace(/\/+$/, ''));
     myName = name;
+    // "Join sitting out": send sitout as soon as the first snapshot arrives.
+    pendingAway = !!($('on-join-away') && $('on-join-away').checked);
     if (wsUrl) { joinLive(code, name); return; }
     mode = 'mock';
     setConn('Local mock — no server needed');
@@ -364,6 +413,7 @@ var Online = (function () {
       (isHost && mode === 'mock' ? '<button id="on-addbot" class="ghost">+ Add demo bot</button>' : '') +
       '<button id="on-leave" class="ghost">Leave</button>' +
       '</div>' +
+      chatHtml() +
       '<div id="online-error" class="on-error" hidden></div>';
 
     $('on-copy').onclick = function () {
@@ -381,6 +431,8 @@ var Online = (function () {
       if (r.error) showError(r.error);
     };
     $('on-leave').onclick = leave;
+    wireChat();
+    renderChat(lob);
   }
 
   // ---------------- table view ----------------
@@ -406,8 +458,11 @@ var Online = (function () {
       '<div class="blinds-info">' + fmt(s.config.sb) + '/' + fmt(s.config.bb) + '</div>' +
       (s.isHost && s.state === 'playing' ? '<button id="on-pause" class="ghost">' + (s.paused ? 'Resume' : 'Pause') + '</button>' : '') +
       (s.state === 'playing' ? '<button id="on-sitout" class="ghost">' + (meSittingOut(s) ? 'Back in' : 'Sit out') + '</button>' : '') +
+      (s.state === 'playing' && meCanRebuy(s) ? '<button id="on-rebuy" class="ghost">Rebuy ' + fmt(s.config.startingStack) + '</button>' : '') +
+      '<button id="on-ledger-toggle" class="ghost">📊</button>' +
       '<button id="on-tleave" class="ghost">Leave</button>' +
       '</div>' +
+      '<div class="online-ledger" id="on-ledger" hidden></div>' +
       '<div class="felt online-felt" id="online-felt">' +
       '<div class="board-area"><div class="pot" id="on-pot"></div>' +
       '<div class="community" id="on-community"></div>' +
@@ -419,6 +474,7 @@ var Online = (function () {
       '<div class="hero-bar"><div class="hero-cards" id="on-hero"></div>' +
       '<div class="controls online-controls-row" id="on-controls"></div></div>' +
       '<div class="online-feed" id="on-feed"></div>' +
+      chatHtml() +
       '<div id="online-error" class="on-error" hidden></div>';
 
     v.innerHTML = html;
@@ -429,6 +485,14 @@ var Online = (function () {
     if (sob) sob.onclick = function () { client.send({ t: 'sitout', out: !meSittingOut(lastState) }); };
     var pb = $('on-pause');
     if (pb) pb.onclick = function () { client.send({ t: s.paused ? 'resume' : 'pause' }); };
+    wireChat();
+    var rb = $('on-rebuy');
+    if (rb) rb.onclick = function () { client.send({ t: 'rebuy' }); };
+    var lg = $('on-ledger-toggle');
+    if (lg) lg.onclick = function () {
+      var p = $('on-ledger');
+      if (p) p.hidden = !p.hidden;
+    };
   }
 
   function updateTableState(s) {
@@ -518,6 +582,8 @@ var Online = (function () {
       feed.appendChild(div);
     });
 
+    renderChat(s);
+    renderLedger(s);
     renderControls(s);
   }
 
@@ -541,6 +607,26 @@ var Online = (function () {
     if (!s || s.mySeat == null) return false;
     var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0];
     return !!(me && me.sittingOut);
+  }
+  function meCanRebuy(s) {
+    if (!s || s.state !== 'playing' || s.mySeat == null) return false;
+    var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0];
+    return !!(me && me.stack < s.config.startingStack);
+  }
+  // Ledger: buy-ins, current stack, net per player. Net = stack - buyins*startingStack.
+  function renderLedger(s) {
+    var box = $('on-ledger');
+    if (!box || !s) return;
+    var rows = s.players.slice().sort(function (a, b) { return a.seat - b.seat; }).map(function (p) {
+      var invested = (p.buyins || 1) * s.config.startingStack;
+      var net = p.stack - invested;
+      var cls = net > 0 ? 'pos' : net < 0 ? 'neg' : '';
+      return '<div class="ledger-row"><span>' + esc(p.name) + '</span>' +
+        '<span class="hint">' + (p.buyins || 1) + '×in</span>' +
+        '<span>' + fmt(p.stack) + '</span>' +
+        '<span class="' + cls + '">' + (net >= 0 ? '+' : '') + fmt(net) + '</span></div>';
+    }).join('');
+    box.innerHTML = '<div class="ledger-head ledger-row"><span>Player</span><span>Buy-ins</span><span>Stack</span><span>Net</span></div>' + rows;
   }
 
   function renderControls(s) {
