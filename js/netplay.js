@@ -126,13 +126,13 @@ MockRoomServer.prototype._newClientId = function () {
 };
 
 // Host path: creates the Room AND connects the host in one call.
-MockRoomServer.prototype.createRoom = function (config, hostName) {
+MockRoomServer.prototype.createRoom = function (config, hostName, emoji) {
   var code = makeRoomCode();
   var guard = 0;
   while (this.rooms[code] && guard++ < 50) code = makeRoomCode();
   var room = new RoomCtor({ code: code, config: config, now: this._now });
   this.rooms[code] = { room: room, clients: {} };
-  var res = this._attach(code, hostName, false);
+  var res = this._attach(code, hostName, false, emoji);
   if (res.error) { delete this.rooms[code]; return { error: res.error }; }
   return { code: code, client: res.client };
 };
@@ -145,7 +145,7 @@ MockRoomServer.prototype.connect = function (code, name) {
   return this._attach(code, name, false);
 };
 
-MockRoomServer.prototype._attach = function (code, name, isBot) {
+MockRoomServer.prototype._attach = function (code, name, isBot, emoji) {
   var entry = this.rooms[code];
   var clientId = this._newClientId();
   var server = this;
@@ -155,7 +155,7 @@ MockRoomServer.prototype._attach = function (code, name, isBot) {
     send: function (msg) { server._route(rec, msg); },
     close: function () { server._removeClient(rec); }
   };
-  var r = entry.room.addPlayer(clientId, name);
+  var r = entry.room.addPlayer(clientId, name, { emoji: emoji || null });
   if (!r.ok) return { error: r.error };
   rec.seat = r.seat;
   rec.name = r.rejoined ? entry.room.playerByClientId(clientId).name : rec.name;
