@@ -464,7 +464,10 @@ var UI = (function () {
     panel.querySelectorAll('.chip-btn').forEach(function (b) {
       b.onclick = function () { setFromFrac(parseFloat(b.dataset.frac)); };
     });
-    setFromFrac(0.75);
+    // Raise opens at the minimum legal raise (poker standard, like PokerNow);
+    // an opening bet keeps the 3/4-pot default.
+    if (isRaise) { slider.value = 0; paint(minTo); }
+    else setFromFrac(0.75);
     $('btn-bet-confirm').onclick = function () {
       var t = minTo + (maxTo - minTo) * (slider.value / 1000);
       t = Math.max(minTo, Math.min(maxTo, Math.round(t / 5) * 5));
@@ -786,6 +789,46 @@ var UI = (function () {
   }
 
   // records: newest first. onOpen(id) opens the replay viewer.
+  // In-game history modal: browse past hands without leaving the table.
+  // Each row expands the story narrative inline.
+  function openHandsModal(records) {
+    var ov = $('hands-modal'), list = $('hands-modal-list');
+    list.innerHTML = '';
+    if (!records.length) {
+      list.innerHTML = '<p class="subtitle">No saved hands yet — play a few and they will appear here.</p>';
+    }
+    records.forEach(function (r) {
+      var row = document.createElement('div');
+      row.className = 'hrow';
+      var net = chipDelta(r.heroNet, r.heroNetBB);
+      var netCls = r.heroNet > 0 ? 'pos' : r.heroNet < 0 ? 'neg' : '';
+      var left = document.createElement('div');
+      left.className = 'hrow-main';
+      left.innerHTML = '<span class="hnum">Hand #' + r.handNo + '</span>' +
+        '<span class="hdate">' + escapeHtml(fmtReplayDate(r.date)) + ' · ' + escapeHtml(r.mode) + '</span>' +
+        '<span class="hres ' + netCls + '">' + escapeHtml(net) + '</span>';
+      var hc = document.createElement('span');
+      hc.className = 'hcards';
+      (r.heroHole || []).forEach(function (c) { hc.appendChild(cardEl(c, true)); });
+      left.appendChild(hc);
+      row.appendChild(left);
+      var story = document.createElement('div');
+      story.className = 'rp-story hm-story';
+      story.hidden = true;
+      row.appendChild(story);
+      row.style.cursor = 'pointer';
+      row.onclick = function () {
+        var open = story.hidden;
+        story.hidden = !open;
+        if (open && !story.innerHTML) story.innerHTML = handStoryHtml(r);
+      };
+      list.appendChild(row);
+    });
+    ov.hidden = false;
+  }
+
+  function closeHandsModal() { $('hands-modal').hidden = true; }
+
   function renderHandList(records, onOpen) {
     var list = $('hand-list'), view = $('replay-view');
     view.hidden = true; view.innerHTML = '';
@@ -840,27 +883,9 @@ var UI = (function () {
   // happened. Built from the same timeline the stepper uses.
   function cardText(c) { return rankChar(c.r) + SUITS[c.s]; }
 
-  function renderHandStory(rec) {
-    var list = $('hand-list'), view = $('replay-view');
-    list.hidden = true; view.hidden = false; view.innerHTML = '';
-    var head = document.createElement('div');
-    head.className = 'rp-head';
-    head.innerHTML = '<div><div class="rp-title">Hand #' + rec.handNo + '</div>' +
-      '<div class="fineprint">' + escapeHtml(fmtReplayDate(rec.date)) + ' · ' + escapeHtml(rec.mode) +
-      ' · blinds ' + fmt(rec.sb) + '/' + fmt(rec.bb) + '</div></div>';
-    var back = document.createElement('button');
-    back.className = 'ghost'; back.id = 'rp-back'; back.textContent = '← Hands';
-    head.appendChild(back);
-    view.appendChild(head);
-
-    var toggle = document.createElement('div');
-    toggle.className = 'rp-controls';
-    toggle.innerHTML = '<button class="ghost" id="rp-steps">▶️ Step through</button>' +
-      '<span class="fineprint">story view</span>';
-    view.appendChild(toggle);
-
-    var story = document.createElement('div');
-    story.className = 'rp-story';
+  // Pure story HTML for a hand record; shared by the Hands-tab story view and
+  // the in-game history modal.
+  function handStoryHtml(rec) {
     var html = '';
     if (rec.heroHole && rec.heroHole.length === 2) {
       html += '<div class="rp-story-hero">Your hand: <b>' +
@@ -907,7 +932,31 @@ var UI = (function () {
         chipDelta(hn, rec.heroNetBB) + '</div>';
     }
     if (!html) html = '<p class="hint">No actions recorded for this hand.</p>';
-    story.innerHTML = html;
+    return html;
+  }
+
+  function renderHandStory(rec) {
+    var list = $('hand-list'), view = $('replay-view');
+    list.hidden = true; view.hidden = false; view.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'rp-head';
+    head.innerHTML = '<div><div class="rp-title">Hand #' + rec.handNo + '</div>' +
+      '<div class="fineprint">' + escapeHtml(fmtReplayDate(rec.date)) + ' · ' + escapeHtml(rec.mode) +
+      ' · blinds ' + fmt(rec.sb) + '/' + fmt(rec.bb) + '</div></div>';
+    var back = document.createElement('button');
+    back.className = 'ghost'; back.id = 'rp-back'; back.textContent = '← Hands';
+    head.appendChild(back);
+    view.appendChild(head);
+
+    var toggle = document.createElement('div');
+    toggle.className = 'rp-controls';
+    toggle.innerHTML = '<button class="ghost" id="rp-steps">▶️ Step through</button>' +
+      '<span class="fineprint">story view</span>';
+    view.appendChild(toggle);
+
+    var story = document.createElement('div');
+    story.className = 'rp-story';
+    story.innerHTML = handStoryHtml(rec);
     view.appendChild(story);
   }
 
@@ -1045,6 +1094,7 @@ var UI = (function () {
     renderArchetypes: renderArchetypes, renderStats: renderStats, renderLearn: renderLearn,
     renderPFScenario: renderPFScenario, renderPFFeedback: renderPFFeedback,
     renderHandList: renderHandList, renderReplay: renderReplay,
+    openHandsModal: openHandsModal, closeHandsModal: closeHandsModal,
     renderHandStory: renderHandStory,
     chipFly: chipFly, resetTableFx: resetTableFx,
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
