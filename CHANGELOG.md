@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.7.2] — 2026-10-07
+
+### Added
+- **💬 Feedback button** in the nav: a small form (Bug / Idea / General,
+  title, details) that opens a pre-filled GitHub issue in a new tab —
+  version, browser, and screen size are attached automatically. Zero backend.
+
 ## [1.7.1] — 2026-10-07
 
 ### Fixed — restored features lost in a stash mishap

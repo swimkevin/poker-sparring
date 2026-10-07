@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.7.1';
+  var APP_VERSION = '1.7.2';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -904,6 +904,15 @@
         else if (dest === 'online') { Online.show(); }
       };
     });
+    // Feedback opens a modal, not a screen.
+    var nfb = $('nav-feedback');
+    if (nfb) nfb.onclick = function () { UI.openFeedbackModal(); };
+    var fmc = $('feedback-modal-close');
+    if (fmc) fmc.onclick = UI.closeFeedbackModal;
+    var fmo = $('feedback-modal');
+    if (fmo) fmo.addEventListener('click', function (e) { if (e.target === fmo) UI.closeFeedbackModal(); });
+    var fsb = $('fb-submit');
+    if (fsb) fsb.onclick = UI.submitFeedback;
     document.querySelectorAll('.mode-card').forEach(function (c) {
       c.onclick = function () {
         document.querySelectorAll('.mode-card').forEach(function (x) { x.classList.remove('selected'); });

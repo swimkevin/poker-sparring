@@ -831,3 +831,46 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+
+// ---------- Feedback modal: opens, selects type, builds GitHub issue URL ----------
+(function () {
+  var d = dom.window.document;
+  d.body.innerHTML =
+    '<div id="feedback-modal" class="modal-overlay" hidden>' +
+    '<div class="modal-panel"><div class="modal-head">' +
+    '<button id="feedback-modal-close" class="ghost">x</button></div>' +
+    '<div class="modal-list fb-form">' +
+    '<div class="fb-types">' +
+    '<button class="chip-btn fb-type" data-fbtype="bug">Bug</button>' +
+    '<button class="chip-btn fb-type" data-fbtype="idea">Idea</button>' +
+    '<button class="chip-btn fb-type" data-fbtype="general">General</button>' +
+    '</div>' +
+    '<input id="fb-title" maxlength="120">' +
+    '<textarea id="fb-body" rows="5"></textarea>' +
+    '<button id="fb-submit" class="primary">Open</button>' +
+    '</div></div></div>';
+  var opened = null;
+  dom.window.open = function (url) { opened = url; };
+  UI.openFeedbackModal();
+  var ov = d.getElementById('feedback-modal');
+  ok(ov.hidden === false, 'feedback modal opens');
+  ok(ov.querySelector('.fb-type[data-fbtype="general"]').classList.contains('sel'), 'general selected by default');
+  // Pick bug type.
+  ov.querySelector('.fb-type[data-fbtype="bug"]').click();
+  ok(ov.querySelector('.fb-type[data-fbtype="bug"]').classList.contains('sel'), 'bug type selects');
+  // Empty title: submit does nothing.
+  UI.submitFeedback();
+  ok(opened === null, 'empty title does not open an issue');
+  // Fill and submit.
+  d.getElementById('fb-title').value = 'Raise slider jumps';
+  d.getElementById('fb-body').value = 'On mobile the slider jumps.';
+  UI.submitFeedback();
+  ok(opened !== null && opened.indexOf('https://github.com/swimkevin/poker-sparring/issues/new?title=') === 0, 'opens GitHub new-issue URL');
+  ok(opened.indexOf(encodeURIComponent('[Bug] Raise slider jumps')) !== -1, 'title carries [Bug] prefix');
+  ok(opened.indexOf(encodeURIComponent('On mobile the slider jumps.')) !== -1, 'body text included');
+  ok(opened.indexOf('App%20version') !== -1, 'version metadata appended');
+  ok(ov.hidden === true, 'modal closes after submit');
+  UI.openFeedbackModal();
+  UI.closeFeedbackModal();
+  ok(d.getElementById('feedback-modal').hidden === true, 'modal closes via close fn');
+})();
