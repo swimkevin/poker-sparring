@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.10] — 2026-10-07
+
+### Fixed
+- Phone: action buttons now stay pinned to the bottom of the screen (were scrolling away mid-hand).
+- You always see your own cards, even after folding (folding hides them from the table, not from you).
+- Mock-mode "Create table" crash fixed (`myEmoji` → `loadEmoji`).
+- Returning to the tab after switching apps now auto-reconnects (was stranding players).
+- Sitting out mid-hand no longer corrupts the hand ("Seat undefined wins").
+
 ## [1.8.9] — 2026-10-07
 
 ### Fixed
