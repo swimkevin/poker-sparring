@@ -874,3 +874,28 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   UI.closeFeedbackModal();
   ok(d.getElementById('feedback-modal').hidden === true, 'modal closes via close fn');
 })();
+
+// ---------- version stamps: version.txt, package.json, APP_VERSION must agree ----------
+// The update toast compares version.txt against APP_VERSION; drift causes a
+// phantom "update available" (or none at all). See repo AGENTS.md.
+(function () {
+  var vt = fs.readFileSync(path.join(__dirname, '..', 'version.txt'), 'utf8').trim();
+  var pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  var appJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+  var m = appJs.match(/var APP_VERSION = '([^']+)'/);
+  ok(!!m, 'APP_VERSION found in js/app.js');
+  if (m) ok(m[1] === vt, 'APP_VERSION (' + m[1] + ') matches version.txt (' + vt + ')');
+  ok(pkg.version === vt, 'package.json version (' + pkg.version + ') matches version.txt (' + vt + ')');
+  var cl = fs.readFileSync(path.join(__dirname, '..', 'CHANGELOG.md'), 'utf8');
+  ok(cl.indexOf('## [' + vt + ']') !== -1, 'CHANGELOG.md has an entry for ' + vt);
+  // index.html cache-busters must track the version, otherwise browsers serve
+  // stale assets — and tests/test.js reads the src attributes verbatim, so a
+  // stale ?v= crashes the unit suite (daily QA 2026-10-07).
+  var html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  var stale = 0;
+  html.replace(/(?:src|href)="([^"]+)\?v=([^"]+)"/g, function (m, f, v) {
+    if (v !== vt) { stale++; console.log('STALE BUSTER: ' + f + ' ?v=' + v + ' (want ' + vt + ')'); }
+    return m;
+  });
+  ok(stale === 0, 'all index.html cache-busters are ?v=' + vt);
+})();

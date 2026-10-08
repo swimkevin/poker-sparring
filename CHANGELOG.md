@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.12] — 2026-10-07
+
+### Fixed
+- Pot pill now paints above seats on full tables (was partially hidden behind a seat in 6-max).
+- Stale "Last:" result from a previous session no longer lingers in the table topbar when starting a new game.
+- Safari fallbacks: `100vh` before `100dvh`, `-webkit-backdrop-filter` for the modal overlay (`:has()` and `dvh` need Safari 15.4+; `env(safe-area-inset-*)` already used).
+
 ## [1.8.11] — 2026-10-07
 
 ### Added

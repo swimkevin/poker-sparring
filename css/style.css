@@ -144,6 +144,9 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   margin-bottom: 0.5rem; font-variant-numeric: tabular-nums;
   background: rgba(0,0,0,0.45); border: 1px solid #2f6a58;
   border-radius: 20px; padding: 0.15rem 0.9rem;
+  /* Seats are absolutely positioned and can overlap the board area on full
+     tables — the pot pill must paint above them (daily QA 2026-10-07). */
+  position: relative; z-index: 5;
 }
 .community { display: flex; gap: 6px; justify-content: center; min-height: 74px; }
 .street-label { color: var(--muted); font-size: 0.8rem; margin-top: 0.4rem; text-transform: uppercase; letter-spacing: 1px; }
@@ -948,6 +951,7 @@ label { font-weight: 600; }
 @media (max-width: 900px) {
   /* Compact game screen: no page scroll, everything fits the viewport */
   #screen-table {
+    height: 100vh; /* fallback for Safari < 15.4 */
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   }
   #screen-table .table-topbar { flex: 0 0 auto; padding: 0.4rem 0.5rem; }
@@ -1018,7 +1022,9 @@ label { font-weight: 600; }
     background: var(--bg);
     transform: none; transition: none;
     border-radius: 0; border: none; box-shadow: none;
-    max-height: none; height: 100dvh;
+    max-height: none;
+    height: 100vh; /* fallback for Safari < 15.4 */
+    height: 100dvh;
   }
   .mobile-panel[hidden] { display: none; }
   .mp-header {
@@ -1030,7 +1036,9 @@ label { font-weight: 600; }
   .mp-title { font-weight: 700; font-size: 1.1rem; }
   .mp-body {
     padding: 1rem 1rem calc(80px + env(safe-area-inset-bottom, 0px));
-    overflow-y: auto; height: calc(100dvh - 65px);
+    overflow-y: auto;
+    height: calc(100vh - 65px); /* fallback for Safari < 15.4 */
+    height: calc(100dvh - 65px);
     -webkit-overflow-scrolling: touch;
   }
   .mp-body .coach { font-size: 1rem; line-height: 1.6; }
@@ -1039,7 +1047,9 @@ label { font-weight: 600; }
   .mobile-tabs { z-index: 300; }
   /* Lock body scroll on game screens — PokerNow-style, no dragging */
   body:has(#screen-table:not([hidden])), body:has(#screen-online:not([hidden])) {
-    overflow: hidden; position: fixed; width: 100%; height: 100dvh;
+    overflow: hidden; position: fixed; width: 100%;
+    height: 100vh; /* fallback for Safari < 15.4 */
+    height: 100dvh;
   }
   .mp-body .coach { font-size: 0.9rem; }
   .mp-body .hand-log { max-height: none; font-size: 0.85rem; }
@@ -1049,6 +1059,7 @@ label { font-weight: 600; }
 @media (max-width: 900px) {
   /* Online screen: fixed viewport, no scroll */
   #screen-online {
+    height: 100vh; /* fallback for Safari < 15.4 */
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   }
   #screen-online #online-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -1114,7 +1125,9 @@ label { font-weight: 600; }
 @media (max-width: 900px) {
   #screen-table .table-topbar {
     position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-    z-index: 10; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+    z-index: 10; background: rgba(0,0,0,0.5);
+    -webkit-backdrop-filter: blur(8px); /* Safari < 18 */
+    backdrop-filter: blur(8px);
     border-radius: 20px; padding: 0.25rem 0.75rem;
     display: flex; gap: 0.5rem; align-items: center;
     font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1);
@@ -1159,7 +1172,10 @@ label { font-weight: 600; }
 
 /* Phone: taller felt, compact seats, no overlap */
 @media (max-width: 900px) {
-  #screen-table .felt, #screen-online .online-felt { min-height: 52dvh; }
+  #screen-table .felt, #screen-online .online-felt {
+    min-height: 52vh; /* fallback for Safari < 15.4 */
+    min-height: 52dvh;
+  }
   #screen-table .seat, #screen-online .seat {
     min-width: 68px; max-width: 78px; padding: 0.2rem 0.25rem;
   }

@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.11';
+  var APP_VERSION = '1.8.12';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -852,6 +852,9 @@
     evtQueue = []; pumping = false; waitingForHero = false;
     UI.buildSeats(players.length);
     UI.showScreen('table');
+    // Clear the previous session's "Last:" result — it would otherwise linger
+    // in the topbar until the first new hand ends (daily QA 2026-10-07).
+    try { var lr = document.getElementById('last-result'); if (lr) lr.textContent = ''; } catch (e) {}
     setTimeout(dealNext, 400);
   }
 

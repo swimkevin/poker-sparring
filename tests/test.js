@@ -770,7 +770,8 @@ function heroPolicy(table, idx) {
   while ((m = re.exec(html))) files.push(m[1]);
   ok(files.length >= 10, 'found page scripts in index.html (' + files.length + ')');
   var combined = files.map(function (f) {
-    return fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+    // Strip the ?v= cache-buster: it is a URL query, not part of the filename.
+    return fs.readFileSync(path.join(__dirname, '..', f.split('?')[0]), 'utf8');
   }).join('\n;\n');
   var failed = null;
   try { new vm.Script(combined, { filename: 'browser-bundle.js' }); }
