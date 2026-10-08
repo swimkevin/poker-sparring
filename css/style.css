@@ -1055,3 +1055,8 @@ label { font-weight: 600; }
   .mobile-panel { max-height: 82dvh; }
   .mobile-panel .mp-body { max-height: calc(82dvh - 60px); }
 }
+
+/* Winner banner: center it on phones so it doesn't cover the hero seat */
+@media (max-width: 900px) {
+  .winner-banner { bottom: auto; top: 42%; }
+}
