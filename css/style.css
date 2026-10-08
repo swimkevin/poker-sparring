@@ -987,9 +987,13 @@ label { font-weight: 600; }
     box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
     background: var(--panel);
   }
-  #screen-table .hero-bar .controls { gap: 0.4rem; }
-  #screen-table .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; }
+  #screen-table .hero-bar .controls { gap: 0.6rem; }
+  #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
   #screen-table .hero-cards .card { width: 40px; height: 56px; }
+  /* Breathing room between hero cards and action buttons */
+  #screen-table .hero-bar { gap: 0.8rem; }
+  /* Bar reaches ~190px up; keep felt clear of it */
+  #screen-table { padding-bottom: 200px; }
 
   /* Bottom tab bar */
   .mobile-tabs {
