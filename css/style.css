@@ -1656,3 +1656,31 @@ label { font-weight: 600; }
   /* Hide the "Your turn" text on mobile — the gold button glow is enough */
   #screen-table .turn-status { display: none; }
 }
+
+/* Bet panel: dark, clean, readable — never covers hero cards */
+.bet-panel {
+  background: #1a2230 !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: #fff !important;
+}
+.bet-panel .bet-row { color: #fff; }
+.bet-panel button {
+  color: #fff !important;
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+.bet-panel .bet-confirm {
+  background: #d4af37 !important;
+  border-color: #d4af37 !important;
+  color: #1a1405 !important;
+  font-weight: 700;
+}
+@media (max-width: 900px) {
+  /* Bet panel opens above hero cards, not over them */
+  #screen-table .bet-panel {
+    bottom: auto !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 50;
+  }
+}
