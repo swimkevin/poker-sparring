@@ -1606,3 +1606,53 @@ label { font-weight: 600; }
     margin: 0.3rem;
   }
 }
+
+/* v1.8.24 fixes: smaller hero cards, visible pot + opponent bets */
+@media (max-width: 900px) {
+  /* Hero cards: compact */
+  #screen-table #hero-cards .card {
+    width: 44px;
+    height: 62px;
+  }
+  #screen-table #hero-cards .card .crank { font-size: 0.8rem; }
+  #screen-table #hero-cards .card .csuit { font-size: 1.2rem; }
+  #screen-table #hero-cards { gap: 5px; padding: 0.3rem 0; }
+
+  /* Buttons: even more compact */
+  #screen-table .hero-bar .ctl {
+    padding: 0.45rem 0.25rem;
+    font-size: 0.78rem;
+    min-height: 34px;
+  }
+  #screen-table .hero-bar { gap: 0.3rem; }
+
+  /* Pot: always visible, centered */
+  #screen-table #pot-display {
+    display: inline-block !important;
+    position: absolute;
+    left: 50%; top: 46%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(212,175,55,0.35);
+    color: #ffd76a;
+    padding: 0.3rem 0.8rem;
+    border-radius: 16px;
+    white-space: nowrap;
+  }
+
+  /* Opponent bet badges: small, visible */
+  #screen-table .seat .pbet {
+    display: block !important;
+    font-size: 0.62rem;
+    color: #7db8ff;
+    font-weight: 700;
+    min-height: 0.9em;
+    margin-top: 1px;
+  }
+
+  /* Hide the "Your turn" text on mobile — the gold button glow is enough */
+  #screen-table .turn-status { display: none; }
+}
