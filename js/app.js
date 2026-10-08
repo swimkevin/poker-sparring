@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.27';
+  var APP_VERSION = '1.8.28';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -1165,25 +1165,6 @@
       };
     });
     $('btn-start').onclick = startGame;
-    // Quick play: one tap → cash game vs first 3 selected bots (or defaults).
-    var qp = $('btn-quickplay');
-    if (qp) qp.onclick = function () {
-      mode = 'cash';
-      document.querySelectorAll('.mode-card').forEach(function (c) {
-        c.classList.toggle('selected', c.dataset.mode === 'cash');
-      });
-      // Ensure at least 3 bots: top up from roster order if needed.
-      var ids = rosterOrderIds().filter(function (id) { return botById(id); });
-      var i = 0;
-      while (selectedBots.size < 3 && i < ids.length) { selectedBots.add(ids[i++]); }
-      syncOppUI();
-      startGame();
-    };
-    var cl = $('btn-customize-link');
-    if (cl) cl.onclick = function () {
-      var d = $('customize-details');
-      if (d) { d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-    };
     // One-tap start: a live mirror of the configuration below — no forcing,
     // no hardcoded "3 bots". The hint always describes exactly what one tap
     // does, so the stepper and the hero button can never contradict.
@@ -1198,11 +1179,6 @@
       var bb = Math.max(sb + 1, parseInt($('cfg-bb').value, 10) || 10);
       q.textContent = 'One tap: ' + modeName + ' vs ' + (n === 1 ? '1 bot' : n + ' bots') +
         ', ' + stack + '-chip stacks, ' + sb + '/' + bb + ' blinds. Customize below if you like.';
-      // The quick-play hint names the bot count too — keep it in sync so the
-      // two one-tap descriptions can never contradict (daily QA 2026-10-08).
-      // ▶ Play tops up to at least 3 bots, so describe the effective table.
-      var qpn = $('qp-n');
-      if (qpn) qpn.textContent = Math.max(n, 3) + ' bots';
     }
     var bq = $('btn-quick');
     if (bq) bq.onclick = function () { startGame(); };

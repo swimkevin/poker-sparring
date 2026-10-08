@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.28] — 2026-10-08
+
+### Changed
+- Homepage simplified: removed duplicate "▶ Play" button. Now one clear "♠️ Deal me in" CTA at top and bottom (identical). Less redundant, cleaner for recruiters.
+- Amogh now always raises QQ+ first-in (was 20%).
+
 ## [1.8.27] — 2026-10-08
 
 ### Fixed

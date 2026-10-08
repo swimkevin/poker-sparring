@@ -253,7 +253,7 @@ function botPreflop(table, p, A) {
   // Amogh: bombs with tier-1 monsters (QQ+/AK) — usually when there is a
   // raise to punish, occasionally as a first-in open-shove. (Character sizing;
   // the normal 3-bet path below handles the rest.)
-  if (A.id === 'amogh' && tier <= 1 && legal.canRaise && Math.random() < (raised ? 0.7 : 0.2)) {
+  if (A.id === 'amogh' && tier <= 1 && legal.canRaise && (raised ? Math.random() < 0.7 : true)) {
     return { a: 'raise', amount: legal.maxRaiseTo };
   }
 
