@@ -278,9 +278,9 @@ var UI = (function () {
         { x: 50, y: 62 },  // 0: hero (bottom-center)
         { x: 22, y: 52 },  // 1: lower-left
         { x: 12, y: 32 },  // 2: mid-left
-        { x: 28, y: 14 },  // 3: upper-left
-        { x: 50, y: 8 },   // 4: top-center
-        { x: 72, y: 14 },  // 5: upper-right
+        { x: 28, y: 18 },  // 3: upper-left
+        { x: 50, y: 14 },  // 4: top-center
+        { x: 72, y: 18 },  // 5: upper-right
         { x: 88, y: 32 },  // 6: mid-right
         { x: 78, y: 52 },  // 7: lower-right
       ];
@@ -292,9 +292,9 @@ var UI = (function () {
       { x: 50, y: 82 },  // 0: hero (bottom-center)
       { x: 18, y: 68 },  // 1: lower-left
       { x: 8, y: 45 },   // 2: mid-left
-      { x: 22, y: 22 },  // 3: upper-left
-      { x: 50, y: 12 },  // 4: top-center
-      { x: 78, y: 22 },  // 5: upper-right
+      { x: 22, y: 26 },  // 3: upper-left
+      { x: 50, y: 18 },  // 4: top-center
+      { x: 78, y: 26 },  // 5: upper-right
       { x: 92, y: 45 },  // 6: mid-right
       { x: 82, y: 68 },  // 7: lower-right
     ];
