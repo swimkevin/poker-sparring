@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.38] — 2026-10-08
+
+### Fixed
+- Mobile felt layout (iPhone): the hero bar is `position: fixed` and covers
+  the bottom ~30% of the felt, which buried the pot pill, community cards,
+  and hero seat behind it. The board (pot + community) moved to 32% (visual
+  middle), the pot pill flows in place instead of absolute-positioning down
+  inside the board, and the mobile seat ring shifted up (hero at 54%) to
+  clear the betting panel. Desktop unchanged.
+
 ## [1.8.37] — 2026-10-08
 
 ### Fixed
