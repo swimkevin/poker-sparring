@@ -37,6 +37,14 @@
         <p class="hint-inline" id="quick-hint">One tap: cash game vs 3 bots, 1,000-chip stacks, 5/10 blinds. Customize below if you like.</p>
       </div>
 
+      <!-- Quick play: one tap, instant game -->
+      <div class="quick-play">
+        <button id="btn-quickplay" class="primary big">▶ Play</button>
+        <p class="hint">Cash game vs 3 bots. Tap <button id="btn-customize-link" class="linklike">customize</button> for modes, opponents &amp; settings.</p>
+      </div>
+
+      <details id="customize-details" class="customize-details">
+        <summary>Customize game</summary>
       <div class="name-row">
         <label>Your name <input type="text" id="cfg-username" maxlength="10" placeholder="e.g. Kevin" autocomplete="nickname"></label>
         <label>Your emoji <select id="cfg-emoji" class="emoji-pick"></select></label>
@@ -90,6 +98,7 @@
       </details>
 
       <button id="btn-start" class="primary big">Start training →</button>
+      </details>
       <p class="fineprint">No accounts, no network, no real money. Your stats stay in this browser.</p>
       <footer class="app-footer"><span id="app-version"></span></footer>
     </div>
@@ -211,6 +220,7 @@
       <h1>Bot archetypes</h1>
       <p class="subtitle">Each bot plays a distinct, recognizable style. Build your own to drill the exact player type that gives you trouble.</p>
       <div id="preset-list" class="arch-list"></div>
+      <div id="custom-bot-section">
       <h2>Build a custom bot</h2>
       <div class="builder">
         <div class="builder-row">
@@ -230,6 +240,7 @@
         </div>
         <button id="btn-add-custom" class="primary">Add custom bot</button>
       </div>
+      </div><!-- /custom-bot-section -->
       <h2>Your custom bots</h2>
       <div id="custom-list" class="arch-list"></div>
     </div>

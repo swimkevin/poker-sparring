@@ -9,6 +9,48 @@
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
+  /**
+   * Feature flags — Flappy Bird simplicity by default.
+   * Advanced features are preserved in code but hidden until enabled.
+   * Enable via console: PS_FLAGS.tournamentMode = true (then refresh).
+   * Or via URL: ?flags=tournamentMode,pushFoldTrainer
+   */
+  var DEFAULT_FLAGS = {
+    tournamentMode: false,  // Tournament mode card
+    headsUpMode: false,     // Heads-Up mode card
+    pushFoldTrainer: false, // Push/Fold trainer mode card
+    customBots: false,      // Custom bot builder section
+    advancedStats: false    // Leak tracker, detailed per-archetype stats
+  };
+  var PS_FLAGS = Object.assign({}, DEFAULT_FLAGS);
+  // URL override: ?flags=a,b
+  try {
+    var flagParam = new URLSearchParams(window.location.search).get('flags');
+    if (flagParam) {
+      flagParam.split(',').forEach(function (f) {
+        f = f.trim();
+        if (f in PS_FLAGS) PS_FLAGS[f] = true;
+      });
+    }
+    // localStorage persistence for console-enabled flags
+    var savedFlags = JSON.parse(localStorage.getItem('ps_feature_flags') || '{}');
+    Object.keys(savedFlags).forEach(function (f) {
+      if (f in PS_FLAGS && savedFlags[f]) PS_FLAGS[f] = true;
+    });
+  } catch (e) {}
+  // Expose for console toggling with persistence
+  window.PS_FLAGS = PS_FLAGS;
+  window.enableFlag = function (name) {
+    if (!(name in PS_FLAGS)) return 'Unknown flag: ' + name;
+    PS_FLAGS[name] = true;
+    try {
+      var s = JSON.parse(localStorage.getItem('ps_feature_flags') || '{}');
+      s[name] = true;
+      localStorage.setItem('ps_feature_flags', JSON.stringify(s));
+    } catch (e) {}
+    return name + ' enabled — refresh to see it.';
+  };
+
   // Last-resort error boundary: a UI glitch must never take down the table or
   // lose the player's stats. Surfaces a calm notice instead of failing silently.
   window.addEventListener('error', function (ev) {
@@ -981,9 +1023,17 @@
         if (m && !m.hidden) UI.closeFeedbackModal();
       }
     });
+    // Feature flags: hide custom bot builder by default.
+    var cbs = document.getElementById('custom-bot-section');
+    if (cbs && !PS_FLAGS.customBots) cbs.style.display = 'none';
+
     var fsb = $('fb-submit');
     if (fsb) fsb.onclick = UI.submitFeedback;
+    // Feature flags: hide advanced mode cards by default.
+    var flagForMode = { hu: 'headsUpMode', tourney: 'tournamentMode', pushfold: 'pushFoldTrainer' };
     document.querySelectorAll('.mode-card').forEach(function (c) {
+      var flag = flagForMode[c.dataset.mode];
+      if (flag && !PS_FLAGS[flag]) { c.style.display = 'none'; return; }
       c.onclick = function () {
         document.querySelectorAll('.mode-card').forEach(function (x) { x.classList.remove('selected'); });
         c.classList.add('selected');
@@ -1005,6 +1055,25 @@
       };
     });
     $('btn-start').onclick = startGame;
+    // Quick play: one tap → cash game vs first 3 selected bots (or defaults).
+    var qp = $('btn-quickplay');
+    if (qp) qp.onclick = function () {
+      mode = 'cash';
+      document.querySelectorAll('.mode-card').forEach(function (c) {
+        c.classList.toggle('selected', c.dataset.mode === 'cash');
+      });
+      // Ensure at least 3 bots: top up from roster order if needed.
+      var ids = rosterOrderIds().filter(function (id) { return botById(id); });
+      var i = 0;
+      while (selectedBots.size < 3 && i < ids.length) { selectedBots.add(ids[i++]); }
+      syncOppUI();
+      startGame();
+    };
+    var cl = $('btn-customize-link');
+    if (cl) cl.onclick = function () {
+      var d = $('customize-details');
+      if (d) { d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    };
     // One-tap start: a live mirror of the configuration below — no forcing,
     // no hardcoded "3 bots". The hint always describes exactly what one tap
     // does, so the stepper and the hero button can never contradict.

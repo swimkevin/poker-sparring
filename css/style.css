@@ -1183,3 +1183,12 @@ label { font-weight: 600; }
   #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.62rem; margin: 1px 0; }
   #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.58rem; min-height: 0.8em; }
 }
+
+/* Quick play: Flappy Bird simplicity — one big button */
+.quick-play { text-align: center; margin: 1.2rem 0 0.4rem; }
+.quick-play .primary.big { font-size: 1.3rem; padding: 0.9rem 3.2rem; }
+.quick-play .hint { margin-top: 0.6rem; }
+.linklike { background: none; border: none; color: var(--green); cursor: pointer; text-decoration: underline; font: inherit; padding: 0; }
+.customize-details { margin-top: 1rem; border-top: 1px solid var(--panel2); padding-top: 0.8rem; }
+.customize-details > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; padding: 0.5rem 0; color: var(--muted); }
+.customize-details > summary:hover { color: var(--text); }
