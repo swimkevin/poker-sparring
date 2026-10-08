@@ -1276,6 +1276,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
   }
 
   function closePanel() {
+    restoreChat();
     panel.hidden = true;
     setActive('table');
   }
@@ -1300,7 +1301,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
 
   // Pull the hand log HTML into the panel (offline or online).
   function fillHistory(body) {
-    var src = document.getElementById('hand-log') || document.getElementById('on-feed');
+    // Check which screen is visible — #hand-log exists in DOM even when hidden.
+    var online = document.getElementById('screen-online') && !document.getElementById('screen-online').hidden;
+    var src = online ? document.getElementById('on-feed') : document.getElementById('hand-log');
+    body.innerHTML = '';
     var wrap = document.createElement('div');
     wrap.className = 'hand-log';
     if (src) wrap.innerHTML = src.innerHTML;
@@ -1313,27 +1317,24 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     body.appendChild(replay);
   }
 
-  // Table chat gets its own tab (online games).
+  // Table chat gets its own tab (online games). Moves the live node (not a
+  // clone) so send/input keep working; restored on panel close.
+  var chatHome = null, chatNode = null;
   function fillChat(body) {
+    body.innerHTML = '';
     var chat = document.querySelector('#screen-online .online-chat');
     if (chat) {
-      var clone = chat.cloneNode(true);
-      clone.style.display = 'block';
-      clone.removeAttribute('hidden');
-      // Rewire the send button in the clone.
-      var input = clone.querySelector('input');
-      var sendBtn = clone.querySelector('button');
-      var origInput = chat.querySelector('input');
-      var origSend = chat.querySelector('button');
-      if (sendBtn && origSend) sendBtn.onclick = function () { origSend.click(); };
-      if (input && origInput) {
-        input.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter') { origInput.value = input.value; origSend.click(); input.value = ''; }
-        });
-      }
-      body.appendChild(clone);
+      if (!chatHome) { chatHome = chat.parentNode; chatNode = chat; }
+      chat.style.display = 'block';
+      body.appendChild(chat);
     } else {
       body.innerHTML = '<p class="fineprint">Chat is available in online games.</p>';
+    }
+  }
+  function restoreChat() {
+    if (chatNode && chatHome && chatNode.parentNode !== chatHome) {
+      chatHome.appendChild(chatNode);
+      chatNode.style.display = '';
     }
   }
 
