@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.19] — 2026-10-08
+
+### Changed
+- PokerNow-style hand end: no blocking modal. Small toast + inline "Next hand" button. All hands revealed face-up at showdown.
+- Hero seat moved up (62%) — cards no longer hidden behind action bar.
+
 ## [1.8.18] — 2026-10-08
 
 ### Changed
