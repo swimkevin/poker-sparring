@@ -1165,6 +1165,9 @@
     };
 
     UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
+    // Sync the counter on initial load — selectedBots may be restored from storage.
+    var oc0 = document.getElementById('opp-count');
+    if (oc0) oc0.textContent = selectedBots.size;
     // Stack/blind tweaks update the quick-start hint live.
     ['cfg-stack', 'cfg-sb', 'cfg-bb'].forEach(function (id) {
       var el = $(id);
