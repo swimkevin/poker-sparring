@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.37] — 2026-10-08
+
+### Fixed
+- "Check for updates" reload now navigates with the new version in the URL
+  (`?v=<new>`) instead of `location.reload()` — the old reload kept the stale
+  `?v=` param in the address bar, so the URL still showed the previous version.
+- Seat boxes expand to fit their content (`width: max-content`, up to 170px on
+  desktop) instead of clipping: v1.8.36's `overflow: hidden` cut off the dealer
+  button and SB/BB badges, which intentionally overlap the seat edge. Long
+  names truncate with an ellipsis; avatar and badges are never clipped.
+
 ## [1.8.36] — 2026-10-08
 
 ### Fixed

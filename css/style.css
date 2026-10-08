@@ -1707,7 +1707,11 @@ label { font-weight: 600; }
   }
   #screen-table .seat {
     min-width: 88px;
-    max-width: 100px;
+    /* Boxes expand to fit avatar + name + badge instead of clipping them:
+       overflow:hidden (v1.8.36) cut off the dealer button and SB/BB badges,
+       which intentionally overlap the seat edge (reported 2026-10-08). */
+    width: max-content;
+    max-width: 170px;
     padding: 0.35rem 0.45rem;
     border-radius: 10px;
     border-width: 1.5px;
@@ -1716,6 +1720,12 @@ label { font-weight: 600; }
   #screen-table .seat .pname {
     font-size: 0.72rem;
     font-weight: 600;
+    /* Long names truncate with an ellipsis so boxes can't grow without
+       bound; avatar and badges are never clipped. */
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   #screen-table .seat .pstack {
     font-size: 0.7rem;
@@ -1732,16 +1742,20 @@ label { font-weight: 600; }
   #screen-table .seat .pcards { min-height: 0; margin-top: 2px; }
 }
 
-/* Fix emoji overflow in seat boxes */
-#screen-table .seat {
-  overflow: hidden;
-}
-#screen-table .seat .who {
-  max-width: 100%;
-  overflow: hidden;
-}
+/* Seat content is never clipped: the dealer button and the SB/BB badges
+   intentionally overlap the seat edge, so overflow:hidden here (v1.8.36) cut
+   them off. Boxes size to content via width:max-content on desktop; only
+   over-long names truncate, via .pname ellipsis. */
 #screen-table .seat .avatar {
   flex-shrink: 0;
+}
+@media (max-width: 900px) {
+  /* Phone: seats stay compact; names truncate exactly at the seat edge. */
+  #screen-table .seat .pname {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 /* Mobile: compact bottom bar — cards + buttons in minimal space */
