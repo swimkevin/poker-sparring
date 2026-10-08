@@ -1309,3 +1309,132 @@ label { font-weight: 600; }
     -webkit-backdrop-filter: blur(8px);
   }
 }
+
+/* ============ MODERN REDESIGN v2 — Muse-clean poker (2026-10-08) ============ */
+@media (max-width: 900px) {
+  /* Page: deep calm background */
+  #screen-table {
+    background: #0a0e13;
+    padding: 0.5rem;
+  }
+
+  /* Felt: modern, minimal — soft radial, no busy pattern */
+  #screen-table .felt {
+    background: radial-gradient(120% 90% at 50% 20%, #1a7a5a 0%, #0d4a36 60%, #083325 100%);
+    border: none;
+    border-radius: 28px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* Seats: floating minimal pills — avatar, name, stack. No heavy boxes. */
+  #screen-table .seat {
+    background: rgba(10,14,19,0.72);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 18px;
+    padding: 0.5rem 0.6rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    min-width: 76px;
+  }
+  #screen-table .seat .pname {
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.2px;
+  }
+  #screen-table .seat .pstack {
+    color: rgba(255,255,255,0.65);
+    font-size: 0.7rem;
+    font-weight: 500;
+  }
+  #screen-table .seat.to-act {
+    border-color: rgba(212,175,55,0.6);
+    box-shadow: 0 0 0 1px rgba(212,175,55,0.4), 0 4px 16px rgba(0,0,0,0.3);
+  }
+  /* Hide bet text under seats — cleaner (bets show on felt) */
+  #screen-table .seat .pbet { display: none; }
+
+  /* Hero cards: large, crisp, well-spaced */
+  #screen-table #seat-0 .pcards {
+    gap: 8px;
+    margin-top: 6px;
+  }
+  #screen-table #seat-0 .pcards .card {
+    width: 62px; height: 86px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  }
+  #screen-table #seat-0 .pcards .card .crank {
+    font-size: 1.15rem;
+    top: 6px; left: 8px;
+  }
+  #screen-table #seat-0 .pcards .card .csuit {
+    font-size: 1.9rem;
+  }
+
+  /* Pot: minimal floating pill */
+  #screen-table .pot {
+    background: rgba(10,14,19,0.75);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #ffd76a;
+    font-weight: 700;
+    padding: 0.35rem 1rem;
+    border-radius: 24px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
+  /* Community cards: clean, well-spaced */
+  #screen-table .community {
+    gap: 8px;
+  }
+  #screen-table .community .card {
+    width: 52px; height: 72px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  }
+
+  /* Action bar: clean bottom sheet */
+  #screen-table .hero-bar {
+    background: rgba(13,18,25,0.98);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-radius: 24px 24px 0 0;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
+  }
+  #screen-table .hero-bar .ctl {
+    border-radius: 16px;
+    font-weight: 650;
+    font-size: 0.95rem;
+    padding: 0.85rem 0.5rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    letter-spacing: 0.2px;
+  }
+  #screen-table .hero-bar .ctl.primary-action {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #1a1405;
+  }
+
+  /* Tab bar: minimal, clean */
+  .mobile-tabs {
+    background: rgba(13,18,25,0.98);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .mtab {
+    color: rgba(255,255,255,0.45);
+  }
+  .mtab.active {
+    color: #ffd76a;
+    background: none;
+    text-shadow: none;
+  }
+  .mtab.active .mtab-icon {
+    transform: none;
+    filter: none;
+  }
+}
