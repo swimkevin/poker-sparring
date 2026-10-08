@@ -4,7 +4,7 @@
 
 ▶️ **Play it:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.11-blue)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![no dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1900%2B%20assertions-brightgreen) ![version](https://img.shields.io/badge/version-1.8.12-blue)
 
 ## Why I built this
 
@@ -59,7 +59,7 @@ Key decisions are recorded as ADRs in `docs/adr/` — vanilla JS, local-first st
 
 ## Verification
 
-**~1,800 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
+**~1,900 assertions across 5 layers.** The number that matters isn't coverage — it's *invariants*: chip conservation across 300 randomized hands, every bot move passing engine legality, hole-card privacy per seat, and a regression test for every bug in the [incident log](docs/INCIDENTS.md), each verified to fail without its fix.
 
 ```bash
 npm test          # unit + component + smoke + netplay + worker
@@ -67,6 +67,20 @@ npm run serve     # → http://localhost:8000
 ```
 
 What the suite proves: money can't be created or destroyed · every action is legal · humans can't see each other's cards · dropped connections resync. Honest limits are documented in [docs/TESTING.md](docs/TESTING.md).
+
+## Mobile-first design
+
+Rebuilt for phones in v1.8.x with a Muse/PokerNow-inspired minimalist approach:
+
+- **Bottom tab bar** — Table, Coach, History, Chat, Menu. Each opens a full-screen view; the active tab glows gold
+- **No scrolling on game screens** — fixed viewport, the table always fits
+- **Compact seats** — full player names, SB/BB badges, no clutter
+- **Collapsible result banner** — never blocks the board
+- Tested on Safari, Edge, and Chrome
+
+## Automated daily testing
+
+A scheduled job runs every morning: full test suite, live browser testing (plays real hands, tests edge cases like rapid-clicking and mid-hand refresh), Safari-specific checks, and auto-pushes fixes. See `docs/AI-WORKFLOW.md` for the workflow.
 
 ## Project structure
 
