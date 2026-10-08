@@ -79,6 +79,40 @@ function hand(str) {
   ok(eqDraw > 0.45, 'nut flush draw + overs reasonable, got ' + eqDraw.toFixed(3));
 })();
 
+// ---------- SPR + commitment (coach) ----------
+(function () {
+  ok(EQ.spr(200, 100) === 2, 'spr = effStack/pot');
+  ok(EQ.spr(200, 0) === 99, 'spr guards zero pot');
+  ok(EQ.sprVerdict(2, 'toppair') === 'commit', 'top pair commits at SPR 2');
+  ok(EQ.sprVerdict(12, 'toppair') === 'pot-control', 'top pair pot-controls deep');
+  ok(EQ.sprVerdict(2, 'overpair') === 'commit', 'overpair commits at SPR 2');
+  ok(EQ.sprVerdict(10, 'overpair') === 'pot-control', 'overpair cautious deep');
+  ok(EQ.sprVerdict(1, 'nut') === 'commit', 'nuts always commit shallow');
+  ok(EQ.sprVerdict(10, 'draw') === 'implied', 'draws want implied odds deep');
+  ok(EQ.sprVerdict(2, 'draw-strong') === 'commit', 'monster draw commits shallow');
+  ok(EQ.sprVerdict(4, 'secondpair') === 'pot-control', 'second pair never commits deep');
+
+  // Implied odds: credit only deep + drawing/speculative.
+  ok(EQ.impliedCredit({ draw: true, effStackBB: 50, villainStubborn: 0.8, inPosition: true }) > 0.1,
+    'deep + station + IP gives real implied credit');
+  ok(EQ.impliedCredit({ draw: true, effStackBB: 8, villainStubborn: 0.9, inPosition: true }) === 0,
+    'no implied credit short-stacked');
+  ok(EQ.impliedCredit({ draw: false, smallPair: false, effStackBB: 50, villainStubborn: 0.9 }) === 0,
+    'no credit without a draw or pair');
+  ok(EQ.impliedCredit({ draw: true, effStackBB: 50, villainStubborn: 0.8, inPosition: true }) <= 0.15,
+    'implied credit capped at 0.15');
+
+  // Reverse implied odds: debit for non-nut draws vs tight/multiway.
+  ok(EQ.rioPenalty({ nutDraw: true, villainTight: 0.9, multiway: true }) === 0,
+    'nut draws take no RIO penalty');
+  ok(EQ.rioPenalty({ nutDraw: false, villainTight: 0.9, multiway: false }) >= 0.06,
+    'non-nut draw vs tight range penalized');
+  ok(EQ.rioPenalty({ nutDraw: false, villainTight: 0.9, multiway: true }) <= 0.10,
+    'RIO penalty capped at 0.10');
+  ok(EQ.rioPenalty({ nutDraw: false, villainTight: 0.2, multiway: false }) === 0,
+    'no RIO penalty vs loose heads-up');
+})();
+
 // ---------- engine: 300-hand soak test ----------
 function randomPolicy(table, idx) {
   var legal = table.legalActions(idx);

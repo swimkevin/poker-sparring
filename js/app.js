@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.40';
+  var APP_VERSION = '1.8.41';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -130,6 +130,8 @@
   var lastActions = {};
   var handCtx = null;
   var handRec = null; // in-progress hand record for the replayer (js/replay.js)
+  var coachDecisions = []; // hero decisions vs coach advice this hand (for the recap)
+  var pendingAdvice = null; // coach verdict awaiting the hero's action
   var replay = null;  // { rec, idx } while the replay viewer is open
   var sessionStartChips = 0;
   // Exact hero stack at the end of the previous hand. The engine posts
@@ -218,6 +220,8 @@
       vpip: false, pfr: false,
       postBet: 0, postCall: 0, preflopActed: false
     };
+    coachDecisions = [];
+    pendingAdvice = null;
     handRec = startHandRecord(table, e, gameMode);
     $('hand-info').textContent = 'Hand #' + e.handNo + (gameMode === 'tourney' ? ' · Level ' + (tourney.levelIdx + 1) : '');
     updateBlindsInfo();
@@ -233,7 +237,13 @@
       pauseForHero();
       enableHeroControls();
       setTurnStatus('Your turn — action is on you.', true);
-      UI.coachTip(coachTip());
+      var vd = coachVerdict();
+      UI.coachTip(vd.html);
+      // Remember the advice so the hero's actual action can be graded for
+      // the post-hand recap.
+      pendingAdvice = vd.advice ? {
+        advice: vd.advice, strength: vd.strength, lesson: vd.lesson, street: table.street
+      } : null;
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
     } else {
       // Bot thinks, then acts.
@@ -264,7 +274,17 @@
   function onActionTaken(e) {
     var p = table.players[e.player];
     lastActions[e.player] = describeAction(e, p);
-    if (p.isHero) trackHeroAction(e);
+    if (p.isHero) {
+      trackHeroAction(e);
+      if (pendingAdvice) {
+        coachDecisions.push({
+          street: pendingAdvice.street, advice: pendingAdvice.advice,
+          strength: pendingAdvice.strength, lesson: pendingAdvice.lesson,
+          action: e.action, followed: adviceFollowed(pendingAdvice.advice, e.action)
+        });
+        pendingAdvice = null;
+      }
+    }
     if (handRec) recordHandAction(handRec, table, e);
     // Chip-commit actions fly a chip from the bettor's seat to the pot.
     if (e.action === 'bet' || e.action === 'raise' || e.action === 'call') UI.chipFly(e.player);
@@ -306,7 +326,10 @@
 
   function onHandEnd(e) {
     UI.disableControls();
-    UI.coachTip(null);
+    // Post-hand coach recap (lives in the coach tab until the next hand).
+    var recap = null;
+    try { recap = coachRecap(e.handNo); } catch (err) {}
+    UI.coachTip(recap ? recap.html : null);
     setTurnStatus('', false); // drop any stale "Waiting for X…" during the results pause
     var hero = table.players[0];
     var won = heroWon(e);
@@ -406,6 +429,7 @@
     var profit = hero.stack - handCtx.startStack;
     lastHeroEndStack = hero.stack; // pre-blind baseline for the next hand
     if (handRec) {
+      if (recap) handRec.coachNotes = recap.lines; // plain-text recap for history
       finishHandRecord(handRec, table, e, profit);
       saveHandRecord(handRec);
       handRec = null;
@@ -862,119 +886,652 @@
     }
   }
 
-  function coachTip() {
+  // ---------------- coach: range reading + situation classifiers ----------------
+  // All DOM-free; they read table + handRec.timeline only. handRec may be
+  // null in tests — every helper degrades to the archetype prior.
+
+  // Preflop situation: 'open' | 'facing-open' | 'facing-3bet' | 'facing-4bet+'.
+  // Counts re-raises from the timeline (blinds are recorded as sb/bb, so an
+  // open is raise #1 and a re-raise is #2).
+  function preflopSpot() {
+    var legal = table.legalActions(0);
+    if (legal.toCall === 0) return 'open';
+    var raises = 0;
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t === 'action' && t.street === 'preflop' &&
+          (t.action === 'bet' || t.action === 'raise')) raises++;
+    });
+    if (raises <= 1) return 'facing-open';
+    if (raises === 2) return 'facing-3bet';
+    return 'facing-4bet+';
+  }
+
+  // How tight a villain is, from their opening range (1=rock .. 6=any two).
+  function villainTighty(A) {
+    A = A || {};
+    var t = A.openTier || 3;
+    return 1 - (t - 1) / 5;
+  }
+
+  // Effective stack in chips between hero and a villain (or the shortest live
+  // opponent when villainIdx is null). SPR math uses this, not hero's stack.
+  function effStackChips(villainIdx) {
+    var eff = table.players[0].stack;
+    table.players.forEach(function (p, i) {
+      if (i === 0 || p.folded || p.sittingOut) return;
+      if (villainIdx == null || i === villainIdx) eff = Math.min(eff, p.stack);
+    });
+    return eff;
+  }
+  function effStackBB(villainIdx) {
+    return table.bb > 0 ? effStackChips(villainIdx) / table.bb : 99;
+  }
+
+  // Read a villain's range from this hand's actions + their archetype.
+  // Returns {label, strength, words}. Labels are honest buckets, never fake
+  // percentages: wide | capped | strong | polarized | unknown.
+  function estimateVillainRange(idx) {
+    var p = table.players[idx];
+    var A = (p && p.archetype) || {};
+    var label = 'unknown', strength = 0.5, actions = 0;
+    var neverRaises = (A.id === 'nathan' || A.id === 'rohan');
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.player !== idx) return;
+      actions++;
+      var size = t.bet || t.amount || 0, pot = t.pot || 1;
+      var ratio = size / pot;
+      if (t.street === 'preflop') {
+        if (t.action === 'raise' || t.action === 'bet') {
+          label = 'strong'; strength = Math.max(strength, 0.75);
+        } else if (t.action === 'call') {
+          // Callers are capped: premiums would have re-raised.
+          if (label !== 'strong') { label = 'capped'; strength = Math.min(strength, 0.45); }
+        }
+      } else if (t.action === 'bet' || t.action === 'raise') {
+        if (neverRaises) { label = 'strong'; strength = 0.85; }
+        else if (ratio > 1.0) { label = 'polarized'; strength = 0.7; }
+        else if (ratio >= 0.7) { label = 'strong'; strength = Math.max(strength, 0.7); }
+        else if (ratio <= 0.35) {
+          if (label !== 'strong' && label !== 'polarized') { label = 'capped'; strength = Math.min(strength, 0.4); }
+        } else if (label === 'unknown') label = 'wide';
+      } else if (t.action === 'check' && label === 'strong') {
+        label = 'capped'; strength = 0.45; // gave up the betting lead: weakness
+      }
+    });
+    var words = {
+      wide: 'playing a lot of hands',
+      capped: 'capped — mostly medium hands, no big premiums',
+      strong: 'showing real strength',
+      polarized: 'polarized — the nuts or nothing',
+      unknown: 'no read yet'
+    }[label];
+    return { label: label, strength: strength, actions: actions, words: words };
+  }
+
+  // The villain's last aggressive sizing this street. Preflop it's measured
+  // in big blinds (a 3x open is standard); postflop as a true fraction of
+  // the pot before the bet (reconstructed from the timeline).
+  function villainSizingTell(idx) {
+    var entries = [];
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t === 'action' && t.player === idx && t.street === table.street) entries.push(t);
+    });
+    var li = -1;
+    for (var i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].action === 'bet' || entries[i].action === 'raise') { li = i; break; }
+    }
+    if (li < 0) return null;
+    var last = entries[li];
+    var total = last.bet || last.amount || 0;
+    if (table.street === 'preflop') {
+      var bbMult = table.bb > 0 ? total / table.bb : 0;
+      return {
+        size: bbMult <= 2.5 ? 'small' : bbMult <= 3.5 ? 'medium' : bbMult <= 6 ? 'large' : 'overbet',
+        ratio: bbMult, unit: 'bb'
+      };
+    }
+    var betBefore = 0;
+    for (var j = li - 1; j >= 0; j--) {
+      if (typeof entries[j].bet === 'number') { betBefore = entries[j].bet; break; }
+    }
+    var added = total - betBefore, potBefore = (last.pot || 0) - added;
+    if (!(added > 0) || !(potBefore > 0)) return null;
+    var ratio = added / potBefore;
+    return {
+      size: ratio <= 0.4 ? 'small' : ratio <= 0.8 ? 'medium' : ratio <= 1.2 ? 'large' : 'overbet',
+      ratio: ratio, unit: 'pot'
+    };
+  }
+
+  // Blind-steal spot: folded to the hero preflop in a steal seat, blinds live.
+  function isStealSpot() {
+    if (table.street !== 'preflop') return null;
+    var posName = heroPositionName();
+    if (posName !== 'button' && posName !== 'cutoff' && posName !== 'small blind') return null;
+    var acted = false;
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.street !== 'preflop' || t.player === 0) return;
+      if (t.action === 'call' || t.action === 'raise' || t.action === 'bet') acted = true;
+    });
+    if (acted) return null;
+    var targets = [];
+    [table.sbIdx, table.bbIdx].forEach(function (i) {
+      var pl = table.players[i];
+      if (pl && !pl.isHero && !pl.folded && !pl.sittingOut) targets.push(pl);
+    });
+    if (!targets.length) return null;
+    return { canSteal: true, pos: posName, targets: targets };
+  }
+
+  // Made-hand class for SPR commitment decisions, from the evaluator directly:
+  // nut (straight+) | overpair (trips+, two pair, or a pair above the board) |
+  // toppair | secondpair | draw-strong (combo) | draw | draw-weak | air.
+  function handClass(hole, community) {
+    var d = detectDraws(hole, community);
+    if (d.flushDraw && d.oesd) return 'draw-strong';
+    var ev = (hole.length + community.length >= 5) ? evaluate7(hole.concat(community)) : null;
+    if (ev) {
+      if (ev.cat >= 4) return 'nut';
+      if (ev.cat === 3 || ev.cat === 2) return 'overpair';
+      if (ev.cat === 1) {
+        var pr = ev.kickers[0];
+        var bmax = Math.max.apply(null, community.map(function (c) { return c.r; }));
+        return pr > bmax ? 'overpair' : (pr === bmax ? 'toppair' : 'secondpair');
+      }
+    }
+    if (d.flushDraw || d.oesd) return 'draw';
+    if (d.gutshot) return 'draw-weak';
+    return 'air';
+  }
+
+  // Plain-language name for a hand class (SPR/commitment messages).
+  function handClassName(hc) {
+    return { nut: 'the nuts', overpair: 'an overpair', toppair: 'top pair',
+      secondpair: 'second pair', 'draw-strong': 'a monster draw', draw: 'a draw',
+      'draw-weak': 'a weak draw', air: 'nothing' }[hc] || 'your hand';
+  }
+
+  // Bet AND a call ahead of the hero this street — a reliable strength tell.
+  function betCallAhead() {
+    var sawAggro = false, sawCall = false;
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.street !== table.street || t.player === 0) return;
+      if (t.action === 'bet' || t.action === 'raise') sawAggro = true;
+      else if (t.action === 'call' && sawAggro) sawCall = true;
+    });
+    return sawAggro && sawCall;
+  }
+
+  // Limpers ahead of the hero preflop (calls, no raises yet).
+  function countLimpers() {
+    var n = 0;
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t === 'action' && t.street === 'preflop' && t.action === 'call') n++;
+    });
+    return n;
+  }
+
+  // True if the hero's flush draw is to the nuts (holds the ace of the suit).
+  function isNutFlushDraw(hole, community) {
+    var suits = [0, 0, 0, 0];
+    hole.concat(community).forEach(function (c) { suits[c.s]++; });
+    var ds = suits.indexOf(4);
+    if (ds < 0) return false;
+    return hole.some(function (c) { return c.s === ds && c.r === 14; });
+  }
+
+  function isSmallPair(hole) {
+    return hole.length === 2 && hole[0].r === hole[1].r && hole[0].r <= 9;
+  }
+
+  // Board texture for value-bet sizing: wet boards need bigger, protective bets.
+  function boardTexture(community) {
+    if (community.length < 3) return 'dry';
+    var suits = [0, 0, 0, 0];
+    community.forEach(function (c) { suits[c.s]++; });
+    if (suits.some(function (n) { return n >= 3; })) return 'wet';
+    var rs = community.map(function (c) { return c.r; }).sort(function (a, b) { return a - b; });
+    return (rs[rs.length - 1] - rs[0] <= 4) ? 'wet' : 'dry';
+  }
+
+  // Equity vs the villain's likely range (not random hands) — preflop only,
+  // since estimateEquityVsRange deals fresh boards. maxTier bounds the range.
+  function rangeAwareEquityPreflop(hole, maxTier) {
+    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 150);
+  }
+
+  // One verdict per hero decision: machine-readable advice (for post-hand
+  // feedback) plus the HTML tip. advice in fold|check|call|bet|raise|null.
+  function mkVerdict(advice, strength, msg, lesson) {
+    return { advice: advice, strength: strength, msg: msg, lesson: lesson || '', html: null };
+  }
+
+  // Entry point: builds the verdict, then composes the full tip HTML in the
+  // long-standing shape (message + villain read + position + opponent reads).
+  function coachVerdict() {
     var hero = table.players[0];
     var legal = table.legalActions(0);
-    var toCall = legal.toCall;
-    var pot = table.potTotal();
-    var esc = UI.escapeHtml, fmt = UI.fmt;
     try {
       var V = pickVillain();
-      var tail = villainLine(V);
+      var vIdx = V ? table.players.indexOf(V) : -1;
+      var esc = UI.escapeHtml;
       var vName = V ? esc(V.name) : 'they';
       var posName = heroPositionName();
-      var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
-      var opps = opponentReads();
       var nm = hero.hole.slice().sort(function (a, b) { return b.r - a.r; })
         .map(function (c) { return rankName(c.r); }).join(' ');
-      // ---------------- preflop ----------------
-      if (table.street === 'preflop') {
-        var tier = holeTier(hero.hole);
-        if (toCall === 0) {
-          var msg;
-          if (tier <= 2) msg = '<b>' + esc(nm) + '</b> — premium. <b>Open-raise</b> 2.5–3× the blind. TAG poker is raise-or-fold; never limp.';
-          else if (tier <= 4) msg = '<b>' + esc(nm) + '</b> — playable. Open it in late position, fold it early. If you play it, raise.';
-          else msg = '<b>' + esc(nm) + '</b> — fold. TAG means folding ~80% of hands preflop; discipline is the edge.';
-          if (tier <= 4 && V && villainFoldy(V && V.archetype) > 0.6)
-            msg += ' Good steal spot — ' + vName + ' folds too much.';
-          return msg + tail + posNote + opps;
+      var ctx = {
+        hero: hero, legal: legal, toCall: legal.toCall, pot: table.potTotal(),
+        V: V, vIdx: vIdx, vName: vName, posName: posName,
+        tier: holeTier(hero.hole),
+        nmHtml: '<b>' + esc(nm) + '</b>', esc: esc, fmt: UI.fmt
+      };
+      var v = (table.street === 'preflop') ? coachPreflop(ctx) : coachPostflop(ctx);
+      var tail = villainLine(V);
+      var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
+      v.html = v.msg ? v.msg + tail + posNote + opponentReads() : null;
+      return v;
+    } catch (err) { return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null }; }
+  }
+
+  function coachTip() {
+    return coachVerdict().html;
+  }
+  // Test/eval hooks (not used by the UI).
+  try {
+    window.coachVerdict = coachVerdict;
+    window.coachState = function () {
+      var l = table.legalActions(0);
+      return { toCall: l.toCall, canBet: !!l.canBet, canRaise: !!l.canRaise,
+               street: table.street, pot: table.potTotal(),
+               stack: table.players[0].stack };
+    };
+    window.__coachTestHooks = {
+      recap: coachRecap,
+      setDecisions: function (ds) { coachDecisions = ds; },
+      adviceFollowed: adviceFollowed,
+      estimateVillainRange: estimateVillainRange,
+      preflopSpot: preflopSpot
+    };
+  } catch (e) {}
+
+  // Did the hero's action match the coach's advice? bet/raise are interchangeable.
+  function adviceFollowed(advice, action) {
+    switch (advice) {
+      case 'fold': return action === 'fold';
+      case 'check': return action === 'check';
+      case 'call': return action === 'call';
+      case 'bet': return action === 'bet' || action === 'raise';
+      case 'raise': return action === 'raise' || action === 'bet';
+      default: return true;
+    }
+  }
+
+  // Post-hand recap: at most one line of praise + one leak to fix, drawn
+  // from this hand's strong (non-marginal) decisions vs the coach's advice.
+  // Shown in the coach tab after the hand; plain-text lines are also stored
+  // on the hand record for history.
+  function coachRecap(handNo) {
+    var good = null, bad = null;
+    coachDecisions.forEach(function (d) {
+      if (d.strength !== 'strong' || !d.lesson) return;
+      if (d.followed && !good) good = d;
+      else if (!d.followed && !bad) bad = d;
+    });
+    if (!good && !bad) return null;
+    var lines = [];
+    if (good) lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
+    if (bad) lines.push({ kind: 'bad', text: 'Leak to fix: coach said ' + bad.advice +
+      ', you went ' + bad.action + '. ' + bad.lesson });
+    var h = '<div class="coach-recap-title">Hand #' + UI.escapeHtml(String(handNo)) + ' recap</div>';
+    lines.forEach(function (l) {
+      h += '<div class="coach-recap-' + l.kind + '">' +
+        (l.kind === 'good' ? '✅ ' : '📌 ') + UI.escapeHtml(l.text) + '</div>';
+    });
+    return { html: h, lines: lines.map(function (l) { return (l.kind === 'good' ? '+ ' : '- ') + l.text; }) };
+  }
+
+  function coachPreflop(c) {
+    var esc = c.esc, fmt = c.fmt;
+    var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
+    var V = c.V, vIdx = c.vIdx, vName = c.vName, tier = c.tier;
+    var spot = preflopSpot();
+    var inPos = positionScore(table, 0) > 0.6;
+
+    // ---- first to act (usually the big blind option): raise premiums,
+    // otherwise take the free card.
+    if (spot === 'open') {
+      if (tier <= 2)
+        return mkVerdict('raise', 'strong',
+          c.nmHtml + ' — a premium and no one raised. <b>Raise</b> 2.5–3× the blind and build a pot while you\'re ahead.',
+          'Raise premiums first-in: checking lets worse hands see free cards.');
+      return mkVerdict('check', 'marginal',
+        '<b>Check</b> and take the free flop' +
+        (tier <= 4 ? ' — ' + c.nmHtml + ' is playable but not worth inflating the pot' : '') + '.',
+        '');
+    }
+
+    // ---- folded to the hero in a steal seat
+    var steal = isStealSpot();
+    if (steal) {
+      var folders = steal.targets.filter(function (p) { return villainFoldy(p.archetype) > 0.5; });
+      if (tier <= 2)
+        return mkVerdict('raise', 'strong',
+          c.nmHtml + ' on the ' + steal.pos + ' — <b>raise 2.5×</b> for value. Best hand, best seat.',
+          'Late position plus a premium: raise every time.');
+      if (tier <= 4)
+        return mkVerdict('raise', 'strong',
+          'Folded to you on the ' + steal.pos + '. <b>Raise 2.5×</b> — a clean steal spot' +
+          (folders.length ? '; ' + esc(folders[0].name) + ' folds too much' : '') + '.',
+          'Steal blinds when it folds to you late: uncontested pots are pure profit.');
+      if (tier === 5 && folders.length === steal.targets.length)
+        return mkVerdict('raise', 'marginal',
+          'Both blinds fold too much — <b>raise 2.5×</b> as a steal, but give it up if they fight back.',
+          'Steals work because folds are instant profit — don\'t marry the hand.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — ' + c.nmHtml + ' isn\'t worth playing, even on the ' + steal.pos + '. Discipline is the edge.',
+        'Folding trash on the button feels wrong, but bad hands lose money from every seat.');
+    }
+
+    // ---- facing a 3-bet: 4-bet premiums, fold the marginal middle
+    if (spot === 'facing-3bet') {
+      var effBB3 = effStackBB(vIdx);
+      if (tier === 1) {
+        if (legal.canRaise) {
+          var fourTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 2.3)));
+          return mkVerdict('raise', 'strong',
+            'That\'s a <b>3-bet</b> in front of you. With ' + c.nmHtml + ', <b>4-bet</b> to ~<b>' + fmt(fourTo) + '</b> — build the pot while you\'re likely ahead.',
+            'Facing a 3-bet with a premium: 4-bet for value, about 2.3× their raise.');
         }
-        var open = table.currentBet;
-        var need = toCall / (pot + toCall);
-        var eq = estimateEquity(hero.hole, [], Math.min(3, table.livePlayers().length - 1), 150);
-        if (tier <= 2 && legal.canRaise) {
-          // Value 3-bet: 3x the open in position is the standard TAG sizing.
-          var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * 3)));
-          return '<b>3-bet</b> ' + esc(nm) + ' to ~<b>' + fmt(three) + '</b> (3× their open). Best hand most of the time, fold equity the rest — the 3-bet is the TAG money-maker.' + tail + posNote + opps;
-        }
-        var hasAce = hero.hole.some(function (c) { return c.r === 14; });
-        if (tier >= 4 && hasAce && legal.canRaise && V && villainFoldy(V && V.archetype) > 0.45) {
-          return 'Mix in a <b>bluff 3-bet</b> sometimes: your Ace blocks their strongest continuing hands, and ' + vName + ' folds to pressure. Balanced ranges get paid.' + tail + posNote + opps;
-        }
-        var suited = isSuited(hero.hole);
-        var multiway = isMultiway();
-        // Suited hands play better multi-way (flush potential); offsuit
-        // marginal hands get worse. Adjust the call threshold naturally.
-        var threshold = need + (suited ? 0.0 : 0.02) + (multiway ? 0.04 : 0);
-        var handDesc = esc(nm) + (suited ? ' suited' : '');
-        var verdict;
-        if (eq > threshold + 0.03) {
-          verdict = 'The math says call' + (suited ? ' — being suited gives you extra ways to win' : '') + '.';
-        } else if (eq > threshold - 0.05) {
-          verdict = multiway ? 'Too thin multi-way — fold and wait for a better spot.'
-            : 'Close — prefer it in position.';
-        } else {
-          verdict = 'Math says fold' + (multiway ? ' — too many players to overcome' : '') + '.';
-        }
-        return 'Call <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need <b>' +
-          pct(need) + '</b> equity. ' + handDesc + ' has ~<b>' + pct(eq) + '</b>. ' +
-          verdict + tail + posNote + opps;
+        return mkVerdict('call', 'strong',
+          'They shoved. With ' + c.nmHtml + ', <b>call</b> — you\'re ahead of a 3-bet shoving range far too often to fold a premium.',
+          'Never fold QQ+ to a single shove: their range holds plenty of worse hands.');
       }
-      // ---------------- postflop ----------------
-      var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
-      var str = madeStrength(hero.hole, table.community);
-      var d = detectDraws(hero.hole, table.community);
-      var pos = positionScore(table, 0);
-      var foldy = villainFoldy(V && V.archetype);
-      if (toCall === 0) {
-        var canBet = legal.canBet || legal.canRaise;
+      if (tier === 2)
+        return mkVerdict(inPos && effBB3 >= 40 ? 'call' : 'fold', inPos && effBB3 >= 40 ? 'marginal' : 'strong',
+          inPos && effBB3 >= 40
+            ? '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re deep. Fold to more heat.'
+            : '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a 3-bet range' + (inPos ? '' : ' out of position') + '.',
+          'Medium pairs and broadways shrink fast against 3-bets — call only deep and in position.');
+      if (isSmallPair(hero.hole)) {
+        if (toCall * 15 <= effStackChips(vIdx))
+          return mkVerdict('call', 'marginal',
+            '<b>Call</b> to set-mine — stacks are deep enough that one set pays for all the misses.',
+            'You can call 3-bets with small pairs only when ~15× the call sits behind.');
+        return mkVerdict('fold', 'strong',
+          '<b>Fold</b> — too shallow to set-mine a 3-bet. The implied odds aren\'t there.',
+          'Folding small pairs to 3-bets when shallow is disciplined, not weak.');
+      }
+      if (tier <= 4 && inPos && effBB3 >= 30)
+        return mkVerdict('call', 'marginal',
+          '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.',
+          'Calling 3-bets in position with playable hands is fine when deep.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a 3-bet range. TAG poker folds these.',
+        'Fold hands like AJo and KQo to 3-bets: when called, you\'re usually dominated.');
+    }
+
+    // ---- facing a 4-bet or worse: only the nuts continue
+    if (spot === 'facing-4bet+') {
+      if (tier === 1)
+        return mkVerdict(legal.canRaise ? 'raise' : 'call', 'strong',
+          legal.canRaise
+            ? 'They 4-bet. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> or call it off.'
+            : 'They shoved. With ' + c.nmHtml + ', <b>call</b> — folding a premium to one shove burns money.',
+          'Against a 4-bet only the very best hands continue — everything else folds.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — 4-bets at these stakes are almost always the nuts.',
+        'Respect 4-bets: players don\'t bluff them often enough to call light.');
+    }
+
+    // ---- limpers ahead, no raise yet
+    if (countLimpers() > 0) {
+      if (tier <= 2)
+        return mkVerdict('raise', 'strong',
+          c.nmHtml + ' — limpers are weak. <b>Raise 4×</b> to isolate one of them and play for stacks.',
+          'Isolate limpers with premiums: raise big, play heads-up, stack them.');
+      if (tier <= 3 && inPos)
+        return mkVerdict('raise', 'marginal',
+          '<b>Raise 4×</b> to isolate — limpers rarely have much, and you have position.',
+          'Attack limpers from late position; they fold or play bloated pots out of position.');
+      if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
+        return mkVerdict('call', 'marginal',
+          '<b>Call</b> behind — speculative hand, deep stacks, great implied odds if you crack a limper.',
+          'Calling behind with speculative hands in position is fine when stacks are deep.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — don\'t limp behind with ' + c.nmHtml + '. Wait for a real hand.',
+        'Limping behind with weak hands is a slow leak — fold and stay disciplined.');
+    }
+
+    // ---- facing a single open: 3-bet premiums, otherwise the call/fold math
+    var open = table.currentBet;
+    var need = toCall / (pot + toCall);
+    var multiway = isMultiway();
+    var suited = isSuited(hero.hole);
+
+    // Value 3-bet with position-aware sizing: 3x in position, 4x out of position.
+    if (tier <= 2 && legal.canRaise) {
+      var mult = inPos ? 3 : 4;
+      var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * mult)));
+      return mkVerdict('raise', 'strong',
+        '<b>3-bet</b> ' + c.nmHtml + ' to ~<b>' + fmt(three) + '</b> (' + mult + '× their open' +
+        (inPos ? ') — you have position' : ') — out of position, size up to charge them') +
+        '. You\'re usually ahead, so build the pot now.',
+        '3-bet premiums for value: 3× in position, 4× out of position.');
+    }
+
+    // Small pairs: set-mine only with ~15:1 implied odds behind.
+    if (isSmallPair(hero.hole)) {
+      if (toCall * 15 <= effStackChips(vIdx) && effStackBB(vIdx) >= 12)
+        return mkVerdict('call', 'marginal',
+          'Call <b>' + fmt(toCall) + '</b> to set-mine — ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
+          'Set-mining needs about 15× the call behind: you miss the set most flops.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> the small pair — only ' + Math.round(effStackBB(vIdx)) + 'bb deep, not enough behind to get paid on the rare set.',
+        'Don\'t set-mine short-stacked: the math only works with deep money behind.');
+    }
+
+    // Bluff 3-bet: suited-ace blocker vs a folder, heads-up only.
+    var hasAce = hero.hole.some(function (x) { return x.r === 14; });
+    if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
+        villainFoldy(V.archetype) > 0.5 && !multiway)
+      return mkVerdict('raise', 'marginal',
+        'Mix in a <b>bluff 3-bet</b> sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
+        'Bluff 3-bets need a blocker plus a folder — never into multiple players.');
+
+    // Equity vs the opener's actual range (not random hands), then adjust
+    // for implied odds, reverse implied odds, and player type.
+    var vOpenTier = (V && V.archetype && V.archetype.openTier) || 3;
+    var eq = rangeAwareEquityPreflop(hero.hole, vOpenTier);
+    var effBB = effStackBB(vIdx);
+    var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
+    var credit = impliedCredit({
+      draw: suited && tier <= 4, smallPair: false, effStackBB: effBB,
+      villainStubborn: stubborn, inPosition: inPos
+    });
+    var tight = V ? villainTighty(V.archetype) : 0.4;
+    var debit = (tier === 3 && !suited && tight > 0.6) ? 0.05 : 0; // dominated broadways
+    var adjEq = eq + credit - debit;
+    var threshold = need + (multiway ? 0.04 : 0) -
+      ((V && villainBluffy(V.archetype) > 0.55) ? 0.05 : 0);
+
+    var handDesc = c.nmHtml + (suited ? ' suited' : '');
+    var mathLine = 'Call <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need <b>' +
+      pct(need) + '</b> equity' + (credit > 0 ? ' (plus implied odds)' : '') + '. ' +
+      handDesc + ' has ~<b>' + pct(adjEq) + '</b> vs ' + vName + '\'s range. ';
+    if (adjEq > threshold + 0.03)
+      return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
+        'Call when your equity beats the price — the single most important poker math skill.');
+    if (adjEq > threshold - 0.05)
+      return mkVerdict(inPos ? 'call' : 'fold', 'marginal',
+        mathLine + (inPos ? 'Close — with position, lean <b>call</b>.' : 'Close — out of position, lean <b>fold</b>.'),
+        'Marginal spots are position-dependent: position makes close calls profitable.');
+    var rioNote = debit > 0 ? ' Against a tight range your broadway is often dominated — that\'s reverse implied odds.' : '';
+    return mkVerdict('fold', 'strong', mathLine + 'Math says <b>fold</b>.' + rioNote,
+      'Folding when the price is wrong saves more money than hero-calling ever wins.');
+  }
+
+  function coachPostflop(c) {
+    var esc = c.esc, fmt = c.fmt;
+    var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
+    var V = c.V, vIdx = c.vIdx, vName = c.vName;
+    var hc = handClass(hero.hole, table.community);
+    var d = detectDraws(hero.hole, table.community);
+    var pos = positionScore(table, 0);
+    var inPos = pos > 0.6;
+    var multiway = isMultiway();
+    var effChips = effStackChips(vIdx);
+    var sprV = spr(effChips, pot);
+    var commit = sprVerdict(sprV, hc);
+    var foldy = V ? villainFoldy(V.archetype) : 0.5;
+    var canBet = legal.canBet || legal.canRaise;
+    var range = V ? estimateVillainRange(vIdx)
+      : { label: 'unknown', strength: 0.5, words: 'no read yet', actions: 0 };
+    var rangeNote = (V && range.label !== 'unknown')
+      ? ' ' + vName + '\'s range looks ' + range.words + '.' : '';
+    var anyDraw = (hc === 'draw-strong' || hc === 'draw' || hc === 'draw-weak');
+
+    // ---------------- no bet to face ----------------
+    if (toCall === 0) {
+      var vManiac = V && villainBluffy(V.archetype) > 0.6;
+      // Strong made hands: bet for value — but trap maniacs.
+      if ((hc === 'nut' || hc === 'overpair' || hc === 'toppair') && canBet) {
+        if (vManiac)
+          return mkVerdict('check', 'marginal',
+            '<b>Check</b> your monster — ' + vName + ' bluffs constantly. Let them bet into you, then raise.' + rangeNote,
+            'Against maniacs, trap strong hands: they build the pot for you.');
+        var tex = boardTexture(table.community);
+        var frac = (tex === 'wet' || foldy < 0.25) ? 0.75 : 0.5;
+        var betSize = Math.max(1, Math.round(pot * frac));
+        var sprLine = (commit === 'commit')
+          ? ' The pot\'s already big next to the stacks (SPR ~' + sprV.toFixed(1) + ') — you\'re committed, so get the money in.'
+          : '';
+        return mkVerdict('bet', 'strong',
+          '<b>Bet for value</b> ~' + (frac === 0.75 ? '¾' : '½') + ' pot (' + fmt(betSize) + ')' +
+          (tex === 'wet' ? ' — draws everywhere, charge them' : '') + '.' + sprLine + rangeNote,
+          'Bet strong hands for value; size up on draw-heavy boards to charge draws.');
+      }
+      // Draws: semi-bluff the strong ones, check weak ones and vs stations.
+      if (anyDraw && canBet) {
+        if (foldy < 0.25)
+          return mkVerdict('check', 'strong',
+            'Nice draw, but ' + vName + ' never folds. <b>Check</b> and take the free card.' + rangeNote,
+            'Never semi-bluff a calling station — with no fold equity, take the free card.');
+        if (hc === 'draw-weak')
+          return mkVerdict('check', 'marginal',
+            'Just a gutshot — <b>check</b>. One way to win isn\'t enough to bet on.',
+            '');
         var halfBet = Math.max(1, Math.round(pot / 2));
-        var be = pct(bluffBE(halfBet, pot));
-        if (str >= 0.60 || eq2 >= 0.62) {
-          // Value: size up vs stations who never fold.
-          var sizing = foldy < 0.25 ? '¾-pot' : '½–¾ pot';
-          return '<b>Bet for value</b> (~' + sizing + ', ' + fmt(halfBet) + '). Ask: what worse hands call? Never slow-play — build the pot while ahead.' + tail + posNote + opps;
-        }
-        if ((d.flushDraw || d.oesd) && canBet) {
-          if (foldy < 0.25)
-            return 'Strong draw (~' + pct(eq2) + '), but ' + vName + ' never folds — <b>check</b> and take the free card.' + tail + posNote + opps;
-          return '<b>Semi-bluff</b> the draw (~' + pct(eq2) + '): bet ~½ pot (' + fmt(halfBet) +
-            '). Two ways to win — folds now, or you hit. Needs only <b>' + be + '</b> folds on fold equity alone.' + tail + posNote + opps;
-        }
-        if (canBet) {
-          var scare = scareCardRank();
-          var spot = (pos > 0.6 ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) - (foldy < 0.3 ? 2 : 0);
-          // Never suggest a pure bluff into a station: if they don't fold,
-          // the "Bluff" line would contradict the per-opponent "never bluff" tail.
-          // Multi-way: bluffs rarely get through multiple players.
-          // Weave this into the reasoning naturally.
-          var mw = isMultiway();
-          if (mw) spot -= 2;
-          if (spot >= 2 && foldy >= 0.4 && !mw) {
-            var why = [];
-            if (scare) why.push('the ' + esc(scare) + ' is a scare card');
-            if (pos > 0.6) why.push('you have position');
-            if (foldy > 0.55) why.push(vName + ' overfolds');
-            return '<b>Bluff</b> ~½ pot (' + fmt(halfBet) + ') — needs <b>' + be + '</b> folds (' + why.join(', ') +
-              '). Mix bluffs in, or your value bets never get paid.' + tail + posNote + opps;
-          }
-          if (mw) return '<b>Check</b> — too many players to bluff through. Wait for a real hand.' + tail + posNote + opps;
-          return '<b>Check</b> — no value, no fold equity. Save the bluff for a better spot.' + tail + posNote + opps;
-        }
-        return null;
+        return mkVerdict('bet', hc === 'draw-strong' ? 'strong' : 'marginal',
+          '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit. Needs only <b>' +
+          pct(bluffBE(halfBet, pot)) + '</b> folds to break even.' + rangeNote,
+          'Semi-bluff strong draws: fold equity plus real equity is a profitable combo.');
       }
-      var need2 = toCall / (pot + toCall);
-      if ((str >= 0.62 || eq2 >= 0.65) && legal.canRaise)
-        return '<b>Raise for value</b> (~3× their bet). Don\'t slow-play monsters — charge the draws and worse hands now.' + tail + posNote + opps;
-      if ((d.flushDraw || d.oesd) && legal.canRaise && foldy > 0.4)
-        return '<b>Semi-bluff raise</b> sometimes: fold equity plus ~' + pct(eq2) + ' to hit. Otherwise call ' +
-          fmt(toCall) + ' needing ' + pct(need2) + '.' + tail + posNote + opps;
-      var vAggro = V && villainBluffy(V && V.archetype) > 0.4;
-      var verdict = eq2 > need2 + 0.03 ? 'The math says call.'
-        : (vAggro && eq2 > need2 - 0.12) ? 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.'
-        : 'Math says fold.';
-      return 'Need <b>' + pct(need2) + '</b>, you have ~<b>' + pct(eq2) + '</b>. ' + verdict + tail + posNote + opps;
-    } catch (err) { return null; }
+      // Air: bluff only with a real story behind it.
+      if (canBet) {
+        var scare = scareCardRank();
+        var spot = (inPos ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) -
+          (foldy < 0.3 ? 2 : 0) - (multiway ? 2 : 0);
+        if (spot >= 2 && foldy >= 0.4 && !multiway) {
+          var why = [];
+          if (scare) why.push('the ' + esc(scare) + ' is a scare card');
+          if (inPos) why.push('you have position');
+          if (foldy > 0.55) why.push(vName + ' overfolds');
+          var b2 = Math.max(1, Math.round(pot / 2));
+          return mkVerdict('bet', 'marginal',
+            '<b>Bluff</b> ~½ pot (' + fmt(b2) + ') — needs <b>' + pct(bluffBE(b2, pot)) + '</b> folds (' + why.join(', ') +
+            ').' + rangeNote,
+            'Bluff with a story — position, a scare card, or a folder — never just because. Mix bluffs in, or your value bets never get paid.');
+        }
+        return mkVerdict('check', multiway ? 'strong' : 'marginal',
+          '<b>Check</b> — ' + (multiway ? 'too many players to bluff through.' : 'no value, no fold equity.') +
+          ' Save it for a better spot.' + rangeNote,
+          multiway ? 'Multiway pots kill bluffs: everyone has to fold, and someone usually won\'t.' : '');
+      }
+      return mkVerdict(null, 'marginal', '', '');
+    }
+
+    // ---------------- facing a bet ----------------
+    var need2 = toCall / (pot + toCall);
+    var tell = V ? villainSizingTell(vIdx) : null;
+
+    // Range-based threshold shifts: strong/tight ranges demand more equity,
+    // wide or bluffy ones demand less.
+    var tight = V ? villainTighty(V.archetype) : 0.4;
+    var bluffy = V ? villainBluffy(V.archetype) : 0.3;
+    var rangeAdjust = 0;
+    if (range.label === 'strong' && tight > 0.6) rangeAdjust += 0.08;
+    if (range.label === 'polarized') rangeAdjust += (tight > 0.6 ? 0.12 : -0.02);
+    if (range.label === 'wide' || bluffy > 0.55) rangeAdjust -= 0.06;
+    if (range.label === 'capped') rangeAdjust -= 0.03;
+    if (multiway && betCallAhead()) rangeAdjust += 0.05;
+
+    // Equity vs a strong/tight range runs lower than vs random hands.
+    var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
+    if (range.label === 'strong' || (range.label === 'polarized' && tight > 0.6)) eq2 *= 0.75;
+
+    var effBB = effStackBB(vIdx);
+    var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
+    var credit = impliedCredit({ draw: anyDraw, smallPair: false, effStackBB: effBB,
+      villainStubborn: stubborn, inPosition: inPos });
+    var debit = rioPenalty({ nutDraw: isNutFlushDraw(hero.hole, table.community) || !anyDraw,
+      villainTight: tight, multiway: multiway });
+    var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
+
+    // SPR commitment: big pot, small stacks, strong hand — no folding.
+    if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)
+      return mkVerdict('call', 'strong',
+        'SPR is only ~' + sprV.toFixed(1) + ' — the pot\'s huge next to what\'s left. With ' + handClassName(hc) +
+        ' you\'re <b>committed: call</b>.' + rangeNote,
+        'Low SPR means commitment: once the pot is big relative to stacks, strong hands don\'t fold.');
+
+    // Sizing tells: tiny bets invite raises, overbets from nits mean the nuts.
+    if (tell && tell.unit === 'pot') {
+      if (tell.size === 'small' && legal.canRaise && !multiway &&
+          (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || anyDraw))
+        return mkVerdict('raise', 'marginal',
+          'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
+          'Small bets often mean weakness: attack them.');
+      if (tell.size === 'overbet' && tight > 0.6 && hc !== 'nut')
+        return mkVerdict('fold', 'strong',
+          '<b>Fold</b> — an overbet from a tight player is almost always the nuts. Don\'t pay it off.' + rangeNote,
+          'Respect overbets from tight players: it\'s the nuts far more often than a bluff.');
+    }
+
+    // Raise monsters for value; semi-bluff-raise strong draws.
+    if (hc === 'nut' && legal.canRaise)
+      return mkVerdict('raise', 'strong',
+        '<b>Raise for value</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.' + rangeNote,
+        'With the near-nuts, raise: every street you don\'t build the pot costs money.');
+    if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway)
+      return mkVerdict('raise', 'marginal',
+        '<b>Semi-bluff raise</b> sometimes: fold equity plus ~' + pct(adjEq) + ' to hit. Otherwise call ' +
+        fmt(toCall) + ', needing ' + pct(need2) + '.' + rangeNote,
+        '');
+
+    // The call/fold math, adjusted for range, implied odds, and player type.
+    // (The range read is already named in the parenthetical, so rangeNote is
+    // skipped here to avoid repeating it.)
+    var threshold = need2 + rangeAdjust;
+    var mathLine = 'You need <b>' + pct(need2) + '</b>' +
+      (rangeAdjust > 0.005 ? ' (more — ' + vName + '\'s range is strong)'
+        : rangeAdjust < -0.005 ? ' (less — ' + vName + ' is wide or bluffy)' : '') +
+      ', you have ~<b>' + pct(adjEq) + '</b>' +
+      (credit > 0 ? ' (counting implied odds)' : '') +
+      (debit > 0 ? ' (docked for reverse implied odds)' : '') + '. ';
+    if (adjEq > threshold + 0.03)
+      return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
+        'Calling when your equity beats the price is how winning poker works.');
+    if ((bluffy > 0.5 || range.label === 'wide') && adjEq > threshold - 0.10)
+      return mkVerdict('call', 'marginal',
+        mathLine + 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.',
+        'Against heavy bluffers, call lighter: their range holds more air than usual.');
+    if (debit > 0 && adjEq <= threshold)
+      return mkVerdict('fold', 'strong',
+        mathLine + 'Math says <b>fold</b> — and even hitting might not win (reverse implied odds).',
+        'Non-nut draws against tight ranges are trap hands: hitting can still lose.');
+    return mkVerdict('fold', adjEq > threshold - 0.06 ? 'marginal' : 'strong',
+      mathLine + 'Math says <b>fold</b>.',
+      'Folding when the price is wrong is a skill — most money is saved, not won.');
   }
 
   // ================= game setup =================

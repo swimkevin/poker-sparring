@@ -203,6 +203,54 @@ function tierName(t) { return TIER_NAMES[t] || 'Unknown'; }
 // fold equity alone. Half-pot = 33%, third-pot = 25%, full pot = 50%.
 function bluffBE(size, pot) { return size / (size + pot); }
 
+// Effective stack-to-pot ratio. Answers "how strong a hand do I need to
+// stack off?" Small SPR = committed with one pair; big SPR = need a monster.
+function spr(effStack, pot) {
+  if (!(pot > 0)) return 99;
+  return Math.max(0, effStack / pot);
+}
+
+// Commitment verdict from SPR + hand class.
+// handClass: 'nut'|'overpair'|'toppair'|'secondpair'|'draw-strong'|'draw'|'draw-weak'|'air'
+function sprVerdict(s, handClass) {
+  switch (handClass) {
+    case 'nut': return s <= 8 ? 'commit' : 'decide';
+    case 'overpair': return s <= 3 ? 'commit' : (s <= 8 ? 'decide' : 'pot-control');
+    case 'toppair': return s <= 2 ? 'commit' : (s <= 6 ? 'decide' : 'pot-control');
+    case 'secondpair': return s <= 1.5 ? 'decide' : 'pot-control';
+    case 'draw-strong': return s <= 3 ? 'commit' : 'implied';
+    case 'draw': return s >= 6 ? 'implied' : 'decide';
+    case 'draw-weak': return s >= 8 ? 'implied' : 'pot-control';
+    default: return 'decide';
+  }
+}
+
+// Implied-odds credit: extra equity (0..0.15) added to a draw's or small
+// pair's raw equity when stacks are deep and the villain pays off — the
+// extra you expect to win on later streets when you hit.
+function impliedCredit(o) {
+  o = o || {};
+  if (!(o.effStackBB >= 12)) return 0; // short stacks: nothing left to win
+  if (!(o.draw || o.smallPair)) return 0;
+  var c = 0.05;
+  if (o.effStackBB >= 30) c += 0.03;
+  if (o.villainStubborn > 0.65) c += 0.04; // stations pay off draws
+  if (o.inPosition) c += 0.02;             // easier to extract in position
+  if (o.smallPair) c += 0.01;
+  return Math.min(0.15, c);
+}
+
+// Reverse-implied-odds penalty: equity debit (0..0.10) for non-nut draws
+// that can hit and still lose — worst against tight ranges or multiway.
+function rioPenalty(o) {
+  o = o || {};
+  if (o.nutDraw) return 0;
+  var p = 0;
+  if (o.villainTight > 0.6) p += 0.06;
+  if (o.multiway) p += 0.04;
+  return Math.min(0.10, p);
+}
+
 // How often a villain folds to pressure, from their stubbornness slider.
 function villainFoldy(archetype) {
   var a = archetype || {};
@@ -242,6 +290,7 @@ if (typeof module !== 'undefined' && module.exports) {
     madeStrength: madeStrength,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,
-    exploitLine: exploitLine, EXPLOIT_LINES: EXPLOIT_LINES
+    exploitLine: exploitLine, EXPLOIT_LINES: EXPLOIT_LINES,
+    spr: spr, sprVerdict: sprVerdict, impliedCredit: impliedCredit, rioPenalty: rioPenalty
   };
 }

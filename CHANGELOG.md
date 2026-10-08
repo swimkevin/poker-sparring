@@ -3,7 +3,7 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
-## [1.8.40] — 2026-10-08
+## [1.8.41] — 2026-10-08
 
 ### Changed — coach upgrade (poker theory deep dive)
 - New concepts: SPR + commitment guidance ("SPR ~2, you're committed with top

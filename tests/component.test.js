@@ -565,6 +565,15 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   d.getElementById('btn-next-hand').click();
   ok(nextFired, 'Next button fires onNext');
   ok(!d.getElementById('handend-row'), 'controls removed after Next');
+  // Win splash (v1.8.40): ephemeral, non-blocking, nothing to dismiss.
+  UI.winnerBanner('<div class="wtitle">🏆 You win 100!</div><div class="wsub">Main pot</div>');
+  ok(wb.classList.contains('win-splash'), 'result renders as a win splash');
+  ok(wb.textContent.indexOf('You win 100') !== -1, 'splash shows the result title');
+  ok(!wb.querySelector('.wclose'), 'splash has no close button');
+  ok(!wb.querySelector('.wchevron'), 'splash has no expand chevron');
+  ok(wb.textContent.indexOf('Main pot') === -1, 'splash keeps only the one-line title (details stay in the log)');
+  UI.winnerBanner(null);
+  ok(wb.hidden === true && !wb.classList.contains('win-splash'), 'splash clears on winnerBanner(null)');
   UI.hideHandEndControls();
   d.body.removeChild(wb);
 })();
