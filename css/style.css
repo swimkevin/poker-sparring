@@ -1130,3 +1130,22 @@ label { font-weight: 600; }
   #screen-setup .setup-wrap .subtitle { display: none; }
   #screen-setup .setup-wrap { padding-top: 1rem; }
 }
+
+/* Muse-style compact controls — buttons match text size, more table room */
+@media (max-width: 900px) {
+  #screen-table .hero-bar .ctl, #screen-online .hero-bar .ctl {
+    padding: 0.45rem 0.5rem; font-size: 0.85rem; border-radius: 10px;
+    min-height: 0; line-height: 1.3;
+  }
+  #screen-table .hero-bar, #screen-online .hero-bar {
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.35rem;
+  }
+  #screen-table .hero-cards .card, #screen-online .hero-cards .card { width: 34px; height: 48px; }
+  #screen-table .hero-bar .controls, #screen-online .hero-bar .controls { gap: 0.35rem; }
+  /* Tighter tab bar */
+  .mobile-tabs { padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px)); }
+  .mtab { padding: 0.3rem 0; gap: 1px; }
+  .mtab-icon { font-size: 1.15rem; }
+  .mtab-label { font-size: 0.6rem; }
+}
