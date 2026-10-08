@@ -272,10 +272,11 @@ var UI = (function () {
     // Hero seat (i=0) at bottom-center; others on an ellipse in action order.
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
     var rx = narrow ? 30 : 42;
-    var ry = narrow ? 32 : 32;
+    var ry = narrow ? 24 : 32;
+    var cy = narrow ? 42 : 50;
     if (i === 0) return { x: 50, y: narrow ? 58 : 82 };
     var theta = (90 + i * (360 / SEAT_COUNT)) * Math.PI / 180;
-    return { x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
+    return { x: 50 + rx * Math.cos(theta), y: cy + ry * Math.sin(theta) };
   }
 
   function buildSeats() {

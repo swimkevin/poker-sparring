@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.21';
+  var APP_VERSION = '1.8.22';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -80,7 +80,7 @@
   // ---------- setup state ----------
   var mode = 'cash';
   // Opponent selection: a Set of bot ids, the single source of truth.
-  // Invariants: 1 <= size <= maxOpp() (1 for heads-up, 5 otherwise).
+  // Invariants: 1 <= size <= maxOpp() (1 for heads-up, 7 otherwise).
   // The stepper, mode cards, and roster cards all mutate this set; the count
   // display derives from it, so the number and the highlighted cards can
   // never disagree. Persisted across reloads (stale ids are dropped).
@@ -99,7 +99,7 @@
   }
   var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
   var preHuSelection = null; // full table remembered across a heads-up detour
-  function maxOpp() { return mode === 'hu' ? 1 : 5; }
+  function maxOpp() { return mode === 'hu' ? 1 : 7; }
   function rosterOrderIds() { return allBots().map(function (b) { return b.id; }); }
   // Transient hint under the bot roster ("Only 1 opponent for heads-up", …).
   var rosterHintTimer = null;

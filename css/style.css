@@ -1523,3 +1523,13 @@ label { font-weight: 600; }
   /* Empty seats: dimmed dashed placeholders (pairs with .seat.empty base). */
   #screen-table .seat.empty .pname { color: var(--muted); font-style: italic; }
 }
+
+/* Compact turn status on mobile — subtle, doesn't push cards */
+@media (max-width: 900px) {
+  .turn-status {
+    font-size: 0.7rem;
+    min-height: 1em;
+    margin-top: 0.15rem;
+    opacity: 0.8;
+  }
+}
