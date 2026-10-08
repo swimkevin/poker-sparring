@@ -274,15 +274,18 @@ var UI = (function () {
     if (narrow) {
       // Explicit mobile positions: evenly spread, no overlap.
       // Seat boxes are ~56px wide; positions keep 15%+ horizontal separation.
+      // The hero bar is position:fixed and covers the bottom ~30% of the
+      // felt, so the ring lives in the visible upper region (v1.8.38):
+      // pot/board sit in the visual middle, hero seat clears the bar.
       var mobilePos = [
-        { x: 50, y: 62 },  // 0: hero (bottom-center)
-        { x: 22, y: 52 },  // 1: lower-left
-        { x: 12, y: 32 },  // 2: mid-left
-        { x: 28, y: 18 },  // 3: upper-left
+        { x: 50, y: 54 },  // 0: hero (bottom-center, clear of the bar)
+        { x: 22, y: 45 },  // 1: lower-left
+        { x: 12, y: 29 },  // 2: mid-left
+        { x: 28, y: 16 },  // 3: upper-left
         { x: 50, y: 14 },  // 4: top-center
-        { x: 72, y: 18 },  // 5: upper-right
-        { x: 88, y: 32 },  // 6: mid-right
-        { x: 78, y: 52 },  // 7: lower-right
+        { x: 72, y: 16 },  // 5: upper-right
+        { x: 88, y: 29 },  // 6: mid-right
+        { x: 78, y: 45 },  // 7: lower-right
       ];
       return mobilePos[i] || { x: 50, y: 50 };
     }
