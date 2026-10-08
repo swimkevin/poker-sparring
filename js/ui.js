@@ -276,13 +276,12 @@ var UI = (function () {
   }
 
   function buildSeats(n) {
-    // Always build 8 seats PokerNow-style — empty seats show as vacant so
-    // late joiners can see where they'd sit. Position on a fixed 8-ellipse.
+    // Simple design: only show occupied seats (not 8 always).
+    // Cleaner on phones, easier to read cards.
     var box = $('seats');
     box.innerHTML = '';
-    var total = 8;
-    for (var i = 0; i < total; i++) {
-      var pos = seatPos(i, total);
+    for (var i = 0; i < n; i++) {
+      var pos = seatPos(i, n);
       var s = document.createElement('div');
       s.className = 'seat'; s.id = 'seat-' + i;
       s.style.left = pos.x + '%'; s.style.top = pos.y + '%';
@@ -391,20 +390,6 @@ var UI = (function () {
     }
     var bs = $('seat-' + table.button);
     if (bs && db.parentNode !== bs) bs.appendChild(db);
-
-    // Mark empty seats (beyond the player count) as vacant.
-    for (var ei = table.players.length; ei < 8; ei++) {
-      var es = $('seat-' + ei);
-      if (es) {
-        es.classList.add('empty');
-        es.querySelector('.avatar').textContent = '💺';
-        es.querySelector('.pname').textContent = 'Empty';
-        es.querySelector('.pstack').textContent = '';
-        es.querySelector('.pcards').innerHTML = '';
-        es.querySelector('.pbet').textContent = '';
-        es.querySelector('.pact').textContent = '';
-      }
-    }
 
     table.players.forEach(function (p, i) {
       var s = $('seat-' + i);
