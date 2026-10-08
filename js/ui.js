@@ -1276,15 +1276,25 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     tabs.style.display = onGame ? '' : 'none';
     if (!onGame) closePanel();
   }
-  // Sync on screen changes.
+  // Lock body scroll on game screens via JS too (fallback for browsers
+  // without :has() support). PokerNow-style: no dragging the page.
+  function lockScroll() {
+    var t = document.getElementById('screen-table');
+    var o = document.getElementById('screen-online');
+    var onGame = (t && !t.hidden) || (o && !o.hidden);
+    document.body.style.overflow = onGame ? 'hidden' : '';
+    document.body.style.position = onGame ? 'fixed' : '';
+    document.body.style.width = onGame ? '100%' : '';
+  }
   if (typeof MutationObserver !== 'undefined') {
-    var obs = new MutationObserver(syncTabBar);
+    var scrollObs = new MutationObserver(function () { syncTabBar(); lockScroll(); });
     ['screen-table', 'screen-online'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) obs.observe(el, { attributes: true, attributeFilter: ['hidden'] });
+      if (el) scrollObs.observe(el, { attributes: true, attributeFilter: ['hidden'] });
     });
   }
   syncTabBar();
+  lockScroll();
 
   function setActive(name) {
     tabs.querySelectorAll('.mtab').forEach(function (b) {
