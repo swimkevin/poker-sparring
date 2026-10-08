@@ -3,6 +3,19 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.13] — 2026-10-08
+
+### Fixed
+- Safari: pot no longer covered by top seat (CSS stacking context fix — z-index on #board-area, not just .pot).
+- Mobile hero cards redesigned PokerNow-style: bigger cards (72×100), smaller cleaner text, overflow hidden.
+- Removed cut-off action text under seats ("Amogh c...") — redundant with hand history.
+- Mobile action buttons now 44px touch targets with better spacing.
+
+### Added
+- Feature flags: advanced modes (tournament, heads-up, push/fold) hidden by default. Enable via `enableFlag('name')` or `?flags=name`.
+- Coach now position-aware ("You're on the button") with multi-opponent reads.
+- Coach naturally accounts for suitedness and multi-way pots in its reasoning.
+
 ## [1.8.12] — 2026-10-07
 
 ### Fixed
