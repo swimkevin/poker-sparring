@@ -286,10 +286,19 @@ var UI = (function () {
       ];
       return mobilePos[i] || { x: 50, y: 50 };
     }
-    var rx = 42, ry = 32, cy = 50;
-    if (i === 0) return { x: 50, y: 82 };
-    var theta = (90 + i * (360 / SEAT_COUNT)) * Math.PI / 180;
-    return { x: 50 + rx * Math.cos(theta), y: cy + ry * Math.sin(theta) };
+    // Desktop: explicit evenly-spaced positions, no ellipse overlap.
+    // Seats are larger on desktop; keep generous separation.
+    var desktopPos = [
+      { x: 50, y: 82 },  // 0: hero (bottom-center)
+      { x: 18, y: 68 },  // 1: lower-left
+      { x: 8, y: 45 },   // 2: mid-left
+      { x: 22, y: 22 },  // 3: upper-left
+      { x: 50, y: 12 },  // 4: top-center
+      { x: 78, y: 22 },  // 5: upper-right
+      { x: 92, y: 45 },  // 6: mid-right
+      { x: 82, y: 68 },  // 7: lower-right
+    ];
+    return desktopPos[i] || { x: 50, y: 50 };
   }
 
   function buildSeats() {

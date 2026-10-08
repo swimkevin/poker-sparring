@@ -3,6 +3,11 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.32] — 2026-10-08
+
+### Fixed
+- Desktop seat layout: 8 seats now use explicit evenly-spaced positions (was ellipse math causing overlaps on left/right sides).
+
 ## [1.8.30] — 2026-10-08
 
 ### Fixed
