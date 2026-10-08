@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.36] — 2026-10-08
+
+### Fixed
+- Seat emoji overflow: boxes now clip content properly.
+- Mobile bottom bar compact: 36×50 hero cards, 32px buttons, more felt room.
+
 ## [1.8.35] — 2026-10-08
 
 ### Fixed

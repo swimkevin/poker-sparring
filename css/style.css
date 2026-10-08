@@ -1731,3 +1731,51 @@ label { font-weight: 600; }
   }
   #screen-table .seat .pcards { min-height: 0; margin-top: 2px; }
 }
+
+/* Fix emoji overflow in seat boxes */
+#screen-table .seat {
+  overflow: hidden;
+}
+#screen-table .seat .who {
+  max-width: 100%;
+  overflow: hidden;
+}
+#screen-table .seat .avatar {
+  flex-shrink: 0;
+}
+
+/* Mobile: compact bottom bar — cards + buttons in minimal space */
+@media (max-width: 900px) {
+  #screen-table .hero-bar {
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.25rem;
+  }
+  /* Hero cards: small, side-by-side with buttons */
+  #screen-table #hero-cards {
+    padding: 0.2rem 0;
+    gap: 4px;
+  }
+  #screen-table #hero-cards .card {
+    width: 36px;
+    height: 50px;
+  }
+  #screen-table #hero-cards .card .crank {
+    font-size: 0.7rem;
+    top: 2px; left: 4px;
+  }
+  #screen-table #hero-cards .card .csuit { font-size: 1rem; }
+  #screen-table #hero-info {
+    font-size: 0.6rem;
+    margin-bottom: 0.1rem;
+  }
+  /* Buttons: single compact row */
+  #screen-table .hero-bar .ctl {
+    min-height: 32px;
+    padding: 0.35rem 0.2rem;
+    font-size: 0.75rem;
+  }
+  /* Felt gets more room */
+  #screen-table .felt {
+    min-height: 48vh;
+  }
+}
