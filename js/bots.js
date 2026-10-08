@@ -228,11 +228,14 @@ function botDecide(table, p) {
 
 function botPreflop(table, p, A) {
   var tier = holeTier(p.hole);
+  var isPair = p.hole[0].r === p.hole[1].r;
+  // Pocket pairs never fold preflop to normal bets — any pair is playable.
+  // Only vs all-ins do they sometimes fold (small pairs fold more often).
   // Humanize: occasionally play a tier looser/tighter — but tiers 1-2 stay
   // protected. Shifting JJ into a "tier 3" that folds to a 3-bet is not
   // humanizing, it is just a leak (B9). Marginal hands (tier 3+) still shift.
   var r0 = Math.random();
-  if (r0 < 0.08 && tier > 2) tier = Math.min(6, tier + 1);
+  if (r0 < 0.08 && tier > 2 && !isPair) tier = Math.min(6, tier + 1);
   else if (r0 < 0.14) tier = Math.max(1, tier - 1);
 
   var legal = table.legalActions(p.idx);
@@ -307,6 +310,8 @@ function botPreflop(table, p, A) {
       if (to4b != null) return { a: 'raise', amount: to4b };
     }
     if (tier <= A.callTier && (need < 0.30 || Math.random() < A.stubborn * 0.5)) return { a: 'call' };
+    // Pocket pairs call 3-bets too (set-mining is profitable) — only fold vs all-ins.
+    if (isPair && toCall < p.stack) return { a: 'call' };
     return { a: 'fold' };
   }
 
@@ -333,6 +338,9 @@ function botPreflop(table, p, A) {
     return { a: 'call' };
   // SB completing vs a limp-ish price
   if (need < 0.12 && tier <= 5) return { a: 'call' };
+  // Pocket pairs never fold to normal bets — any pair is playable preflop.
+  // Only vs all-ins (toCall >= stack) do small pairs sometimes fold.
+  if (isPair && toCall < p.stack) return { a: 'call' };
   return { a: 'fold' };
 }
 

@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.29] — 2026-10-08
+
+### Changed
+- Pocket pairs never fold preflop to normal bets — any pair is always playable. Only vs all-ins do small pairs sometimes fold.
+- Added "Check for updates" button in footer for manual version checks during live testing.
+
 ## [1.8.28] — 2026-10-08
 
 ### Changed

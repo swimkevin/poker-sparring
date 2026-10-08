@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.28';
+  var APP_VERSION = '1.8.29';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -1337,6 +1337,25 @@
     refreshBankroll();
     var vv = $('app-version');
     if (vv) vv.textContent = 'v' + APP_VERSION + ' · offline · stats stay in this browser';
+    // Manual update check for live testing — fetches version.txt, reloads if newer.
+    var cu = $('btn-check-update');
+    if (cu) cu.onclick = function () {
+      cu.textContent = 'Checking…';
+      fetch('version.txt?v=' + Date.now()).then(function (r) { return r.text(); }).then(function (t) {
+        var v = (t || '').trim();
+        if (v && v !== APP_VERSION) {
+          if (confirm('New version ' + v + ' available (you have ' + APP_VERSION + '). Reload now?')) {
+            location.reload(true);
+          }
+        } else {
+          cu.textContent = 'Up to date ✓';
+          setTimeout(function () { cu.textContent = 'Check for updates'; }, 2000);
+        }
+      }).catch(function () {
+        cu.textContent = 'Check failed';
+        setTimeout(function () { cu.textContent = 'Check for updates'; }, 2000);
+      });
+    };
   }
 
   function deleteCustom(id) {
