@@ -1684,3 +1684,16 @@ label { font-weight: 600; }
     z-index: 50;
   }
 }
+
+/* Fix empty seat crowding: make them tiny and subtle */
+@media (max-width: 900px) {
+  #screen-table .seat.empty {
+    min-width: 40px;
+    max-width: 44px;
+    padding: 0.2rem;
+    opacity: 0.35;
+  }
+  #screen-table .seat.empty .avatar { font-size: 0.7rem; }
+  #screen-table .seat.empty .pname { font-size: 0.55rem; }
+  #screen-table .seat.empty .pstack { display: none; }
+}
