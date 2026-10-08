@@ -602,6 +602,11 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
     width: 44px; height: 62px;
   }
   .pot { font-size: 0.9rem; padding: 0.1rem 0.7rem; }
+  /* Mobile: board lower (52%) for clearance from top seat; seats get explicit
+     z-index so the pot (z-index:5) always paints above (Safari fix 2026-10-08). */
+  #board-area { top: 52%; }
+  .seat { z-index: 1; }
+  #board-area { z-index: 5; }
   /* Winner banner: compact + dismissible, never covers the board */
   .winner-banner {
     padding: 0.7rem 1rem; max-width: 92%; bottom: 3%;
