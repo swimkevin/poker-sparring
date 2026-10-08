@@ -3,6 +3,11 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.18] — 2026-10-08
+
+### Changed
+- Modern v2 redesign: floating minimal seats, clean felt, refined cards/buttons/tab bar. Muse-clean aesthetic.
+
 ## [1.8.17] — 2026-10-08
 
 ### Changed
