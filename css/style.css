@@ -1533,3 +1533,76 @@ label { font-weight: 600; }
     opacity: 0.8;
   }
 }
+
+/* ============ ULTRA-MINIMALIST (Muse-clean) — 2026-10-08 ============ */
+@media (max-width: 900px) {
+  /* Seats: tiny, clean, generous spacing */
+  #screen-table .seat {
+    min-width: 56px;
+    max-width: 64px;
+    padding: 0.3rem 0.35rem;
+    border-radius: 12px;
+  }
+  #screen-table .seat .avatar { font-size: 0.9rem; }
+  #screen-table .seat .pname {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+  }
+  #screen-table .seat .pstack {
+    font-size: 0.58rem;
+    opacity: 0.7;
+  }
+  #screen-table .seat .pbet { display: none; }
+  #screen-table .seat .pact { display: none; }
+
+  /* Hero cards: clean, not oversized */
+  #screen-table #hero-cards {
+    gap: 6px;
+    padding: 0.4rem 0;
+  }
+  #screen-table #hero-cards .card {
+    width: 52px;
+    height: 72px;
+    border-radius: 8px;
+  }
+  #screen-table #hero-cards .card .crank {
+    font-size: 0.95rem;
+    top: 4px; left: 6px;
+  }
+  #screen-table #hero-cards .card .csuit { font-size: 1.5rem; }
+  #screen-table #hero-info {
+    font-size: 0.68rem;
+    opacity: 0.75;
+    margin-bottom: 0.2rem;
+  }
+
+  /* Buttons: compact, clean */
+  #screen-table .hero-bar {
+    padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+  }
+  #screen-table .hero-bar .ctl {
+    padding: 0.55rem 0.3rem;
+    font-size: 0.82rem;
+    border-radius: 12px;
+    min-height: 38px;
+  }
+
+  /* Pot: tiny pill */
+  #screen-table .pot {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.7rem;
+  }
+
+  /* Community cards: smaller */
+  #screen-table .community .card {
+    width: 38px;
+    height: 54px;
+  }
+  #screen-table .community { gap: 5px; }
+
+  /* Board: more breathing room */
+  #screen-table .felt {
+    margin: 0.3rem;
+  }
+}
