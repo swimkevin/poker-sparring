@@ -5,8 +5,8 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.43';
-  // Read-only copy for update-check.js (this file's scope is an IIFE).
+  var APP_VERSION = '1.8.44';
+  // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
   // Builds the URL to load after an update: we NAVIGATE instead of calling

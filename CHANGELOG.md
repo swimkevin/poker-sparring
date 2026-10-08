@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.44] — 2026-10-08
+
+### Removed
+- The "New version available" update toast: it was unreliable (Kevin). The
+  footer "Check for updates" button remains the single update path.
+
+### Fixed
+- Typeable bet amount was rendering in near-black on the always-dark bet
+  panel (light theme's `--gold` is dark bronze). It now uses a fixed light
+  gold readable in both themes.
+
 ## [1.8.43] — 2026-10-08
 
 ### Fixed

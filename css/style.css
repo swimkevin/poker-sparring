@@ -323,7 +323,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .bet-row:last-child { margin-bottom: 0; }
 #bet-slider { flex: 1; accent-color: var(--gold); }
 .bet-amount { font-weight: 800; color: var(--gold); min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
-input.bet-amount { width: 78px; background: transparent; border: 1px solid rgba(212,175,55,0.28); border-radius: 8px; padding: 0.15rem 0.35rem; font-size: 1rem; }
+input.bet-amount { width: 78px; background: transparent; border: 1px solid rgba(212,175,55,0.28); border-radius: 8px; padding: 0.15rem 0.35rem; font-size: 1rem; color: #f2cd5e; /* panel is always dark: fixed light gold, readable in both themes */ }
 input.bet-amount:focus { border-color: var(--gold); outline: none; background: rgba(0,0,0,0.25); }
 .chip-btn {
   flex: 1; background: var(--panel); border: 1px solid #2b3547; color: var(--text);
@@ -799,33 +799,7 @@ label { font-weight: 600; }
 .setup-wrap h2 { margin-top: 2.2em; }
 .mode-desc, .bot-desc { line-height: 1.5; }
 
-/* Update-available toast: calm, bottom-center, out of the way of the table */
-.update-toast {
-  position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom));
-  transform: translate(-50%, 16px); opacity: 0;
-  display: flex; align-items: center; gap: 12px;
-  background: var(--panel2); color: var(--text);
-  border: 1px solid var(--gold-dim); border-radius: 999px;
-  padding: 10px 10px 10px 18px; font-size: 15px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
-  z-index: 9999; pointer-events: none;
-  transition: transform .25s ease, opacity .25s ease;
-  max-width: calc(100vw - 32px);
-}
-.update-toast.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
-.update-toast-msg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.update-toast-btn {
-  background: var(--gold); color: #1a1405; border: none; border-radius: 999px;
-  padding: 8px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
-  flex-shrink: 0;
-}
-.update-toast-btn:hover { filter: brightness(1.08); }
-.update-toast-x {
-  background: none; border: none; color: var(--muted);
-  font-size: 1rem; cursor: pointer; padding: 6px 8px; flex-shrink: 0;
-  border-radius: 50%; line-height: 1;
-}
-.update-toast-x:hover { color: var(--text); background: rgba(128,128,128,0.15); }
+/* (update toast retired in v1.8.44 — the footer "Check for updates" button is the reliable path) */
 
 /* Quick start: the one-tap hero button above the setup wall */
 .quick-start-wrap { margin: 1.2rem 0 0.4rem; }
