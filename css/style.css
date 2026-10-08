@@ -1012,21 +1012,35 @@ label { font-weight: 600; }
   .mtab-icon { transition: transform 0.15s ease, filter 0.15s ease; }
   .mtab:active { opacity: 0.7; }
 
-  /* Slide-up panel for Coach / History / Menu */
+  /* Full-page tab views (not slide-ups) — like switching pages in an app */
   .mobile-panel {
-    display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
-    max-height: 70dvh; background: var(--panel);
-    border-radius: 16px 16px 0 0; border-top: 1px solid var(--line);
-    box-shadow: 0 -12px 32px rgba(0,0,0,0.4);
-    transform: translateY(0); transition: transform 0.25s ease;
+    display: block; position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 200;
+    background: var(--bg);
+    transform: none; transition: none;
+    border-radius: 0; border: none; box-shadow: none;
+    max-height: none; height: 100dvh;
   }
   .mobile-panel[hidden] { display: none; }
   .mp-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 0.7rem 1rem; border-bottom: 1px solid var(--line);
+    padding: 0.8rem 1rem; border-bottom: 1px solid var(--line);
+    background: var(--panel); position: sticky; top: 0; z-index: 2;
+    padding-top: calc(0.8rem + env(safe-area-inset-top, 0px));
   }
-  .mp-title { font-weight: 700; font-size: 1rem; }
-  .mp-body { padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px)); overflow-y: auto; max-height: calc(70dvh - 60px); }
+  .mp-title { font-weight: 700; font-size: 1.1rem; }
+  .mp-body {
+    padding: 1rem 1rem calc(80px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; height: calc(100dvh - 65px);
+    -webkit-overflow-scrolling: touch;
+  }
+  .mp-body .coach { font-size: 1rem; line-height: 1.6; }
+  .mp-body .hand-log { max-height: none; font-size: 0.95rem; line-height: 1.5; }
+  /* Tab bar stays visible above the full-page panel */
+  .mobile-tabs { z-index: 300; }
+  /* Lock body scroll on game screens — PokerNow-style, no dragging */
+  body:has(#screen-table:not([hidden])), body:has(#screen-online:not([hidden])) {
+    overflow: hidden; position: fixed; width: 100%; height: 100dvh;
+  }
   .mp-body .coach { font-size: 0.9rem; }
   .mp-body .hand-log { max-height: none; font-size: 0.85rem; }
 }
@@ -1051,12 +1065,16 @@ label { font-weight: 600; }
     padding: 0.5rem 0.6rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
     background: var(--panel); box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
   }
-  /* Taller panels that feel like a real view, not a dropdown */
-  .mobile-panel { max-height: 82dvh; }
-  .mobile-panel .mp-body { max-height: calc(82dvh - 60px); }
 }
 
 /* Winner banner: center it on phones so it doesn't cover the hero seat */
 @media (max-width: 900px) {
   .winner-banner { bottom: auto; top: 42%; }
+}
+
+/* Empty seats (PokerNow-style 8-seat table) */
+.seat.empty { opacity: 0.45; border-style: dashed; }
+.seat.empty .avatar { filter: grayscale(1); }
+@media (max-width: 900px) {
+  .seat.empty .pname { font-size: 0.7rem; }
 }
