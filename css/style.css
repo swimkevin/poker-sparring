@@ -1078,3 +1078,34 @@ label { font-weight: 600; }
 @media (max-width: 900px) {
   .seat.empty .pname { font-size: 0.7rem; }
 }
+
+/* Compact 8-seat layout on phones — nothing overlaps or clips */
+@media (max-width: 900px) {
+  #screen-table .seat, #screen-online .seat {
+    min-width: 64px; max-width: 76px;
+    padding: 0.25rem 0.3rem;
+    font-size: 0.7rem;
+  }
+  #screen-table .seat .pname, #screen-online .seat .pname { font-size: 0.7rem; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.65rem; }
+  #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1rem; }
+  #screen-table .seat .pcards .card, #screen-online .seat .pcards .card { width: 22px; height: 32px; }
+  #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.6rem; }
+  #screen-table .seat .pact, #screen-online .seat .pact { font-size: 0.6rem; }
+  #screen-table .seat .pos-badge, #screen-online .seat .pos-badge { font-size: 0.55rem; padding: 0.05rem 0.25rem; }
+  #screen-table .seat .seat-badge, #screen-online .seat .seat-badge { font-size: 0.55rem; }
+  /* Smaller community cards to leave room for 8 seats */
+  #screen-table .community .card, #screen-online .community .card { width: 30px; height: 42px; }
+  #screen-table .pot, #screen-online .pot { font-size: 0.85rem; }
+}
+
+/* Minimalist phone seats: hide non-essential badges, keep SB/BB */
+@media (max-width: 900px) {
+  #screen-table .seat .seat-badge.rb, #screen-online .seat .seat-badge.rb,
+  #screen-table .seat .seat-badge.tilt, #screen-online .seat .seat-badge.tilt { display: none; }
+  /* Cleaner dealer button */
+  #screen-table .dealer-btn, #screen-online .dealer-btn { width: 18px; height: 18px; font-size: 0.6rem; }
+  /* More breathing room in panels */
+  .mp-body { line-height: 1.65; }
+  .mp-body .hand-log { line-height: 1.6; }
+}
