@@ -1281,7 +1281,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
   function lockScroll() {
     var t = document.getElementById('screen-table');
     var o = document.getElementById('screen-online');
-    var onGame = (t && !t.hidden) || (o && !o.hidden);
+    var onOfflineGame = t && !t.hidden;
+    // Online: only lock when actually at a table (not the lobby/setup).
+    var onOnlineGame = o && !o.hidden && !!document.querySelector('#online-view .online-felt');
+    var onGame = onOfflineGame || onOnlineGame;
     document.body.style.overflow = onGame ? 'hidden' : '';
     document.body.style.position = onGame ? 'fixed' : '';
     document.body.style.width = onGame ? '100%' : '';
