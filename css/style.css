@@ -206,6 +206,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .card {
   width: 52px; height: 72px; background: #f7f9fc; border-radius: 7px; color: #111;
   position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.45); flex: none;
+  overflow: hidden;
   animation: deal 0.32s cubic-bezier(.2,.9,.3,1.2) backwards;
 }
 @keyframes deal { from { opacity: 0; transform: translateY(-14px) rotate(-4deg) scale(.9); } }
@@ -995,9 +996,18 @@ label { font-weight: 600; }
   }
   #screen-table .hero-bar .controls { gap: 0.6rem; }
   #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
-  #screen-table .hero-cards .card { width: 64px; height: 88px; }
-  #screen-table .hero-cards .card .crank { font-size: 1.1rem; top: 4px; left: 6px; }
-  #screen-table .hero-cards .card .csuit { font-size: 1.6rem; }
+  /* PokerNow-style hero cards: bigger card, smaller cleaner text, more whitespace.
+     Card 72x100, rank small top-left, suit centered with breathing room.
+     overflow:hidden guarantees text never spills out (Safari fix 2026-10-08). */
+  #screen-table .hero-cards .card {
+    width: 72px; height: 100px; overflow: hidden;
+    border-radius: 8px;
+  }
+  #screen-table .hero-cards .card .crank {
+    font-size: 0.85rem; font-weight: 700;
+    top: 5px; left: 7px; line-height: 1;
+  }
+  #screen-table .hero-cards .card .csuit { font-size: 1.4rem; }
   /* Remove cut-off action text under seats (Kevin 2026-10-08):
      "Amogh c..." is unreadable and redundant — actions show in history. */
   .seat .pact { display: none; }
