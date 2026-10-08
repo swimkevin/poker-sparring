@@ -1001,10 +1001,13 @@ label { font-weight: 600; }
     flex: 0 0 auto;
     position: fixed; bottom: 64px; left: 0; right: 0; z-index: 60;
     margin: 0; border-radius: 14px 14px 0 0;
-    padding: 0.5rem 0.6rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
     background: var(--panel);
   }
+  /* Compact hero bar: smaller buttons, less padding — more room for cards */
+  #screen-table .hero-bar .controls { gap: 0.4rem; }
+  #screen-table .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; min-height: 40px; }
   #screen-table .hero-bar .controls { gap: 0.6rem; }
   #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
   /* PokerNow-style hero cards: bigger card, smaller cleaner text, more whitespace.
@@ -1456,5 +1459,36 @@ label { font-weight: 600; }
   .winner-banner.toast-mode {
     top: 8px;
     font-size: 0.85rem;
+  }
+}
+
+/* High-contrast action buttons (Kevin 2026-10-08): clear, readable colors */
+@media (max-width: 900px) {
+  #screen-table .hero-bar .ctl {
+    color: #fff;
+    font-weight: 700;
+  }
+  #screen-table .hero-bar .ctl.fold-btn {
+    background: rgba(229,72,77,0.15);
+    border-color: rgba(229,72,77,0.5);
+    color: #ff6b6b;
+  }
+  #screen-table .hero-bar .ctl.call-btn {
+    background: rgba(63,185,80,0.15);
+    border-color: rgba(63,185,80,0.5);
+    color: #4ade80;
+  }
+  #screen-table .hero-bar .ctl.raise-btn {
+    background: #d4af37;
+    border-color: #d4af37;
+    color: #1a1405;
+  }
+  #screen-table .hero-bar .ctl.allin-btn {
+    background: rgba(212,175,55,0.12);
+    border-color: rgba(212,175,55,0.4);
+    color: #ffd76a;
+  }
+  #screen-table .hero-bar .ctl:disabled {
+    opacity: 0.35;
   }
 }

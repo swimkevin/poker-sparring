@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poker Sparring — Practice vs AI Opponents</title>
-<link rel="stylesheet" href="css/style.css?v=1.8.19">
-<link rel="stylesheet" href="css/online.css?v=1.8.19">
+<link rel="stylesheet" href="css/style.css?v=1.8.20">
+<link rel="stylesheet" href="css/online.css?v=1.8.20">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -138,10 +138,10 @@
         <div id="hero-name" class="hero-name">You</div>
       </div>
       <div id="controls" class="controls">
-        <button id="btn-fold" class="ctl danger">Fold</button>
-        <button id="btn-checkcall" class="ctl">Check</button>
-        <button id="btn-betraise" class="ctl primary">Bet</button>
-        <button id="btn-allin" class="ctl warn">All-in</button>
+        <button id="btn-fold" class="ctl danger fold-btn">Fold</button>
+        <button id="btn-checkcall" class="ctl call-btn">Check</button>
+        <button id="btn-betraise" class="ctl primary raise-btn">Bet</button>
+        <button id="btn-allin" class="ctl warn allin-btn">All-in</button>
         <div id="turn-status" class="turn-status" aria-live="polite"></div>
         <div id="bet-panel" class="bet-panel" hidden>
           <div class="bet-row">
@@ -301,21 +301,21 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.19"></script>
-<script src="js/evaluator.js?v=1.8.19"></script>
-<script src="js/equity.js?v=1.8.19"></script>
-<script src="js/engine.js?v=1.8.19"></script>
-<script src="js/bots.js?v=1.8.19"></script>
-<script src="js/names.js?v=1.8.19"></script>
-<script src="js/pushfold.js?v=1.8.19"></script>
-<script src="js/stats.js?v=1.8.19"></script>
-<script src="js/replay.js?v=1.8.19"></script>
-<script src="js/room-server.js?v=1.8.19"></script>
-<script src="js/netplay.js?v=1.8.19"></script>
-<script src="js/ui.js?v=1.8.19"></script>
-<script src="js/online.js?v=1.8.19"></script>
-<script src="js/app.js?v=1.8.19"></script>
-<script src="js/update-check.js?v=1.8.19"></script>
+<script src="js/cards.js?v=1.8.20"></script>
+<script src="js/evaluator.js?v=1.8.20"></script>
+<script src="js/equity.js?v=1.8.20"></script>
+<script src="js/engine.js?v=1.8.20"></script>
+<script src="js/bots.js?v=1.8.20"></script>
+<script src="js/names.js?v=1.8.20"></script>
+<script src="js/pushfold.js?v=1.8.20"></script>
+<script src="js/stats.js?v=1.8.20"></script>
+<script src="js/replay.js?v=1.8.20"></script>
+<script src="js/room-server.js?v=1.8.20"></script>
+<script src="js/netplay.js?v=1.8.20"></script>
+<script src="js/ui.js?v=1.8.20"></script>
+<script src="js/online.js?v=1.8.20"></script>
+<script src="js/app.js?v=1.8.20"></script>
+<script src="js/update-check.js?v=1.8.20"></script>
 <!-- In-game hand history modal -->
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="Hand history">
