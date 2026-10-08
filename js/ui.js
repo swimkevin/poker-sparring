@@ -271,10 +271,23 @@ var UI = (function () {
     // n is kept for signature compatibility; the ring is always 8 seats.
     // Hero seat (i=0) at bottom-center; others on an ellipse in action order.
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
-    var rx = narrow ? 30 : 42;
-    var ry = narrow ? 24 : 32;
-    var cy = narrow ? 42 : 50;
-    if (i === 0) return { x: 50, y: narrow ? 58 : 82 };
+    if (narrow) {
+      // Explicit mobile positions: evenly spread, no overlap.
+      // Seat boxes are ~56px wide; positions keep 15%+ horizontal separation.
+      var mobilePos = [
+        { x: 50, y: 62 },  // 0: hero (bottom-center)
+        { x: 22, y: 52 },  // 1: lower-left
+        { x: 12, y: 32 },  // 2: mid-left
+        { x: 28, y: 14 },  // 3: upper-left
+        { x: 50, y: 8 },   // 4: top-center
+        { x: 72, y: 14 },  // 5: upper-right
+        { x: 88, y: 32 },  // 6: mid-right
+        { x: 78, y: 52 },  // 7: lower-right
+      ];
+      return mobilePos[i] || { x: 50, y: 50 };
+    }
+    var rx = 42, ry = 32, cy = 50;
+    if (i === 0) return { x: 50, y: 82 };
     var theta = (90 + i * (360 / SEAT_COUNT)) * Math.PI / 180;
     return { x: 50 + rx * Math.cos(theta), y: cy + ry * Math.sin(theta) };
   }
