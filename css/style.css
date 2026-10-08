@@ -1239,6 +1239,10 @@ label { font-weight: 600; }
 /* Better coach formatting: clear sections, breathing room */
 .coach-tip { line-height: 1.7; }
 .coach-tip b { color: var(--gold); }
+/* Post-hand recap: one praise line, one leak line — calm and scannable */
+.coach-recap-good, .coach-recap-bad { margin: 0.35rem 0; font-size: 0.88rem; line-height: 1.5; }
+.coach-recap-good { color: var(--green); }
+.coach-recap-bad { color: var(--gold); }
 .coach-opps { margin-top: 0.8rem; padding: 0.7rem; background: rgba(0,0,0,0.25); border-radius: 8px; }
 
 /* ============ MODERN CLEAN REDESIGN (Muse-style) — 2026-10-08 ============ */
@@ -1791,5 +1795,21 @@ label { font-weight: 600; }
   /* Felt gets more room */
   #screen-table .felt {
     min-height: 48vh;
+  }
+}
+
+/* v1.8.38: mobile felt layout — the hero bar is position:fixed and covers the
+   bottom ~30% of the felt, so the board and seat ring must live in the
+   visible upper region (Kevin's iPhone screenshot, 2026-10-08). Desktop is
+   untouched (laptop looks good). */
+@media (max-width: 900px) {
+  /* Board (pot + community cards) in the visual middle of the visible felt. */
+  #screen-table #board-area { top: 32%; }
+  /* Let the pot pill flow at the top of the board area (as on desktop)
+     instead of absolute-positioning it 46% down inside the board area,
+     which buried it behind the fixed hero bar. */
+  #screen-table #pot-display {
+    position: static;
+    transform: none;
   }
 }
