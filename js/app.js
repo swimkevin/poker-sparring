@@ -5,9 +5,18 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.36';
+  var APP_VERSION = '1.8.37';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
+
+  // Builds the URL to load after an update: we NAVIGATE instead of calling
+  // location.reload(), because a reload keeps the stale ?v= query param in
+  // the address bar (bug reported 2026-10-08). Pure function for testability.
+  function updateReloadURL(pathname, v, hash) {
+    return pathname + '?v=' + encodeURIComponent(v) + hash;
+  }
+  // Exposed for tests (tests/update-flow.test.js); the IIFE keeps the rest private.
+  try { window.updateReloadURL = updateReloadURL; } catch (e) {}
 
   /**
    * Feature flags — Flappy Bird simplicity by default.
@@ -1345,7 +1354,12 @@
         var v = (t || '').trim();
         if (v && v !== APP_VERSION) {
           if (confirm('New version ' + v + ' available (you have ' + APP_VERSION + '). Reload now?')) {
-            location.reload(true);
+            // Navigate instead of reloading in place: a plain reload keeps the
+            // stale ?v= query param in the address bar, so the URL still
+            // shows the old version after the refresh (bug reported 2026-10-08).
+            // Navigating with the new version also guarantees a fresh
+            // index.html, since the changed URL bypasses the HTTP cache.
+            window.location.href = updateReloadURL(window.location.pathname, v, window.location.hash);
           }
         } else {
           cu.textContent = 'Up to date ✓';
