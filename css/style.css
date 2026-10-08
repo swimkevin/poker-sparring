@@ -995,7 +995,12 @@ label { font-weight: 600; }
   }
   #screen-table .hero-bar .controls { gap: 0.6rem; }
   #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
-  #screen-table .hero-cards .card { width: 40px; height: 56px; }
+  #screen-table .hero-cards .card { width: 56px; height: 78px; }
+  #screen-table .hero-cards .card .crank { font-size: 1.4rem; }
+  #screen-table .hero-cards .card .csuit { font-size: 1.8rem; }
+  /* Remove cut-off action text under seats (Kevin 2026-10-08):
+     "Amogh c..." is unreadable and redundant — actions show in history. */
+  .seat .pact { display: none; }
   /* Breathing room between hero cards and action buttons */
   #screen-table .hero-bar { gap: 0.8rem; }
   /* Bar reaches ~190px up; keep felt clear of it */
