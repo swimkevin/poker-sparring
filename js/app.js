@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.24';
+  var APP_VERSION = '1.8.25';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -1157,7 +1157,7 @@
           selectedBots = new Set([first]);
         } else if (prev === 'hu' && mode !== 'hu' && preHuSelection) {
           // Restore the pre-heads-up table.
-          selectedBots = new Set(preHuSelection.filter(function (id) { return botById(id); }).slice(0, 5));
+          selectedBots = new Set(preHuSelection.filter(function (id) { return botById(id); }).slice(0, 7));
           if (!selectedBots.size) selectedBots = new Set(['lag', 'rohan', 'amogh']);
           preHuSelection = null;
         }
