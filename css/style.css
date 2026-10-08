@@ -1109,3 +1109,24 @@ label { font-weight: 600; }
   .mp-body { line-height: 1.65; }
   .mp-body .hand-log { line-height: 1.6; }
 }
+
+/* Minimalist collapsed topbar on phones — info becomes a floating pill on the felt */
+@media (max-width: 900px) {
+  #screen-table .table-topbar {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    z-index: 10; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+    border-radius: 20px; padding: 0.25rem 0.75rem;
+    display: flex; gap: 0.5rem; align-items: center;
+    font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1);
+  }
+  #screen-table .table-topbar #btn-leave,
+  #screen-table .table-topbar #btn-hands,
+  #screen-table .table-topbar #btn-skip { display: none; }
+  #screen-table .table-topbar .hand-info { font-size: 0.75rem; font-weight: 600; }
+  #screen-table .table-topbar .blinds-info { font-size: 0.7rem; opacity: 0.8; }
+  #screen-table .table-topbar .last-result { display: none; }
+  /* Home screen: minimal header */
+  #screen-setup .setup-wrap h1 { font-size: 1.3rem; margin-bottom: 0.25rem; }
+  #screen-setup .setup-wrap .subtitle { display: none; }
+  #screen-setup .setup-wrap { padding-top: 1rem; }
+}
