@@ -1207,3 +1207,8 @@ label { font-weight: 600; }
 .customize-details { margin-top: 1rem; border-top: 1px solid var(--panel2); padding-top: 0.8rem; }
 .customize-details > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; padding: 0.5rem 0; color: var(--muted); }
 .customize-details > summary:hover { color: var(--text); }
+
+/* Coach: position and multi-opponent reads */
+.coach-pos { color: var(--gold); font-weight: 600; }
+.coach-opps { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--panel2); font-size: 0.88rem; line-height: 1.5; color: var(--muted); }
+.coach-opps b { color: var(--text); }
