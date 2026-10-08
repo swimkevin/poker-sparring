@@ -3,6 +3,19 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.33] — 2026-10-08
+
+### Changed
+- Shuffle now uses a CSPRNG (`crypto.getRandomValues` in browser, Node `crypto`
+  in tests) instead of `Math.random`, with rejection sampling for unbiased
+  Fisher-Yates indices — the browser-side equivalent of how regulated sites
+  (e.g. PokerStars' GLI-certified quantum RNG) seed shuffles from strong
+  entropy. The whole deck is still shuffled once before the hand and never
+  re-dealt. Legacy caller-supplied rng param kept for deterministic tests.
+- New shuffle tests: 52-unique-cards invariant, chi-square uniformity of the
+  first-card rank over 6,500 shuffles, all 52 cards dealt over 500 hands,
+  `randInt` uniformity, seeded-rng determinism.
+
 ## [1.8.32] — 2026-10-08
 
 ### Fixed

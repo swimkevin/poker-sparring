@@ -1157,5 +1157,63 @@ function heroPolicy(table, idx) {
 })();
 
 
+// ---------- shuffle randomness ----------
+// Real sites (PokerStars: GLI-certified quantum RNG + client entropy) shuffle
+// the whole deck from strong entropy before each hand. Ours must at least use
+// a CSPRNG + unbiased Fisher-Yates. These tests verify the statistical
+// properties, not the entropy source.
+(function () {
+  function deckKey(c) { return c.r + ':' + c.s; }
+
+  // 1. Every shuffle is a complete, duplicate-free 52-card permutation.
+  var i, d, seen;
+  for (i = 0; i < 200; i++) {
+    d = C.shuffle(C.makeDeck());
+    seen = {};
+    d.forEach(function (c) { seen[deckKey(c)] = (seen[deckKey(c)] || 0) + 1; });
+    if (Object.keys(seen).length !== 52) break;
+  }
+  ok(Object.keys(seen).length === 52, 'shuffled deck always has 52 unique cards');
+  ok(d === C.shuffle(d), 'shuffle returns the same array (in place)');
+
+  // 2. Uniformity: chi-square on the first card's rank over many shuffles.
+  // 13 ranks, 12 df. Critical values: 26.2 (99%), 32.9 (99.9%); we assert
+  // < 40 (beyond 99.99%) so a fair shuffle essentially never flakes.
+  var N = 6500, counts = {};
+  for (i = 0; i < N; i++) {
+    var top = C.shuffle(C.makeDeck())[0];
+    counts[top.r] = (counts[top.r] || 0) + 1;
+  }
+  var exp = N / 13, chi2 = 0;
+  for (var r = 2; r <= 14; r++) {
+    var o = counts[r] || 0;
+    chi2 += (o - exp) * (o - exp) / exp;
+    ok(Math.abs(o - exp) / exp < 0.25, 'rank ' + r + ' within 25% of expected (' + o + ')');
+  }
+  ok(chi2 < 40, 'first-card rank uniform, chi2=' + chi2.toFixed(1) + ' < 40');
+
+  // 3. Over many deals every one of the 52 cards shows up as a hole card.
+  var dealt = {};
+  for (i = 0; i < 500; i++) {
+    d = C.shuffle(C.makeDeck());
+    dealt[deckKey(d[0])] = 1; dealt[deckKey(d[1])] = 1;
+  }
+  ok(Object.keys(dealt).length === 52, 'all 52 cards dealt over 500 hands');
+
+  // 4. randInt is unbiased over its range (rejection sampling, no modulo bias).
+  var bins = [0, 0, 0, 0, 0, 0];
+  for (i = 0; i < 6000; i++) bins[C.randInt(6)]++;
+  ok(bins.every(function (b) { return b > 700 && b < 1300; }),
+    'randInt(6) uniform-ish: ' + bins.join(','));
+
+  // 5. Legacy caller-supplied rng still works (deterministic for tests).
+  function fixedRng() { return 0.999999; }
+  var a1 = C.shuffle([1, 2, 3, 4, 5], fixedRng);
+  var a2 = C.shuffle([1, 2, 3, 4, 5], fixedRng);
+  ok(a1.join(',') === a2.join(','), 'seeded rng gives deterministic shuffle');
+  ok(a1.join(',') === '1,2,3,4,5', 'rng~1.0 leaves order unchanged (j always = i)');
+})();
+
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
