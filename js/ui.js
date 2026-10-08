@@ -264,25 +264,27 @@ var UI = (function () {
   }
 
   // ---------- table ----------
+  // Fixed 8-seat layout: the felt always shows 8 seats in a ring; seats
+  // beyond the player count render as dimmed "Open" placeholders.
+  var SEAT_COUNT = 8;
   function seatPos(i, n) {
-    // Phones: tighter ellipse for 8 seats — smaller rx/ry so nothing clips.
-    // Hero seat (i=0) pulled up so action bar doesn't cover hero cards.
-    // ry=32 gives the top seat clearance from the board/pot (Safari fix 2026-10-08).
+    // n is kept for signature compatibility; the ring is always 8 seats.
+    // Hero seat (i=0) at bottom-center; others on an ellipse in action order.
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
     var rx = narrow ? 30 : 42;
     var ry = narrow ? 32 : 32;
     if (i === 0) return { x: 50, y: narrow ? 58 : 82 };
-    var theta = (90 + i * (360 / n)) * Math.PI / 180;
+    var theta = (90 + i * (360 / SEAT_COUNT)) * Math.PI / 180;
     return { x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
   }
 
-  function buildSeats(n) {
-    // Simple design: only show occupied seats (not 8 always).
-    // Cleaner on phones, easier to read cards.
+  function buildSeats() {
+    // Always build 8 seats. renderTable marks seats beyond the player count
+    // as .empty placeholders.
     var box = $('seats');
     box.innerHTML = '';
-    for (var i = 0; i < n; i++) {
-      var pos = seatPos(i, n);
+    for (var i = 0; i < SEAT_COUNT; i++) {
+      var pos = seatPos(i, SEAT_COUNT);
       var s = document.createElement('div');
       s.className = 'seat'; s.id = 'seat-' + i;
       s.style.left = pos.x + '%'; s.style.top = pos.y + '%';
@@ -371,9 +373,12 @@ var UI = (function () {
 
   // opts: { lastActions: {idx: str}, winners: [idx], revealed: {idx: true}, acting: idx,
   //         button: idx, handEnd: bool, heroShow: bool }
-  // At hand end (handEnd), every bot's hole cards are revealed face-up — even
-  // folded ones — so the player can study how each bot played (practice mode).
-  // A folded hero sees card backs until they tap "Show my hand" (heroShow).
+  // Fixed 8-seat layout: seats 0..7 always exist; seats beyond the player
+  // count render as dimmed "Open" placeholders. Hero cards live in the
+  // dedicated #hero-cards strip (always visible, always face-up to the
+  // player); seat-0 on the felt is cardless. Opponent seats show avatar +
+  // name + stack only mid-hand; their cards expand inline (face-up) at hand
+  // end or when voluntarily shown (opts.revealed).
   function renderTable(table, opts) {
     opts = opts || {};
     var handEnd = !!opts.handEnd;
@@ -395,6 +400,7 @@ var UI = (function () {
     table.players.forEach(function (p, i) {
       var s = $('seat-' + i);
       if (!s) return;
+      s.classList.remove('empty');
       var heroEmoji = '🧑';
       try { heroEmoji = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) {}
       s.querySelector('.avatar').textContent = p.isHero ? heroEmoji : (p.archetype ? p.archetype.emoji : '🤖');
@@ -412,23 +418,70 @@ var UI = (function () {
       setTextFx(s.querySelector('.pstack'), fmt(p.stack));
       setTextFx(s.querySelector('.pbet'), p.bet > 0 ? 'bet ' + fmt(p.bet) : '');
       setPact(s.querySelector('.pact'), i, (opts.lastActions && opts.lastActions[i]) || '');
-      var hole = [], faceUp = false;
-      // Hero always keeps their cards (folding hides from table, not from self).
-      // At hand end (PokerNow-style): reveal ALL hands face-up so you can see
-      // who would have won, even if they folded early.
-      var showHole = !p.sittingOut && p.hole.length === 2 && (!p.folded || p.isHero || handEnd);
-      if (showHole) {
-        hole = p.hole;
-        // At hand end, everyone's cards are face-up (PokerNow-style reveal)
-        faceUp = p.isHero || handEnd || (opts.revealed && opts.revealed[i]);
+      if (p.isHero) {
+        // Hero seat on the felt is cardless — the hero's cards live in the
+        // dedicated #hero-cards strip below the felt (always visible).
+        var hpc = s.querySelector('.pcards');
+        if (hpc.children.length) hpc.innerHTML = '';
+        s.classList.remove('cards-up');
+      } else {
+        // Opponents: avatar + name + stack only mid-hand. Cards appear
+        // inline (expandable overlay) at hand end or when shown.
+        var reveal = handEnd || (opts.revealed && opts.revealed[i]);
+        if (reveal && !p.sittingOut && p.hole.length === 2) {
+          syncCards(s.querySelector('.pcards'), p.hole, true, true);
+          s.classList.add('cards-up');
+        } else {
+          var opc = s.querySelector('.pcards');
+          if (opc.children.length) opc.innerHTML = '';
+          s.classList.remove('cards-up');
+        }
       }
-      syncCards(s.querySelector('.pcards'), hole, faceUp, true);
       s.classList.toggle('folded', p.folded);
       s.classList.toggle('to-act', opts.acting === i && !table.handOver);
       s.classList.toggle('thinking', opts.acting === i && !p.isHero && !table.handOver);
       s.classList.toggle('winner', !!(opts.winners && opts.winners.indexOf(i) !== -1));
       s.classList.toggle('out', p.sittingOut || p.stack === 0);
     });
+
+    // Empty seats: dimmed placeholders beyond the player count.
+    for (var e = n; e < SEAT_COUNT; e++) {
+      var es = $('seat-' + e);
+      if (!es) continue;
+      es.classList.add('empty');
+      es.classList.remove('to-act', 'thinking', 'winner', 'folded', 'out', 'cards-up');
+      es.querySelector('.avatar').textContent = '💺';
+      es.querySelector('.pname').textContent = 'Open';
+      es.querySelector('.pstack').textContent = '';
+      es.querySelector('.pbet').textContent = '';
+      es.querySelector('.pact').textContent = '';
+      var ebg = es.querySelector('.who .badges');
+      if (ebg) ebg.innerHTML = '';
+      es.querySelector('.pcards').innerHTML = '';
+    }
+
+    // Hero strip: dedicated always-visible hero cards + info line.
+    // (PokerNow pattern — hero cards are never inside a felt seat.)
+    var hero = null;
+    for (var h = 0; h < table.players.length; h++) {
+      if (table.players[h].isHero) { hero = table.players[h]; break; }
+    }
+    hero = hero || table.players[0];
+    var hc = $('hero-cards');
+    if (hc) {
+      if (hero && !hero.sittingOut && hero.hole && hero.hole.length === 2) {
+        syncCards(hc, hero.hole, true, false);
+      } else {
+        syncCards(hc, [], true, false);
+      }
+    }
+    var hi = $('hero-info');
+    if (hi && hero) {
+      var hb = '';
+      if (table.sbIdx === 0) hb += ' <span class="pos-badge sb">SB</span>';
+      if (table.bbIdx === 0) hb += ' <span class="pos-badge bb">BB</span>';
+      hi.innerHTML = escapeHtml(hero.name) + ' · ' + fmt(hero.stack) + hb;
+    }
   }
 
   // ---------- controls ----------
@@ -599,32 +652,37 @@ var UI = (function () {
       w.hidden = false;
       w.classList.add('toast-mode');
     }
-    // Create inline next-hand button in the hero bar
+    // PokerNow-style: inline in the hero bar when available; fall back to
+    // the winner banner (desktop / tests) otherwise.
     var bar = document.querySelector('#screen-table .hero-bar .controls');
-    if (!bar) { o.onNext(); return; }
+    var host = bar || w;
+    if (!host) { o.onNext(); return; }
     var row = document.createElement('div');
     row.id = 'handend-row';
-    row.style.cssText = 'display:flex;gap:0.5rem;width:100%;margin-top:0.5rem;';
+    if (bar) row.style.cssText = 'display:flex;gap:0.5rem;width:100%;margin-top:0.5rem;';
     if (o.onShowHero) {
       var sh = document.createElement('button');
       sh.className = 'ghost'; sh.id = 'btn-show-hero';
       sh.textContent = '👁 Show my hand';
-      sh.style.flex = '1';
+      if (bar) sh.style.flex = '1';
       sh.onclick = function () { sh.disabled = true; sh.textContent = 'Hand shown'; o.onShowHero(); };
       row.appendChild(sh);
     }
     var btn = document.createElement('button');
     btn.className = 'primary'; btn.id = 'btn-next-hand';
     btn.textContent = 'Next hand ▸';
-    btn.style.flex = '2';
+    if (bar) btn.style.flex = '2';
     row.appendChild(btn);
-    bar.appendChild(row);
+    var hint = document.createElement('span');
+    hint.className = 'fineprint';
+    row.appendChild(hint);
+    host.appendChild(row);
     var ms = o.autoMs || 8000;
     var t0 = Date.now();
     function tick() {
       var s = Math.ceil((ms - (Date.now() - t0)) / 1000);
       if (s <= 0) { hideHandEndControls(); o.onNext(); return; }
-      btn.textContent = 'Next hand ▸ (' + s + 's)';
+      hint.textContent = 'auto-dealing in ' + s + 's';
     }
     btn.onclick = function () { hideHandEndControls(); o.onNext(); };
     tick();

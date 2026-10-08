@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.20';
+  var APP_VERSION = '1.8.21';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -1002,7 +1002,7 @@
     lastHeroEndStack = undefined; // new session: hand 1 falls back to sessionStartChips
     refreshBankroll();
     evtQueue = []; pumping = false; waitingForHero = false;
-    UI.buildSeats(players.length);
+    UI.buildSeats(); // fixed 8-seat layout; renderTable marks empties
     UI.showScreen('table');
     // Clear the previous session's "Last:" result — it would otherwise linger
     // in the topbar until the first new hand ends (daily QA 2026-10-07).
