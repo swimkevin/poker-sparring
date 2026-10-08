@@ -618,52 +618,34 @@ var UI = (function () {
     return same ? total : (w0.each || w0.amount);
   }
 
+  // Win splash (v1.8.40, PokerStars/GGPoker-style): the hand result is a
+  // single celebratory line that fades on its own after ~3s.
+  // pointer-events:none — it never blocks the board and there is no close
+  // button to tap. The per-pot breakdown lives in the hand log and the
+  // topbar "Last:" chip, so nothing is lost.
+  var splashTimer = null;
   function winnerBanner(html) {
     var w = $('winner-banner');
     hideHandEndControls();
-    if (!html) { w.hidden = true; return; }
-    w.hidden = false;
-    // Collapsible result bar (PokerNow-style): starts collapsed as a slim
-    // one-line summary so it never blocks the board. Tap to expand the full
-    // breakdown, tap again to collapse. Never fully disappears until the next
-    // hand — no more "X'd it away and can't get it back".
-    w.classList.remove('expanded');
-    w.innerHTML =
-      '<button class="wmain" aria-expanded="false">' +
-        '<span class="wtitle-wrap"></span>' +
-        '<span class="wchevron" aria-hidden="true">▾</span>' +
-      '</button>' +
-      '<div class="wdetails" hidden></div>' +
-      '<button class="wclose" aria-label="Dismiss">×</button>';
-    var closeBtn = w.querySelector('.wclose');
-    if (closeBtn) closeBtn.onclick = function (e) {
-      e.stopPropagation();
+    if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
+    if (!html) {
       w.hidden = true;
-    };
-    var main = w.querySelector('.wmain');
-    var titleWrap = w.querySelector('.wtitle-wrap');
-    var details = w.querySelector('.wdetails');
-    // Split the html into title (first .wtitle div) and the rest (details).
+      w.classList.remove('win-splash');
+      return;
+    }
+    // Keep just the one-line title ("You win 1,200!"); details stay in the log.
     var tmp = document.createElement('div');
     tmp.innerHTML = html;
     var titleEl = tmp.querySelector('.wtitle');
-    if (titleEl) {
-      titleWrap.innerHTML = titleEl.outerHTML;
-      titleEl.remove();
-      details.innerHTML = tmp.innerHTML;
-    } else {
-      titleWrap.innerHTML = html;
-      details.innerHTML = '';
-    }
-    // Only show the chevron if there are details to expand.
-    var hasDetails = details.innerHTML.trim().length > 0;
-    main.querySelector('.wchevron').style.display = hasDetails ? '' : 'none';
-    main.onclick = function () {
-      if (!hasDetails) return;
-      var exp = w.classList.toggle('expanded');
-      main.setAttribute('aria-expanded', exp ? 'true' : 'false');
-      details.hidden = !exp;
-    };
+    var title = titleEl ? titleEl.innerHTML : html;
+    w.hidden = false;
+    w.className = 'winner-banner win-splash';
+    w.innerHTML = '<div class="wtitle">' + title + '</div>';
+    splashTimer = setTimeout(function () {
+      splashTimer = null;
+      w.hidden = true;
+      w.classList.remove('win-splash');
+    }, 3200);
   }
 
   // Hand-end: PokerNow-style — no blocking modal. Show a small toast with the
@@ -672,14 +654,9 @@ var UI = (function () {
   var handEndTimer = null;
   function showHandEndControls(o) {
     hideHandEndControls();
-    // Show result as a small toast (not a blocking modal)
-    var w = $('winner-banner');
-    if (w) {
-      w.hidden = false;
-      w.classList.add('toast-mode');
-    }
     // PokerNow-style: inline in the hero bar when available; fall back to
     // the winner banner (desktop / tests) otherwise.
+    var w = $('winner-banner');
     var bar = document.querySelector('#screen-table .hero-bar .controls');
     var host = bar || w;
     if (!host) { o.onNext(); return; }

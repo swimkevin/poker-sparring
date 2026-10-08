@@ -634,41 +634,33 @@ var Online = (function () {
         showBtn.hidden = true;
       };
     }
-    // Winner banner: collapsible (same pattern as offline). Starts as a slim
-    // bar; tap to expand details. Never fully disappears until next hand.
+    // Winner splash (v1.8.40): same ephemeral one-liner as offline play —
+    // fades on its own after ~3s, never blocks, nothing to dismiss.
+    // The hand name and details stay in the feed below.
     var banner = $('on-banner');
     if (s.winners && s.winners.length) {
       var w = s.winners[0];
       var pl = s.players.filter(function (p) { return p.seat === w.idx; })[0];
-      var titleHtml = '<div class="wtitle">' + esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>';
-      var detailsHtml = (w.hand ? '<div class="wsub">' + esc(w.hand) + '</div>' : '') +
-        (s.nextHandInMs > 0 ? '<div class="wsub">Next hand soon…</div>' : '');
-      // Only rebuild if the winner changed (preserves expanded/collapsed state
+      // Only rebuild if the winner changed (preserves the splash timer
       // across re-renders of the same result).
       var sig = w.idx + ':' + w.amount + ':' + (w.hand || '');
       if (banner.dataset.sig !== sig) {
         banner.dataset.sig = sig;
-        banner.classList.remove('expanded');
-        banner.innerHTML =
-          '<button class="wmain" aria-expanded="false">' +
-            '<span class="wtitle-wrap">' + titleHtml + '</span>' +
-            '<span class="wchevron" aria-hidden="true">▾</span>' +
-          '</button>' +
-          '<div class="wdetails"' + (detailsHtml ? '' : ' hidden') + '>' + detailsHtml + '</div>';
-        var main = banner.querySelector('.wmain');
-        var det = banner.querySelector('.wdetails');
-        var hasDet = detailsHtml.trim().length > 0;
-        main.querySelector('.wchevron').style.display = hasDet ? '' : 'none';
-        main.onclick = function () {
-          if (!hasDet) return;
-          var exp = banner.classList.toggle('expanded');
-          main.setAttribute('aria-expanded', exp ? 'true' : 'false');
-          det.hidden = !exp;
-        };
+        if (banner._splashT) { clearTimeout(banner._splashT); banner._splashT = null; }
+        banner.className = 'winner-banner win-splash';
+        banner.innerHTML = '<div class="wtitle">' +
+          esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>';
+        banner.hidden = false;
+        banner._splashT = setTimeout(function () {
+          banner._splashT = null;
+          banner.hidden = true;
+          banner.classList.remove('win-splash');
+        }, 3200);
       }
-      banner.hidden = false;
     } else {
+      if (banner._splashT) { clearTimeout(banner._splashT); banner._splashT = null; }
       banner.hidden = true;
+      banner.classList.remove('win-splash');
       banner.dataset.sig = '';
     }
 

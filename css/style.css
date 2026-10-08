@@ -235,31 +235,37 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .hero-cards.large .card { width: 76px; height: 106px; }
 
 .winner-banner {
-  /* Compact toast at top of felt — never blocks the board or hero cards.
-     Dismissible via X button or tapping outside (Kevin 2026-10-08). */
-  position: absolute; left: 50%; top: 8px; bottom: auto; transform: translateX(-50%);
-  background: rgba(8, 12, 18, 0.95); border: 1px solid var(--gold); border-radius: 12px;
-  padding: 0.5rem 0.8rem; text-align: center; z-index: 20; max-width: 90%;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  display: flex; align-items: center; gap: 0.6rem;
+  /* Anchor for the win splash (v1.8.40): a single celebratory line that
+     fades on its own, PokerStars/GGPoker-style. pointer-events:none so it
+     never blocks the board; no close button. The full breakdown lives in
+     the hand log + the topbar "Last:" chip. */
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
+  z-index: 30; max-width: 86%; pointer-events: none;
 }
-.winner-banner .wclose {
-  background: none; border: none; color: var(--muted); font-size: 1.2rem;
-  cursor: pointer; padding: 0.2rem 0.4rem; line-height: 1;
-}
-.winner-banner .wclose:hover { color: var(--text); }
-.winner-banner .wmain {
-  background: none; border: none; color: inherit; cursor: pointer;
-  display: flex; align-items: center; gap: 0.5rem; justify-content: center;
-  padding: 0.25rem 0.5rem; border-radius: 8px; width: 100%;
-  min-height: 44px;
-}
-.winner-banner .wmain:hover { background: rgba(255,255,255,0.06); }
-.winner-banner .wchevron { color: var(--muted); font-size: 1.1rem; transition: transform 0.2s; }
-.winner-banner.expanded .wchevron { transform: rotate(180deg); }
-.winner-banner .wdetails { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
 .winner-banner .wtitle { font-size: 1.25rem; font-weight: 800; color: var(--gold); }
 .winner-banner .wsub { color: var(--muted); margin-top: 0.3rem; font-size: 0.9rem; }
+.winner-banner.win-splash {
+  background: rgba(8, 12, 18, 0.85);
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  border-radius: 999px;
+  padding: 0.55rem 1.3rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  animation: win-splash-in 3.2s ease forwards;
+  white-space: nowrap;
+}
+.winner-banner.win-splash .wtitle {
+  overflow: hidden; text-overflow: ellipsis;
+}
+@keyframes win-splash-in {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+  10%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  78%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.03); }
+}
+@media (max-width: 900px) {
+  .winner-banner.win-splash { top: 40%; padding: 0.5rem 1rem; }
+  .winner-banner.win-splash .wtitle { font-size: 1rem; }
+}
 #handend-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.7rem; flex-wrap: wrap; }
 #handend-row .fineprint { font-size: 0.8rem; }
 .winner-banner .wsub .wsub { margin-left: 0.35em; font-style: italic; }
@@ -623,13 +629,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .pot { font-size: 0.9rem; padding: 0.1rem 0.7rem; }
   /* Mobile: board at 58% for extra clearance from top seat. */
   #board-area { top: 58%; }
-  /* Winner banner: compact + dismissible, never covers the board */
-  .winner-banner {
-    padding: 0.7rem 1rem; max-width: 92%; bottom: 3%;
-  }
-  .winner-banner .wtitle { font-size: 1rem; }
-  .winner-banner .wsub { font-size: 0.8rem; }
-  /* dismiss-btn removed: banner is now collapsible, not dismissible */
+  /* (retired in v1.8.40 — the win splash is centered, not bottom-anchored) */
 }
 
 @media (max-width: 560px) {
@@ -1113,10 +1113,7 @@ label { font-weight: 600; }
   }
 }
 
-/* Winner banner: center it on phones so it doesn't cover the hero seat */
-@media (max-width: 900px) {
-  .winner-banner { bottom: auto; top: 42%; }
-}
+/* (old mobile banner position retired in v1.8.40 — win splash is centered) */
 
 /* Empty seats (PokerNow-style 8-seat table) */
 .seat.empty { opacity: 0.45; border-style: dashed; }
@@ -1300,15 +1297,7 @@ label { font-weight: 600; }
     letter-spacing: 0.3px;
   }
 
-  /* Winner toast: minimal, elegant */
-  .winner-banner {
-    background: rgba(20,26,36,0.97);
-    border: 1px solid rgba(212,175,55,0.4);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
+  /* (retired in v1.8.40 — win splash styles live with the .win-splash rules) */
 }
 
 /* ============ MODERN REDESIGN v2 — Muse-clean poker (2026-10-08) ============ */
@@ -1425,25 +1414,7 @@ label { font-weight: 600; }
   }
 }
 
-/* Winner toast mode: small, non-blocking, auto-dismisses */
-.winner-banner.toast-mode {
-  position: absolute;
-  top: 12px; left: 50%;
-  transform: translateX(-50%);
-  bottom: auto;
-  max-width: 88%;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.9rem;
-  z-index: 25;
-}
-.winner-banner.toast-mode .wdetails { display: none; }
-.winner-banner.toast-mode .wchevron { display: none; }
-@media (max-width: 900px) {
-  .winner-banner.toast-mode {
-    top: 8px;
-    font-size: 0.85rem;
-  }
-}
+/* (toast-mode retired in v1.8.40 — the win splash replaced the banner) */
 
 /* High-contrast action buttons (Kevin 2026-10-08): clear, readable colors */
 @media (max-width: 900px) {

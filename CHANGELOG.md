@@ -3,6 +3,37 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.40] — 2026-10-08
+
+### Changed — coach upgrade (poker theory deep dive)
+- New concepts: SPR + commitment guidance ("SPR ~2, you're committed with top
+  pair"), implied odds (deep stacks vs paying opponents), reverse implied odds
+  (non-nut draws vs tight ranges), range reading from the hand's action history
+  (callers capped, raisers strong, overbets polarized), blind-steal spots, and
+  villain sizing tells (tiny bet = weak, overbet from a nit = nuts).
+- Fixed 3 advice bugs: facing a 3-bet no longer mislabeled as a 3-bet spot
+  (proper 4-bet branch: premiums 4-bet ~2.3x, marginal broadways fold);
+  3-bet sizing is now 3x in position / 4x out of position; equity is computed
+  vs the villain's range (not random hands) when facing aggression.
+- Premiums never fold to a single all-in 3-bet/4-bet (was: fell through to fold).
+- All tips rewritten in beginner-friendly language; jargon gets a one-clause
+  explanation inline. Coach stays honestly labeled as heuristics, not a solver.
+- Post-hand recap: at most one praise line + one leak to fix, shown in the
+  coach box after each hand, in the Coach tab, and in the hand story history.
+- New 10-hand eval harness (`tests/coach-eval.js`): auto-plays 10 hands, flags
+  illegal advice, math errors, contradictions, and tone problems — clean.
+- New unit tests: SPR/implied/RIO helpers, recap builder, update-flow kept green.
+
+## [1.8.40] — 2026-10-08
+
+### Changed
+- Hand-end result is now an ephemeral **win splash** (PokerStars/GGPoker-style)
+  instead of the blocking popup: a single pill-shaped line ("🏆 You win 1,200!")
+  centered on the felt that fades on its own after ~3s. No close button, and
+  `pointer-events: none` so it never blocks the board. The per-pot breakdown
+  stays in the hand log and the topbar "Last:" chip. Online multiplayer uses
+  the same splash.
+
 ## [1.8.39] — 2026-10-08
 
 ### Fixed
