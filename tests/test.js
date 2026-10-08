@@ -490,8 +490,9 @@ function heroPolicy(table, idx) {
   ok(rTried > 200, 'rohan decisions sampled (' + rTried + ')');
   ok(rAggro === 0, 'Rohan never bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
 
-  // (b1) Amogh shoves tier-1 monsters (QQ+/AKs) preflop relentlessly.
-  var shoves = 0, spots = 0;
+  // (b1) Amogh bombs tier-1 monsters (QQ+/AKs) preflop: shoves relentlessly
+  // when facing a raise, and always raises (shove or big open) first-in.
+  var shovesFirst = 0, spotsFirst = 0, raisesFirst = 0;
   for (var k2 = 0; k2 < 80; k2++) {
     var t2 = mkTable('amogh');
     var i2 = t2.acting;
@@ -499,12 +500,34 @@ function heroPolicy(table, idx) {
     var legal2 = t2.legalActions(i2);
     if (t2.currentBet === t2.bb && legal2.canRaise) { // first-in spot
       var mv2 = BOTS.botDecide(t2, t2.players[i2]);
-      spots++;
-      if (mv2 && mv2.a === 'raise' && mv2.amount >= legal2.maxRaiseTo * 0.97) shoves++;
+      spotsFirst++;
+      if (mv2 && mv2.a === 'raise' && mv2.amount >= legal2.maxRaiseTo * 0.97) shovesFirst++;
+      else if (mv2 && mv2.a === 'raise') raisesFirst++;
     }
   }
-  ok(spots > 40, 'amogh monster spots sampled (' + spots + ')');
-  ok(shoves / spots > 0.5, 'Amogh shoves QQ+/AKs preflop relentlessly (' + shoves + '/' + spots + ')');
+  ok(spotsFirst > 40, 'amogh monster spots sampled (' + spotsFirst + ')');
+  ok(shovesFirst + raisesFirst === spotsFirst, 'Amogh always raises QQ+ first-in, never flats/folds');
+  // Facing an open: shove rate should be relentless.
+  var shovesVs = 0, spotsVs = 0;
+  for (var k3 = 0; k3 < 60; k3++) {
+    var t3 = new EN.PokerTable({
+      players: [
+        { name: 'You', isHero: true },
+        { name: 'Amogh', archetype: BOTS.getArchetype('amogh') },
+        { name: 'Z', archetype: BOTS.getArchetype('shark') }
+      ], sb: 5, bb: 10, startingStack: 1000
+    });
+    t3.startHand();
+    if (t3.acting !== 0 || t3.currentBet !== 10) { k3--; continue; }
+    t3.act(0, 'raise', 30);
+    if (t3.acting !== 1) { k3--; continue; }
+    t3.players[1].hole = hand('As Ah');
+    var legal3 = t3.legalActions(1);
+    var mv3 = BOTS.botDecide(t3, t3.players[1]);
+    spotsVs++;
+    if (mv3 && mv3.a === 'raise' && mv3.amount >= legal3.maxRaiseTo * 0.97) shovesVs++;
+  }
+  ok(shovesVs / spotsVs > 0.5, 'Amogh shoves QQ+/AKs vs an open relentlessly (' + shovesVs + '/' + spotsVs + ')');
 
   // (b2) Amogh's postflop sizing: whenever he bets with no one to call, it's
   // an overbet (1.5x+ pot) or an all-in bomb. Tested directly against
@@ -994,6 +1017,143 @@ function heroPolicy(table, idx) {
     if (mv2 && mv2.a === 'fold') folds2++;
   }
   ok(folds2 < N / 2, 'bots defend vs min-raises (folded ' + folds2 + '/' + N + ' with 9Ts)');
+})();
+
+
+(function () {
+  // B9: Premiums never fold preflop. Tier 1 in this codebase is QQ+ pairs and
+  // AKs (AKo is tier 2 — see holeTier). Vs a single open they 3-bet or call;
+  // vs a 3-bet they 4-bet or flat. (Amogh folding KK preflop was the bug.)
+  function mkTable(players) {
+    return new EN.PokerTable({ players: players, sb: 5, bb: 10, startingStack: 1000, onEvent: function () {} });
+  }
+  var tier1 = [
+    [{ r: 14, s: 0 }, { r: 14, s: 1 }], // AA
+    [{ r: 13, s: 0 }, { r: 13, s: 1 }], // KK
+    [{ r: 12, s: 0 }, { r: 12, s: 1 }], // QQ
+    [{ r: 14, s: 0 }, { r: 13, s: 0 }]  // AKs
+  ];
+  var tier2 = [
+    [{ r: 11, s: 0 }, { r: 11, s: 1 }], // JJ
+    [{ r: 14, s: 0 }, { r: 13, s: 1 }]  // AKo
+  ];
+  var noFoldHands = tier1.concat(tier2); // AA KK QQ AKs JJ AKo
+  tier1.forEach(function (h) { ok(EQ.holeTier(h) === 1, 'test hand is tier 1'); });
+  tier2.forEach(function (h) { ok(EQ.holeTier(h) === 2, 'test hand is tier 2'); });
+
+  BOTS.ARCHETYPES.forEach(function (arch) {
+    // Vs a single 3bb open: hero opens, bot (SB) faces it.
+    var folds = 0, N = 30;
+    for (var i = 0; i < N; i++) {
+      var t = mkTable([
+        { name: 'You', isHero: true },
+        { name: 'T', archetype: BOTS.getArchetype(arch.id) },
+        { name: 'Z', archetype: BOTS.getArchetype('shark') }
+      ]);
+      t.startHand(); // button=2 -> 0; sb=1, bb=2, acting=0
+      if (t.acting !== 0 || t.currentBet !== 10) { i--; continue; }
+      t.act(0, 'raise', 30);
+      if (t.acting !== 1) { i--; continue; }
+      t.players[1].hole = tier1[i % tier1.length];
+      var mv = BOTS.botDecide(t, t.players[1]);
+      if (mv && mv.a === 'fold') folds++;
+    }
+    ok(folds === 0, arch.id + ' never folds tier-1 to a single open (folded ' + folds + '/' + N + ')');
+
+    // Vs a 3-bet to 9bb: hero opens, shark 3-bets, bot faces it.
+    // Tiers 1 AND 2 never fold here (JJ/AKo folding was the same leak class).
+    var folds2 = 0;
+    for (var j = 0; j < N; j++) {
+      var t2 = mkTable([
+        { name: 'You', isHero: true },
+        { name: 'R', archetype: BOTS.getArchetype('shark') },
+        { name: 'T', archetype: BOTS.getArchetype(arch.id) }
+      ]);
+      t2.startHand();
+      if (t2.acting !== 0 || t2.currentBet !== 10) { j--; continue; }
+      t2.act(0, 'raise', 30);
+      if (t2.acting !== 1) { j--; continue; }
+      t2.act(1, 'raise', 90);
+      if (t2.acting !== 2) { j--; continue; }
+      t2.players[2].hole = noFoldHands[j % noFoldHands.length];
+      var mv2 = BOTS.botDecide(t2, t2.players[2]);
+      if (mv2 && mv2.a === 'fold') folds2++;
+    }
+    ok(folds2 === 0, arch.id + ' never folds tier-1/2 to a 3-bet (folded ' + folds2 + '/' + N + ')');
+  });
+})();
+
+(function () {
+  // B10: 4-bets are sized ~2.3x the 3-bet, not automatic all-in shoves.
+  function mkTable(players) {
+    return new EN.PokerTable({ players: players, sb: 5, bb: 10, startingStack: 1000, onEvent: function () {} });
+  }
+  var shoves = 0, fours = 0, N = 60;
+  for (var i = 0; i < N; i++) {
+    var t = mkTable([
+      { name: 'You', isHero: true },
+      { name: 'R', archetype: BOTS.getArchetype('shark') },
+      { name: 'Lag', archetype: BOTS.getArchetype('lag') }
+    ]);
+    t.startHand();
+    if (t.acting !== 0 || t.currentBet !== 10) { i--; continue; }
+    t.act(0, 'raise', 30);
+    if (t.acting !== 1) { i--; continue; }
+    t.act(1, 'raise', 90);
+    if (t.acting !== 2) { i--; continue; }
+    t.players[2].hole = [{ r: 11, s: 0 }, { r: 11, s: 1 }]; // JJ, tier 2
+    var mv = BOTS.botDecide(t, t.players[2]);
+    if (mv && mv.a === 'raise') {
+      fours++;
+      var maxTo = t.players[2].bet + t.players[2].stack;
+      if (mv.amount >= maxTo - 1) shoves++;
+      else ok(mv.amount <= 90 * 2.6, 'lag 4-bet sized ~2.3x, not a shove (got ' + mv.amount + ')');
+    }
+  }
+  ok(fours > 0, 'lag 4-bets JJ vs 3-bet sometimes (' + fours + '/' + N + ')');
+  ok(shoves === 0, 'no 4-bet shoves with 100bb stacks (' + shoves + '/' + fours + ')');
+})();
+
+(function () {
+  // B11: 3-bet ranges follow the archetype — rock only 3-bets premiums,
+  // TAGs 3-bet strong hands, and everyone 3-bets QQ+ at a healthy clip.
+  function mkTable(players) {
+    return new EN.PokerTable({ players: players, sb: 5, bb: 10, startingStack: 1000, onEvent: function () {} });
+  }
+  function threeBetRate(archId, hole, N) {
+    var n = 0;
+    for (var i = 0; i < N; i++) {
+      var t = mkTable([
+        { name: 'You', isHero: true },
+        { name: 'T', archetype: BOTS.getArchetype(archId) },
+        { name: 'Z', archetype: BOTS.getArchetype('shark') }
+      ]);
+      t.startHand();
+      if (t.acting !== 0 || t.currentBet !== 10) { i--; continue; }
+      t.act(0, 'raise', 30);
+      if (t.acting !== 1) { i--; continue; }
+      t.players[1].hole = hole;
+      var mv = BOTS.botDecide(t, t.players[1]);
+      if (mv && mv.a === 'raise') n++;
+    }
+    return n;
+  }
+  var JJ = [{ r: 11, s: 0 }, { r: 11, s: 1 }]; // tier 2
+  var QQ = [{ r: 12, s: 0 }, { r: 12, s: 1 }]; // tier 1
+  var N = 40;
+  // Rock's 3-bet range is premiums-only: with JJ it 3-bets far less often than
+  // a TAG (the humanize tier-shift can occasionally promote JJ, so this is a
+  // rate comparison, not an absolute zero).
+  var rockR = threeBetRate('rock', JJ, N);
+  var sharkR = threeBetRate('shark', JJ, N);
+  ok(rockR <= N * 0.15, 'rock rarely 3-bets JJ (' + rockR + '/' + N + ')');
+  ok(sharkR > 0, 'shark 3-bets JJ sometimes (' + sharkR + '/' + N + ')');
+  ok(rockR < sharkR, 'rock 3-bets JJ less than shark (' + rockR + ' vs ' + sharkR + ')');
+  ok(threeBetRate('lag', JJ, N) > 0, 'lag 3-bets JJ sometimes');
+  ['shark', 'lag', 'grinder', 'maniac'].forEach(function (id) {
+    var r = threeBetRate(id, QQ, N);
+    ok(r >= N * 0.3, id + ' 3-bets QQ at a healthy clip (' + r + '/' + N + ')');
+  });
 })();
 
 

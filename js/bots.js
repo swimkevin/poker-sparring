@@ -228,9 +228,11 @@ function botDecide(table, p) {
 
 function botPreflop(table, p, A) {
   var tier = holeTier(p.hole);
-  // Humanize: occasionally play a tier looser/tighter.
+  // Humanize: occasionally play a tier looser/tighter — but tiers 1-2 stay
+  // protected. Shifting JJ into a "tier 3" that folds to a 3-bet is not
+  // humanizing, it is just a leak (B9). Marginal hands (tier 3+) still shift.
   var r0 = Math.random();
-  if (r0 < 0.08) tier = Math.min(6, tier + 1);
+  if (r0 < 0.08 && tier > 2) tier = Math.min(6, tier + 1);
   else if (r0 < 0.14) tier = Math.max(1, tier - 1);
 
   var legal = table.legalActions(p.idx);
@@ -240,11 +242,6 @@ function botPreflop(table, p, A) {
   // --- short stack: push/fold ---
   if (effBB < 13) return shortStackPreflop(table, p, A, legal, tier);
 
-  // Amogh: tier-1 monsters (QQ+/AKs) go in relentlessly, first-in or facing heat.
-  if (A.id === 'amogh' && tier <= 1 && legal.canRaise && Math.random() < 0.9) {
-    return { a: 'raise', amount: legal.maxRaiseTo };
-  }
-
   var pos = positionScore(table, p.idx);
   var openTier = pos >= 0.75 ? A.openTierLate : A.openTier;
   var raised = table.currentBet > table.bb; // someone actually raised (limps don't move currentBet)
@@ -252,6 +249,13 @@ function botPreflop(table, p, A) {
   var limpers = table.players.filter(function (q) {
     return q !== p && !q.folded && !q.sittingOut && q.idx !== table.bbIdx && q.totalBet >= table.bb;
   }).length;
+
+  // Amogh: bombs with tier-1 monsters (QQ+/AK) — usually when there is a
+  // raise to punish, occasionally as a first-in open-shove. (Character sizing;
+  // the normal 3-bet path below handles the rest.)
+  if (A.id === 'amogh' && tier <= 1 && legal.canRaise && Math.random() < (raised ? 0.7 : 0.2)) {
+    return { a: 'raise', amount: legal.maxRaiseTo };
+  }
 
   // --- first in / vs limps only ---
   if (!raised) {
@@ -285,20 +289,39 @@ function botPreflop(table, p, A) {
   var need = toCall / (pot + toCall);
 
   if (facingBig) {
+    // Tiers 1-2 (QQ+, AKs, plus JJ-TT/AKo/AQs/AJs/KQs) never fold to a single
+    // 3-bet at 100bb: 4-bet or flat, always continue. Folding KK here was the
+    // reported bug; folding JJ/AKo is the same leak (old code folded them
+    // ~77% of the time for TAGs).
+    if (tier <= 2) {
+      var fourP = (tier <= 1 ? 0.45 : 0.25) + A.aggression * 0.4;
+      if (legal.canRaise && Math.random() < fourP) {
+        var to4 = clampRaise(table, p, legal, table.currentBet * 2.3);
+        if (to4 != null) return { a: 'raise', amount: to4 };
+      }
+      return toCall > 0 ? { a: 'call' } : { a: 'check' };
+    }
     if (tier <= Math.max(1, A.threeBetTier - 1) && Math.random() < 0.3 + A.aggression * 0.4 && legal.canRaise) {
-      var to4 = clampRaise(table, p, legal, p.bet + p.stack); // shove it in
-      return { a: 'raise', amount: to4 };
+      // Standard 4-bet sizing (~2.3x the 3-bet), not an automatic shove.
+      var to4b = clampRaise(table, p, legal, table.currentBet * 2.3);
+      if (to4b != null) return { a: 'raise', amount: to4b };
     }
     if (tier <= A.callTier && (need < 0.30 || Math.random() < A.stubborn * 0.5)) return { a: 'call' };
     return { a: 'fold' };
   }
 
-  // Facing a single open.
-  if (tier <= A.threeBetTier && Math.random() < 0.15 + A.aggression * 0.35 && legal.canRaise) {
+  // Facing a single open. Premiums 3-bet at a high frequency and never fold.
+  if (tier <= A.threeBetTier && Math.random() < 0.15 + A.aggression * 0.35 + (tier <= 1 ? 0.35 : 0) && legal.canRaise) {
     var to3 = clampRaise(table, p, legal, table.currentBet * 3 + (pos >= 0.75 ? 0 : table.bb));
     if (to3 != null) return { a: 'raise', amount: to3 };
   }
-  var callLine = A.callTier + (pos >= 0.75 ? 1 : 0);
+  // Premiums always continue vs a single open (explicit; the tier<=2 shortcut
+  // below already guarantees it, but this is the invariant — see B9).
+  if (tier <= 1) return toCall > 0 ? { a: 'call' } : { a: 'check' };
+  // Early position plays a tier tighter facing a raise; late position a tier
+  // looser. Blinds keep their own pot-odds defense, so the EP cut starts at 0.3.
+  var callLine = A.callTier + (pos >= 0.75 ? 1 : 0) - (pos >= 0.3 && pos < 0.55 ? 1 : 0);
+  callLine = Math.max(1, callLine);
   // Stack-relative looseness: trivial prices get called much wider.
   var sd = stackDiscount(p, toCall, A);
   if (sd > 0 && tier <= callLine + Math.round(sd * 3) && need < 0.45) return { a: 'call' };
@@ -362,13 +385,20 @@ function botPostflop(table, p, A) {
 
   if (toCall === 0) {
     var betLine = 0.62 - A.aggression * 0.22 + (street === 'river' ? 0.04 : 0);
-    if (eq > betLine || ms > 0.74) return betSized(0.45 + A.aggression * 0.45);
+    // Standard c-bet/value sizing: half-pot to three-quarter-pot.
+    if (eq > betLine || ms > 0.74) return betSized(0.5 + A.aggression * 0.25);
     var bluffP = A.bluff * (liveOpp === 1 ? 0.22 : 0.10) * (street === 'river' ? 1 : 0.55);
     if (Math.random() < bluffP && ms < 0.55) return betSized(0.65);
     return { a: 'check' };
   }
 
   var need = toCall / (pot + toCall);
+  var spr = pot > 0 ? p.stack / pot : 99;
+  // Short SPR + big equity = commit now. No point playing turns and rivers
+  // when the pot already justifies stacking off.
+  if (spr < 2.5 && eq > 0.70 && legal.canRaise && Math.random() < 0.35 + A.aggression * 0.45) {
+    return { a: 'raise', amount: legal.maxRaiseTo };
+  }
   var margin = (0.5 - A.stubborn) * 0.12 + (street === 'river' ? 0.03 : 0);
   // Stack-relative looseness: cheap calls need less equity (friendly game).
   margin -= stackDiscount(p, toCall, A) * 0.18;

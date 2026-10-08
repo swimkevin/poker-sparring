@@ -3,6 +3,42 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.27] — 2026-10-08
+
+### Fixed
+- Bot preflop realism: tier-1 hands (QQ+, AKs) never fold preflop — vs a single
+  open they 3-bet or call; vs a 3-bet they 4-bet or flat. Tier-2 hands
+  (JJ-TT, AKo, AQs/AJs/KQs) also never fold to a single 3-bet at 100bb
+  (TAGs were folding JJ/AKo ~77% of the time — same leak class).
+  (Amogh folding KK preflop was the reported bug.)
+- 4-bets now sized ~2.3x the 3-bet instead of automatic all-in shoves.
+- C-bet/value sizing standardized to half-pot through three-quarter-pot.
+- Early position plays a tier tighter facing a raise; blinds keep pot-odds defense.
+- Short-SPR + strong equity hands commit instead of playing turns/rivers.
+- Amogh bombs monsters 70% facing a raise, 20% first-in (was 90% always).
+
+## [1.8.25] — 2026-10-08
+
+### Fixed
+- Roster restore no longer caps opponents at 5 when switching game modes.
+
+## [1.8.24] — 2026-10-08
+
+### Changed
+- Smaller hero cards (44x62), more compact buttons, pot pinned center-table,
+  opponent bet badges visible, "Your turn" text hidden on mobile.
+
+## [1.8.23] — 2026-10-08
+
+### Changed
+- Ultra-minimalist mobile design: 56px seats, smaller text, even spacing.
+
+## [1.8.22] — 2026-10-08
+
+### Fixed
+- Seat ellipse compressed so all 8 seats visible above the action bar.
+- Turn status made compact; max opponents raised to 7.
+
 ## [1.8.21] — 2026-10-08
 
 ### Changed
