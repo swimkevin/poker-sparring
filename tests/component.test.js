@@ -347,6 +347,8 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     ok(html.indexOf('id="' + id + '"') !== -1, 'index.html contains #' + id);
   });
   ok(/id="bet-slider"[^>]*aria-label="Raise amount"/.test(html), 'raise slider has accessible name');
+  ok(/id="bet-slider"[^>]*max="1000"/.test(html), 'raise slider spans 0..1000 (matches the JS math)');
+  ok(/id="bet-amount"[^>]*inputmode="numeric"/.test(html), 'bet amount is a typeable numeric field');
 })();
 
 // ---------- smooth table fx ----------
@@ -771,11 +773,12 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 // ---------- Raise panel defaults to the minimum legal raise ----------
 (function () {
   var d = dom.window.document;
-  // Build the bet panel DOM the same shape as index.html.
+  // Build the bet panel DOM the same shape as index.html (v1.8.42: the amount
+  // is an editable input, and the slider spans 0..1000).
   var panel = d.createElement('div'); panel.id = 'bet-panel'; panel.hidden = true;
   panel.innerHTML =
-    '<div class="bet-row"><input id="bet-slider" type="range" min="0" max="100" value="50">' +
-    '<span id="bet-amount" class="bet-amount">0</span></div>' +
+    '<div class="bet-row"><input id="bet-slider" type="range" min="0" max="1000" value="50">' +
+    '<input id="bet-amount" class="bet-amount" type="text" inputmode="numeric" value="0"></div>' +
     '<div class="bet-row quicks">' +
     '<button class="chip-btn" data-frac="0">Min</button>' +
     '<button class="chip-btn" data-frac="0.5">\u00bd Pot</button>' +
@@ -785,12 +788,13 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     '<div class="bet-row"><button id="btn-bet-confirm">Confirm</button>' +
     '<button id="btn-bet-cancel">Cancel</button></div>';
   d.body.appendChild(panel);
+  function amt() { return document.getElementById('bet-amount').value; }
 
   // Raise: facing a 20 bet with lastRaiseSize 20 -> min raise to 40.
   var got = null;
   UI.openBetPanel(40, 1000, 150, true, function (amt) { got = amt; });
-  ok(document.getElementById('bet-amount').textContent === '40',
-    'raise panel opens at min raise, got "' + document.getElementById('bet-amount').textContent + '"');
+  ok(amt() === '40',
+    'raise panel opens at min raise, got "' + amt() + '"');
   ok(document.getElementById('bet-slider').value === '0', 'raise slider starts at min position');
   document.getElementById('btn-bet-confirm').click();
   ok(got === 40, 'confirming untouched raise panel bets the min, got ' + got);
@@ -798,14 +802,43 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   // Opening bet: opens at the minimum (v1.8.9 changed from 3/4-pot default).
   got = null;
   UI.openBetPanel(10, 1000, 200, false, function (amt) { got = amt; });
-  ok(document.getElementById('bet-amount').textContent === '10',
-    'bet panel opens at minimum, got "' + document.getElementById('bet-amount').textContent + '"');
+  ok(amt() === '10',
+    'bet panel opens at minimum, got "' + amt() + '"');
 
   // Min quick button jumps a raise back to the floor.
   var minBtn = panel.querySelector('[data-frac="0"]');
   minBtn.click();
-  ok(document.getElementById('bet-amount').textContent === '10',
-    'Min button targets the floor, got "' + document.getElementById('bet-amount').textContent + '"');
+  ok(amt() === '10',
+    'Min button targets the floor, got "' + amt() + '"');
+
+  // v1.8.42 regression: the slider must span the FULL [minTo, maxTo] range.
+  // (The HTML slider was max="100" while the JS divided by 1000, so it
+  // topped out at ~10% — e.g. 124 of a 1060 max.)
+  var slider = document.getElementById('bet-slider');
+  slider.value = '1000';
+  slider.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  ok(amt() === '1000', 'slider at max reaches maxTo, got "' + amt() + '"');
+  document.getElementById('btn-bet-confirm').click();
+  ok(got === 1000, 'confirming a maxed slider bets the max, got ' + got);
+
+  // Typing an exact amount works and clamps to the legal range.
+  got = null;
+  UI.openBetPanel(40, 1000, 150, true, function (amt) { got = amt; });
+  var input = document.getElementById('bet-amount');
+  input.value = '500';
+  input.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  ok(amt() === '500', 'typed amount sticks, got "' + amt() + '"');
+  document.getElementById('btn-bet-confirm').click();
+  ok(got === 500, 'confirm uses the typed amount, got ' + got);
+  // Over-max input clamps instead of leaking an illegal bet.
+  got = null;
+  UI.openBetPanel(40, 1000, 150, true, function (amt) { got = amt; });
+  input = document.getElementById('bet-amount');
+  input.value = '99999';
+  input.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+  ok(amt() === '1000', 'over-max input clamps to maxTo, got "' + amt() + '"');
+  document.getElementById('btn-bet-confirm').click();
+  ok(got === 1000, 'confirm clamps over-max input, got ' + got);
   d.body.removeChild(panel);
 })();
 

@@ -536,33 +536,51 @@ var UI = (function () {
 
   // Bet panel: cb(amountChips). Range in chips [minTo, maxTo].
   // opts.roundBets: when true, snap the slider to multiples of 5.
+  // The amount field is editable — typing syncs the slider, the slider syncs
+  // the field, and Confirm uses whichever was set last. Values clamp to the
+  // legal [minTo, maxTo] range.
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
+    function clamp(v) { return Math.max(minTo, Math.min(maxTo, snap(v))); }
     var panel = $('bet-panel');
     panel.hidden = false;
-    var slider = $('bet-slider'), amtEl = $('bet-amount');
+    var slider = $('bet-slider'), amtInput = $('bet-amount');
+    function syncSlider(v) {
+      slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
+    }
     function setFromFrac(f) {
       var target = isRaise ? (minTo + (pot * f)) : (pot * f);
-      target = Math.max(minTo, Math.min(maxTo, Math.round(target)));
-      slider.value = maxTo === minTo ? 0 : Math.round(1000 * (target - minTo) / (maxTo - minTo));
+      target = clamp(Math.round(target));
+      syncSlider(target);
       paint(target);
     }
-    function paint(v) { amtEl.textContent = fmt(v); }
+    function paint(v) { amtInput.value = String(v); }
+    function typedAmount() {
+      var raw = parseInt(String(amtInput.value).replace(/[^0-9]/g, ''), 10);
+      return clamp(isNaN(raw) ? minTo : raw);
+    }
     slider.oninput = function () {
       var t = minTo + (maxTo - minTo) * (slider.value / 1000);
-      paint(Math.max(minTo, Math.min(maxTo, snap(t))));
+      paint(clamp(t));
+    };
+    amtInput.onchange = function () {
+      var v = typedAmount();
+      paint(v);
+      syncSlider(v);
+    };
+    amtInput.onkeydown = function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); $('btn-bet-confirm').click(); }
     };
     panel.querySelectorAll('.chip-btn').forEach(function (b) {
       b.onclick = function () { setFromFrac(parseFloat(b.dataset.frac)); };
     });
     // Both raises and opening bets start at the minimum legal amount —
-    // the user can slide up from there.
+    // the user can slide up from there or type an exact amount.
     slider.value = 0; paint(minTo);
     $('btn-bet-confirm').onclick = function () {
-      var t = minTo + (maxTo - minTo) * (slider.value / 1000);
-      t = Math.max(minTo, Math.min(maxTo, snap(t)));
+      var t = typedAmount();
       panel.hidden = true;
       cb(t);
     };

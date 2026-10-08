@@ -323,6 +323,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .bet-row:last-child { margin-bottom: 0; }
 #bet-slider { flex: 1; accent-color: var(--gold); }
 .bet-amount { font-weight: 800; color: var(--gold); min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+input.bet-amount { width: 78px; background: transparent; border: 1px solid rgba(212,175,55,0.28); border-radius: 8px; padding: 0.15rem 0.35rem; font-size: 1rem; }
+input.bet-amount:focus { border-color: var(--gold); outline: none; background: rgba(0,0,0,0.25); }
 .chip-btn {
   flex: 1; background: var(--panel); border: 1px solid #2b3547; color: var(--text);
   border-radius: 8px; padding: 0.4rem; cursor: pointer; font-size: 0.85rem;

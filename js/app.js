@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.41';
+  var APP_VERSION = '1.8.42';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -464,16 +464,16 @@
     });
     refreshBankroll();
 
-    // Give the result room to breathe: a Next-hand button plus a 6s auto-deal
-    // countdown, so the banner, board, and revealed hands can actually be read.
+    // Give the result room to breathe: a Next-hand button plus a 10s auto-deal
+    // countdown, so the splash, board, and revealed hands can actually be read.
     // Skipped (fast-forward) hands stay instant.
     if (fastForward) {
       setTimeout(function () { if (table) prepareNextHand(); }, 600);
     } else {
-      // Give the result room to breathe: a Next-hand button plus a 16s auto-deal
+      // Give the result room to breathe: a Next-hand button plus a 10s auto-deal
       // countdown, so the board and revealed hands stay readable.
       UI.showHandEndControls({
-        autoMs: 16000,
+        autoMs: 10000,
         onNext: function () { if (table) prepareNextHand(); },
         onShowHero: hero.folded ? function () { heroShow = true; renderEndTable(); } : null
       });

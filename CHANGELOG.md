@@ -3,6 +3,19 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.42] — 2026-10-08
+
+### Fixed
+- Raise slider topped out at ~10% of the legal range (e.g. 124 of a 1,060 max):
+  the HTML slider was `max="100"` while the JS divided by 1000. Now `max="1000"`,
+  so the slider spans the full [min, all-in] range.
+- Bet amount is now typeable: the amount field accepts exact chip counts
+  (numeric keyboard on mobile), clamps to the legal range, syncs both ways
+  with the slider, and Enter confirms.
+
+### Changed
+- Hand-end auto-deal countdown shortened 16s → 10s.
+
 ## [1.8.41] — 2026-10-08
 
 ### Changed — coach upgrade (poker theory deep dive)
