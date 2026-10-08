@@ -1166,6 +1166,16 @@ var UI = (function () {
       html += '<div class="rp-story-net ' + (hn > 0 ? 'pos' : hn < 0 ? 'neg' : '') + '">You ' +
         chipDelta(hn, rec.heroNetBB) + '</div>';
     }
+    // Coach recap from when the hand was played (plain-text '+/-' lines).
+    if (rec.coachNotes && rec.coachNotes.length) {
+      html += '<div class="rp-coach"><div class="rp-coach-title">💡 Coach recap</div>';
+      rec.coachNotes.forEach(function (ln) {
+        var good = ln.charAt(0) === '+';
+        html += '<div class="coach-recap-' + (good ? 'good' : 'bad') + '">' +
+          escapeHtml(ln.slice(2)) + '</div>';
+      });
+      html += '</div>';
+    }
     if (!html) html = '<p class="hint">No actions recorded for this hand.</p>';
     return html;
   }

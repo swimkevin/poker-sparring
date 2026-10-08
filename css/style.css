@@ -592,6 +592,11 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .mini-card.red { color: #c0392b; }
 .rp-story-net { font-size: 1.15rem; font-weight: 800; text-align: center; }
 .rp-story-net.pos { color: var(--green); } .rp-story-net.neg { color: var(--red); }
+/* Coach recap inside the hand story: calm, scannable, visually quiet */
+.rp-coach { margin-top: 0.9rem; padding: 0.7rem 0.8rem; background: rgba(0,0,0,0.22);
+  border-radius: 10px; }
+.rp-coach-title { font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem;
+  text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
 [data-theme="light"] .rp-story-sec { background: #fbfaf4; border-color: #d8d2bd; }
 
 /* ===== phone: keep hand rows tidy ===== */
@@ -1240,6 +1245,7 @@ label { font-weight: 600; }
 .coach-tip { line-height: 1.7; }
 .coach-tip b { color: var(--gold); }
 /* Post-hand recap: one praise line, one leak line — calm and scannable */
+.coach-recap-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.25rem; }
 .coach-recap-good, .coach-recap-bad { margin: 0.35rem 0; font-size: 0.88rem; line-height: 1.5; }
 .coach-recap-good { color: var(--green); }
 .coach-recap-bad { color: var(--gold); }
@@ -1542,16 +1548,18 @@ label { font-weight: 600; }
 
 /* ============ ULTRA-MINIMALIST (Muse-clean) — 2026-10-08 ============ */
 @media (max-width: 900px) {
-  /* Seats: tiny, clean, generous spacing */
+  /* Seats: tiny, clean, generous spacing.
+     v1.8.39: slightly wider (72px) + smaller names (0.55rem) so full names
+     like "The Grinder" fit instead of truncating to "The Gri…". */
   #screen-table .seat {
     min-width: 56px;
-    max-width: 64px;
+    max-width: 72px;
     padding: 0.3rem 0.35rem;
     border-radius: 12px;
   }
   #screen-table .seat .avatar { font-size: 0.9rem; }
   #screen-table .seat .pname {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 600;
     letter-spacing: 0.1px;
   }

@@ -17,10 +17,10 @@
   "name": "poker-sparring",
   "scripts": {
     "serve": "python3 -m http.server 8000",
-    "test": "node tests/test.js && node tests/component.test.js && node tests/smoke.js && node tests/netplay.test.js && node tests/worker.test.js && node tests/update-flow.test.js",
+    "test": "node tests/test.js && node tests/component.test.js && node tests/smoke.js && node tests/netplay.test.js && node tests/worker.test.js && node tests/update-flow.test.js && node tests/coach-advice.test.js",
     "test:smoke": "node tests/smoke.js",
     "test:component": "node tests/component.test.js",
     "test:unit": "node tests/test.js"
   },
-  "version": "1.8.38"
+  "version": "1.8.39"
 }

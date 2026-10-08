@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.39] — 2026-10-08
+
+### Fixed
+- Mobile seat names truncated ("The Gri…", "realswi…"): seat boxes slightly
+  wider (72px max, was 64px) and names slightly smaller (0.55rem, was 0.6rem),
+  so full names fit; ellipsis remains as the backstop for very long names.
+
 ## [1.8.38] — 2026-10-08
 
 ### Fixed
