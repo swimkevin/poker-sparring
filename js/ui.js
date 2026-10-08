@@ -266,10 +266,11 @@ var UI = (function () {
   // ---------- table ----------
   function seatPos(i, n) {
     // Phones: tighter ellipse for 8 seats — smaller rx/ry so nothing clips.
+    // Hero seat (i=0) pulled up so action bar doesn't cover hero cards.
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
     var rx = narrow ? 30 : 42;
     var ry = narrow ? 26 : 32;
-    if (i === 0) return { x: 50, y: narrow ? 78 : 82 };
+    if (i === 0) return { x: 50, y: narrow ? 70 : 82 };
     var theta = (90 + i * (360 / n)) * Math.PI / 180;
     return { x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
   }
