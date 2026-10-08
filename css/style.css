@@ -1184,7 +1184,7 @@ label { font-weight: 600; }
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     gap: 0.35rem;
   }
-  #screen-table .hero-cards .card, #screen-online .hero-cards .card { width: 34px; height: 48px; }
+  /* Hero cards: 72x100 PokerNow-style (defined earlier) — do not override here. */
   #screen-table .hero-bar .controls, #screen-online .hero-bar .controls { gap: 0.35rem; }
   /* Tighter tab bar */
   .mobile-tabs { padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px)); }
