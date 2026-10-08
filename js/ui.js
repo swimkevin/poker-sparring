@@ -265,14 +265,13 @@ var UI = (function () {
 
   // ---------- table ----------
   function seatPos(i, n) {
-    // Phones: pull the ellipse in so side seats (min-width 84px) stay on the felt.
-    // All screens: keep top/bottom seats fully inside (seats are ~110-150px tall,
-    // so y=10%/88% clipped them under .felt{overflow:hidden}).
+    // Phones: tighter ellipse for 8 seats — smaller rx/ry so nothing clips.
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
-    var rx = narrow ? 35 : 42;
-    if (i === 0) return { x: 50, y: 82 };
+    var rx = narrow ? 30 : 42;
+    var ry = narrow ? 26 : 32;
+    if (i === 0) return { x: 50, y: narrow ? 78 : 82 };
     var theta = (90 + i * (360 / n)) * Math.PI / 180;
-    return { x: 50 + rx * Math.cos(theta), y: 50 + 32 * Math.sin(theta) };
+    return { x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
   }
 
   function buildSeats(n) {
