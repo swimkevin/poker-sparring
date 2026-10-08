@@ -1156,3 +1156,14 @@ label { font-weight: 600; }
   #screen-table .seat .pname, #screen-online .seat .pname { max-width: 76px; text-align: center; }
   #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1.1rem; }
 }
+
+/* Phone: taller felt, compact seats, no overlap */
+@media (max-width: 900px) {
+  #screen-table .felt, #screen-online .online-felt { min-height: 52dvh; }
+  #screen-table .seat, #screen-online .seat {
+    min-width: 68px; max-width: 78px; padding: 0.2rem 0.25rem;
+  }
+  #screen-table .seat .pcards .card, #screen-online .seat .pcards .card { width: 20px; height: 30px; }
+  #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.62rem; margin: 1px 0; }
+  #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.58rem; min-height: 0.8em; }
+}
