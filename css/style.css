@@ -1082,11 +1082,11 @@ label { font-weight: 600; }
 /* Compact 8-seat layout on phones — nothing overlaps or clips */
 @media (max-width: 900px) {
   #screen-table .seat, #screen-online .seat {
-    min-width: 64px; max-width: 76px;
+    min-width: 72px; max-width: 84px;
     padding: 0.25rem 0.3rem;
     font-size: 0.7rem;
   }
-  #screen-table .seat .pname, #screen-online .seat .pname { font-size: 0.7rem; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #screen-table .seat .pname, #screen-online .seat .pname { font-size: 0.68rem; max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.65rem; }
   #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1rem; }
   #screen-table .seat .pcards .card, #screen-online .seat .pcards .card { width: 22px; height: 32px; }
