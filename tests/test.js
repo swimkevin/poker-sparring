@@ -906,7 +906,7 @@ function heroPolicy(table, idx) {
       }
     }
   }
-  checkSeats(1280, 1100, 460, 118, 150, 'desktop');
+  checkSeats(1280, 1100, 520, 100, 90, 'desktop');
   checkSeats(390, 358, 440, 84, 112, 'phone');
 })();
 

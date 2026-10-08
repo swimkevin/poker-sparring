@@ -1699,3 +1699,35 @@ label { font-weight: 600; }
   #screen-table .seat.empty .pname { font-size: 0.55rem; }
   #screen-table .seat.empty .pstack { display: none; }
 }
+
+/* Desktop: compact Muse-clean seats, bigger felt */
+@media (min-width: 901px) {
+  #screen-table .felt {
+    min-height: 520px;
+  }
+  #screen-table .seat {
+    min-width: 88px;
+    max-width: 100px;
+    padding: 0.35rem 0.45rem;
+    border-radius: 10px;
+    border-width: 1.5px;
+  }
+  #screen-table .seat .avatar { font-size: 1rem; }
+  #screen-table .seat .pname {
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  #screen-table .seat .pstack {
+    font-size: 0.7rem;
+    opacity: 0.85;
+  }
+  /* Hide action text on seats — it's in the hand log */
+  #screen-table .seat .pact { display: none; }
+  /* Bet as compact pill */
+  #screen-table .seat .pbet {
+    font-size: 0.65rem;
+    min-height: 0.9em;
+    margin-top: 1px;
+  }
+  #screen-table .seat .pcards { min-height: 0; margin-top: 2px; }
+}

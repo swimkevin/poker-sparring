@@ -3,6 +3,11 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.35] — 2026-10-08
+
+### Fixed
+- Desktop seats compact: 88-100px wide (was 118px), smaller text, action text hidden (in hand log). Felt taller (520px). No more overlaps.
+
 ## [1.8.33] — 2026-10-08
 
 ### Changed
