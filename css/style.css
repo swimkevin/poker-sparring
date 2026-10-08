@@ -235,13 +235,19 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .hero-cards.large .card { width: 76px; height: 106px; }
 
 .winner-banner {
-  /* Docked at the bottom of the felt so the board and every revealed hand
-     stay visible during the results pause. Collapsed by default: slim bar. */
-  position: absolute; left: 50%; top: auto; bottom: 5%; transform: translate(-50%, 0);
-  background: rgba(8, 12, 18, 0.94); border: 2px solid var(--gold); border-radius: 14px;
-  padding: 0.6rem 1rem; text-align: center; z-index: 20; max-width: 86%;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  /* Compact toast at top of felt — never blocks the board or hero cards.
+     Dismissible via X button or tapping outside (Kevin 2026-10-08). */
+  position: absolute; left: 50%; top: 8px; bottom: auto; transform: translateX(-50%);
+  background: rgba(8, 12, 18, 0.95); border: 1px solid var(--gold); border-radius: 12px;
+  padding: 0.5rem 0.8rem; text-align: center; z-index: 20; max-width: 90%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: flex; align-items: center; gap: 0.6rem;
 }
+.winner-banner .wclose {
+  background: none; border: none; color: var(--muted); font-size: 1.2rem;
+  cursor: pointer; padding: 0.2rem 0.4rem; line-height: 1;
+}
+.winner-banner .wclose:hover { color: var(--text); }
 .winner-banner .wmain {
   background: none; border: none; color: inherit; cursor: pointer;
   display: flex; align-items: center; gap: 0.5rem; justify-content: center;
@@ -1184,7 +1190,15 @@ label { font-weight: 600; }
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     gap: 0.35rem;
   }
-  /* Hero cards: 72x100 PokerNow-style (defined earlier) — do not override here. */
+  /* Hero seat cards (seat-0): PokerNow-style big and readable.
+     The hero's cards live in .seat .pcards, NOT .hero-cards (fixed 2026-10-08). */
+  #screen-table #seat-0 .pcards .card {
+    width: 56px; height: 78px; overflow: hidden; border-radius: 8px;
+  }
+  #screen-table #seat-0 .pcards .card .crank {
+    font-size: 1rem; font-weight: 800; top: 5px; left: 7px; line-height: 1;
+  }
+  #screen-table #seat-0 .pcards .card .csuit { font-size: 1.6rem; }
   #screen-table .hero-bar .controls, #screen-online .hero-bar .controls { gap: 0.35rem; }
   /* Tighter tab bar */
   .mobile-tabs { padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px)); }

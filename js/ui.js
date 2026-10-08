@@ -553,7 +553,13 @@ var UI = (function () {
         '<span class="wtitle-wrap"></span>' +
         '<span class="wchevron" aria-hidden="true">▾</span>' +
       '</button>' +
-      '<div class="wdetails" hidden></div>';
+      '<div class="wdetails" hidden></div>' +
+      '<button class="wclose" aria-label="Dismiss">×</button>';
+    var closeBtn = w.querySelector('.wclose');
+    if (closeBtn) closeBtn.onclick = function (e) {
+      e.stopPropagation();
+      w.hidden = true;
+    };
     var main = w.querySelector('.wmain');
     var titleWrap = w.querySelector('.wtitle-wrap');
     var details = w.querySelector('.wdetails');

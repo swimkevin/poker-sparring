@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.16] — 2026-10-08
+
+### Fixed
+- Hero seat cards now 56×78 (were 20×30) — the 72×100 rule was targeting the wrong element (.hero-cards instead of #seat-0 .pcards).
+- Winner banner redesigned as a compact dismissible toast at the top — no longer blocks the table.
+
 ## [1.8.15] — 2026-10-08
 
 ### Fixed
