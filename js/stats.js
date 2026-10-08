@@ -82,7 +82,10 @@ function recordHand(ctx) {
     // at the top of Stats.
   });
   s.history.unshift({
-    n: s.hands, hole: (ctx.heroHole || []).map(function (c) { return rankChar(c.r) + ' sdhc'[c.s + 1] || ''; }),
+    // Suits: 0=spades, 1=hearts, 2=diamonds, 3=clubs (see cards.js). The 'h'/'d'
+    // positions here were once transposed, showing every heart as a diamond
+    // and vice versa in Stats → Recent hands (caught by daily QA 2026-10-08).
+    n: s.hands, hole: (ctx.heroHole || []).map(function (c) { return rankChar(c.r) + ' shdc'[c.s + 1] || ''; }),
     board: (ctx.community || []).length,
     profitBB: Math.round(profitBB * 10) / 10,
     profitChips: profitChips,

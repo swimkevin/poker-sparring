@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.13';
+  var APP_VERSION = '1.8.14';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -123,6 +123,13 @@
   var handRec = null; // in-progress hand record for the replayer (js/replay.js)
   var replay = null;  // { rec, idx } while the replay viewer is open
   var sessionStartChips = 0;
+  // Exact hero stack at the end of the previous hand. The engine posts
+  // antes/blinds BEFORE emitting handStart, so snapshotting hero.stack in
+  // onHandStart would exclude blind postings from per-hand P/L (daily QA
+  // 2026-10-08: folding the BB showed 0 instead of -10). The previous hand's
+  // end stack IS the next hand's pre-blind stack; sessionStartChips covers
+  // hand 1 of a session and post-rebuy hands.
+  var lastHeroEndStack;
   // Bankroll chip shows LIFETIME profit from persistent stats, so it survives
   // refreshes. (Session-only profit reset to 0 on every page load.)
   function refreshBankroll() {
@@ -197,7 +204,9 @@
     UI.clearLog();
     var hero = table.players[0];
     handCtx = {
-      startStack: hero.stack, vpip: false, pfr: false,
+      startStack: (typeof lastHeroEndStack === 'number') ? lastHeroEndStack
+        : (sessionStartChips || hero.stack),
+      vpip: false, pfr: false,
       postBet: 0, postCall: 0, preflopActed: false
     };
     handRec = startHandRecord(table, e, gameMode);
@@ -307,7 +316,8 @@
       }).join(' & ');
       var potLabel = (w.potIndex == null || w.potIndex === 0) ? 'Main pot' : 'Side pot ' + w.potIndex;
       var verb = names === 'You' ? 'win' : (names.indexOf('You') === 0 ? 'win' : 'wins');
-      if (w.uncalled) bits.push(names + ' takes ' + UI.fmt(w.amount) + ' back (uncalled bet)');
+      var takeVerb = names.indexOf('You') === 0 ? 'take' : 'takes'; // "You take", not "You takes"
+      if (w.uncalled) bits.push(names + ' ' + takeVerb + ' ' + UI.fmt(w.amount) + ' back (uncalled bet)');
       else if (w.byFold) bits.push(names + ' ' + verb + ' ' + UI.fmt(w.amount));
       else bits.push(potLabel + ': ' + names + ' ' + verb + ' ' + UI.fmt(w.each || w.amount) +
         ' <span class="wsub">' + UI.escapeHtml(w.hand || '') + '</span>');
@@ -332,7 +342,7 @@
           return table.players[i].isHero ? 'You' : table.players[i].name;
         }).join(' & ');
         lr.textContent = w0.uncalled
-          ? 'Last: ' + wn + ' takes back ' + UI.fmt(w0.amount)
+          ? 'Last: ' + wn + ' ' + (wn.indexOf('You') === 0 ? 'take' : 'takes') + ' back ' + UI.fmt(w0.amount)
           : 'Last: ' + wn + ' +' + UI.fmt(UI.firstWinnersTotal(e)) + (w0.hand ? ' · ' + w0.hand : '');
       }
     } catch (err) {}
@@ -385,12 +395,15 @@
 
     // Stats
     var profit = hero.stack - handCtx.startStack;
+    lastHeroEndStack = hero.stack; // pre-blind baseline for the next hand
     if (handRec) {
       finishHandRecord(handRec, table, e, profit);
       saveHandRecord(handRec);
       handRec = null;
     }
-    var resultText = won ? ('Won ' + UI.fmt(e.pot)) : 'Lost';
+    // resultText is what Stats → Recent hands shows. Use what the hero
+    // actually won, not the total pot (side-pot wins overstated it).
+    var resultText = won ? ('Won ' + UI.fmt(UI.handWinAmount(e))) : 'Lost';
     if (!won && e.winners.length && e.winners[0].hand) resultText = e.winners[0].hand;
     // Capture everyone's cards for the hand history: hero always, opponents only if revealed
     var allHands = table.players.map(function (p, idx) {
@@ -485,6 +498,7 @@
             label: '🔄 Rebuy (1000 chips)', primary: true,
             cb: function () {
               hero.stack = 1000; hero.rebuys = (hero.rebuys || 0) + 1;
+              sessionStartChips = 1000; lastHeroEndStack = 1000;
               UI.log('🔄 You rebuy (1000 chips)');
               prepareNextHand();
             }
@@ -553,7 +567,7 @@
           body: 'Rebuy to ' + UI.fmt(cfg.stack) + ' and keep training?',
           buttons: [
             { label: 'Leave', cb: leaveToLobby },
-            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; h.rebuys = (h.rebuys || 0) + 1; sessionStartChips = cfg.stack; UI.setBankroll(0); dealNext(); } }
+            { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; h.rebuys = (h.rebuys || 0) + 1; sessionStartChips = cfg.stack; lastHeroEndStack = cfg.stack; UI.setBankroll(0); dealNext(); } }
           ]
         });
         return;
@@ -985,6 +999,7 @@
     } else tourney = null;
 
     sessionStartChips = table.players[0].stack;
+    lastHeroEndStack = undefined; // new session: hand 1 falls back to sessionStartChips
     refreshBankroll();
     evtQueue = []; pumping = false; waitingForHero = false;
     UI.buildSeats(players.length);
@@ -1183,6 +1198,11 @@
       var bb = Math.max(sb + 1, parseInt($('cfg-bb').value, 10) || 10);
       q.textContent = 'One tap: ' + modeName + ' vs ' + (n === 1 ? '1 bot' : n + ' bots') +
         ', ' + stack + '-chip stacks, ' + sb + '/' + bb + ' blinds. Customize below if you like.';
+      // The quick-play hint names the bot count too — keep it in sync so the
+      // two one-tap descriptions can never contradict (daily QA 2026-10-08).
+      // ▶ Play tops up to at least 3 bots, so describe the effective table.
+      var qpn = $('qp-n');
+      if (qpn) qpn.textContent = Math.max(n, 3) + ' bots';
     }
     var bq = $('btn-quick');
     if (bq) bq.onclick = function () { startGame(); };

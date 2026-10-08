@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poker Sparring — Practice vs AI Opponents</title>
-<link rel="stylesheet" href="css/style.css?v=1.8.13">
-<link rel="stylesheet" href="css/online.css?v=1.8.13">
+<link rel="stylesheet" href="css/style.css?v=1.8.14">
+<link rel="stylesheet" href="css/online.css?v=1.8.14">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -30,7 +30,7 @@
   <section id="screen-setup" class="screen">
     <div class="setup-wrap">
       <h1>Train against poker AI, <span class="accent">offline</span>.</h1>
-      <p class="subtitle">Pick a mode, pick your opponents, and practice real spots — cash games, heads-up, tournaments, and push/fold drills.</p>
+      <p class="subtitle">Pick your opponents and practice real cash-game spots. One tap and you're dealt in.</p>
 
       <div class="quick-start-wrap">
         <button id="btn-quick" class="primary big">♠️ Deal me in</button>
@@ -40,7 +40,7 @@
       <!-- Quick play: one tap, instant game -->
       <div class="quick-play">
         <button id="btn-quickplay" class="primary big">▶ Play</button>
-        <p class="hint">Cash game vs 3 bots. Tap <button id="btn-customize-link" class="linklike">customize</button> for modes, opponents &amp; settings.</p>
+        <p class="hint">Cash game vs <span id="qp-n">3 bots</span>. Tap <button id="btn-customize-link" class="linklike">customize</button> for modes, opponents &amp; settings.</p>
       </div>
 
       <details id="customize-details" class="customize-details">
@@ -86,8 +86,8 @@
         <summary>Stacks &amp; blinds <span class="hint-inline">(defaults are fine — open to tweak)</span></summary>
         <div class="settings-row">
           <label>Starting stack <input id="cfg-stack" type="number" value="1000" step="100" min="200"></label>
-          <label>Small blind <input id="cfg-sb" type="number" value="5" step="5" min="1"></label>
-          <label>Big blind <input id="cfg-bb" type="number" value="10" step="5" min="2"></label>
+          <label>Small blind <input id="cfg-sb" type="number" value="5" step="1" min="1"></label>
+          <label>Big blind <input id="cfg-bb" type="number" value="10" step="1" min="2"></label>
           <label title="Tournament only: how often blinds go up">Blinds up every <input id="cfg-blindint" type="number" value="8" step="1" min="2" max="30" style="width:4em"> hands</label>
         </div>
         <div class="settings-row">
@@ -301,21 +301,21 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.13"></script>
-<script src="js/evaluator.js?v=1.8.13"></script>
-<script src="js/equity.js?v=1.8.13"></script>
-<script src="js/engine.js?v=1.8.13"></script>
-<script src="js/bots.js?v=1.8.13"></script>
-<script src="js/names.js?v=1.8.13"></script>
-<script src="js/pushfold.js?v=1.8.13"></script>
-<script src="js/stats.js?v=1.8.13"></script>
-<script src="js/replay.js?v=1.8.13"></script>
-<script src="js/room-server.js?v=1.8.13"></script>
-<script src="js/netplay.js?v=1.8.13"></script>
-<script src="js/ui.js?v=1.8.13"></script>
-<script src="js/online.js?v=1.8.13"></script>
-<script src="js/app.js?v=1.8.13"></script>
-<script src="js/update-check.js?v=1.8.13"></script>
+<script src="js/cards.js?v=1.8.14"></script>
+<script src="js/evaluator.js?v=1.8.14"></script>
+<script src="js/equity.js?v=1.8.14"></script>
+<script src="js/engine.js?v=1.8.14"></script>
+<script src="js/bots.js?v=1.8.14"></script>
+<script src="js/names.js?v=1.8.14"></script>
+<script src="js/pushfold.js?v=1.8.14"></script>
+<script src="js/stats.js?v=1.8.14"></script>
+<script src="js/replay.js?v=1.8.14"></script>
+<script src="js/room-server.js?v=1.8.14"></script>
+<script src="js/netplay.js?v=1.8.14"></script>
+<script src="js/ui.js?v=1.8.14"></script>
+<script src="js/online.js?v=1.8.14"></script>
+<script src="js/app.js?v=1.8.14"></script>
+<script src="js/update-check.js?v=1.8.14"></script>
 <!-- In-game hand history modal -->
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="Hand history">
