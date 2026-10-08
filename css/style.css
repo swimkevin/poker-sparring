@@ -1149,3 +1149,10 @@ label { font-weight: 600; }
   .mtab-icon { font-size: 1.15rem; }
   .mtab-label { font-size: 0.6rem; }
 }
+
+/* Phone seats: stack avatar above name so full names fit */
+@media (max-width: 900px) {
+  #screen-table .seat .who, #screen-online .seat .who { flex-direction: column; gap: 1px; }
+  #screen-table .seat .pname, #screen-online .seat .pname { max-width: 76px; text-align: center; }
+  #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1.1rem; }
+}
