@@ -598,6 +598,32 @@ function heroPolicy(table, idx) {
   delete global.localStorage;
 })();
 
+// ---------- stats: recordHand suit mapping (daily QA 2026-10-08) ----------
+// Regression: the suit-letter string was ' sdhc' (hearts/diamonds transposed),
+// so Stats → Recent hands showed every heart as a diamond and vice versa.
+(function () {
+  var mem = {};
+  global.localStorage = {
+    getItem: function (k) { return mem[k] || null; },
+    setItem: function (k, v) { mem[k] = String(v); },
+    removeItem: function (k) { delete mem[k]; }
+  };
+  function holeOf(str) {
+    var ctx = {
+      mode: 'cash', bb: 10, heroHole: hand(str), community: [], profitChips: 0,
+      wonHand: false, vpip: false, pfr: false, postBet: 0, postCall: 0,
+      opponents: [], heroStackBB: 100, potBB: 3, resultText: 'Lost'
+    };
+    ST.recordHand(ctx);
+    return ST.loadStats().history[0].hole.join(' ');
+  }
+  ok(holeOf('Qs Qd') === 'Qs Qd', 'spades->s, diamonds->d (was Qs Qh)');
+  ok(holeOf('Th 8h') === 'Th 8h', 'hearts->h (was 8d Td)');
+  ok(holeOf('Ac Kc') === 'Ac Kc', 'clubs->c');
+  ok(holeOf('2s 3h') === '2s 3h', 'mixed suits map correctly');
+  delete global.localStorage;
+})();
+
 // ---------- stats: sessionProfitBB regression (header stat units bug) ----------
 (function () {
   // Regression: the header once computed (heroChips - startBB) / bb, mixing

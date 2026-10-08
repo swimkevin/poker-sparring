@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.14] — 2026-10-08
+
+### Fixed
+- Stats → Recent hands showed wrong suits on every row (hearts/diamonds transposed in the suit-letter map). Hands view was always correct.
+- Stats per-hand P/L now includes blind/ante postings. Previously the baseline was snapshotted after blinds were posted, so folding the BB showed 0 instead of −10. (This was the shape of the reported "loss on the wrong row" — a systematic blind exclusion, not a row shift.)
+- Stats "Won X" label now shows what the hero actually won (side-pot wins no longer display the full pot).
+- Grammar: "You take back" instead of "You takes back" in hand log and topbar result.
+- Lobby: the ▶ Play hint's bot count is now live ("vs 4 bots") instead of a hardcoded "vs 3 bots"; subtitle no longer advertises flag-hidden modes (tournament, heads-up, push/fold).
+- Lobby blind inputs no longer flag valid values as invalid (`step=5` made the 5/10 defaults themselves fail validation; now `step=1`).
+
 ## [1.8.13] — 2026-10-08
 
 ### Fixed
