@@ -1174,7 +1174,7 @@ function heroPolicy(table, idx) {
   }
   var JJ = [{ r: 11, s: 0 }, { r: 11, s: 1 }]; // tier 2
   var QQ = [{ r: 12, s: 0 }, { r: 12, s: 1 }]; // tier 1
-  var N = 40;
+  var N = 200; // large enough that the 15% rock threshold is statistically meaningful (N=40 flaked ~1/10 runs)
   // Rock's 3-bet range is premiums-only: with JJ it 3-bets far less often than
   // a TAG (the humanize tier-shift can occasionally promote JJ, so this is a
   // rate comparison, not an absolute zero).
