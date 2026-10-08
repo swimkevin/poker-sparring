@@ -33,7 +33,13 @@
       '<button type="button" class="update-toast-btn">Refresh</button>' +
       '<button type="button" class="update-toast-x" aria-label="Dismiss">✕</button>';
     var btn = el.querySelector('.update-toast-btn');
-    if (btn) btn.addEventListener('click', function () { location.reload(); });
+    // Force a cache-bypassing reload: append the version as a query param so
+    // the browser fetches a fresh index.html (which itself cache-busts all
+    // its assets via ?v= params). Plain location.reload() can serve stale HTML.
+    if (btn) btn.addEventListener('click', function () {
+      var u = window.location.pathname + '?v=' + encodeURIComponent(serverVersion) + window.location.hash;
+      window.location.href = u;
+    });
     var x = el.querySelector('.update-toast-x');
     if (x) x.addEventListener('click', function () {
       el.classList.remove('show');
