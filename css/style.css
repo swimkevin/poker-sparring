@@ -995,9 +995,9 @@ label { font-weight: 600; }
   }
   #screen-table .hero-bar .controls { gap: 0.6rem; }
   #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
-  #screen-table .hero-cards .card { width: 56px; height: 78px; }
-  #screen-table .hero-cards .card .crank { font-size: 1.4rem; }
-  #screen-table .hero-cards .card .csuit { font-size: 1.8rem; }
+  #screen-table .hero-cards .card { width: 64px; height: 88px; }
+  #screen-table .hero-cards .card .crank { font-size: 1.1rem; top: 4px; left: 6px; }
+  #screen-table .hero-cards .card .csuit { font-size: 1.6rem; }
   /* Remove cut-off action text under seats (Kevin 2026-10-08):
      "Amogh c..." is unreadable and redundant — actions show in history. */
   .seat .pact { display: none; }
@@ -1212,3 +1212,11 @@ label { font-weight: 600; }
 .coach-pos { color: var(--gold); font-weight: 600; }
 .coach-opps { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--panel2); font-size: 0.88rem; line-height: 1.5; color: var(--muted); }
 .coach-opps b { color: var(--text); }
+
+/* Coach improvements: suited, multiway, fold equity */
+.coach-suited { color: var(--blue); font-weight: 600; }
+.coach-multiway { color: #e8a838; font-weight: 600; }
+/* Better coach formatting: clear sections, breathing room */
+.coach-tip { line-height: 1.7; }
+.coach-tip b { color: var(--gold); }
+.coach-opps { margin-top: 0.8rem; padding: 0.7rem; background: rgba(0,0,0,0.25); border-radius: 8px; }
