@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.15] — 2026-10-08
+
+### Fixed
+- Pot/board moved lower (55% desktop, 58% mobile) — no longer overlaps the top seat.
+- Raise bet-panel now opens above the hero seat instead of covering hero cards.
+
 ## [1.8.14] — 2026-10-08
 
 ### Fixed

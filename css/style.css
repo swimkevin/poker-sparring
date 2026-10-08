@@ -138,7 +138,9 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   border: 10px solid #3a2a18; box-shadow: inset 0 0 60px rgba(0,0,0,0.55), 0 8px 30px rgba(0,0,0,0.5);
   overflow: hidden;
 }
-#board-area { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; z-index: 5; }
+#board-area { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%); text-align: center; z-index: 5; }
+/* Board at 55% (was 46%): top seat at 18% with ~160px height extends to ~35%,
+   so 55% gives clear separation. Fixes pot-under-seat overlap (2026-10-08). */
 /* Seats must paint below the board: #board-area's transform creates a stacking
    context, so z-index on .pot alone is trapped inside it (bug found 2026-10-08).
    The z-index must be on #board-area itself. */
@@ -607,8 +609,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
     width: 44px; height: 62px;
   }
   .pot { font-size: 0.9rem; padding: 0.1rem 0.7rem; }
-  /* Mobile: board lower (52%) for clearance from top seat (Safari fix 2026-10-08). */
-  #board-area { top: 52%; }
+  /* Mobile: board at 58% for extra clearance from top seat. */
+  #board-area { top: 58%; }
   /* Winner banner: compact + dismissible, never covers the board */
   .winner-banner {
     padding: 0.7rem 1rem; max-width: 92%; bottom: 3%;
@@ -731,6 +733,9 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .controls { gap: 0.5rem; }
   .ctl { padding: 0.8rem 0.6rem; font-size: 1.02rem; min-width: 0; flex: 1 1 40%; }
   .bet-panel { width: min(300px, 86vw); }
+  /* Bet panel: open above the hero seat, not over the hero cards.
+     bottom:220% clears the ~160px tall hero seat (2026-10-08). */
+  #screen-table .bet-panel { bottom: 220%; }
 
   /* setup screens: 2-col modes, single-col roster */
   .mode-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
