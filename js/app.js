@@ -734,20 +734,13 @@
     return '<div class="coach-opps">🎯 ' + reads.join(' · ') + '</div>';
   }
 
-  // Suitedness: suited hands gain ~2-3% equity preflop from flush potential.
+  // Suitedness and multi-way are woven into the advice naturally, not as
+  // separate badges (Kevin 2026-10-08). These helpers feed the reasoning.
   function isSuited(hole) {
     return hole.length === 2 && hole[0].s === hole[1].s;
   }
-  function suitedNote(hole) {
-    if (!isSuited(hole)) return '';
-    return ' <span class="coach-suited">♠ Suited — +~3% equity from flush potential.</span>';
-  }
-
-  // Multi-way pot (3+ opponents): play tighter, fewer bluffs, more value.
-  function multiwayNote() {
-    var n = liveOpponents().length;
-    if (n < 3) return '';
-    return ' <span class="coach-multiway">⚠️ ' + n + '-way pot — play tighter. Bluffs rarely work multi-way; bet for value, fold marginal hands.</span>';
+  function isMultiway() {
+    return liveOpponents().length >= 3;
   }
 
   // Fold equity explainer: how often they need to fold for a bluff to profit.
@@ -859,8 +852,6 @@
       var posName = heroPositionName();
       var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
       var opps = opponentReads();
-      var suitNote = suitedNote(hero.hole);
-      var mwNote = multiwayNote();
       var nm = hero.hole.slice().sort(function (a, b) { return b.r - a.r; })
         .map(function (c) { return rankName(c.r); }).join(' ');
       // ---------------- preflop ----------------
@@ -873,7 +864,7 @@
           else msg = '<b>' + esc(nm) + '</b> — fold. TAG means folding ~80% of hands preflop; discipline is the edge.';
           if (tier <= 4 && V && villainFoldy(V && V.archetype) > 0.6)
             msg += ' Good steal spot — ' + vName + ' folds too much.';
-          return msg + tail + posNote + suitNote + mwNote + opps;
+          return msg + tail + posNote + opps;
         }
         var open = table.currentBet;
         var need = toCall / (pot + toCall);
@@ -881,15 +872,30 @@
         if (tier <= 2 && legal.canRaise) {
           // Value 3-bet: 3x the open in position is the standard TAG sizing.
           var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * 3)));
-          return '<b>3-bet</b> ' + esc(nm) + ' to ~<b>' + fmt(three) + '</b> (3× their open). Best hand most of the time, fold equity the rest — the 3-bet is the TAG money-maker.' + tail + posNote + suitNote + mwNote + opps;
+          return '<b>3-bet</b> ' + esc(nm) + ' to ~<b>' + fmt(three) + '</b> (3× their open). Best hand most of the time, fold equity the rest — the 3-bet is the TAG money-maker.' + tail + posNote + opps;
         }
         var hasAce = hero.hole.some(function (c) { return c.r === 14; });
         if (tier >= 4 && hasAce && legal.canRaise && V && villainFoldy(V && V.archetype) > 0.45) {
-          return 'Mix in a <b>bluff 3-bet</b> sometimes: your Ace blocks their strongest continuing hands, and ' + vName + ' folds to pressure. Balanced ranges get paid.' + tail + posNote + suitNote + mwNote + opps;
+          return 'Mix in a <b>bluff 3-bet</b> sometimes: your Ace blocks their strongest continuing hands, and ' + vName + ' folds to pressure. Balanced ranges get paid.' + tail + posNote + opps;
+        }
+        var suited = isSuited(hero.hole);
+        var multiway = isMultiway();
+        // Suited hands play better multi-way (flush potential); offsuit
+        // marginal hands get worse. Adjust the call threshold naturally.
+        var threshold = need + (suited ? 0.0 : 0.02) + (multiway ? 0.04 : 0);
+        var handDesc = esc(nm) + (suited ? ' suited' : '');
+        var verdict;
+        if (eq > threshold + 0.03) {
+          verdict = 'The math says call' + (suited ? ' — being suited gives you extra ways to win' : '') + '.';
+        } else if (eq > threshold - 0.05) {
+          verdict = multiway ? 'Too thin multi-way — fold and wait for a better spot.'
+            : 'Close — prefer it in position.';
+        } else {
+          verdict = 'Math says fold' + (multiway ? ' — too many players to overcome' : '') + '.';
         }
         return 'Call <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need <b>' +
-          pct(need) + '</b> equity. ' + esc(nm) + ' has ~<b>' + pct(eq) + '</b>. ' +
-          (eq > need + 0.03 ? 'The math says call.' : eq > need - 0.05 ? 'Close — prefer it in position.' : 'Math says fold.') + tail + posNote + suitNote + mwNote + opps;
+          pct(need) + '</b> equity. ' + handDesc + ' has ~<b>' + pct(eq) + '</b>. ' +
+          verdict + tail + posNote + opps;
       }
       // ---------------- postflop ----------------
       var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
@@ -904,42 +910,47 @@
         if (str >= 0.60 || eq2 >= 0.62) {
           // Value: size up vs stations who never fold.
           var sizing = foldy < 0.25 ? '¾-pot' : '½–¾ pot';
-          return '<b>Bet for value</b> (~' + sizing + ', ' + fmt(halfBet) + '). Ask: what worse hands call? Never slow-play — build the pot while ahead.' + tail + posNote + suitNote + mwNote + opps;
+          return '<b>Bet for value</b> (~' + sizing + ', ' + fmt(halfBet) + '). Ask: what worse hands call? Never slow-play — build the pot while ahead.' + tail + posNote + opps;
         }
         if ((d.flushDraw || d.oesd) && canBet) {
           if (foldy < 0.25)
-            return 'Strong draw (~' + pct(eq2) + '), but ' + vName + ' never folds — <b>check</b> and take the free card.' + tail + posNote + suitNote + mwNote + opps;
+            return 'Strong draw (~' + pct(eq2) + '), but ' + vName + ' never folds — <b>check</b> and take the free card.' + tail + posNote + opps;
           return '<b>Semi-bluff</b> the draw (~' + pct(eq2) + '): bet ~½ pot (' + fmt(halfBet) +
-            '). Two ways to win — folds now, or you hit. Needs only <b>' + be + '</b> folds on fold equity alone.' + tail + posNote + suitNote + mwNote + opps;
+            '). Two ways to win — folds now, or you hit. Needs only <b>' + be + '</b> folds on fold equity alone.' + tail + posNote + opps;
         }
         if (canBet) {
           var scare = scareCardRank();
           var spot = (pos > 0.6 ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) - (foldy < 0.3 ? 2 : 0);
           // Never suggest a pure bluff into a station: if they don't fold,
           // the "Bluff" line would contradict the per-opponent "never bluff" tail.
-          if (spot >= 2 && foldy >= 0.4) {
+          // Multi-way: bluffs rarely get through multiple players.
+          // Weave this into the reasoning naturally.
+          var mw = isMultiway();
+          if (mw) spot -= 2;
+          if (spot >= 2 && foldy >= 0.4 && !mw) {
             var why = [];
             if (scare) why.push('the ' + esc(scare) + ' is a scare card');
             if (pos > 0.6) why.push('you have position');
             if (foldy > 0.55) why.push(vName + ' overfolds');
             return '<b>Bluff</b> ~½ pot (' + fmt(halfBet) + ') — needs <b>' + be + '</b> folds (' + why.join(', ') +
-              '). Mix bluffs in, or your value bets never get paid.' + tail + posNote + suitNote + mwNote + opps;
+              '). Mix bluffs in, or your value bets never get paid.' + tail + posNote + opps;
           }
-          return '<b>Check</b> — no value, no fold equity. Save the bluff for a better spot.' + tail + posNote + suitNote + mwNote + opps;
+          if (mw) return '<b>Check</b> — too many players to bluff through. Wait for a real hand.' + tail + posNote + opps;
+          return '<b>Check</b> — no value, no fold equity. Save the bluff for a better spot.' + tail + posNote + opps;
         }
         return null;
       }
       var need2 = toCall / (pot + toCall);
       if ((str >= 0.62 || eq2 >= 0.65) && legal.canRaise)
-        return '<b>Raise for value</b> (~3× their bet). Don\'t slow-play monsters — charge the draws and worse hands now.' + tail + posNote + suitNote + mwNote + opps;
+        return '<b>Raise for value</b> (~3× their bet). Don\'t slow-play monsters — charge the draws and worse hands now.' + tail + posNote + opps;
       if ((d.flushDraw || d.oesd) && legal.canRaise && foldy > 0.4)
         return '<b>Semi-bluff raise</b> sometimes: fold equity plus ~' + pct(eq2) + ' to hit. Otherwise call ' +
-          fmt(toCall) + ' needing ' + pct(need2) + '.' + tail + posNote + suitNote + mwNote + opps;
+          fmt(toCall) + ' needing ' + pct(need2) + '.' + tail + posNote + opps;
       var vAggro = V && villainBluffy(V && V.archetype) > 0.4;
       var verdict = eq2 > need2 + 0.03 ? 'The math says call.'
         : (vAggro && eq2 > need2 - 0.12) ? 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.'
         : 'Math says fold.';
-      return 'Need <b>' + pct(need2) + '</b>, you have ~<b>' + pct(eq2) + '</b>. ' + verdict + tail + posNote + suitNote + mwNote + opps;
+      return 'Need <b>' + pct(need2) + '</b>, you have ~<b>' + pct(eq2) + '</b>. ' + verdict + tail + posNote + opps;
     } catch (err) { return null; }
   }
 
