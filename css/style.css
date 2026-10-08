@@ -1249,3 +1249,63 @@ label { font-weight: 600; }
 .coach-tip { line-height: 1.7; }
 .coach-tip b { color: var(--gold); }
 .coach-opps { margin-top: 0.8rem; padding: 0.7rem; background: rgba(0,0,0,0.25); border-radius: 8px; }
+
+/* ============ MODERN CLEAN REDESIGN (Muse-style) — 2026-10-08 ============ */
+@media (max-width: 900px) {
+  /* Felt: cleaner, softer — less busy pattern, more modern */
+  #screen-table .felt {
+    background: radial-gradient(100% 100% at 50% 30%, #147a56 0%, #0b4a34 70%);
+    border: 6px solid rgba(255,255,255,0.08);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.3);
+  }
+
+  /* Seats: minimal, clean — no heavy boxes */
+  #screen-table .seat {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    padding: 0.4rem 0.5rem;
+  }
+  #screen-table .seat.to-act {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(212,175,55,0.3), 0 2px 12px rgba(0,0,0,0.25);
+  }
+
+  /* Action buttons: Muse-clean — flat, minimal, good spacing */
+  #screen-table .hero-bar {
+    background: rgba(18,24,34,0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px 20px 0 0;
+    padding: 0.8rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  }
+  #screen-table .hero-bar .ctl {
+    border-radius: 14px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* Pot: clean pill, subtle */
+  #screen-table .pot {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* Winner toast: minimal, elegant */
+  .winner-banner {
+    background: rgba(20,26,36,0.97);
+    border: 1px solid rgba(212,175,55,0.4);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
