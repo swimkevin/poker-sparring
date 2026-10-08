@@ -3,6 +3,21 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.21] — 2026-10-08
+
+### Changed
+- Table rewrite: fixed 8-seat layout (empty seats show as dimmed "Open" placeholders).
+- Opponent seats are cardless mid-hand (avatar + name + stack only); cards expand inline face-up at hand end or on voluntary show.
+- Hero cards moved to a dedicated always-visible strip (`#hero-cards`) above the action bar; seat-0 on the felt is cardless.
+- CSS cleanup: deleted 5 competing seat-card size rules + dead `#seat-0 .pcards` / `#screen-table .hero-cards` overrides; one consolidated TABLE REWRITE block is the single source of truth.
+- Hand-end controls: inline in the hero bar on mobile, falling back to the winner banner.
+
+## [1.8.20] — 2026-10-08
+
+### Fixed
+- Hero cards visibility (seat moved up, action bar compacted).
+- Action button color contrast (fold red, call green, raise gold).
+
 ## [1.8.19] — 2026-10-08
 
 ### Changed

@@ -27,6 +27,7 @@ var dom = new jsdom.JSDOM('<!DOCTYPE html><html><body>' +
   '<div id="preset-list"></div><div id="custom-list"></div>' +
   '<div id="hand-list"></div><div id="replay-view" hidden></div>' +
   '<div id="pot-display"></div><div id="community"></div><div id="street-label"></div><div id="seats"></div>' +
+  '<div id="hero-cards"></div><div id="hero-info"></div>' +
   '</body></html>');
 
 global.window = dom.window;
@@ -365,20 +366,31 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     };
   }
   var d = dom.window.document;
-  UI.buildSeats(2);
+  UI.buildSeats();
   var t = fakeTable();
   UI.renderTable(t, {});
-  var heroCards1 = Array.prototype.slice.call(d.querySelector('#seat-0 .pcards').children);
+  // Fixed 8-seat layout: always 8 seats, 6 empty with 2 players.
+  ok(d.querySelectorAll('#seats .seat').length === 8, 'buildSeats creates 8 seats');
+  ok(d.querySelectorAll('#seats .seat.empty').length === 6, '6 empty seats with 2 players');
+  ok(d.querySelector('#seat-5 .pname').textContent === 'Open', 'empty seat shows Open placeholder');
+  var heroCards1 = Array.prototype.slice.call(d.querySelector('#hero-cards').children);
   var botCards1 = Array.prototype.slice.call(d.querySelector('#seat-1 .pcards').children);
-  ok(heroCards1.length === 2 && botCards1.length === 2, 'hole cards rendered (hero face-up, bot face-down)');
-  ok(botCards1[0].classList.contains('back'), 'bot hole cards are face-down');
+  ok(heroCards1.length === 2, 'hero cards rendered in #hero-cards strip');
+  ok(!!heroCards1[0].querySelector('.crank'), 'hero cards are face-up in strip');
+  ok(botCards1.length === 0, 'opponent seat is cardless mid-hand');
+  ok(!d.querySelector('#seat-1').classList.contains('cards-up'), 'no cards-up class mid-hand');
 
   // Re-render with identical state: the SAME nodes must survive (no rebuild).
   UI.renderTable(t, {});
-  var heroCards2 = Array.prototype.slice.call(d.querySelector('#seat-0 .pcards').children);
-  var botCards2 = Array.prototype.slice.call(d.querySelector('#seat-1 .pcards').children);
+  var heroCards2 = Array.prototype.slice.call(d.querySelector('#hero-cards').children);
   ok(heroCards2[0] === heroCards1[0] && heroCards2[1] === heroCards1[1], 'hero cards not rebuilt on re-render');
-  ok(botCards2[0] === botCards1[0] && botCards2[1] === botCards1[1], 'bot cards not rebuilt on re-render');
+
+  // Bot reveal (opts.revealed): cards expand inline in the seat.
+  UI.renderTable(t, { revealed: { 1: true } });
+  var botCards2 = Array.prototype.slice.call(d.querySelector('#seat-1 .pcards').children);
+  ok(botCards2.length === 2, 'revealed bot shows 2 cards in seat overlay');
+  ok(!!botCards2[0].querySelector('.crank'), 'revealed bot cards are face-up');
+  ok(d.querySelector('#seat-1').classList.contains('cards-up'), 'cards-up class on reveal');
 
   // Flop: 3 new community cards appear; a second render keeps them stable.
   t.community = [{ r: 14, s: 2 }, { r: 8, s: 2 }, { r: 6, s: 3 }];
@@ -395,10 +407,18 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   var turn = Array.prototype.slice.call(d.querySelector('#community').children);
   ok(turn.length === 4 && turn[0] === flop1[0] && turn[2] === flop1[2], 'turn adds one card, flop untouched');
 
-  // Fold: bot cards are removed (not left stale).
+  // Fold: opponent seat stays cardless (never rendered mid-hand).
   t.players[1].folded = true;
   UI.renderTable(t, {});
-  ok(d.querySelector('#seat-1 .pcards').children.length === 0, 'folded player cards removed');
+  ok(d.querySelector('#seat-1 .pcards').children.length === 0, 'folded opponent stays cardless mid-hand');
+  ok(d.querySelector('#seat-1').classList.contains('folded'), 'folded opponent seat marked folded');
+
+  // Folded hero keeps seeing own cards in the strip.
+  t.players[0].folded = true;
+  UI.renderTable(t, {});
+  ok(d.querySelectorAll('#hero-cards .card').length === 2, 'folded hero keeps own cards in strip');
+  ok(d.querySelector('#seat-0').classList.contains('folded'), 'folded hero seat marked folded');
+  t.players[0].folded = false;
 
   // Action badge pops when the action text changes.
   UI.renderTable(t, { lastActions: { 0: 'bets 20' } });
@@ -503,28 +523,30 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
       potTotal: function () { return 0; }
     };
   }
-  UI.buildSeats(2);
+  UI.buildSeats();
 
-  // Folded bot's cards are revealed face-up at hand end.
+  // Folded bot's cards are revealed face-up at hand end (expandable overlay).
   var t = endTable(false, true);
   UI.renderTable(t, { handEnd: true, winners: [0], revealed: {}, button: 0 });
   var botCards = d.querySelectorAll('#seat-1 .pcards .card');
   ok(botCards.length === 2, 'folded bot shows 2 cards at hand end');
   ok(!!botCards[0].querySelector('.crank'), 'folded bot cards are face-up');
+  ok(d.querySelector('#seat-1').classList.contains('cards-up'), 'cards-up class at hand end');
 
-  // Folded hero always sees their own cards (folding hides from table, not self).
+  // Hero cards live in the dedicated strip, always face-up to the player.
   t = endTable(true, true);
   UI.renderTable(t, { handEnd: true, winners: [1], revealed: {}, button: 0 });
-  var heroCards = d.querySelectorAll('#seat-0 .pcards .card');
-  ok(heroCards.length === 2, 'folded hero shows 2 cards at hand end');
-  ok(!!heroCards[0].querySelector('.crank'), 'folded hero cards are face-up to hero');
-  UI.renderTable(t, { handEnd: true, winners: [1], revealed: {}, button: 0, heroShow: true });
-  heroCards = d.querySelectorAll('#seat-0 .pcards .card');
-  ok(!!heroCards[0].querySelector('.crank'), 'hero cards flip face-up after Show');
+  var heroCards = d.querySelectorAll('#hero-cards .card');
+  ok(heroCards.length === 2, 'hero shows 2 cards in strip at hand end');
+  ok(!!heroCards[0].querySelector('.crank'), 'hero strip cards are face-up');
+  ok(d.querySelectorAll('#seat-0 .pcards .card').length === 0, 'hero felt seat is cardless');
+  // Hero info line shows name and stack.
+  var hi = d.querySelector('#hero-info').textContent;
+  ok(hi.indexOf('You') !== -1 && hi.indexOf('1,010') !== -1, 'hero info shows name + stack, got "' + hi + '"');
 
-  // Mid-hand: folded hero keeps seeing own cards; folded bots stay hidden.
+  // Mid-hand: folded hero keeps seeing own cards in strip; folded bots stay hidden.
   UI.renderTable(t, { winners: [], revealed: {}, button: 0 });
-  ok(d.querySelectorAll('#seat-0 .pcards .card').length === 2, 'folded hero keeps own cards mid-hand');
+  ok(d.querySelectorAll('#hero-cards .card').length === 2, 'folded hero keeps own cards in strip mid-hand');
   ok(d.querySelectorAll('#seat-1 .pcards .card').length === 0, 'folded bot cards hidden mid-hand');
 
   // Hand-end controls: Next button + countdown + Show button.
@@ -717,8 +739,11 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
       potTotal: function () { return 0; }
     };
   }
-  UI.buildSeats(2);
+  UI.buildSeats();
   UI.renderTable(fakeTable2(), { handEnd: true });
+  // 8 seats with 2 players: seats 2-7 are empty placeholders.
+  ok(d.querySelectorAll('#seats .seat').length === 8, '8 seats in badge test');
+  ok(d.querySelector('#seat-7').classList.contains('empty'), 'seat-7 marked empty');
   var b0 = d.querySelector('#seat-0 .badges').innerHTML;
   var b1 = d.querySelector('#seat-1 .badges').innerHTML;
   ok(b0.indexOf('×1') !== -1, 'hero rebuy count shown, got "' + b0 + '"');

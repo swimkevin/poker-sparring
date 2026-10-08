@@ -213,8 +213,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 }
 @keyframes deal { from { opacity: 0; transform: translateY(-14px) rotate(-4deg) scale(.9); } }
 /* staggered deal: cards land one after another */
-.community .card:nth-child(1), .hero-cards .card:nth-child(1), .seat .pcards .card:nth-child(1) { animation-delay: 0ms; }
-.community .card:nth-child(2), .hero-cards .card:nth-child(2), .seat .pcards .card:nth-child(2) { animation-delay: 70ms; }
+.community .card:nth-child(1), #hero-cards .card:nth-child(1), .seat .pcards .card:nth-child(1) { animation-delay: 0ms; }
+.community .card:nth-child(2), #hero-cards .card:nth-child(2), .seat .pcards .card:nth-child(2) { animation-delay: 70ms; }
 .community .card:nth-child(3) { animation-delay: 140ms; }
 .community .card:nth-child(4) { animation-delay: 210ms; }
 .community .card:nth-child(5) { animation-delay: 280ms; }
@@ -288,6 +288,9 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   border-radius: 14px; padding: 0.9rem 1.2rem; flex-wrap: wrap;
 }
 .hero-name { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+/* Hero strip info line (v1.8.21): name · stack · position badges under the cards. */
+.hero-info { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
+.hero-info .pos-badge { margin-left: 0.3rem; }
 .controls { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; position: relative; }
 .ctl {
   border: 1px solid #2b3547; background: var(--panel2); color: var(--text);
@@ -602,10 +605,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .seat .pname { font-size: 0.72rem; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
   .seat .pstack { font-size: 0.7rem; }
   .seat .pbet { font-size: 0.65rem; }
-  .seat .pcards { min-height: 32px; margin-top: 2px; }
-  .seat .pcards .card, .seat .pcards .card-back {
-    width: 30px; height: 42px;
-  }
+  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
+     at the end of this file (v1.8.21). */
   .pos-badge { min-width: 16px; height: 16px; font-size: 0.55rem; }
   /* Taller felt gives the board breathing room */
   .felt { height: 520px; border-radius: 200px; }
@@ -723,10 +724,8 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   .seat .pstack { font-size: 0.7rem; }
   .seat .pbet { font-size: 0.62rem; }
   .seat .pact { font-size: 0.6rem; }
-  .seat .pcards { min-height: 34px; margin-top: 2px; gap: 2px; }
-  .seat .pcards .card { width: 32px; height: 44px; }
-  .seat .pcards .card .crank { font-size: 0.65rem; top: 2px; left: 3px; }
-  .seat .pcards .card .csuit { font-size: 1.05rem; }
+  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
+     at the end of this file (v1.8.21). */
   .felt { height: 440px; border-radius: 32px; border-width: 7px; }
   .pot { font-size: 0.9rem; margin-bottom: 0.35rem; }
   .community { gap: 4px; min-height: 60px; }
@@ -992,7 +991,8 @@ label { font-weight: 600; }
   #screen-table .seat { padding: 0.3rem 0.4rem; font-size: 0.8rem; border-radius: 10px; }
   #screen-table .seat .pname { font-size: 0.8rem; }
   #screen-table .seat .pstack { font-size: 0.75rem; }
-  #screen-table .seat .pcards .card { width: 26px; height: 36px; font-size: 0.7rem; }
+  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
+     at the end of this file (v1.8.21). */
   #screen-table .pos-badge { font-size: 0.6rem; padding: 0.05rem 0.3rem; }
   /* Hide the desktop side panel on phones — Coach/History live in tab panels */
   #screen-table .side-panel { display: none; }
@@ -1010,18 +1010,9 @@ label { font-weight: 600; }
   #screen-table .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; min-height: 40px; }
   #screen-table .hero-bar .controls { gap: 0.6rem; }
   #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
-  /* PokerNow-style hero cards: bigger card, smaller cleaner text, more whitespace.
-     Card 72x100, rank small top-left, suit centered with breathing room.
-     overflow:hidden guarantees text never spills out (Safari fix 2026-10-08). */
-  #screen-table .hero-cards .card {
-    width: 72px; height: 100px; overflow: hidden;
-    border-radius: 8px;
-  }
-  #screen-table .hero-cards .card .crank {
-    font-size: 0.85rem; font-weight: 700;
-    top: 5px; left: 7px; line-height: 1;
-  }
-  #screen-table .hero-cards .card .csuit { font-size: 1.4rem; }
+  /* Hero strip cards (#hero-cards): single source of truth is the TABLE
+     REWRITE block at the end of this file (v1.8.21). The old
+     "#screen-table .hero-cards" rules were dead (wrong element). */
   /* Remove cut-off action text under seats (Kevin 2026-10-08):
      "Amogh c..." is unreadable and redundant — actions show in history. */
   .seat .pact { display: none; }
@@ -1139,7 +1130,8 @@ label { font-weight: 600; }
   #screen-table .seat .pname, #screen-online .seat .pname { font-size: 0.68rem; max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.65rem; }
   #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1rem; }
-  #screen-table .seat .pcards .card, #screen-online .seat .pcards .card { width: 22px; height: 32px; }
+  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
+     at the end of this file (v1.8.21). */
   #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.6rem; }
   #screen-table .seat .pact, #screen-online .seat .pact { font-size: 0.6rem; }
   #screen-table .seat .pos-badge, #screen-online .seat .pos-badge { font-size: 0.55rem; padding: 0.05rem 0.25rem; }
@@ -1193,15 +1185,8 @@ label { font-weight: 600; }
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     gap: 0.35rem;
   }
-  /* Hero seat cards (seat-0): PokerNow-style big and readable.
-     The hero's cards live in .seat .pcards, NOT .hero-cards (fixed 2026-10-08). */
-  #screen-table #seat-0 .pcards .card {
-    width: 56px; height: 78px; overflow: hidden; border-radius: 8px;
-  }
-  #screen-table #seat-0 .pcards .card .crank {
-    font-size: 1rem; font-weight: 800; top: 5px; left: 7px; line-height: 1;
-  }
-  #screen-table #seat-0 .pcards .card .csuit { font-size: 1.6rem; }
+  /* Hero cards moved to the dedicated #hero-cards strip (v1.8.21) —
+     seat-0 on the felt is cardless. See the TABLE REWRITE block. */
   #screen-table .hero-bar .controls, #screen-online .hero-bar .controls { gap: 0.35rem; }
   /* Tighter tab bar */
   .mobile-tabs { padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px)); }
@@ -1226,7 +1211,8 @@ label { font-weight: 600; }
   #screen-table .seat, #screen-online .seat {
     min-width: 68px; max-width: 78px; padding: 0.2rem 0.25rem;
   }
-  #screen-table .seat .pcards .card, #screen-online .seat .pcards .card { width: 20px; height: 30px; }
+  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
+     at the end of this file (v1.8.21). */
   #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.62rem; margin: 1px 0; }
   #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.58rem; min-height: 0.8em; }
 }
@@ -1357,23 +1343,8 @@ label { font-weight: 600; }
   /* Hide bet text under seats — cleaner (bets show on felt) */
   #screen-table .seat .pbet { display: none; }
 
-  /* Hero cards: large, crisp, well-spaced */
-  #screen-table #seat-0 .pcards {
-    gap: 8px;
-    margin-top: 6px;
-  }
-  #screen-table #seat-0 .pcards .card {
-    width: 62px; height: 86px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-  }
-  #screen-table #seat-0 .pcards .card .crank {
-    font-size: 1.15rem;
-    top: 6px; left: 8px;
-  }
-  #screen-table #seat-0 .pcards .card .csuit {
-    font-size: 1.9rem;
-  }
+  /* Hero cards moved to the dedicated #hero-cards strip (v1.8.21) —
+     seat-0 on the felt is cardless. See the TABLE REWRITE block. */
 
   /* Pot: minimal floating pill */
   #screen-table .pot {
@@ -1491,4 +1462,64 @@ label { font-weight: 600; }
   #screen-table .hero-bar .ctl:disabled {
     opacity: 0.35;
   }
+}
+
+/* ============ TABLE REWRITE (v1.8.21) — single source of truth ============
+   Fixed 8-seat layout. Opponent seats are cardless mid-hand (avatar + name +
+   stack only); their .pcards container is display:none until reveal.
+   Hero cards live in the dedicated #hero-cards strip (always visible).
+   This block REPLACES all earlier competing seat-card size rules. */
+@media (max-width: 900px) {
+  /* Hero bar becomes a column: hero card strip on top, action buttons below.
+     The strip is never covered — it sits inside the fixed bar, above controls. */
+  #screen-table .hero-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  #screen-table .hero-cards-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  /* Hero strip cards: always visible, larger than board cards, crisp. */
+  #hero-cards {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  #hero-cards .card {
+    width: 64px; height: 90px;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  }
+  #hero-cards .card .crank {
+    font-size: 1.05rem; font-weight: 800;
+    top: 5px; left: 7px; line-height: 1;
+  }
+  #hero-cards .card .csuit { font-size: 1.8rem; }
+  #screen-table .hero-info {
+    font-size: 0.8rem;
+    margin-top: 0;
+  }
+
+  /* Opponent seats: cardless by default. The .pcards container only
+     renders on reveal (hand end / voluntary show) via .cards-up. */
+  #screen-table .seat .pcards { display: none; }
+  #screen-table .seat.cards-up .pcards {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin-top: 4px;
+    min-height: 0;
+  }
+  /* THE one opponent-card size rule (reveal only): */
+  #screen-table .seat .pcards .card { width: 30px; height: 42px; }
+  #screen-table .seat .pcards .card .crank { font-size: 0.7rem; top: 2px; left: 4px; }
+  #screen-table .seat .pcards .card .csuit { font-size: 1.1rem; }
+
+  /* Empty seats: dimmed dashed placeholders (pairs with .seat.empty base). */
+  #screen-table .seat.empty .pname { color: var(--muted); font-style: italic; }
 }
