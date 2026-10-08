@@ -271,7 +271,7 @@ var UI = (function () {
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
     var rx = narrow ? 30 : 42;
     var ry = narrow ? 32 : 32;
-    if (i === 0) return { x: 50, y: narrow ? 72 : 82 };
+    if (i === 0) return { x: 50, y: narrow ? 62 : 82 };
     var theta = (90 + i * (360 / n)) * Math.PI / 180;
     return { x: 50 + rx * Math.cos(theta), y: 50 + ry * Math.sin(theta) };
   }
@@ -414,12 +414,13 @@ var UI = (function () {
       setPact(s.querySelector('.pact'), i, (opts.lastActions && opts.lastActions[i]) || '');
       var hole = [], faceUp = false;
       // Hero always keeps their cards (folding hides from table, not from self).
-      // Others' cards show only at hand end or when revealed.
+      // At hand end (PokerNow-style): reveal ALL hands face-up so you can see
+      // who would have won, even if they folded early.
       var showHole = !p.sittingOut && p.hole.length === 2 && (!p.folded || p.isHero || handEnd);
       if (showHole) {
         hole = p.hole;
-        if (p.isHero) faceUp = true;
-        else faceUp = handEnd || (opts.revealed && opts.revealed[i]);
+        // At hand end, everyone's cards are face-up (PokerNow-style reveal)
+        faceUp = p.isHero || handEnd || (opts.revealed && opts.revealed[i]);
       }
       syncCards(s.querySelector('.pcards'), hole, faceUp, true);
       s.classList.toggle('folded', p.folded);
@@ -586,42 +587,48 @@ var UI = (function () {
     };
   }
 
-  // Hand-end controls: a "Next hand" button plus an auto-deal countdown, and
-  // optionally a "Show my hand" button when the hero folded. The row lives
-  // inside the winner banner so it clears with it; the timer is owned here so
-  // leaving the table (winnerBanner(null)) always cancels the auto-deal.
+  // Hand-end: PokerNow-style — no blocking modal. Show a small toast with the
+  // result, reveal all hands at showdown, and auto-deal after a pause.
+  // The "Next hand" button appears inline in the action area.
   var handEndTimer = null;
   function showHandEndControls(o) {
     hideHandEndControls();
+    // Show result as a small toast (not a blocking modal)
     var w = $('winner-banner');
-    if (!w) { o.onNext(); return; }
+    if (w) {
+      w.hidden = false;
+      w.classList.add('toast-mode');
+    }
+    // Create inline next-hand button in the hero bar
+    var bar = document.querySelector('#screen-table .hero-bar .controls');
+    if (!bar) { o.onNext(); return; }
     var row = document.createElement('div');
     row.id = 'handend-row';
+    row.style.cssText = 'display:flex;gap:0.5rem;width:100%;margin-top:0.5rem;';
     if (o.onShowHero) {
       var sh = document.createElement('button');
       sh.className = 'ghost'; sh.id = 'btn-show-hero';
       sh.textContent = '👁 Show my hand';
+      sh.style.flex = '1';
       sh.onclick = function () { sh.disabled = true; sh.textContent = 'Hand shown'; o.onShowHero(); };
       row.appendChild(sh);
     }
     var btn = document.createElement('button');
     btn.className = 'primary'; btn.id = 'btn-next-hand';
     btn.textContent = 'Next hand ▸';
+    btn.style.flex = '2';
     row.appendChild(btn);
-    var hint = document.createElement('span');
-    hint.className = 'fineprint';
-    row.appendChild(hint);
-    w.appendChild(row);
-    var ms = o.autoMs || 6000;
+    bar.appendChild(row);
+    var ms = o.autoMs || 8000;
     var t0 = Date.now();
     function tick() {
       var s = Math.ceil((ms - (Date.now() - t0)) / 1000);
       if (s <= 0) { hideHandEndControls(); o.onNext(); return; }
-      hint.textContent = 'auto-dealing in ' + s + 's';
+      btn.textContent = 'Next hand ▸ (' + s + 's)';
     }
     btn.onclick = function () { hideHandEndControls(); o.onNext(); };
     tick();
-    handEndTimer = setInterval(tick, 250);
+    handEndTimer = setInterval(tick, 500);
   }
   function hideHandEndControls() {
     if (handEndTimer) { clearInterval(handEndTimer); handEndTimer = null; }

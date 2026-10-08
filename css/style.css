@@ -1438,3 +1438,23 @@ label { font-weight: 600; }
     filter: none;
   }
 }
+
+/* Winner toast mode: small, non-blocking, auto-dismisses */
+.winner-banner.toast-mode {
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  bottom: auto;
+  max-width: 88%;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.9rem;
+  z-index: 25;
+}
+.winner-banner.toast-mode .wdetails { display: none; }
+.winner-banner.toast-mode .wchevron { display: none; }
+@media (max-width: 900px) {
+  .winner-banner.toast-mode {
+    top: 8px;
+    font-size: 0.85rem;
+  }
+}
