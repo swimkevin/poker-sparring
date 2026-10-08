@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.43] — 2026-10-08
+
+### Fixed
+- Coach: second pair (e.g. QQ on an Ace-high flop) was labeled a "Bluff" — it
+  fell through to the air-ball branch. It now gets its own thin-value/
+  protection guidance ("Bet ~½ pot — second pair is usually best here…")
+  heads-up with a reason, else a pot-control check.
+
 ## [1.8.42] — 2026-10-08
 
 ### Fixed

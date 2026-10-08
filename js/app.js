@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.42';
+  var APP_VERSION = '1.8.43';
   // Read-only copy for update-check.js (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -1425,6 +1425,22 @@
           '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit. Needs only <b>' +
           pct(bluffBE(halfBet, pot)) + '</b> folds to break even.' + rangeNote,
           'Semi-bluff strong draws: fold equity plus real equity is a profitable combo.');
+      }
+      // Second pair: thin value/protection — not a bluff, it has real
+      // showdown value. Bet heads-up with a reason; otherwise pot control.
+      if (hc === 'secondpair' && canBet) {
+        var scare2 = scareCardRank();
+        if (!multiway && (inPos || scare2 || foldy > 0.5)) {
+          var b3 = Math.max(1, Math.round(pot / 2));
+          return mkVerdict('bet', 'marginal',
+            '<b>Bet</b> ~½ pot (' + fmt(b3) + ') — ' + handClassName(hc) +
+            ' is usually best here. Worse pairs call, draws pay to chase, and you charge overcards.' + rangeNote,
+            'Bet second pair for thin value and protection — but keep the pot small.');
+        }
+        return mkVerdict('check', 'marginal',
+          '<b>Check</b> — ' + handClassName(hc) + ' has showdown value. Take the pot-control line' +
+          (multiway ? ', especially multiway.' : '.') + rangeNote,
+          'Second pair often wins unimproved — no need to inflate the pot to find out.');
       }
       // Air: bluff only with a real story behind it.
       if (canBet) {
