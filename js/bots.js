@@ -109,9 +109,9 @@ var ARCHETYPES = [
     tiltProne: 0.20, rebuy: 0.40
   },
   {
-    id: 'grinder', name: 'Grinder', modes: ['tourney'], emoji: '⏱️',
-    tagline: 'Tournament pro. Tight early, lethal with 20 big blinds.',
-    desc: 'Tournament TAG: folds ~85% of hands, but 3-bets relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
+    id: 'pro', name: 'Pro', modes: ['tourney'], emoji: '⏱️',
+    tagline: 'Tournament TAG. Tight early, lethal with 20 big blinds.',
+    desc: 'Tournament tight-aggressive (Harrington-style): folds ~85% of hands, but 3-bets relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
     beat: 'Steal his blinds early when stacks are deep. Never pay off a shove without a real hand — his all-in range is brutally strong.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 2,
     aggression: 0.65, bluff: 0.12, stubborn: 0.40, pushTier: 5, callPushTier: 2, limp: 0.05,
@@ -119,13 +119,33 @@ var ARCHETYPES = [
     friendly: true,
   },
   {
-    id: 'bubble', name: 'Bubble', modes: ['tourney'], emoji: '🫧',
+    id: 'nit', name: 'Nit', modes: ['tourney'], emoji: '🫧',
     tagline: 'Here to cash, not to win. Folds everything but the nuts.',
     desc: 'Extreme survival mode: plays ~10% of hands and treats every all-in like the tournament bubble. Will blind down to 5 big blinds waiting for aces — then shove them with total conviction.',
     beat: 'Rob his blinds with any two cards. When he finally plays back at you, believe the strength and get out of the way.',
     openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.30, bluff: 0.02, stubborn: 0.30, pushTier: 2, callPushTier: 1, limp: 0.10,
     tiltProne: 0.45, rebuy: 0.15
+  },
+  {
+    id: 'bully', name: 'Bully', modes: ['tourney'], emoji: '💪',
+    tagline: 'Big stack bully. Your tournament life is his poker chip.',
+    desc: 'Chip-leader pressure: when Bully has the big stack, he opens ~35% of hands and 3-bets light — medium stacks can\'t call without risking their tournament. Backs down against other big stacks, but feasts on anyone protecting a cash. The ICM nightmare from every final table.',
+    beat: 'Wait for a real hand and trap — he bets into everything. Don\'t bluff into the chip leader; let him hang himself.',
+    openTier: 4, openTierLate: 5, callTier: 3, threeBetTier: 3,
+    aggression: 0.85, bluff: 0.30, stubborn: 0.60, pushTier: 4, callPushTier: 3, limp: 0.10,
+    tiltProne: 0.50, rebuy: 0.70,
+    friendly: true,
+  },
+  {
+    id: 'gambler', name: 'Gambler', modes: ['tourney'], emoji: '🎲',
+    tagline: 'Super-aggressive. Doubles up or busts by level 4.',
+    desc: 'Harrington\'s "super aggressive" tournament style: plays ~40% of hands, 4-bets light, bluffs every street. Either builds a monster stack early or rebuys — no middle ground. The cowboy from every tournament field.',
+    beat: 'Tighten up and let him bluff into your strong hands. Never try to out-aggress him; patience is the counter.',
+    openTier: 5, openTierLate: 6, callTier: 4, threeBetTier: 4,
+    aggression: 0.90, bluff: 0.45, stubborn: 0.70, pushTier: 5, callPushTier: 4, limp: 0.15,
+    tiltProne: 0.80, rebuy: 0.90,
+    friendly: true,
   },
 
 ];

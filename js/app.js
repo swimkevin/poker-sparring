@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.49';
+  var APP_VERSION = '1.8.51';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -119,6 +119,16 @@
   }
   var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
   var preHuSelection = null; // full table remembered across a heads-up detour
+  // Prune the selection to bots available in the current game mode.
+  // Prevents stale tournament picks from blocking cash-game selection.
+  function pruneSelection() {
+    var available = rosterBots().map(function (b) { return b.id; });
+    selectedBots = new Set(Array.from(selectedBots).filter(function (id) {
+      return available.indexOf(id) !== -1;
+    }));
+    if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
+  }
+  pruneSelection(); // clean any stale picks from a previous mode
   function maxOpp() { return mode === 'hu' ? 1 : 7; }
   function rosterOrderIds() { return rosterBots().map(function (b) { return b.id; }); }
   // Transient hint under the bot roster ("Only 1 opponent for heads-up", …).
@@ -164,13 +174,18 @@
   var gameMode = 'cash';
   var cfg = { stack: 10000, sb: 50, bb: 100 };
 
-  var TOUR_LEVELS = [
-    { sb: 10, bb: 20, ante: 0 }, { sb: 15, bb: 30, ante: 0 },
-    { sb: 20, bb: 40, ante: 0 }, { sb: 30, bb: 60, ante: 5 },
-    { sb: 40, bb: 80, ante: 10 }, { sb: 60, bb: 120, ante: 10 },
-    { sb: 80, bb: 160, ante: 20 }, { sb: 120, bb: 240, ante: 30 },
-    { sb: 160, bb: 320, ante: 40 }, { sb: 200, bb: 400, ante: 50 }
-  ];
+  // Tournament blind structure: Level 1 uses the user's configured SB/BB,
+  // later levels scale up (roughly doubling). Antes kick in from level 4.
+  function tourLevels() {
+    var sb0 = Math.max(1, cfg.sb || 5), bb0 = Math.max(2, cfg.bb || 10);
+    var mult = [1, 1.5, 2, 3, 4, 6, 8, 12, 16, 20];
+    var antes = [0, 0, 0, 0.5, 1, 1, 2, 3, 4, 5];
+    return mult.map(function (m, i) {
+      return { sb: Math.round(sb0 * m), bb: Math.round(bb0 * m),
+               ante: Math.round(bb0 * antes[i] / 5) * 5 };
+    });
+  }
+  var TOUR_LEVELS = null; // built per tournament from cfg
 
   // ================= event pump =================
   function onTableEvent(e) {
@@ -291,7 +306,11 @@
         coachDecisions.push({
           street: pendingAdvice.street, advice: pendingAdvice.advice,
           strength: pendingAdvice.strength, lesson: pendingAdvice.lesson,
-          action: e.action, followed: adviceFollowed(pendingAdvice.advice, e.action)
+          action: e.action, followed: adviceFollowed(pendingAdvice.advice, e.action),
+          // Hand strength at decision time — lets the recap recognize
+          // semi-bluffs (big bet with a draw) vs pure bluffs.
+          hc: (typeof handClass === 'function')
+            ? handClass(table.players[0].hole, table.community) : null
         });
         pendingAdvice = null;
       }
@@ -533,6 +552,7 @@
             UI.log('🔄 ' + UI.escapeHtml(p.name) + ' rebuys (1000 chips)');
           } else {
             p.sittingOut = true;
+            if (tourney && tourney.placements) tourney.placements.push(p.name);
             UI.log('💀 ' + UI.escapeHtml(p.name) + ' is eliminated!');
           }
         }
@@ -541,6 +561,7 @@
       var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; });
       if (hero.stack === 0) {
         var place = alive.length + 1;
+        if (tourney && tourney.placements) tourney.placements.push(hero.name || 'You');
         var buttons = [
           { label: 'View stats', cb: function () { UI.showScreen('stats'); UI.renderStats(); } },
           { label: 'New tournament', primary: true, cb: startGame }
@@ -567,9 +588,10 @@
         return;
       }
       if (alive.length === 1) {
+        var payoutHtml = tourneyPayoutHtml();
         UI.modal({
           title: '🏆 Champion!',
-          body: 'You outlasted the whole table. Tournament winner!',
+          body: 'You outlasted the whole table. Tournament winner!' + payoutHtml,
           buttons: [
             { label: 'View stats', cb: function () { UI.showScreen('stats'); UI.renderStats(); } },
             { label: 'New tournament', primary: true, cb: startGame }
@@ -636,6 +658,30 @@
   function ordinal(n) {
     var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  // Tournament payout: top 3 split the prize pool (50/30/20).
+  // placements[] = eliminated names in order; winner is the last one standing.
+  function tourneyPayoutHtml() {
+    if (!tourney || !tourney.placements) return '';
+    var total = table.players.length;
+    var pool = total * (cfg.stack || 1000);
+    // Build final standings: winner first, then placements reversed (last out = 2nd)
+    var standings = [];
+    var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; });
+    if (alive.length === 1) standings.push(alive[0].name);
+    for (var i = tourney.placements.length - 1; i >= 0; i--) {
+      standings.push(tourney.placements[i]);
+    }
+    if (standings.length < 3) return '';
+    var prizes = [0.5, 0.3, 0.2];
+    var medals = ['🥇', '🥈', '🥉'];
+    var html = '<div class="tourney-payout"><div class="payout-title">Prize pool: ' + UI.fmt(pool) + '</div>';
+    for (var j = 0; j < 3 && j < standings.length; j++) {
+      var nm = standings[j] === table.players[0].name ? 'You' : UI.escapeHtml(standings[j]);
+      html += '<div>' + medals[j] + ' ' + ordinal(j + 1) + ': ' + nm + ' — ' + UI.fmt(Math.round(pool * prizes[j])) + '</div>';
+    }
+    return html + '</div>';
   }
 
   function updateBlindsInfo() {
@@ -713,7 +759,7 @@
             (tier >= 6 || (tier >= 5 && table.currentBet >= 4 * table.bb))) {
           return base('loose-call', 'Calling too loose preflop',
             'Called ' + UI.fmt(legal.callAmount) + ' with ' + hole,
-            'Hands like this win roughly 1 in 3 against a raiser\'s range. Poker profit comes from repeating small edges hundreds of times — one loose call is nothing, but a hundred of them is a bankroll leak no lucky streak can fix, because variance only evens out around your true (negative) expectation.');
+            'This hand only wins about 1 in 3 times against a raise. Calling once is no big deal, but doing it every time slowly drains your chips. Save your money for better hands.');
         }
         return null;
       }
@@ -722,19 +768,19 @@
         var need = legal.callAmount / (pot + legal.callAmount);
         if (eq < need - 0.12) {
           return base('bad-chase', 'Chasing without the odds',
-            'Called ' + UI.fmt(legal.callAmount) + ' with ~' + Math.round(eq * 100) + '% equity (needed ' + Math.round(need * 100) + '%)',
-            'You needed ' + Math.round(need * 100) + '% equity to break even but had about ' + Math.round(eq * 100) + '%. Every such call quietly loses chips on average. Draws feel exciting, but bankroll discipline means chasing only when the math — pot odds plus what you might win later — says yes.');
+            'Called ' + UI.fmt(legal.callAmount) + ' but only win about ' + Math.round(eq * 100) + ' out of 100 here',
+            'You paid ' + UI.fmt(legal.callAmount) + ' but this hand only wins about ' + Math.round(eq * 100) + ' times out of 100. That\'s not often enough to make the call worth it. It\'s tempting to chase, but only call when you\'re likely enough to win.');
         }
       }
       if (a === 'check' && street === 'river' && madeStrength(hero.hole, table.community) > 0.88) {
         return base('missed-value', 'Missed value bet',
           'Checked the river with a monster (' + hole + ')',
-          'With a near-nut hand, checking leaves money on the table every single time. Value betting is the lowest-variance way to grow a stack: you were already winning the pot — the bet just makes it bigger. Unclaimed value is poker\'s quietest leak.');
+          'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');
       }
       if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > 0.35) {
         return base('weak-fold', 'Folding too often',
-          'Folded to a small bet of ' + UI.fmt(legal.toCall) + ' with ~' + Math.round(eq * 100) + '% equity',
-          'Small bets have to work very often to be profitable bluffs — most of the time the math says look them up. Habitually folding here doesn\'t just lose this pot; it teaches observant opponents they can bluff you forever.');
+          'Folded to a small bet of ' + UI.fmt(legal.toCall),
+          'That was a tiny bet — you don\'t need a great hand to call it. If you always fold to small bets, other players will keep bluffing you.');
       }
     } catch { /* leak detection never breaks the game */ }
     return null;
@@ -792,8 +838,10 @@
       else if (A.id === 'shark') style = 'solid and balanced — keep it simple';
       else if (A.id === 'nathan') style = 'traps — a raise means a monster';
       else if (A.id === 'amogh') style = 'big bets mean big hands';
-      else if (A.id === 'bubble') style = 'super tight — a bet is the nuts';
-      else if (A.id === 'grinder') style = 'tournament pro — respect raises';
+      else if (A.id === 'nit') style = 'super tight — a bet is the nuts';
+      else if (A.id === 'pro') style = 'tournament pro — respect raises';
+      else if (A.id === 'bully') style = 'chip bully — trap, don\'t bluff into him';
+      else if (A.id === 'gambler') style = 'super aggressive — let him bluff into you';
       else style = 'tricky — play straightforward';
       return '<b>' + name + '</b>: ' + style;
     });
@@ -888,9 +936,9 @@
       case 'rock': return base + ' — they play ~10% of hands. This is premiums only.';
       case 'nathan': return base + ' — the trap springs. They never raise before the river without a monster.';
       case 'amogh': return base + ' — sizing is the weapon. Big bets mean big hands; don\'t bluff-catch light.';
-      case 'bubble': return base + ' — they fold everything but the nuts. This IS the nuts.';
-      case 'grinder': return base + ' — tournament 3-bet: polarized between premiums and blocker bluffs. Respect it without a hand.';
-      case 'lag': return base + ' — constant pressure with ~30% of hands. Could be anything; 3-bet your strong hands back at them.';
+      case 'nit': return base + ' — they fold everything but the best hands. Respect their bets.';
+      case 'pro': return base + ' — a strong tournament player. When they re-raise, they usually have it. Don\'t fight back without a good hand.';
+      case 'lag': return base + ' — plays lots of hands aggressively. Could have anything; re-raise your strong hands.';
       case 'shark': return base + ' — solid TAG aggression, balanced between value and bluffs. Don\'t get fancy.';
       default:
         var lo = Math.round(((A.openTier || 3) / 6) * 100);
@@ -972,9 +1020,9 @@
     });
     var words = {
       wide: 'playing a lot of hands',
-      capped: 'capped — mostly medium hands, no big premiums',
+      capped: 'mostly medium hands, nothing huge',
       strong: 'showing real strength',
-      polarized: 'polarized — the nuts or nothing',
+      polarized: 'either really strong or bluffing',
       unknown: 'no read yet'
     }[label];
     return { label: label, strength: strength, actions: actions, words: words };
@@ -1140,7 +1188,8 @@
       var v = (table.street === 'preflop') ? coachPreflop(ctx) : coachPostflop(ctx);
       var tail = villainLine(V);
       var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
-      v.html = v.msg ? v.msg + tail + posNote + opponentReads() : null;
+      var stageNote = tourneyStageTip();
+      v.html = v.msg ? v.msg + tail + posNote + stageNote + opponentReads() : null;
       return v;
     } catch { return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null }; }
   }
@@ -1189,15 +1238,19 @@
     if (!good && !bad && !won) return null;
     var lines = [];
     // Win first: if you ignored the coach but took the pot, say so.
-    if (won && !good) {
-      lines.push({ kind: 'good', text: wonByFold
-        ? 'Bluff worked! 🎉 Everyone folded — nice aggression.'
-        : 'You won the hand! 🎉 Your play got through.' });
+    // Distinguish semi-bluffs (draw + aggression) from pure bluffs.
+    if (won && !good && bad) {
+      var isSemi = bad.hc === 'draw-strong' || bad.hc === 'draw';
+      var winMsg = wonByFold
+        ? (isSemi ? 'Nice semi-bluff! 🎉 Your draw + aggression took it down.'
+           : 'Bluff worked! 🎉 Everyone folded — nice aggression.')
+        : 'You won the hand! 🎉 Your play got through.';
+      lines.push({ kind: 'good', text: winMsg });
     } else if (good) {
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
     }
     if (bad) {
-      var prefix = (won && !good) ? 'One thing to tighten up: ' : 'Leak to fix: ';
+      var prefix = (won && !good) ? 'One thing to tighten up: ' : 'To improve: ';
       lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
         ', you went ' + bad.action + '. ' + bad.lesson });
     }
@@ -1210,6 +1263,25 @@
   }
 
   // ---- solver-grade additions (2026-10-08 research round) ----
+  // Tournament stage: early (deep), middle, bubble (4-5 left, 3 paid), final (3 left).
+  // Used to tailor coach advice — each stage plays differently.
+  function tourneyStage() {
+    if (gameMode !== 'tourney') return null;
+    var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; }).length;
+    if (alive <= 3) return 'final';
+    if (alive <= 5) return 'bubble';
+    var avgBB = table.players.reduce(function (s, p) { return s + p.stack; }, 0) / alive / table.bb;
+    if (avgBB > 40) return 'early';
+    return 'middle';
+  }
+  function tourneyStageTip() {
+    var st = tourneyStage();
+    if (!st) return '';
+    if (st === 'early') return ' <span class="coach-stage">Early stage: deep stacks — play like cash, see flops with hands that can make big hands.</span>';
+    if (st === 'middle') return ' <span class="coach-stage">Middle stage: blinds rising — steal more, defend less. Antes make steals profitable.</span>';
+    if (st === 'bubble') return ' <span class="coach-stage">🫧 Bubble: 3 get paid! Tighten up as a medium stack; bully as the big stack.</span>';
+    return ' <span class="coach-stage">🏁 Final 3: every elimination is a pay jump. Survival is everything.</span>';
+  }
   // Tournament risk premium: near pay jumps, chips are worth more than face
   // value, so the pot-odds bar rises. Approximated from effective stack depth
   // (short stacks face the most ICM pressure). Cash games: no tax.
@@ -1221,8 +1293,7 @@
     return 0;
   }
   function riskPremiumNote(rp) {
-    return rp > 0 ? ' <span class="coach-icm">Tournament tax: ICM adds ~<b>' + Math.round(rp * 100) +
-      '%</b> to the equity you need — chips are worth more than their face value near pay jumps.</span>' : '';
+    return rp > 0 ? ' <span class="coach-icm">Tournament note: be a bit tighter here — chips are worth more than their face value near pay jumps.</span>' : '';
   }
   // Push/fold chart positions (pushfold.js) from the coach's position names.
   var PF_POS_MAP = { 'button': 'BTN', 'small blind': 'SB', 'big blind': 'BB',
@@ -1267,8 +1338,8 @@
     var spot = preflopSpot();
     if (spot === 'open' || isStealSpot()) {
       if (tier <= shoveTier)
-        return shoveVerdict(c.nmHtml + ' is in the shoving range ' + pos + ' at ' + Math.round(effBB) + 'bb.',
-          'Under ~12bb, fold equity + hand strength makes shoving profitable — calling leaves you pot-committed anyway.');
+        return shoveVerdict(c.nmHtml + ' is strong enough to shove ' + pos + ' at ' + Math.round(effBB) + 'bb.',
+          'With under ~12bb, just go all-in or fold. Calling leaves you with no chips to play with later anyway.');
       return mkVerdict(spot === 'open' ? 'check' : 'fold', 'strong',
         Math.round(effBB) + 'bb and ' + c.nmHtml + ' isn\'t a shove ' + pos +
         '. <b>' + (spot === 'open' ? 'Check' : 'Fold') + '</b> and wait for a real hand.',
@@ -1277,10 +1348,10 @@
     // Facing aggression short: reshove premiums and strong chart hands, never flat.
     if (tier === 1)
       return shoveVerdict(c.nmHtml + ' is always a shove here.',
-        'Premiums never fold short — shove and take your equity plus fold equity.');
+        'Your best hands never fold when short — go all-in. You might win right away if they fold, or win at showdown.');
     if (tier <= Math.min(3, shoveTier))
       return shoveVerdict(c.nmHtml + ' is strong enough to reshove ' + Math.round(effBB) + 'bb.',
-        'Short: reshove strong hands instead of calling — the caller\'s fold equity is your profit.');
+        'When short, go all-in with strong hands instead of just calling — you win extra when they fold.');
     return mkVerdict('fold', 'strong',
       '<b>Fold</b> — ' + c.nmHtml + ' can\'t call a raise at ' + Math.round(effBB) +
       'bb (no postflop play left), and it\'s not a reshove.',
@@ -1330,8 +1401,8 @@
       if (tier === 5 && gameMode === 'tourney' && heroIsBigStack())
         return mkVerdict('raise', 'marginal',
           'You\'re the big stack — <b>raise 2.5×</b> with ' + c.nmHtml +
-          '. Medium stacks have to fold too much to survive; your fold equity is at its peak.',
-          'On tournament bubbles, the big stack attacks: leverage ICM pressure, don\'t wait for premiums.');
+          '. Medium stacks have to fold a lot to stay alive, so your bluffs work more often.',
+          'When you have the most chips in a tournament, be aggressive: others are scared to bust.');
       if (tier === 5 && folders.length === steal.targets.length)
         return mkVerdict('raise', 'marginal',
           'Both blinds fold too much — <b>raise 2.5×</b> as a steal, but give it up if they fight back.',
@@ -1352,8 +1423,8 @@
             'Facing a 3-bet with a premium: 4-bet for value, about 2.3× their raise.');
         }
         return mkVerdict('call', 'strong',
-          'They shoved. With ' + c.nmHtml + ', <b>call</b> — you\'re ahead of a 3-bet shoving range far too often to fold a premium.',
-          'Never fold QQ+ to a single shove: their range holds plenty of worse hands.');
+          'They went all-in. With ' + c.nmHtml + ', <b>call</b> — your hand is usually ahead here.',
+          'Never fold QQ or better to a single all-in: they often have worse hands.');
       }
       if (tier === 2)
         return mkVerdict(inPos && effBB3 >= 40 ? 'call' : 'fold', inPos && effBB3 >= 40 ? 'marginal' : 'strong',
@@ -1444,8 +1515,8 @@
     if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
         villainFoldy(V.archetype) > 0.5 && !multiway)
       return mkVerdict('raise', 'marginal',
-        'Mix in a <b>bluff 3-bet</b> sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
-        'Bluff 3-bets need a blocker plus a folder — never into multiple players.');
+        'Mix in a <b>bluff re-raise</b> sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
+        'Only bluff re-raise when they fold a lot — never into multiple players.');
 
     // Equity vs the opener's actual range (not random hands), then adjust
     // for implied odds, reverse implied odds, and player type.
@@ -1465,20 +1536,19 @@
       ((V && villainBluffy(V.archetype) > 0.55) ? 0.05 : 0);
 
     var handDesc = c.nmHtml + (suited ? ' suited' : '');
-    var mathLine = 'Call <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need <b>' +
-      pct(need) + '</b> equity' + (rp > 0 ? ' +<b>' + Math.round(rp * 100) + '%</b> tournament tax' : '') +
-      (credit > 0 ? ' (plus implied odds)' : '') + '. ' +
-      handDesc + ' has ~<b>' + pct(adjEq) + '</b> vs ' + vName + '\'s range. ' + riskPremiumNote(rp);
+    var mathLine = 'Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need to win <b>' +
+      pct(need) + '</b> of the time' + (rp > 0 ? ' (a bit more in tournaments)' : '') + '. ' +
+      handDesc + ' wins about <b>' + pct(adjEq) + '</b> here. ';
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
-        'Call when your equity beats the price — the single most important poker math skill.');
+        'Call when you win often enough to cover the price — the most important poker math skill.');
     if (adjEq > threshold - 0.05)
       return mkVerdict(inPos ? 'call' : 'fold', 'marginal',
-        mathLine + (inPos ? 'Close — with position, lean <b>call</b>.' : 'Close — out of position, lean <b>fold</b>.'),
-        'Marginal spots are position-dependent: position makes close calls profitable.');
-    var rioNote = debit > 0 ? ' Against a tight range your broadway is often dominated — that\'s reverse implied odds.' : '';
+        mathLine + (inPos ? 'Close — acting last, lean <b>call</b>.' : 'Close — acting first, lean <b>fold</b>.'),
+        'Close calls are better when you act last: you get more information first.');
+    var rioNote = debit > 0 ? ' Against a tight player your hand is often second-best — that\'s trouble.' : '';
     return mkVerdict('fold', 'strong', mathLine + 'Math says <b>fold</b>.' + rioNote,
-      'Folding when the price is wrong saves more money than hero-calling ever wins.');
+      'Folding when the price is wrong saves more money than risky calls ever win.');
   }
 
   function coachPostflop(c) {
@@ -1513,19 +1583,19 @@
         var frac = (tex === 'wet' || foldy < 0.25) ? 0.75 : 0.5;
         var betSize = Math.max(1, Math.round(pot * frac));
         var sprLine = (commit === 'commit')
-          ? ' The pot\'s already big next to the stacks (SPR ~' + sprV.toFixed(1) + ') — you\'re committed, so get the money in.'
+          ? ' The pot\'s already big compared to your stacks — you\'re all-in anyway, so get the money in.'
           : '';
         return mkVerdict('bet', 'strong',
           '<b>Bet for value</b> ~' + (frac === 0.75 ? '¾' : '½') + ' pot (' + fmt(betSize) + ')' +
-          (tex === 'wet' ? ' — draws everywhere, charge them' : '') + '.' + sprLine + rangeNote,
-          'Bet strong hands for value; size up on draw-heavy boards to charge draws.');
+          (tex === 'wet' ? ' — lots of draws out there, make them pay to chase' : '') + '.' + sprLine + rangeNote,
+          'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
       // Draws: semi-bluff the strong ones, check weak ones and vs stations.
       if (anyDraw && canBet) {
         if (foldy < 0.25)
           return mkVerdict('check', 'strong',
             'Nice draw, but ' + vName + ' never folds. <b>Check</b> and take the free card.' + rangeNote,
-            'Never semi-bluff a calling station — with no fold equity, take the free card.');
+            'Never bluff someone who never folds — just check and take the free card.');
         if (hc === 'draw-weak')
           return mkVerdict('check', 'marginal',
             'Just a gutshot — <b>check</b>. One way to win isn\'t enough to bet on.',
@@ -1534,7 +1604,7 @@
         return mkVerdict('bet', hc === 'draw-strong' ? 'strong' : 'marginal',
           '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit. Needs only <b>' +
           pct(bluffBE(halfBet, pot)) + '</b> folds to break even.' + rangeNote,
-          'Semi-bluff strong draws: fold equity plus real equity is a profitable combo.');
+          'Betting a strong draw is smart: you win if they fold now, or if you hit your hand.');
       }
       // Second pair: thin value/protection — not a bluff, it has real
       // showdown value. Bet heads-up with a reason; otherwise pot control.
@@ -1562,7 +1632,7 @@
           if (scare) why.push('the ' + esc(scare) + ' is a scare card');
           if (inPos) why.push('you have position');
           if (foldy > 0.55) why.push(vName + ' overfolds');
-          if (heroFlushBlocker()) why.push('you hold the nut-flush blocker');
+          if (heroFlushBlocker()) why.push('you block their best flush');
           var b2 = Math.max(1, Math.round(pot / 2));
           return mkVerdict('bet', 'marginal',
             '<b>Bluff</b> ~½ pot (' + fmt(b2) + ') — needs <b>' + pct(bluffBE(b2, pot)) + '</b> folds (' + why.join(', ') +
@@ -1570,7 +1640,7 @@
             'Bluff with a story — position, a scare card, or a folder — never just because. Mix bluffs in, or your value bets never get paid.');
         }
         return mkVerdict('check', multiway ? 'strong' : 'marginal',
-          '<b>Check</b> — ' + (multiway ? 'too many players to bluff through.' : 'no value, no fold equity.') +
+          '<b>Check</b> — ' + (multiway ? 'too many players to bluff through.' : 'nothing to win by betting here.') +
           ' Save it for a better spot.' + rangeNote,
           multiway ? 'Multiway pots kill bluffs: everyone has to fold, and someone usually won\'t.' : '');
       }
@@ -1607,9 +1677,9 @@
     // SPR commitment: big pot, small stacks, strong hand — no folding.
     if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)
       return mkVerdict('call', 'strong',
-        'SPR is only ~' + sprV.toFixed(1) + ' — the pot\'s huge next to what\'s left. With ' + handClassName(hc) +
+        'The pot\'s huge compared to what\'s left. With ' + handClassName(hc) +
         ' you\'re <b>committed: call</b>.' + rangeNote,
-        'Low SPR means commitment: once the pot is big relative to stacks, strong hands don\'t fold.');
+        'When the pot is big and your hand is strong, don\'t fold — you\'re already in too deep.');
 
     // Sizing tells: tiny bets invite raises, overbets from nits mean the nuts.
     if (tell && tell.unit === 'pot') {
@@ -1631,8 +1701,8 @@
         'With the near-nuts, raise: every street you don\'t build the pot costs money.');
     if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway)
       return mkVerdict('raise', 'marginal',
-        '<b>Semi-bluff raise</b> sometimes: fold equity plus ~' + pct(adjEq) + ' to hit. Otherwise call ' +
-        fmt(toCall) + ', needing ' + pct(need2) + '.' + rangeNote,
+        '<b>Raise</b> sometimes: you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +
+        fmt(toCall) + '.' + rangeNote,
         '');
 
     // The call/fold math, adjusted for range, implied odds, player type, and
@@ -1644,20 +1714,18 @@
     // slightly to river aggression unless villain is a known bluffer.
     var riverPrior = (table.street === 'river' && bluffy <= 0.55) ? 0.03 : 0;
     threshold += riverPrior;
-    var mdf = pot / (pot + toCall);
-    var mathLine = 'You need <b>' + pct(need2) + '</b>' +
-      (rp2 > 0 ? ' +<b>' + Math.round(rp2 * 100) + '%</b> tournament tax' : '') +
-      (rangeAdjust > 0.005 ? ' (more — ' + vName + '\'s range is strong)'
-        : rangeAdjust < -0.005 ? ' (less — ' + vName + ' is wide or bluffy)' : '') +
-      (riverPrior > 0 ? ' (rivers are under-bluffed at these stakes)' : '') +
-      ', you have ~<b>' + pct(adjEq) + '</b>' +
-      (credit > 0 ? ' (counting implied odds)' : '') +
-      (debit > 0 ? ' (docked for reverse implied odds)' : '') + '. ' +
-      'MDF says defend ~<b>' + Math.round(mdf * 100) + '%</b> of your range here. ' +
+    var mathLine = 'You need to win <b>' + pct(need2) + '</b> of the time' +
+      (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
+      (rangeAdjust > 0.005 ? ' (more — ' + vName + ' usually has a strong hand)'
+        : rangeAdjust < -0.005 ? ' (less — ' + vName + ' plays lots of hands or bluffs)' : '') +
+      (riverPrior > 0 ? ' (players bluff the river less than you\'d think)' : '') +
+      ', you win about <b>' + pct(adjEq) + '</b> of the time' +
+      '. ' +
+      'You don\'t need to defend every hand — folding some is fine. ' +
       riskPremiumNote(rp2);
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
-        'Calling when your equity beats the price is how winning poker works.');
+        'Calling when you win often enough is how winning poker works.');
     if ((bluffy > 0.5 || range.label === 'wide') && adjEq > threshold - 0.10)
       return mkVerdict('call', 'marginal',
         mathLine + 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.',
@@ -1683,8 +1751,17 @@
 
     if (mode === 'pushfold') { startPushFold(); return; }
 
-    var bots = allBots().filter(function (b) { return selectedBots.has(b.id); }).slice(0, maxOpp());
+    var bots = rosterBots().filter(function (b) { return selectedBots.has(b.id); }).slice(0, maxOpp());
     if (!bots.length) bots = [botById('lag')]; // safety net; the UI enforces >= 1
+    // Tournaments need a full table (8 players) for realistic ICM/bubble dynamics.
+    if (mode === 'tourney' && bots.length < 7) {
+      UI.modal({
+        title: 'Need 8 players',
+        body: 'Tournaments need a full table (you + 7 opponents) for realistic bubble and payout dynamics. Please select ' + (7 - bots.length) + ' more opponent' + (7 - bots.length === 1 ? '' : 's') + '.',
+        buttons: [{ label: 'OK', primary: true }]
+      });
+      return;
+    }
 
     gameMode = mode;
     var players = [{ name: NamePrefs.heroName(), isHero: true }].concat(bots.map(function (b) {
@@ -1697,7 +1774,8 @@
       ante: 0, onEvent: onTableEvent
     });
     if (gameMode === 'tourney') {
-      tourney = { levelIdx: 0 };
+      TOUR_LEVELS = tourLevels();
+      tourney = { levelIdx: 0, placements: [] }; // placements: eliminated player names in order
       table.setBlinds(TOUR_LEVELS[0].sb, TOUR_LEVELS[0].bb, 0);
     } else tourney = null;
 
@@ -1822,6 +1900,7 @@
     });
     table.handNo = s.handNo || 0; // next deal continues the count (blinds stay on schedule)
     if (gameMode === 'tourney') {
+      TOUR_LEVELS = tourLevels();
       tourney = { levelIdx: Math.min(s.levelIdx || 0, TOUR_LEVELS.length - 1) };
       var lv = TOUR_LEVELS[tourney.levelIdx];
       table.setBlinds(lv.sb, lv.bb, lv.ante);
@@ -2029,11 +2108,7 @@
         }
         // Prune bots that don't play this game type (e.g. cash classics when
         // switching to tournament). Keep the remaining picks as-is.
-        var available = rosterBots().map(function (b) { return b.id; });
-        selectedBots = new Set(Array.from(selectedBots).filter(function (id) {
-          return available.indexOf(id) !== -1;
-        }));
-        if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
+        pruneSelection();
         syncOppUI();
       };
     });
@@ -2097,7 +2172,20 @@
       $('opp-count').textContent = selectedBots.size;
       UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint, onRosterChange);
       syncQuickHint();
+      syncTourneyHint();
       saveRoster();
+    }
+    // Tournament mode: show the blind structure under the settings.
+    function syncTourneyHint() {
+      var el = $('tourney-blind-hint');
+      if (!el) return;
+      if (mode !== 'tourney') { el.style.display = 'none'; return; }
+      var sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
+      var bb = Math.max(2, parseInt($('cfg-bb').value, 10) || 10);
+      var every = Math.max(2, parseInt($('cfg-blindint').value, 10) || 8);
+      el.style.display = '';
+      el.textContent = '🏆 Tournament: starts at ' + sb + '/' + bb +
+        ', blinds go up every ' + every + ' hands.';
     }
     // Roster card clicks mutate the set inside UI; this keeps the count,
     // hint, and persisted selection in sync.
@@ -2202,9 +2290,9 @@
     var oc0 = document.getElementById('opp-count');
     if (oc0) oc0.textContent = selectedBots.size;
     // Stack/blind tweaks update the quick-start hint live.
-    ['cfg-stack', 'cfg-sb', 'cfg-bb'].forEach(function (id) {
+    ['cfg-stack', 'cfg-sb', 'cfg-bb', 'cfg-blindint'].forEach(function (id) {
       var el = $(id);
-      if (el) el.addEventListener('input', syncQuickHint);
+      if (el) el.addEventListener('input', function () { syncQuickHint(); syncTourneyHint(); });
     });
     syncQuickHint();
     refreshBankroll();

@@ -3,6 +3,48 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.51] — 2026-10-09
+
+### Changed — tournament requirements & payouts
+- **Full table required**: tournaments now need 8 players (you + 7 opponents)
+  for realistic bubble and ICM dynamics. Starting with fewer shows a prompt.
+- **Top 3 payout display**: tournament end now shows 🥇🥈🥉 placements with
+  50/30/20 prize pool split.
+
+### Changed — tournament-aware coach
+- **Stage tips**: coach now shows stage-specific guidance — Early (play like cash),
+  Middle (steal more), 🫧 Bubble (3 paid! tighten/bully), 🏁 Final 3 (survival).
+- **Simpler language**: removed MDF, "implied odds", "reverse implied odds" —
+  replaced with plain explanations. "Leak to fix" → "To improve".
+
+## [1.8.50] — 2026-10-09
+
+### Fixed — bot selection across modes
+- **Stale picks pruned on load**: switching from tournament to cash no longer
+  leaves tournament bots in the selection blocking new picks, and startGame
+  can no longer launch a cash game with tournament bots.
+
+### Changed — tournament bots
+- **Renamed**: Grinder→Pro, Bubble→Nit (cleaner, more professional).
+- **New**: Bully (big-stack ICM pressure) and Gambler (Harrington-style super
+  aggressive) — researched from tournament literature for realistic practice.
+
+### Changed — coach recognizes semi-bluffs
+- **Semi-bluff praise**: winning with a strong draw + aggression now says
+  "Nice semi-bluff! 🎉" instead of just flagging the deviation.
+
+### Fixed — tournament blinds
+- **Tournament now starts at your configured blinds** (e.g. 5/10) instead of
+  jumping to hardcoded 10/20. Blind levels scale from your SB/BB setting.
+- **Setup screen clarifies**: tournament mode now shows "🏆 Tournament: starts
+  at X/Y, blinds go up every N hands" under the settings.
+
+### Changed — simpler coach language
+- **Beginner-friendly wording**: replaced jargon like "equity", "range",
+  "polarized", "SPR", "ICM", "3-bet", "fold equity", "variance", "pot odds"
+  with plain language (e.g. "chance of winning", "re-raise", "be a bit tighter
+  in tournaments"). "Leak to fix" → "To improve".
+
 ## [1.8.49] — 2026-10-09
 
 ### Changed — bot roster by game type
