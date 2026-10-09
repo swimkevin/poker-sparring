@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.59] — 2026-10-09
+
+### Changed — opponent reads explain player types for beginners
+- **Descriptive reads**: "Station: never bluff them, value-bet big" →
+  "Station: calling station — calls with any pair or draw, never folds.
+  Don't bluff; bet big for value when you have it."
+- All 12 archetypes now explain WHAT the player type means, not just
+  the exploit. New users can understand "maniac", "rock", "calling station",
+  etc. without poker background.
+
 ## [1.8.58] — 2026-10-09
 
 ### Changed — coach less rigid, more options

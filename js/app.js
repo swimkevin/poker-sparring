@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.58';
+  var APP_VERSION = '1.8.59';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -869,18 +869,18 @@
       var A = p.archetype, name = UI.escapeHtml(p.name);
       if (!A) return name + ' (unknown style)';
       var style = '';
-      if (A.id === 'maniac') style = 'bluffs a lot — only fold without a real hand';
-      else if (A.id === 'station') style = 'never bluff them, value-bet big';
-      else if (A.id === 'rock') style = 'only plays big hands — fold when they bet';
-      else if (A.id === 'lag') style = 'plays lots of hands — re-raise your strong ones';
-      else if (A.id === 'shark') style = 'solid and balanced — keep it simple';
-      else if (A.id === 'nathan') style = 'traps — a raise means a monster';
-      else if (A.id === 'amogh') style = 'big bets mean big hands';
-      else if (A.id === 'nit') style = 'super tight — a bet is the nuts';
-      else if (A.id === 'pro') style = 'tournament pro — respect raises';
-      else if (A.id === 'bully') style = 'chip bully — trap, don\'t bluff into him';
-      else if (A.id === 'gambler') style = 'super aggressive — let him bluff into you';
-      else style = 'tricky — play straightforward';
+      if (A.id === 'maniac') style = 'maniac — bluffs constantly, calls with anything. Only play back with real hands';
+      else if (A.id === 'station') style = 'calling station — calls with any pair or draw, never folds. Don\'t bluff; bet big for value when you have it';
+      else if (A.id === 'rock') style = 'rock — only plays premium hands. Fold when they bet or raise';
+      else if (A.id === 'lag') style = 'loose-aggressive — plays lots of hands with pressure. Re-raise your strong hands';
+      else if (A.id === 'shark') style = 'solid all-around player — keep it simple, no fancy plays';
+      else if (A.id === 'nathan') style = 'trap player — slow-plays monsters. A raise from him means a huge hand';
+      else if (A.id === 'amogh') style = 'straightforward — big bets mean big hands, small bets mean weak';
+      else if (A.id === 'nit') style = 'super tight — folds everything but the nuts. Steal their blinds';
+      else if (A.id === 'pro') style = 'tournament pro — balanced and tough. Respect their raises';
+      else if (A.id === 'bully') style = 'chip bully — pushes people around. Trap with strong hands, don\'t bluff into them';
+      else if (A.id === 'gambler') style = 'gambler — wildly aggressive, bluffs a lot. Let them bet into your strong hands';
+      else style = 'tricky player — keep it straightforward, don\'t get fancy';
       return '<b>' + name + '</b>: ' + style;
     });
     // Always one per line as bullet points — easy to scan even with many opponents.

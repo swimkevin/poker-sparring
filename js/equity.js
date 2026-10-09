@@ -263,16 +263,16 @@ function villainBluffy(archetype) {
 
 // One-line exploit per bot id; custom bots get a read from their sliders.
 var EXPLOIT_LINES = {
-  lag: 'brings constant pressure — re-raise strong hands, never call light',
-  rohan: 'calls everything, raises nothing — value bet, never bluff',
-  amogh: 'bombs pots with real hands — let him bet into you, don\'t bluff-catch light',
-  nathan: 'never raises before the river — value bet relentlessly, believe his river bet',
-  grinder: 'tournament TAG — steal blinds deep, never pay off a shove light',
+  lag: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
+  rohan: 'calling station — calls everything, raises nothing. Value bet big, never bluff',
+  amogh: 'straightforward — bombs pots with real hands. Let him bet into you, don\'t bluff-catch light',
+  nathan: 'trap player — never raises before the river. Value bet relentlessly, believe his river bet',
+  grinder: 'tight-aggressive — steal blinds deep, never pay off a shove light',
   bubble: 'folds everything but the nuts — rob his blinds, believe his shoves',
-  shark: 'solid TAG — stay balanced, steal when he shows weakness',
-  station: 'calls down with anything — value bet big, never bluff',
-  maniac: 'raises everything — trap strong hands, call down lighter, never bluff',
-  rock: 'only plays monsters — steal his blinds, fold when he bets',
+  shark: 'solid all-around — stay balanced, steal when he shows weakness',
+  station: 'calling station — calls down with anything. Value bet big, never bluff',
+  maniac: 'maniac — raises everything. Trap strong hands, call down lighter, never bluff',
+  rock: 'rock — only plays monsters. Steal his blinds, fold when he bets',
   alice: 'never bluffs — believe every bet, steal her blinds relentlessly'
 };
 function exploitLine(archetype) {
