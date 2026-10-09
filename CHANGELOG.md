@@ -3,6 +3,24 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.49] — 2026-10-09
+
+### Changed — bot roster by game type
+- **Tournament mode is back** — always visible, no longer behind a flag.
+- **Separate default bots per game type**: cash shows Shark/Station/Maniac/Rock;
+  tournament shows Grinder/Bubble. Alice, friends, and custom bots appear in
+  every mode. Switching modes prunes unavailable bots from the selection.
+- **Alice moved to the top** of the roster, ahead of custom bots.
+- **Shorter classic names**: TAG Shark→Shark, Calling Station→Station,
+  The Maniac→Maniac, The Rock→Rock, The Grinder→Grinder, Bubble Boy→Bubble.
+
+### Changed — coach celebrates wins
+- **Win-aware recap**: ignoring the coach but winning now leads with praise
+  ("Bluff worked! 🎉" for fold-wins, "You won the hand! 🎉" otherwise), with
+  the leak to fix below it. Losses keep the direct "Leak to fix" framing.
+- **Cleaner opponent reads**: 1-2 opponents get one style note per line;
+  3+ stay compact. Style notes rewritten in plain beginner language.
+
 ## [1.8.48] — 2026-10-09
 
 ### Changed — code quality & debloat pass
