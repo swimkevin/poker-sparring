@@ -5,9 +5,9 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.47';
+  var APP_VERSION = '1.8.48';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
-  try { window.APP_VERSION = APP_VERSION; } catch (e) {}
+  try { window.APP_VERSION = APP_VERSION; } catch {}
 
   // Builds the URL to load after an update: we NAVIGATE instead of calling
   // location.reload(), because a reload keeps the stale ?v= query param in
@@ -16,7 +16,7 @@
     return pathname + '?v=' + encodeURIComponent(v) + hash;
   }
   // Exposed for tests (tests/update-flow.test.js); the IIFE keeps the rest private.
-  try { window.updateReloadURL = updateReloadURL; } catch (e) {}
+  try { window.updateReloadURL = updateReloadURL; } catch {}
 
   /**
    * Feature flags — Flappy Bird simplicity by default.
@@ -28,8 +28,7 @@
     tournamentMode: false,  // Tournament mode card
     headsUpMode: false,     // Heads-Up mode card
     pushFoldTrainer: false, // Push/Fold trainer mode card
-    customBots: false,      // Custom bot builder section
-    advancedStats: false    // Leak tracker, detailed per-archetype stats
+    customBots: false       // Custom bot builder section
   };
   var PS_FLAGS = Object.assign({}, DEFAULT_FLAGS);
   // URL override: ?flags=a,b
@@ -46,7 +45,7 @@
     Object.keys(savedFlags).forEach(function (f) {
       if (f in PS_FLAGS && savedFlags[f]) PS_FLAGS[f] = true;
     });
-  } catch (e) {}
+  } catch {}
   // Expose for console toggling with persistence
   window.PS_FLAGS = PS_FLAGS;
   window.enableFlag = function (name) {
@@ -56,7 +55,7 @@
       var s = JSON.parse(localStorage.getItem('ps_feature_flags') || '{}');
       s[name] = true;
       localStorage.setItem('ps_feature_flags', JSON.stringify(s));
-    } catch (e) {}
+    } catch {}
     return name + ' enabled — refresh to see it.';
   };
 
@@ -67,7 +66,7 @@
       if (typeof UI !== 'undefined' && UI.log && document.getElementById('hand-log')) {
         UI.log('⚠️ Something glitched, but the table is safe and your stats are saved.', 'hl-leak');
       }
-    } catch (e) { /* error handler must never throw */ }
+    } catch { /* error handler must never throw */ }
   });
 
   function $(id) { return document.getElementById(id); }
@@ -78,10 +77,10 @@
     try {
       var raw = localStorage.getItem(CUSTOM_KEY);
       return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
+    } catch { return []; }
   }
   function saveCustomBots(list) {
-    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); } catch (e) {}
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); } catch {}
   }
   function allBots() { return ARCHETYPES.concat(loadCustomBots()); }
   function botById(id) { return getArchetype(id, loadCustomBots()); }
@@ -100,11 +99,11 @@
       if (!raw) return null;
       var ids = JSON.parse(raw).filter(function (id) { return botById(id); });
       return ids.length ? ids : null;
-    } catch (e) { return null; }
+    } catch { return null; }
   }
   function saveRoster() {
     try { localStorage.setItem(ROSTER_KEY, JSON.stringify(Array.from(selectedBots))); }
-    catch (e) {}
+    catch {}
   }
   var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
   var preHuSelection = null; // full table remembered across a heads-up detour
@@ -147,7 +146,7 @@
     try {
       var st = (typeof loadStats === 'function') ? loadStats() : null;
       UI.setBankroll(st ? (st.profitChips || 0) : 0);
-    } catch (e) { UI.setBankroll(0); }
+    } catch { UI.setBankroll(0); }
   }
   var tourney = null; // { levelIdx }
   var gameMode = 'cash';
@@ -328,7 +327,7 @@
     UI.disableControls();
     // Post-hand coach recap (lives in the coach tab until the next hand).
     var recap = null;
-    try { recap = coachRecap(e.handNo); } catch (err) {}
+    try { recap = coachRecap(e.handNo); } catch {}
     UI.coachTip(recap ? recap.html : null);
     setTurnStatus('', false); // drop any stale "Waiting for X…" during the results pause
     var hero = table.players[0];
@@ -377,7 +376,7 @@
           ? 'Last: ' + wn + ' ' + (wn.indexOf('You') === 0 ? 'take' : 'takes') + ' back ' + UI.fmt(w0.amount)
           : 'Last: ' + wn + ' +' + UI.fmt(UI.firstWinnersTotal(e)) + (w0.hand ? ' · ' + w0.hand : '');
       }
-    } catch (err) {}
+    } catch {}
 
     // Results beat: every bot's hole cards are revealed face-up (practice
     // mode — study how they played), and a folded hero sees card backs with a
@@ -418,12 +417,12 @@
         }
         p.tilt = Math.max(0, Math.min(1, t));
       });
-    } catch (err) {}
+    } catch {}
 
     // ---- bot thinking: post-hand learning notes ----
     // Pick the 1-2 most teachable bot actions and explain the range logic
     // behind them, so each hand trains reading real player types.
-    try { botThinkingNotes(e); } catch (err) {}
+    try { botThinkingNotes(e); } catch {}
 
     // Stats
     var profit = hero.stack - handCtx.startStack;
@@ -488,7 +487,7 @@
     if (!table) return;
     var hero = table.players[0];
     if (waitingForHero && hero && !hero.folded && hero.hole.length === 2) {
-      try { table.act(0, 'fold'); } catch (e) { /* already unplayable; just fast-forward */ }
+      try { table.act(0, 'fold'); } catch { /* already unplayable; just fast-forward */ }
       waitingForHero = false;
     }
     // Results pause showing? Skip it immediately via the Next-hand button.
@@ -719,7 +718,7 @@
           'Folded to a small bet of ' + UI.fmt(legal.toCall) + ' with ~' + Math.round(eq * 100) + '% equity',
           'Small bets have to work very often to be profitable bluffs — most of the time the math says look them up. Habitually folding here doesn\'t just lose this pot; it teaches observant opponents they can bluff you forever.');
       }
-    } catch (e) { /* leak detection never breaks the game */ }
+    } catch { /* leak detection never breaks the game */ }
     return null;
   }
 
@@ -790,17 +789,6 @@
   }
   function isMultiway() {
     return liveOpponents().length >= 3;
-  }
-
-  // Fold equity explainer: how often they need to fold for a bluff to profit.
-  function foldEquityNote(betSize, potSize, V) {
-    var be = bluffBE(betSize, potSize);
-    var foldy = V ? villainFoldy(V.archetype) : 0.5;
-    var vName = V ? UI.escapeHtml(V.name) : 'villain';
-    return 'Fold equity: bluffing ' + UI.fmt(betSize) + ' into ' + UI.fmt(potSize) +
-      ' needs <b>' + pct(be) + '</b> folds to break even. ' + vName +
-      ' folds ~<b>' + pct(foldy) + '</b> — ' +
-      (foldy > be + 0.1 ? 'profitable bluff.' : foldy > be - 0.1 ? 'marginal.' : 'not enough — skip the bluff.');
   }
 
   // The most relevant live opponent: the street's aggressor, else the lone
@@ -1132,12 +1120,9 @@
       var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
       v.html = v.msg ? v.msg + tail + posNote + opponentReads() : null;
       return v;
-    } catch (err) { return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null }; }
+    } catch { return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null }; }
   }
 
-  function coachTip() {
-    return coachVerdict().html;
-  }
   // Test/eval hooks (not used by the UI).
   try {
     window.coachVerdict = coachVerdict;
@@ -1154,7 +1139,7 @@
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot
     };
-  } catch (e) {}
+  } catch {}
 
   // Did the hero's action match the coach's advice? bet/raise are interchangeable.
   function adviceFollowed(advice, action) {
@@ -1235,7 +1220,7 @@
     if (gameMode !== 'tourney' || table.street !== 'preflop') return null;
     var effBB = effStackBB(c.vIdx);
     if (effBB > 12) return null;
-    var esc = c.esc, fmt = c.fmt;
+    var fmt = c.fmt;
     var pos = PF_POS_MAP[c.posName] || 'MP';
     var shoveTier = (typeof chartShoveTier === 'function')
       ? chartShoveTier(pos, Math.max(1, Math.round(effBB))) : 2;
@@ -1469,7 +1454,6 @@
     var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
     var V = c.V, vIdx = c.vIdx, vName = c.vName;
     var hc = handClass(hero.hole, table.community);
-    var d = detectDraws(hero.hole, table.community);
     var pos = positionScore(table, 0);
     var inPos = pos > 0.6;
     var multiway = isMultiway();
@@ -1731,7 +1715,7 @@
         levelIdx: tourney ? tourney.levelIdx : 0,
         players: players
       }));
-    } catch (e) { /* storage blocked/full: resume just won't be offered */ }
+    } catch { /* storage blocked/full: resume just won't be offered */ }
   }
 
   function loadSession() {
@@ -1741,11 +1725,11 @@
       var d = JSON.parse(raw);
       if (!d || d.v !== 1 || !d.players || !d.players.length) return null;
       return d;
-    } catch (e) { return null; }
+    } catch { return null; }
   }
 
   function clearSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+    try { localStorage.removeItem(SESSION_KEY); } catch {}
   }
 
   // Reflect a restored session in the setup screen, so going back there
@@ -1767,7 +1751,7 @@
         saveRoster();
       });
       saveRoster();
-    } catch (e) { /* setup DOM not ready — resume still works */ }
+    } catch { /* setup DOM not ready — resume still works */ }
   }
 
   function resumeSession() {
@@ -1825,7 +1809,7 @@
     UI.showScreen('table');
     // Clear the previous session's "Last:" result — it would otherwise linger
     // in the topbar until the first new hand ends (daily QA 2026-10-07).
-    try { var lr = document.getElementById('last-result'); if (lr) lr.textContent = ''; } catch (e) {}
+    try { var lr = document.getElementById('last-result'); if (lr) lr.textContent = ''; } catch {}
     setTimeout(dealNext, 400);
   }
 
@@ -1849,7 +1833,7 @@
         when = mins < 1 ? 'just now' : mins < 60 ? mins + 'm ago'
           : Math.round(mins / 60) < 24 ? Math.round(mins / 60) + 'h ago'
           : Math.round(mins / 1440) + 'd ago';
-      } catch (e) {}
+      } catch {}
       var modeName = { cash: 'cash game', hu: 'heads-up', tourney: 'tournament' }[s.mode] || s.mode;
       hint.textContent = 'Hand #' + (s.handNo + 1) + ' · ' + modeName + ' · you had ' +
         UI.fmt(s.players[0].stack) + ' chips · saved ' + when;
@@ -1864,7 +1848,7 @@
       saveable: sessionSaveable, resume: resumeSession, refresh: refreshResumeButton,
       key: SESSION_KEY
     };
-  } catch (e) {}
+  } catch {}
 
   // ================= hand replayer =================
   function openHandList() {
@@ -1946,13 +1930,13 @@
     var THEME_KEY = 'ps_theme';
     function applyTheme(t) {
       document.documentElement.dataset.theme = t;
-      try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+      try { localStorage.setItem(THEME_KEY, t); } catch {}
     }
     try {
       var savedTheme = localStorage.getItem(THEME_KEY);
       document.documentElement.dataset.theme =
         (savedTheme === 'light' || savedTheme === 'dark') ? savedTheme : 'dark';
-    } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+    } catch { document.documentElement.dataset.theme = 'dark'; }
     var themeBtn = $('theme-toggle');
     if (themeBtn) themeBtn.onclick = function () {
       applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
@@ -2048,7 +2032,7 @@
     var emojiSel = $('cfg-emoji');
     if (emojiSel) {
       var curEm = '🧑';
-      try { curEm = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) {}
+      try { curEm = localStorage.getItem('ps_player_emoji') || '🧑'; } catch {}
       EMOJI_CHOICES.forEach(function (em) {
         var o = document.createElement('option');
         o.value = em; o.textContent = em;
@@ -2056,7 +2040,7 @@
         emojiSel.appendChild(o);
       });
       emojiSel.addEventListener('change', function () {
-        try { localStorage.setItem('ps_player_emoji', emojiSel.value); } catch (e) {}
+        try { localStorage.setItem('ps_player_emoji', emojiSel.value); } catch {}
       });
     }
     var unameInput = $('cfg-username');

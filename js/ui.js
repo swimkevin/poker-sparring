@@ -132,7 +132,7 @@ var UI = (function () {
     var d = document.createElement('div');
     d.className = 'card' + (small ? ' small' : '') + (isRed(c) ? ' red' : '');
     // Screen readers: announce "Ace of spades", not silence.
-    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', rankName(c.r) + ' of ' + SUIT_NAMES[c.s]); } catch (e) {}
+    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', rankName(c.r) + ' of ' + SUIT_NAMES[c.s]); } catch {}
     var crank = document.createElement('div');
     crank.className = 'crank'; crank.textContent = rankChar(c.r);
     var csuit = document.createElement('div');
@@ -143,7 +143,7 @@ var UI = (function () {
   function cardBackEl(small) {
     var d = document.createElement('div');
     d.className = 'card back' + (small ? ' small' : '');
-    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', 'Face-down card'); } catch (e) {}
+    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', 'Face-down card'); } catch {}
     return d;
   }
 
@@ -385,7 +385,7 @@ var UI = (function () {
       chip.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(0.55)';
       chip.style.opacity = '0.85';
       setTimeout(function () { if (chip.parentNode) chip.parentNode.removeChild(chip); }, 650);
-    } catch (e) {}
+    } catch {}
   }
 
   // Call at hand start: drop per-hand fx state and stray fx elements.
@@ -394,7 +394,7 @@ var UI = (function () {
     try {
       var dead = document.querySelectorAll('.chip-fly');
       for (var i = 0; i < dead.length; i++) dead[i].parentNode.removeChild(dead[i]);
-    } catch (e) {}
+    } catch {}
   }
 
   // opts: { lastActions: {idx: str}, winners: [idx], revealed: {idx: true}, acting: idx,
@@ -428,7 +428,7 @@ var UI = (function () {
       if (!s) return;
       s.classList.remove('empty');
       var heroEmoji = '🧑';
-      try { heroEmoji = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) {}
+      try { heroEmoji = localStorage.getItem('ps_player_emoji') || '🧑'; } catch {}
       s.querySelector('.avatar').textContent = p.isHero ? heroEmoji : (p.archetype ? p.archetype.emoji : '🤖');
       s.querySelector('.pname').textContent = p.name; // hero name set at game start (username or 'You')
       // Rebuy counter (PokerNow-style) + tilt meter on the seat.
@@ -953,7 +953,7 @@ var UI = (function () {
       var d = new Date(iso);
       return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' +
         d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    } catch (e) { return ''; }
+    } catch { return ''; }
   }
 
   // records: newest first. onOpen(id) opens the replay viewer.

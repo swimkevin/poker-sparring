@@ -8,7 +8,7 @@
 // Node: pull cross-file globals when running as modules (browser uses script tags).
 if (typeof module !== 'undefined' && module.exports) {
   var __cards = require('./cards.js');
-  var rankName = __cards.rankName, rankChar = __cards.rankChar;
+  var rankName = __cards.rankName;
 }
 
 var CATEGORY_NAMES = [
@@ -46,7 +46,7 @@ function evaluate5(cards) {
     return { r: +r, c: counts[r] };
   }).sort(function (a, b) { return (b.c - a.c) || (b.r - a.r); });
 
-  var g = groups, kick;
+  var g = groups;
   if (flush && straightHigh)
     return pack(8, [straightHigh], cards);
   if (g[0].c === 4)
@@ -85,7 +85,6 @@ function evaluate5(cards) {
     } else if (cat === 5) {
       best = allCards.slice().sort(function (a, b) { return (b.r - a.r) || (b.s - a.s); }).slice(0, 5);
     } else {
-      var counts2 = {};
       kickers.forEach(function (rk, idx) {
         var n = (cat === 7 && idx === 0) ? 4 :
                 (cat === 6) ? (idx === 0 ? 3 : 2) :

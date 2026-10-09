@@ -6,7 +6,7 @@
 // This module never computes game legality: the server snapshot carries the
 // legal actions for the current seat, and every click just forwards an intent.
 
-var Online = (function () {
+window.Online = (function () {
   'use strict';
 
   function $(id) { return document.getElementById(id); }
@@ -72,10 +72,10 @@ var Online = (function () {
     try {
       var v = localStorage.getItem(EMOJI_KEY);
       if (v && EMOJI_CHOICES.indexOf(v) >= 0) return v;
-    } catch (e) {}
+    } catch {}
     return '🧑';
   }
-  function saveEmoji(e) { try { localStorage.setItem(EMOJI_KEY, e); } catch (x) {} }
+  function saveEmoji(e) { try { localStorage.setItem(EMOJI_KEY, e); } catch {} }
   function fillEmojiPick(sel) {
     if (!sel) return;
     sel.innerHTML = '';
@@ -107,20 +107,19 @@ var Online = (function () {
         var v = localStorage.getItem(WSURL_KEY);
         return v == null ? null : v;
       }
-    } catch (e) { /* fall through */ }
+    } catch { /* fall through */ }
     return _wsMem;
   }
   function saveWsUrl(u) {
     try {
       if (typeof localStorage !== 'undefined') { localStorage.setItem(WSURL_KEY, u); return; }
-    } catch (e) { /* fall through */ }
+    } catch { /* fall through */ }
     _wsMem = u;
   }
-  var mySeat = -1, isHost = false, myName = '';
+  var mySeat = -1, isHost = false;
   var pendingAway = false; // join-with-away: sit out on first snapshot
   var roomCode = '';
   var lastState = null, lastLobby = null;
-  var betOpen = false;
 
   // ---------------- entry ----------------
 
@@ -236,9 +235,9 @@ var Online = (function () {
   }
 
   function leave() {
-    if (client) { try { client.close(); } catch (e) {} client = null; }
+    if (client) { try { client.close(); } catch {} client = null; }
     view = 'home'; lastState = null; lastLobby = null;
-    mySeat = -1; isHost = false; roomCode = ''; betOpen = false;
+    mySeat = -1; isHost = false; roomCode = '';
     render();
   }
 
@@ -325,7 +324,6 @@ var Online = (function () {
     if (!name) { errBox.textContent = 'Enter your name to host.'; errBox.hidden = false; return; }
     wsUrl = normalizeWsUrl(fieldVal('on-wsurl', ''));
     saveWsUrl(fieldVal('on-wsurl', '').trim().replace(/\/+$/, ''));
-    myName = name;
     if (wsUrl) { hostLive(readConfig(), name); return; }
     mode = 'mock';
     setConn('Local mock — no server needed');
@@ -348,7 +346,6 @@ var Online = (function () {
     if (!name) { errBox.textContent = 'Enter your name to join.'; errBox.hidden = false; return; }
     wsUrl = normalizeWsUrl(fieldVal('on-wsurl', ''));
     saveWsUrl(fieldVal('on-wsurl', '').trim().replace(/\/+$/, ''));
-    myName = name;
     // "Join sitting out": send sitout as soon as the first snapshot arrives.
     pendingAway = !!($('on-join-away') && $('on-join-away').checked);
     if (wsUrl) { joinLive(code, name); return; }
@@ -401,7 +398,7 @@ var Online = (function () {
       window.__psVisHandler = true;
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden && mode === 'live' && client && client.reconnect) {
-          try { client.reconnect(); } catch (e) {}
+          try { client.reconnect(); } catch {}
         }
       });
     }
@@ -493,7 +490,6 @@ var Online = (function () {
     var v = $('online-view');
     var s = lastState;
     if (!s) { renderHome(); return; }
-    var n = s.players.length;
 
     var html =
       '<div class="online-table-top">' +
@@ -558,7 +554,6 @@ var Online = (function () {
       d.className = 'seat' + (p.folded ? ' folded' : '') + (s.acting === p.seat ? ' to-act' : '');
       d.style.left = pos.x + '%';
       d.style.top = pos.y + '%';
-      var cardsHtml = '';
       var avatarEmoji = p.emoji || (p.seat === s.mySeat ? '🧑' : '👤');
       var badges = '';
       if (s.button === p.seat) badges += '<span class="pos-badge dealer" title="Dealer">D</span>';
@@ -618,10 +613,10 @@ var Online = (function () {
     // revealed at showdown, offer to show them to the table voluntarily.
     // Cache hole cards: the server clears s.hole when the hand ends.
     if (s.hole && s.hole.length === 2) {
-      try { window.__lastHole = JSON.stringify(s.hole); } catch (e) {}
+      try { window.__lastHole = JSON.stringify(s.hole); } catch {}
     }
     var cachedHole = null;
-    try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch (e) {}
+    try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch {}
     var showBtn = $('on-show-btn');
     var canShow = s.state === 'playing' && cachedHole && cachedHole.length === 2 &&
       !(s.showdown && s.showdown.some(function (r) { return r.seat === s.mySeat; })) &&
@@ -723,7 +718,6 @@ var Online = (function () {
   function renderControls(s) {
     var c = $('on-controls');
     c.innerHTML = '';
-    betOpen = false;
     function status(text) {
       var d = document.createElement('div');
       d.className = 'online-status';

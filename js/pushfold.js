@@ -81,18 +81,18 @@ function evaluatePushFold(scn, action) {
     var toCall = Math.min(scn.stackBB, scn.shover.stackBB);
     var potAfter = scn.potBB + scn.shover.stackBB + toCall;
     var need = toCall / potAfter;
-    var shoveTier = scn.shover.pushTier || 4; // worst tier this archetype shoves
-    var rangeEq = estimateEquityVsRange(scn.heroHole, shoveTier, 400);
+    var shoverTier = scn.shover.pushTier || 4; // worst tier this archetype shoves
+    var rangeEq = estimateEquityVsRange(scn.heroHole, shoverTier, 400);
     out.need = need;
     out.rangeEquity = rangeEq;
-    out.shoveTier = shoveTier;
+    out.shoveTier = shoverTier;
     out.correct = rangeEq > need + 0.02;
     out.playerAction = action;
     out.right = (action === 'call') === out.correct;
     out.explain = scn.shover.emoji + ' ' + scn.shover.name + ' shoves ' + scn.shover.stackBB + 'bb. ' +
       'Calling ' + toCall + 'bb to win ' + Math.round(potAfter) + 'bb — you need ' + Math.round(need * 100) + '% equity. ' +
       'Your ' + cardPairName(scn.heroHole) + ' (' + tierName(tier) + ') has ~' + Math.round(rangeEq * 100) +
-      '% against ' + scn.shover.name + '\u2019s shoving range (roughly the top ' + tierLabel(shoveTier) + ' of hands — ' +
+      '% against ' + scn.shover.name + '\u2019s shoving range (roughly the top ' + tierLabel(shoverTier) + ' of hands — ' +
       'much stronger than a random hand). ' +
       (out.right
         ? (action === 'call' ? 'Correct call — you have the equity against their range.' : 'Correct fold — not enough equity against a shoving range this strong.')
