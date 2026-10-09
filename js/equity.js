@@ -282,7 +282,7 @@ function exploitLine(archetype) {
   var bl = (typeof a.bluff === 'number') ? a.bluff : 0.3;
   return st > 0.75 ? 'calls down a lot — value bet, rarely bluff'
     : st < 0.35 ? 'folds too much — a good bluff target'
-    : bl > 0.5 ? 'bluffs a lot — call down lighter, trap your monsters' : 'unreadable — play solid TAG';
+    : bl > 0.5 ? 'bluffs a lot — call down lighter, trap your monsters' : 'hard to read — play straightforward';
 }
 
 if (typeof module !== 'undefined' && module.exports) {

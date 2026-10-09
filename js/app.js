@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.61';
+  var APP_VERSION = '1.8.62';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -880,7 +880,10 @@
       else if (A.id === 'pro') style = 'tournament pro — balanced and tough. Respect their raises';
       else if (A.id === 'bully') style = 'chip bully — pushes people around. Trap with strong hands, don\'t bluff into them';
       else if (A.id === 'gambler') style = 'gambler — wildly aggressive, bluffs a lot. Let them bet into your strong hands';
-      else style = 'tricky player — keep it straightforward, don\'t get fancy';
+      else if (A.id === 'alice') style = 'the vault — super tight, never bluffs. Steal her blinds; believe her bets';
+      else if (A.id === 'rohan') style = 'calling station — calls everything, raises nothing. Value bet, never bluff';
+      else if (A.id === 'swimkev') style = 'loose-aggressive — plays lots of hands with pressure. Re-raise your strong hands';
+      else style = 'unfamiliar style — watch their bets and adjust';
       return '<b>' + name + '</b>: ' + style;
     });
     // Always one per line as bullet points — easy to scan even with many opponents.
@@ -1130,6 +1133,10 @@
       if (ev.cat === 3 || ev.cat === 2) return 'overpair';
       if (ev.cat === 1) {
         var pr = ev.kickers[0];
+        // Only counts as hero's pair if hero holds one of the paired cards.
+        // If the pair is on the board, hero has no pair (just high card).
+        var heroHasPair = hole.some(function (c) { return c.r === pr; });
+        if (!heroHasPair) return 'air';
         var boardRanks = community.map(function (c) { return c.r; }).sort(function (a, b) { return b - a; });
         var bmax = boardRanks[0], bsecond = boardRanks[1];
         if (pr > bmax) return 'overpair';
@@ -1163,9 +1170,12 @@
 
   // Limpers ahead of the hero preflop (calls, no raises yet).
   function countLimpers() {
-    var n = 0;
+    var n = 0, raised = false;
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
-      if (t.t === 'action' && t.street === 'preflop' && t.action === 'call') n++;
+      if (t.t !== 'action' || t.street !== 'preflop') return;
+      if (t.action === 'raise' || t.action === 'bet') raised = true;
+      // Only count calls made before any raise — a call of a raise is not a limp.
+      if (t.action === 'call' && !raised) n++;
     });
     return n;
   }
@@ -1188,7 +1198,10 @@
     if (community.length < 3) return 'dry';
     var suits = [0, 0, 0, 0];
     community.forEach(function (c) { suits[c.s]++; });
-    if (suits.some(function (n) { return n >= 3; })) return 'wet';
+    // 4+ of a suit: flush completed, not a draw to charge. Treat as dry for
+    // "make them pay" purposes — the draw already got there.
+    if (suits.some(function (n) { return n >= 4; })) return 'completed';
+    if (suits.some(function (n) { return n === 3; })) return 'wet';
     var rs = community.map(function (c) { return c.r; }).sort(function (a, b) { return a - b; });
     return (rs[rs.length - 1] - rs[0] <= 4) ? 'wet' : 'dry';
   }
@@ -1230,7 +1243,7 @@
       // heads-up or 3-way pots.
       var isMultiLimp = table.street === 'preflop' && countLimpers() >= 3;
       var tail = isMultiLimp ? '' : villainLine(V);
-      var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
+      var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
       v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + opponentReads() : null;
@@ -1335,7 +1348,7 @@
   // focus on a single villain.
   function multiwayNote() {
     if (table.street !== 'preflop') {
-      var n = table.livePlayers().length - 1;
+      var n = table.livePlayers().length;
       if (n >= 4) return ' <span class="coach-multi">👥 ' + n + '-way pot — bluffs rarely work multiway; bet only for value.</span>';
       return '';
     }
@@ -1491,8 +1504,8 @@
         return mkVerdict(inPos && effBB3 >= 40 ? 'call' : 'fold', inPos && effBB3 >= 40 ? 'marginal' : 'strong',
           inPos && effBB3 >= 40
             ? '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re deep. Fold to more heat.'
-            : '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a 3-bet range' + (inPos ? '' : ' out of position') + '.',
-          'Medium pairs and broadways shrink fast against 3-bets — call only deep and in position.');
+            : '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a re-raise' + (inPos ? '' : ' out of position') + '.',
+          'Medium pairs and broadways shrink fast against re-raises — call only deep and in position.');
       if (isSmallPair(hero.hole)) {
         if (toCall * 15 <= effStackChips(vIdx))
           return mkVerdict('call', 'marginal',
@@ -1507,8 +1520,8 @@
           '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.',
           'Calling 3-bets in position with playable hands is fine when deep.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a 3-bet range. TAG poker folds these.',
-        'Fold hands like AJo and KQo to 3-bets: when called, you\'re usually dominated.');
+        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.',
+        'Fold hands like AJo and KQo to re-raises: when called, you\'re usually dominated.');
     }
 
     // ---- facing a 4-bet or worse: only the nuts continue
@@ -1661,11 +1674,16 @@
           'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
       // Draws: semi-bluff the strong ones, check weak ones and vs stations.
+      // But never semi-bluff multiway — too many players to fold.
       if (anyDraw && canBet) {
         if (foldy < 0.25)
           return mkVerdict('check', 'strong',
             'Nice draw, but ' + vName + ' never folds. <b>Check</b> and take the free card.' + rangeNote,
             'Never bluff someone who never folds — just check and take the free card.');
+        if (multiway)
+          return mkVerdict('check', 'strong',
+            '<b>Check</b> — nice draw, but too many players to bluff through multiway. Take the free card.' + rangeNote,
+            'Multiway pots kill semi-bluffs: everyone has to fold, and someone usually won\'t.');
         if (hc === 'draw-weak')
           return mkVerdict('check', 'marginal',
             'Just a gutshot — <b>check</b>. One way to win isn\'t enough to bet on.',

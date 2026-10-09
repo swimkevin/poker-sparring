@@ -3,6 +3,32 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.62] — 2026-10-09
+
+### Fixed — 5-hand coach audit (11 issues)
+From systematic live audit of 5 full hands:
+
+**HIGH:**
+- **Limp counter fixed**: `countLimpers()` was counting calls of raises as limps.
+  83s facing a 3-bet got "great spot to raise and take it down" — dangerous.
+  Now only counts calls made before any raise.
+- **Board pair ≠ hero pair**: J-high on a paired board was called "weak pair".
+  Now correctly identifies when hero doesn't hold the paired card → "air".
+
+**MEDIUM:**
+- **No semi-bluffs multiway**: was suggesting semi-bluffs while also saying
+  "bluffs rarely work multiway". Now checks multiway draws.
+- **Player count**: "5-way pot" with 6 players — was counting opponents, not total.
+- **Rohan contradiction**: vs-line said "calling station", bullet said "tricky player".
+  Added friend-bot archetypes (Alice=the vault, Rohan=calling station, etc.)
+
+**LOW:**
+- **Jargon removed**: "3-bet range" → "re-raise", "TAG poker" → "tight players",
+  "solid TAG" → "play straightforward", "unreadable" → "hard to read".
+- **Grammar**: "You're on the middle position" → "You're in middle position".
+- **Board texture**: 4-flush board no longer says "make draws pay to chase"
+  (the draw already completed).
+
 ## [1.8.61] — 2026-10-09
 
 ### Docs — coach methodology + competitive analysis
