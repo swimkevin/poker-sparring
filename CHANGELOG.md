@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.54] — 2026-10-09
+
+### Fixed — Skip button UI state
+- **Skip now disables controls** when folding the hero's hand (was leaving
+  Fold/Call/Raise buttons enabled, causing a "glitched" error notice).
+- **Safer bot fast-forward**: wrapped the immediate bot action in try/catch
+  so a bad bot decision can't break the hand.
+
 ## [1.8.53] — 2026-10-09
 
 ### Changed — tournament blinds now double every level

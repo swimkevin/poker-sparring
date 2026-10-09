@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.53';
+  var APP_VERSION = '1.8.54';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -546,6 +546,8 @@
     if (waitingForHero && hero && !hero.folded && hero.hole.length === 2) {
       try { table.act(0, 'fold'); } catch { /* already unplayable; just fast-forward */ }
       waitingForHero = false;
+      UI.disableControls();
+      UI.coachTip(null);
     }
     // Results pause showing? Skip it immediately via the Next-hand button.
     var nx = document.getElementById('btn-next-hand');
@@ -556,10 +558,15 @@
       clearTimeout(botThinkTimer);
       botThinkTimer = null;
       var pb = pendingBot; pendingBot = null;
-      var mv = botDecide(table, pb.player);
-      pumping = false;
-      if (mv) table.act(pb.idx, mv.a, mv.amount);
-      else pump();
+      try {
+        var mv = botDecide(table, pb.player);
+        pumping = false;
+        if (mv) table.act(pb.idx, mv.a, mv.amount);
+        else pump();
+      } catch {
+        pumping = false;
+        pump();
+      }
       return;
     }
     pump();
