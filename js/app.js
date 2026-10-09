@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.45';
+  var APP_VERSION = '1.8.46';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch (e) {}
 
@@ -463,6 +463,8 @@
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
     refreshBankroll();
+    // Persist the session so leaving the page doesn't lose the stacks.
+    saveSession();
 
     // Give the result room to breathe: a Next-hand button plus a 10s auto-deal
     // countdown, so the splash, board, and revealed hands can actually be read.
@@ -1581,7 +1583,139 @@
     } else tourney = null;
 
     sessionStartChips = table.players[0].stack;
-    lastHeroEndStack = undefined; // new session: hand 1 falls back to sessionStartChips
+    beginTableSession();
+  }
+
+  function leaveToLobby() {
+    table = null; evtQueue = []; pumping = false; waitingForHero = false;
+    UI.winnerBanner(null);
+    showSetup();
+  }
+
+  // ================= offline session resume =================
+  // If Kevin leaves the page mid-session, the completed hands' stacks are
+  // kept: a "Resume last session" button appears on the setup screen and
+  // restores every stack (his and the bots') exactly. Saves happen at each
+  // hand end (exact stacks) and on pagehide (best effort — uncollected
+  // street bets are credited back, the dead hand itself is not resumed).
+  var SESSION_KEY = 'poker-sparring-session-v1';
+
+  function sessionSaveable() {
+    return !!table && (gameMode === 'cash' || gameMode === 'hu' || gameMode === 'tourney');
+  }
+
+  function saveSession() {
+    if (!sessionSaveable()) return;
+    try {
+      var players = table.players.map(function (p) {
+        return {
+          name: p.name,
+          stack: Math.max(0, Math.round((p.stack || 0) + (p.bet || 0))),
+          archetypeId: p.isHero ? null : (p.archetype && p.archetype.id),
+          isHero: !!p.isHero,
+          sittingOut: !!p.sittingOut
+        };
+      });
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        v: 1, savedAt: Date.now(),
+        mode: gameMode,
+        cfg: { stack: cfg.stack, sb: cfg.sb, bb: cfg.bb, botRebuys: cfg.botRebuys,
+               roundBets: cfg.roundBets, blindInterval: cfg.blindInterval,
+               tourneyRebuys: cfg.tourneyRebuys },
+        heroName: table.players[0].name,
+        handNo: table.handNo,
+        button: table.button,
+        levelIdx: tourney ? tourney.levelIdx : 0,
+        players: players
+      }));
+    } catch (e) { /* storage blocked/full: resume just won't be offered */ }
+  }
+
+  function loadSession() {
+    try {
+      var raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || d.v !== 1 || !d.players || !d.players.length) return null;
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function clearSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+  }
+
+  // Reflect a restored session in the setup screen, so going back there
+  // after a resume shows the right mode, blinds, and roster.
+  function syncSetupInputs() {
+    try {
+      document.querySelectorAll('.mode-card').forEach(function (c) {
+        c.classList.toggle('selected', c.dataset.mode === mode);
+      });
+      function setVal(id, v) { var el = $(id); if (el && v != null) el.value = v; }
+      function setChk(id, v) { var el = $(id); if (el) el.checked = !!v; }
+      setVal('cfg-stack', cfg.stack); setVal('cfg-sb', cfg.sb); setVal('cfg-bb', cfg.bb);
+      setVal('cfg-blindint', cfg.blindInterval);
+      setChk('cfg-botrebuys', cfg.botRebuys); setChk('cfg-roundbets', cfg.roundBets);
+      setChk('cfg-tourneyrebuys', cfg.tourneyRebuys);
+      var oc = $('opp-count'); if (oc) oc.textContent = selectedBots.size;
+      UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint, function () {
+        var oc2 = $('opp-count'); if (oc2) oc2.textContent = selectedBots.size;
+        saveRoster();
+      });
+      saveRoster();
+    } catch (e) { /* setup DOM not ready — resume still works */ }
+  }
+
+  function resumeSession() {
+    var s = loadSession();
+    if (!s) return;
+    mode = s.mode; gameMode = s.mode;
+    Object.keys(s.cfg || {}).forEach(function (k) { cfg[k] = s.cfg[k]; });
+    // Rebuild the roster from saved archetype ids (custom bots resolve via
+    // loadCustomBots, exactly like startGame).
+    var ids = (s.players || []).slice(1).map(function (sp) { return sp.archetypeId; })
+      .filter(function (id) { return !!botById(id); }).slice(0, maxOpp());
+    selectedBots = new Set(ids.length ? ids : ['lag']);
+    syncSetupInputs();
+    var bots = Array.from(selectedBots).map(botById).filter(Boolean);
+    if (!bots.length) bots = [botById('lag')];
+    var heroStack = (s.players[0] && s.players[0].stack) || cfg.stack;
+    var players = [{ name: s.heroName || NamePrefs.heroName(), isHero: true }];
+    bots.forEach(function (b, i) {
+      var sp = s.players[i + 1] || {};
+      players.push({
+        name: sp.name || NamePrefs.displayName(b), archetype: b,
+        sittingOut: !!sp.sittingOut
+      });
+      players[players.length - 1]._resumeStack = (sp.stack != null ? sp.stack : cfg.stack);
+    });
+    table = new PokerTable({
+      players: players, sb: cfg.sb, bb: cfg.bb,
+      startingStack: cfg.stack, button: s.button, ante: 0, onEvent: onTableEvent
+    });
+    // The constructor assigns startingStack to everyone — restore saved stacks.
+    table.players[0].stack = Math.max(0, heroStack);
+    bots.forEach(function (b, i) {
+      var tp = table.players[i + 1];
+      tp.stack = Math.max(0, players[i + 1]._resumeStack);
+      if (s.players[i + 1] && s.players[i + 1].sittingOut) tp.sittingOut = true;
+    });
+    table.handNo = s.handNo || 0; // next deal continues the count (blinds stay on schedule)
+    if (gameMode === 'tourney') {
+      tourney = { levelIdx: Math.min(s.levelIdx || 0, TOUR_LEVELS.length - 1) };
+      var lv = TOUR_LEVELS[tourney.levelIdx];
+      table.setBlinds(lv.sb, lv.bb, lv.ante);
+    } else tourney = null;
+    beginTableSession();
+    UI.log('↻ Resumed session — hand #' + (table.handNo + 1) + ' continues with saved stacks.');
+  }
+
+  // Shared tail of startGame/resumeSession: reset pump state, show the table,
+  // deal the next hand.
+  function beginTableSession() {
+    sessionStartChips = table.players[0].stack;
+    lastHeroEndStack = undefined;
     refreshBankroll();
     evtQueue = []; pumping = false; waitingForHero = false;
     UI.buildSeats(); // fixed 8-seat layout; renderTable marks empties
@@ -1592,11 +1726,42 @@
     setTimeout(dealNext, 400);
   }
 
-  function leaveToLobby() {
-    table = null; evtQueue = []; pumping = false; waitingForHero = false;
-    UI.winnerBanner(null);
+  // Setup screen entry point: refresh the Resume button every time.
+  function showSetup() {
     UI.showScreen('setup');
+    refreshResumeButton();
   }
+
+  function refreshResumeButton() {
+    var btn = $('btn-resume'), hint = $('resume-hint');
+    if (!btn) return;
+    var s = loadSession();
+    if (!s) { btn.hidden = true; if (hint) hint.hidden = true; return; }
+    btn.hidden = false;
+    if (hint) {
+      hint.hidden = false;
+      var when = '';
+      try {
+        var mins = Math.round((Date.now() - s.savedAt) / 60000);
+        when = mins < 1 ? 'just now' : mins < 60 ? mins + 'm ago'
+          : Math.round(mins / 60) < 24 ? Math.round(mins / 60) + 'h ago'
+          : Math.round(mins / 1440) + 'd ago';
+      } catch (e) {}
+      var modeName = { cash: 'cash game', hu: 'heads-up', tourney: 'tournament' }[s.mode] || s.mode;
+      hint.textContent = 'Hand #' + (s.handNo + 1) + ' · ' + modeName + ' · you had ' +
+        UI.fmt(s.players[0].stack) + ' chips · saved ' + when;
+    }
+    btn.onclick = resumeSession;
+  }
+
+  // Exposed for tests (tests/session.test.js); the IIFE keeps the rest private.
+  try {
+    window.__sessionIO = {
+      save: saveSession, load: loadSession, clear: clearSession,
+      saveable: sessionSaveable, resume: resumeSession, refresh: refreshResumeButton,
+      key: SESSION_KEY
+    };
+  } catch (e) {}
 
   // ================= hand replayer =================
   function openHandList() {
@@ -1690,11 +1855,11 @@
       applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
     };
     var brandBtn = $('brand-home');
-    if (brandBtn) brandBtn.onclick = function () { UI.showScreen('setup'); };
+    if (brandBtn) brandBtn.onclick = function () { showSetup(); };
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.onclick = function () {
         var dest = b.dataset.nav;
-        if (dest === 'setup') UI.showScreen('setup');
+        if (dest === 'setup') showSetup();
         else if (dest === 'archetypes') { UI.renderArchetypes(loadCustomBots(), deleteCustom); UI.showScreen('archetypes'); }
         else if (dest === 'hands') { openHandList(); }
         else if (dest === 'stats') { UI.renderStats(); UI.showScreen('stats'); }
@@ -1956,7 +2121,17 @@
       saveRoster();
     });
     saveRoster();
+    // A deleted bot can't be resumed — drop stale sessions referencing it.
+    var s = loadSession();
+    if (s && s.players.some(function (sp) {
+      return !sp.isHero && !botById(sp.archetypeId);
+    })) clearSession();
   }
+
+  // Session resume: offer the button on load, and persist best-effort when
+  // the page is hidden/closed (the per-hand save in onHandEnd is the exact one).
+  refreshResumeButton();
+  document.addEventListener('pagehide', saveSession);
 
   document.addEventListener('DOMContentLoaded', wire);
 })();
