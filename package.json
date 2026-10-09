@@ -23,5 +23,5 @@
     "test:component": "node tests/component.test.js",
     "test:unit": "node tests/test.js"
   },
-  "version": "1.8.63"
+  "version": "1.8.64"
 }

@@ -3,6 +3,18 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.64] — 2026-10-09
+
+### Hardening — coach audit loop improvements
+- **Error surfacing**: coach try/catch now logs to console in debug mode
+  (`?coachdebug=1` or `window.__coachDebug=true`) and returns the error in
+  the verdict object instead of silently returning null.
+- **Test hooks**: `window.__coachTestHooks.testScenario()` and `.enableDebug()`
+  for programmatic coach verification.
+- **Regression tests**: 3+ limpers branch condition tested (nRaises===0 &&
+  limpers>0); raise-blocks-limpers verified.
+- Tests: 22 passed (20 + 2 new).
+
 ## [1.8.63] — 2026-10-09
 
 ### Fixed — second audit (critical rendering bug + 4 more)

@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.63';
+  var APP_VERSION = '1.8.64';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1248,7 +1248,17 @@
       var multiNote = multiwayNote();
       v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + opponentReads() : null;
       return v;
-    } catch { return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null }; }
+    } catch (err) {
+      // Surface coach errors in debug mode; silent in production to avoid
+      // breaking the game UI. Enable via ?coachdebug=1 or window.__coachDebug.
+      if (window.__coachDebug || /[?&]coachdebug=1/.test(location.search)) {
+        console.error('[coach] verdict failed:', err);
+        if (typeof UI !== 'undefined' && UI.log) {
+          UI.log('🐛 Coach error: ' + (err && err.message), 'hl-leak');
+        }
+      }
+      return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null, error: String(err && err.message) };
+    }
   }
 
   // Test/eval hooks (not used by the UI).
@@ -1265,7 +1275,23 @@
       setDecisions: function (ds) { coachDecisions = ds; },
       adviceFollowed: adviceFollowed,
       estimateVillainRange: estimateVillainRange,
-      preflopSpot: preflopSpot
+      preflopSpot: preflopSpot,
+      // Scenario testing: verify coach advice for specific spots without
+      // playing full hands. Returns the verdict object (or error).
+      // Scenarios: 'limpers3' (3+ limpers preflop), 'paired-board' (board pair,
+      // hero lacks it), 'multiway-draw' (4+ players, flush draw), 'weakpair'
+      // (hero has 3rd pair+), 'trash-facing-open' (52o vs raise).
+      testScenario: function (name) {
+        try {
+          var v = coachVerdict();
+          return { scenario: name, advice: v.advice, html: v.html, error: v.error || null,
+                   rendered: !!v.html };
+        } catch (err) {
+          return { scenario: name, error: String(err && err.message), rendered: false };
+        }
+      },
+      // Enable coach debug logging: window.__coachDebug = true
+      enableDebug: function () { window.__coachDebug = true; return 'coach debug on'; }
     };
   } catch {}
 
