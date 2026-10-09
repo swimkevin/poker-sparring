@@ -40,7 +40,7 @@ class PokerTable {
   emit(evt) {
     evt.handNo = this.handNo;
     this.eventQueue.push(evt);
-    try { this.onEvent(evt); } catch (e) { /* UI errors must not break the engine */ }
+    try { this.onEvent(evt); } catch { /* UI errors must not break the engine */ }
   }
 
   drainEvents() { var q = this.eventQueue; this.eventQueue = []; return q; }

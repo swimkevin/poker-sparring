@@ -39,18 +39,18 @@ function loadStats() {
       for (var k in b) if (s[k] !== undefined) b[k] = s[k];
       return b;
     }
-  } catch (e) {}
+  } catch {}
   return blankStats();
 }
 
 function saveStats(s) {
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STATS_KEY, JSON.stringify(s));
-  } catch (e) {}
+  } catch {}
 }
 
 function clearStats() {
-  try { if (typeof localStorage !== 'undefined') localStorage.removeItem(STATS_KEY); } catch (e) {}
+  try { if (typeof localStorage !== 'undefined') localStorage.removeItem(STATS_KEY); } catch {}
   return blankStats();
 }
 

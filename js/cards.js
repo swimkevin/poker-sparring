@@ -40,7 +40,7 @@ function getU32() {
       if (nodeCrypto && nodeCrypto.randomInt) {
         _getU32 = function () { return nodeCrypto.randomInt(0, 4294967296); };
       }
-    } catch (e) { /* fall through to Math.random */ }
+    } catch { /* fall through to Math.random */ }
   }
   if (!_getU32) _getU32 = function () { return Math.floor(Math.random() * 4294967296); };
   return _getU32();

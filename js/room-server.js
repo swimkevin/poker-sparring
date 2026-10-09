@@ -74,7 +74,7 @@ class Room {
 
   _emit(evt) {
     evt.room = this.code;
-    try { this.onEvent(evt); } catch (e) { /* transport errors must not break the room */ }
+    try { this.onEvent(evt); } catch { /* transport errors must not break the room */ }
   }
 
   _pushRecent(s) {
@@ -349,7 +349,7 @@ class Room {
     var ep = this.table && this.table.players[p.seat];
     if (out && this.table && !this.table.handOver && ep && !ep.folded && !ep.allIn) {
       try { this.table.act(p.seat, 'fold'); }
-      catch (e) {
+      catch {
         // Not their turn: mark folded manually, then let the engine check if
         // the hand is over (_step -> _winByFold when one player remains).
         ep.folded = true; ep.acted = true;
@@ -376,7 +376,7 @@ class Room {
       if (last && last.indexOf(nm + ' ' + action) === 0) {
         this.recent[this.recent.length - 1] = nm + ' auto-' + action + 's (' + reason + ')';
       }
-    } catch (e) { /* engine is the source of truth; a failed auto-action just stalls to next tick */ }
+    } catch { /* engine is the source of truth; a failed auto-action just stalls to next tick */ }
     this._afterTableChange();
   }
 
@@ -453,7 +453,6 @@ class Room {
   // ---------- snapshots ----------
 
   getLobby() {
-    var self = this;
     return {
       t: 'lobby', code: this.code, state: this.state,
       config: Object.assign({}, this.config),
@@ -509,7 +508,7 @@ class Room {
       var mine = t.players[me.seat];
       if (mine && mine.hole.length === 2) snap.hole = mine.hole.map(function (c) { return { r: c.r, s: c.s }; });
       if (!this.paused && t.acting === me.seat) {
-        try { snap.legal = t.legalActions(me.seat); } catch (e) { snap.legal = null; }
+        try { snap.legal = t.legalActions(me.seat); } catch { snap.legal = null; }
       }
     }
     if (this.lastResult) {

@@ -160,7 +160,7 @@ function loadHandRecords() {
     if (!raw) return [];
     var list = JSON.parse(raw);
     return Array.isArray(list) ? list : [];
-  } catch (e) { return []; }
+  } catch { return []; }
 }
 
 function saveHandRecord(rec) {
@@ -169,13 +169,13 @@ function saveHandRecord(rec) {
     var list = loadHandRecords();
     list.unshift(rec);
     localStorage.setItem(HANDS_KEY, JSON.stringify(list.slice(0, HANDS_CAP)));
-  } catch (e) { /* storage full/blocked: replayer is best-effort */ }
+  } catch { /* storage full/blocked: replayer is best-effort */ }
 }
 
 function clearHandRecords() {
   try {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(HANDS_KEY);
-  } catch (e) {}
+  } catch {}
 }
 
 if (typeof module !== 'undefined' && module.exports) {

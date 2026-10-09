@@ -19,19 +19,19 @@ var NamePrefs = (function () {
   function rawStore() {
     try {
       if (typeof localStorage !== 'undefined') return localStorage;
-    } catch (e) { /* private mode etc. */ }
+    } catch { /* private mode etc. */ }
     return null;
   }
 
   function read(key) {
     var s = rawStore();
-    if (s) { try { return s.getItem(key); } catch (e) { return mem[key] || null; } }
+    if (s) { try { return s.getItem(key); } catch { return mem[key] || null; } }
     return mem[key] || null;
   }
 
   function write(key, val) {
     var s = rawStore();
-    if (s) { try { s.setItem(key, val); return; } catch (e) { /* fall through */ } }
+    if (s) { try { s.setItem(key, val); return; } catch { /* fall through */ } }
     mem[key] = val;
   }
 
@@ -51,7 +51,7 @@ var NamePrefs = (function () {
     try {
       var o = JSON.parse(read(BOT_NAMES_KEY) || '{}');
       return (o && typeof o === 'object') ? o : {};
-    } catch (e) { return {}; }
+    } catch { return {}; }
   }
 
   function setBotOverride(id, name) {

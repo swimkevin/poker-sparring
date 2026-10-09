@@ -64,7 +64,7 @@ NetClient.prototype.connect = function (url, opts) {
   ws.onopen = function () { self._reconnectTries = 0; if (self.onopen) self.onopen(); };
   ws.onmessage = function (ev) {
     var m;
-    try { m = JSON.parse(ev.data); } catch (e) { return; }
+    try { m = JSON.parse(ev.data); } catch { return; }
     if (self.onmessage) self.onmessage(m);
   };
   ws.onclose = function () {
@@ -76,7 +76,7 @@ NetClient.prototype.connect = function (url, opts) {
     if (self._autoReconnect && self._reconnectTries < self._maxTries) {
       self._reconnectTries++;
       var delay = Math.min(1000 * Math.pow(2, self._reconnectTries), 8000);
-      if (self.onreconnecting) { try { self.onreconnecting(self._reconnectTries); } catch (e) {} }
+      if (self.onreconnecting) { try { self.onreconnecting(self._reconnectTries); } catch {} }
       setTimeout(function () {
         if (self._userClosed) return;
         self.connect(url, opts);
@@ -91,13 +91,13 @@ NetClient.prototype.connect = function (url, opts) {
 
 NetClient.prototype.send = function (obj) {
   if (this.ws && this.ws.readyState === 1) {
-    try { this.ws.send(JSON.stringify(obj)); } catch (e) { /* ignore */ }
+    try { this.ws.send(JSON.stringify(obj)); } catch { /* ignore */ }
   }
 };
 
 NetClient.prototype.close = function () {
   this._userClosed = true; // intentional: the pending redial (if any) stands down
-  if (this.ws) { try { this.ws.close(); } catch (e) {} this.ws = null; }
+  if (this.ws) { try { this.ws.close(); } catch {} this.ws = null; }
 };
 
 // ---------- MockRoomServer: in-page server for prototype + tests ----------
@@ -173,7 +173,7 @@ MockRoomServer.prototype._entryFor = function (rec) {
 MockRoomServer.prototype._deliver = function (rec, msg) {
   rec.last = msg;
   if (rec.onmessage) {
-    try { rec.onmessage(msg); } catch (e) { /* UI errors must not break the server */ }
+    try { rec.onmessage(msg); } catch { /* UI errors must not break the server */ }
   }
 };
 
@@ -188,7 +188,7 @@ MockRoomServer.prototype._sendLobby = function (entry) {
         you: rec.seat
       });
       rec.last = personal;
-      if (rec.onmessage) { try { rec.onmessage(personal); } catch (e) {} }
+      if (rec.onmessage) { try { rec.onmessage(personal); } catch {} }
     }
   });
 };
