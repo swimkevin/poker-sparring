@@ -3,6 +3,29 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.47] — 2026-10-08
+
+### Changed — solver-grade coach upgrade
+- **Minimum defense frequency**: facing a bet, the coach now shows the MDF
+  (`pot / (pot + bet)`) alongside your pot-odds math.
+- **Tournament ICM**: a risk premium (4–12% by stack depth) is added to the
+  equity you need near pay jumps, with a plain-English "tournament tax" note.
+- **Short-stack push/fold**: at ≤12bb in tournaments the coach switches to
+  shove-or-fold using the built-in push/fold chart — no more flat-calling
+  short.
+- **River population prior**: rivers are under-bluffed at these stakes, so the
+  coach over-folds slightly to river aggression (unless villain is a known
+  bluffer).
+- **Blocker-aware bluffs**: holding the nut-flush blocker is now cited as a
+  reason to bluff.
+- **Bubble exploitation**: as the big stack in a tournament, the coach widens
+  steal raises — medium stacks must over-fold to survive.
+- Fixed a missing space in the coach's math line ("here. Math says").
+
+### Changed
+- **README rewrite**: current feature set (11 bots, 1,800+ tests, session
+  resume, solver-informed coach), outdated info removed.
+
 ## [1.8.46] — 2026-10-08
 
 ### Added

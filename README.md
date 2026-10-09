@@ -1,61 +1,47 @@
 # Poker Sparring
 
-**Texas Hold'em training app — practice against AI opponents modeled on real player archetypes, or host private online tables with friends.**
+**Texas Hold'em training app — spar against AI opponents modeled on real player types, or host private online tables with friends.**
 
 ▶️ **Live:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1500%2B%20passing-brightgreen)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20passing-brightgreen)
 
 ## What it is
 
-An offline-first poker practice app. Spar against 10 AI opponents — each modeled on a classic player type (the rock, the calling station, the maniac) with distinct, exploitable tendencies. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
+An offline-first poker practice app. Play cash games, heads-up, and tournaments against 11 AI opponents — each modeled on a real player archetype (the rock, the calling station, the maniac, Alice the ultra-tight vault) with distinct, exploitable tendencies. A solver-informed coach explains the math behind every decision in plain English. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
 
 ## Engineering highlights
 
-**Zero-dependency vanilla JS.** No framework, no bundler, no build step. The entire poker engine (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser.
+**Zero-dependency vanilla JS.** No framework, no bundler, no build step. The poker core (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser.
 
-**1,500+ test assertions, 5 layers.** Unit, component, smoke (300 randomized hands), netplay, and worker tests. The suite verifies invariants that matter: chip conservation, engine legality of every bot action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
+**1,800+ test assertions, 5 layers.** Unit, component, smoke (300 randomized hands), netplay, and worker tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
 
 **Real-time multiplayer on Cloudflare Workers.** One Durable Object per room, authoritative game state, per-seat snapshots so hole cards never leak. Auto-reconnect with backoff, host migration if the host drops.
 
-**AI-assisted development workflow.** Built with AI agents writing code under human review — weekly shipping cadence, honest changelog, architectural decisions recorded as ADRs in `docs/adr/`.
+**Solver-informed coaching engine.** The coach encodes solver-derived principles — minimum defense frequency, pot-odds math, SPR commitment tiers, range/nut advantage, ICM risk premiums, push/fold charts — plus exploitative adjustments per opponent type, grounded in standard training literature (Sklansky, Harrington, Janda, Clarke).
 
 ## Features
 
-**Spar vs bots (offline)**
-- Cash games, heads-up, and tournaments vs 11 distinct AI archetypes — including Alice, the ultra-safe vault who never bluffs
-- Build custom opponents — tune looseness, aggression, bluff frequency; name them after your friends
+**Play**
+- Cash games, heads-up, and tournaments vs 11 AI archetypes — including Alice, the ultra-safe vault who never bluffs
+- Custom opponents: tune looseness, aggression, bluff frequency; name them after your friends
+- Session resume: leave mid-session, pick up with the exact same stacks
 - Push/fold trainer with range-based feedback
-- Hand replayer, training stats (VPIP/PFR/bb/100), leak tracker
-- Pot-odds coach that explains the math in plain English — range-aware equity,
-  SPR/commitment guidance, implied + reverse-implied odds, exploit adjustments
-  by opponent archetype, and post-hand recaps (one praise line, one leak line)
+- Hand replayer with street-by-street review, training stats (VPIP/PFR/bb/100), leak tracker
 
-**Coach theory sources.** The coach's rules are distilled from standard poker
-training literature (summarized in own words in
-[`hidden_files/coach-deep-dive.md`](hidden_files/coach-deep-dive.md)):
-- David Sklansky, *The Theory of Poker* — pot odds, the Fundamental Theorem
-- Dan Harrington, *Harrington on Hold'em* — positional hand selection
-- Matthew Janda, *Applications of No-Limit Hold'em* — range-vs-range play, SPR
-- Peter Clarke, *The Grinder's Manual* — TAG fundamentals
-- Alex Fitzgerald, *Exploitative Play in Live Poker* — player-type exploits
-- Training sites: [Upswing Poker](https://upswingpoker.com),
-  [Red Chip Poker](https://redchippoker.com) (SplitSuit),
-  [BlackRain79](https://www.blackrain79.com) (micro-stakes),
-  [PokerCoaching.com](https://www.pokercoaching.com),
-  [888poker](https://www.888poker.com)
-- Open guides: [jameswu5/poker](https://github.com/jameswu5/poker) (6-max NLHE guide)
-
-**Updates.** The app checks for new releases only when you tap the footer
-"Check for updates" button — there is no automatic update popup (removed in
-v1.8.44 as unreliable).
+**Coach**
+- Every spot explained in plain English: pot odds vs your equity, implied and reverse-implied odds, SPR commitment, minimum defense frequency
+- Tournament-aware: ICM risk premiums near pay jumps, shove-or-fold guidance under 12bb, bubble exploitation for big stacks
+- Exploit adjustments by opponent archetype; post-hand recaps (one praise line, one leak line)
 
 **Online with friends**
 - Host a table, share a 6-letter code, up to 8 players
 - Table chat, session ledger, rebuys, sit-out
 - Resilient: auto-reconnect, host migration, spectator mode
 
-**Mobile-first.** Rebuilt for phones — minimalist table layout, always-visible hero cards, thumb-zone controls. No scrolling on game screens.
+**Mobile-first.** Minimalist table layout, always-visible hero cards, thumb-zone controls. No scrolling on game screens.
+
+**Updates.** New releases are checked only when you tap the footer's "Check for updates" — no automatic popups.
 
 ## Project structure
 
@@ -91,7 +77,7 @@ Or just open `index.html` — no build step.
 
 ## Roadmap
 
-Weekly iterations. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the plan, [`CHANGELOG.md`](CHANGELOG.md) for what's shipped.
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the plan, [`CHANGELOG.md`](CHANGELOG.md) for what's shipped.
 
 ---
 
