@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.64';
+  var APP_VERSION = '1.8.65';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1461,7 +1461,7 @@
   function coachPreflop(c) {
     var esc = c.esc, fmt = c.fmt;
     var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
-    var V = c.V, vIdx = c.vIdx, vName = c.vName, tier = c.tier;
+    var V = c.V, vIdx = c.vIdx, vName = c.vName, tier = c.tier, posName = c.posName;
     var spot = preflopSpot();
     var inPos = positionScore(table, 0) > 0.6;
 

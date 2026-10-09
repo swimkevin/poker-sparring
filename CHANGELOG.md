@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.65] — 2026-10-09
+
+### Fixed — CRITICAL: posName undefined in coachPreflop
+- **Root cause of silent coach failure**: `coachPreflop()` didn't destructure
+  `posName` from context. The iso-raise code referenced undefined `posName` →
+  ReferenceError → try/catch → null → blank coach panel on 3+ limpers.
+- This is why v1.8.63 still showed the bug — the branch condition was fixed
+  but the variable was undefined.
+
 ## [1.8.64] — 2026-10-09
 
 ### Hardening — coach audit loop improvements
