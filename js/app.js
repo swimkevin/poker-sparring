@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.59';
+  var APP_VERSION = '1.8.60';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1120,7 +1120,7 @@
 
   // Made-hand class for SPR commitment decisions, from the evaluator directly:
   // nut (straight+) | overpair (trips+, two pair, or a pair above the board) |
-  // toppair | secondpair | draw-strong (combo) | draw | draw-weak | air.
+  // toppair | secondpair | weakpair | draw-strong (combo) | draw | draw-weak | air.
   function handClass(hole, community) {
     var d = detectDraws(hole, community);
     if (d.flushDraw && d.oesd) return 'draw-strong';
@@ -1130,8 +1130,12 @@
       if (ev.cat === 3 || ev.cat === 2) return 'overpair';
       if (ev.cat === 1) {
         var pr = ev.kickers[0];
-        var bmax = Math.max.apply(null, community.map(function (c) { return c.r; }));
-        return pr > bmax ? 'overpair' : (pr === bmax ? 'toppair' : 'secondpair');
+        var boardRanks = community.map(function (c) { return c.r; }).sort(function (a, b) { return b - a; });
+        var bmax = boardRanks[0], bsecond = boardRanks[1];
+        if (pr > bmax) return 'overpair';
+        if (pr === bmax) return 'toppair';
+        if (pr === bsecond) return 'secondpair';
+        return 'weakpair'; // third pair or worse — not a value hand
       }
     }
     if (d.flushDraw || d.oesd) return 'draw';
@@ -1142,7 +1146,7 @@
   // Plain-language name for a hand class (SPR/commitment messages).
   function handClassName(hc) {
     return { nut: 'the nuts', overpair: 'an overpair', toppair: 'top pair',
-      secondpair: 'second pair', 'draw-strong': 'a monster draw', draw: 'a draw',
+      secondpair: 'second pair', weakpair: 'a weak pair', 'draw-strong': 'a monster draw', draw: 'a draw',
       'draw-weak': 'a weak draw', air: 'nothing' }[hc] || 'your hand';
   }
 
@@ -1687,6 +1691,14 @@
           '<b>Check</b> — ' + handClassName(hc) + ' has showdown value. Take the pot-control line' +
           (multiway ? ', especially multiway.' : '.') + rangeNote,
           'Second pair often wins unimproved — no need to inflate the pot to find out.');
+      }
+      // Weak pair (third pair or worse): give up. It's rarely best, especially
+      // vs players who don't fold. Check and hope to win a showdown, but don't
+      // put more money in.
+      if (hc === 'weakpair') {
+        return mkVerdict('check', 'strong',
+          '<b>Check</b> — ' + handClassName(hc) + ' is rarely best here. Don\'t throw good money after bad.' + rangeNote,
+          'Third pair or worse has little value — check and give up if there\'s action. Sometimes you have to let go.');
       }
       // Air: bluff only with a real story behind it.
       if (canBet) {

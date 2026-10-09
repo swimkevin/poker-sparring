@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.60] — 2026-10-09
+
+### Fixed — coach no longer value-bets bottom pair
+- **Hand classification bug**: ANY non-top pair was called "second pair".
+  K7 on A-Q-8-7-5 (bottom pair) was getting "second pair is usually best here"
+  + a half-pot bet suggestion. Now properly distinguishes second pair from
+  third pair or worse ("weak pair").
+- **Weak pair = give up**: third pair or worse now gets "Check — a weak pair
+  is rarely best here. Don't throw good money after bad." The coach knows
+  when to let go instead of value-betting into trappers.
+
 ## [1.8.59] — 2026-10-09
 
 ### Changed — opponent reads explain player types for beginners
