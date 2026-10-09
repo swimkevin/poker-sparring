@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.46] — 2026-10-08
+
+### Added
+- **Resume offline session**: leaving the page no longer loses your game.
+  Stacks (yours and every bot's) are saved after each hand and best-effort
+  when the page closes; the setup screen now offers a "Resume last session"
+  button (with hand number, mode, your chip count, and save time) that
+  restores the exact stacks, blinds, and tournament level. Mid-hand exits
+  forfeit the dead hand — a fresh hand starts with the same chips.
+
 ## [1.8.45] — 2026-10-08
 
 ### Added
