@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.52';
+  var APP_VERSION = '1.8.53';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -189,12 +189,17 @@
   // later levels scale up (roughly doubling). Antes kick in from level 4.
   function tourLevels() {
     var sb0 = Math.max(1, cfg.sb || 5), bb0 = Math.max(2, cfg.bb || 10);
-    var mult = [1, 1.5, 2, 3, 4, 6, 8, 12, 16, 20];
-    var antes = [0, 0, 0, 0.5, 1, 1, 2, 3, 4, 5];
-    return mult.map(function (m, i) {
-      return { sb: Math.round(sb0 * m), bb: Math.round(bb0 * m),
-               ante: Math.round(bb0 * antes[i] / 5) * 5 };
-    });
+    // Pure doubling each level — simple, predictable, and creates good
+    // practice pressure with 8-hand levels. Antes kick in from level 4
+    // (standard in real tournaments).
+    var levels = [];
+    for (var i = 0; i < 10; i++) {
+      var mult = Math.pow(2, i);
+      var sb = sb0 * mult, bb = bb0 * mult;
+      var ante = i >= 3 ? Math.round(bb / 8 / 5) * 5 : 0;
+      levels.push({ sb: sb, bb: bb, ante: ante });
+    }
+    return levels;
   }
   var TOUR_LEVELS = null; // built per tournament from cfg
 

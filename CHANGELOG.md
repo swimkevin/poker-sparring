@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.53] — 2026-10-09
+
+### Changed — tournament blinds now double every level
+- **Pure doubling**: L1 5/10 → L2 10/20 → L3 20/40 → L4 40/80, etc.
+  Simple, predictable, and creates good practice pressure with 8-hand levels.
+- **Antes from level 4**: standard tournament antes (BB/8) kick in at L4.
+
 ## [1.8.52] — 2026-10-09
 
 ### Fixed
