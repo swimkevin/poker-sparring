@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.65';
+  var APP_VERSION = '1.8.66';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -780,6 +780,12 @@
   // Runs before the action is applied; uses the pre-action table state.
   function detectLeak(a) {
     try {
+      // Unified decision tracking: if the coach advised this action, it's not
+      // a leak — even if the tier heuristics would flag it. The coach, leak
+      // tracker, and recap must agree.
+      if (pendingAdvice && adviceFollowed(pendingAdvice.advice, a)) {
+        return null;
+      }
       var hero = table.players[0];
       var hole = hero.hole.map(function (c) { return cardName(c); }).join(' ');
       var street = table.street;

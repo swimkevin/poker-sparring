@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.66] — 2026-10-09
+
+### Hardening — unified decision tracking + scenario verification
+- **Leak tracker respects coach**: if the coach advised the action, the leak
+  tracker no longer flags it. Coach, leak tracker, and recap now agree —
+  no more "math says call" vs "calling too loose" contradictions.
+- **Node scenario verification**: `tests/coach-scenarios.js` runs 15 static
+  checks without a browser (limpers branch, posName, handClass, jargon,
+  debug hooks). Run via `node tests/coach-scenarios.js`.
+- Tests: 22 coach-advice + 15 scenarios, all passing.
+
 ## [1.8.65] — 2026-10-09
 
 ### Fixed — CRITICAL: posName undefined in coachPreflop
