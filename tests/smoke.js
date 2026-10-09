@@ -103,8 +103,8 @@ var iv = setInterval(function () {
           console.log('street jump: ' + before + ' -> ' + after + ', flop cards: ' + flopCards);
           if (before === after) errors.push('replay: street jump did not move');
           // A hand that ended preflop has no flop: the jump lands at the end.
-          var m = /Step (\d+) of (\d+)/.exec(after || '');
-          var atEnd = m && m[1] === m[2];
+          var sm = /Step (\d+) of (\d+)/.exec(after || '');
+          var atEnd = sm && sm[1] === sm[2];
           if (flopCards !== 3 && !atEnd) errors.push('replay: street jump did not show flop, got ' + flopCards);
         }
         // Reset to the start: the street jump may have landed at the end,

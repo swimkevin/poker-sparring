@@ -39,7 +39,6 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 .brand { font-weight: 800; font-size: 1.15rem; letter-spacing: 0.5px; background: none; border: none; color: inherit; cursor: pointer; padding: 6px 10px; border-radius: 10px; display: inline-flex; align-items: center; gap: 0.5rem; }
 .brand:hover { background: rgba(128,128,128,0.12); }
 .brand .brand-mark { width: 20px; height: 20px; }
-.brand-emoji { margin-right: 0.3rem; }
 .nav { display: flex; gap: 0.4rem; margin-left: 1rem; }
 .nav-btn {
   background: transparent; border: 1px solid transparent; color: var(--muted);
@@ -228,7 +227,6 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   background: repeating-linear-gradient(45deg, #1c2a4a, #1c2a4a 6px, #24365e 6px, #24365e 12px);
   border: 2px solid #dfe6f2;
 }
-.card.hole-win { outline: 3px solid var(--green); }
 .hero-cards { display: flex; gap: 8px; }
 .hero-cards .card { width: 64px; height: 90px; }
 .hero-cards .card .csuit { font-size: 2.1rem; }
@@ -293,7 +291,6 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   margin-top: 1rem; background: var(--panel); border: 1px solid #232c3d;
   border-radius: 14px; padding: 0.9rem 1.2rem; flex-wrap: wrap;
 }
-.hero-name { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 /* Hero strip info line (v1.8.21): name · stack · position badges under the cards. */
 .hero-info { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 .hero-info .pos-badge { margin-left: 0.3rem; }
@@ -569,7 +566,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 
 /* ===== hand story: clean phone-readable hand history ===== */
 .rp-story { display: flex; flex-direction: column; gap: 0.9rem; }
-.rp-story-hero { font-size: 1.05rem; }
 .rp-story-sec { background: #0d1219; border: 1px solid #232d40; border-radius: 10px; padding: 0.7rem 1rem; }
 .rp-story-street { font-weight: 800; color: var(--gold); margin-bottom: 0.35rem; font-size: 0.95rem; }
 .rp-story-line { font-size: 0.92rem; padding: 0.12rem 0; color: var(--text); }
@@ -705,7 +701,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   /* top bar: compact brand + horizontally scrollable tabs, nothing wraps */
   .topbar { padding: 0.5rem 0.6rem; gap: 0.5rem; }
   .brand { font-size: 0.95rem; white-space: nowrap; flex: 0 0 auto; }
-  .brand-emoji { margin-right: 0.15rem; }
   .nav {
     margin-left: 0; gap: 0.25rem; flex: 1 1 auto; min-width: 0;
     flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
@@ -754,7 +749,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .mode-card { padding: 0.8rem; }
   .mode-emoji { font-size: 1.5rem; }
   .roster { grid-template-columns: 1fr; }
-  .bot-card { padding: 0.7rem 0.8rem; }
 }
 
 /* ===== Design refresh: clean, minimal, professional ===== */
@@ -779,10 +773,9 @@ button.ghost { border-radius: 10px; font-weight: 600; }
 .ctl.primary, .ctl.is-raise { background: var(--gold); }
 
 /* Cards & panels: one soft surface language */
-.mode-card, .bot-card, .book-card, .gloss-card, .online-card { border-radius: 14px; border-width: 1px; }
+.mode-card, .book-card, .gloss-card, .online-card { border-radius: 14px; border-width: 1px; }
 .mode-card:hover { border-color: var(--gold-dim); }
 .mode-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
-.bot-card:hover { border-color: var(--gold-dim); }
 .settings-details { border-radius: 12px; }
 
 /* Inputs: 16px kills iOS auto-zoom; visible focus ring */
@@ -797,7 +790,7 @@ label { font-weight: 600; }
 
 /* Section rhythm: less gold shouting, more air */
 .setup-wrap h2 { margin-top: 2.2em; }
-.mode-desc, .bot-desc { line-height: 1.5; }
+.mode-desc { line-height: 1.5; }
 
 /* (update toast retired in v1.8.44 — the footer "Check for updates" button is the reliable path) */
 
@@ -1223,9 +1216,6 @@ label { font-weight: 600; }
 .coach-opps { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--panel2); font-size: 0.88rem; line-height: 1.5; color: var(--muted); }
 .coach-opps b { color: var(--text); }
 
-/* Coach improvements: suited, multiway, fold equity */
-.coach-suited { color: var(--blue); font-weight: 600; }
-.coach-multiway { color: #e8a838; font-weight: 600; }
 /* Better coach formatting: clear sections, breathing room */
 .coach-tip { line-height: 1.7; }
 .coach-tip b { color: var(--gold); }
@@ -1374,11 +1364,6 @@ label { font-weight: 600; }
     border: 1px solid rgba(255,255,255,0.08);
     background: rgba(255,255,255,0.04);
     letter-spacing: 0.2px;
-  }
-  #screen-table .hero-bar .ctl.primary-action {
-    background: #d4af37;
-    border-color: #d4af37;
-    color: #1a1405;
   }
 
   /* Tab bar: minimal, clean */

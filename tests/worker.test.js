@@ -6,7 +6,6 @@
 //
 // Run: node tests/worker.test.js (also wired into `npm test`).
 var path = require('path');
-var assert = require('assert');
 var urlMod = require('url');
 
 function makeSocket() {

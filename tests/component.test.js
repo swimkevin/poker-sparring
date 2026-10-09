@@ -12,7 +12,7 @@ function ok(cond, name) {
 
 var jsdom;
 try { jsdom = require('jsdom'); }
-catch (e) {
+catch {
   console.log('SKIP: jsdom not installed — run `npm install` for component tests.');
   process.exit(0);
 }

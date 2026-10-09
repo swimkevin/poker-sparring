@@ -10,7 +10,6 @@ function ok(cond, name) {
   if (cond) { pass++; }
   else { fail++; console.log('FAIL: ' + name); }
 }
-function card(r, s) { return { r: r, s: s }; } // s: 0 spade 1 heart 2 diamond 3 club
 function hand(str) {
   // e.g. "As Kd Qh Jc Ts"
   var sm = { s: 0, h: 1, d: 2, c: 3 };
@@ -300,7 +299,7 @@ function heroPolicy(table, idx) {
   ok(t.livePlayers().length === 2, 'only funded players count as live');
   ok(t.acting === 0, 'hero (SB) acts first');
   var threw = false;
-  try { t.act(0, 'fold'); } catch (e) { threw = true; }
+  try { t.act(0, 'fold'); } catch { threw = true; }
   ok(!threw, 'fold into a short-stack blind does not throw');
   ok(t.handOver, 'hand ends by fold instead of running a zombie showdown');
   ok(t.players[2].stack === 67, 'shorty wins the 67 pot by fold, got ' + t.players[2].stack);
@@ -314,10 +313,10 @@ function heroPolicy(table, idx) {
   t2.players[2].hole = hand('7s 2d');
   t2.deck = hand('4c 3s 9h 5d 2c'); // board runs out 2c 5d 9h | 3s | 4c
   threw = false;
-  try { t2.act(0, 'call'); } catch (e) { threw = true; }
+  try { t2.act(0, 'call'); } catch { threw = true; }
   var guard = 0;
   try { while (!t2.handOver && guard++ < 50) { t2.act(t2.acting, 'check'); } }
-  catch (e) { threw = true; }
+  catch { threw = true; }
   ok(!threw && t2.handOver, 'all-in showdown with broke players seated does not throw');
   ok(t2.players[0].stack === 10017, 'hero (AA) wins the 117 pot, got ' + t2.players[0].stack);
   var chips2 = t2.players.reduce(function (s, p) { return s + p.stack; }, 0);
@@ -334,7 +333,7 @@ function heroPolicy(table, idx) {
   t.players[0].hole = hand('As Ah'); t.players[0].totalBet = 50; t.players[0].stack = 950; t.players[0].folded = true;
   t.players[1].hole = hand('Ks Kh'); t.players[1].totalBet = 17; t.players[1].stack = 983;
   var threw = false;
-  try { t._showdown(); } catch (e) { threw = true; }
+  try { t._showdown(); } catch { threw = true; }
   ok(!threw, 'degenerate showdown does not throw');
   ok(t.handOver, 'hand still ends after degenerate showdown');
   // Level 17: B alone eligible -> 34 uncalled. Level 50: nobody eligible -> A's 33 refunded.
@@ -499,14 +498,6 @@ function heroPolicy(table, idx) {
     t.startHand();
     return t;
   }
-  function playThrough(t, maxSteps) {
-    var guard = 0;
-    while (!t.handOver && guard++ < (maxSteps || 40)) {
-      var i = t.acting, mv = BOTS.botDecide(t, t.players[i]);
-      if (!mv) break;
-      t.act(i, mv.a, mv.amount);
-    }
-  }
 
   // (a) Rohan never takes an aggressive action on any street.
   var rAggro = 0, rTried = 0;
@@ -568,7 +559,7 @@ function heroPolicy(table, idx) {
   // amoghPostflop with stubbed table/legal — the function only reads
   // table.currentBet and the legal bounds, so no full table is needed.
   var over = 0, bets = 0, bombs = 0;
-  for (var k3 = 0; k3 < 60; k3++) {
+  for (var k4 = 0; k4 < 60; k4++) {
     var fakeLegal = { toCall: 0, canCheck: true, canBet: true, canRaise: false,
                       minBetTo: 10, maxRaiseTo: 990 };
     var Aam = BOTS.getArchetype('amogh');
@@ -588,7 +579,7 @@ function heroPolicy(table, idx) {
 
   // (c1) Nathan never bets/raises before the river.
   var nAggro = 0, nTried = 0;
-  for (var k4 = 0; k4 < 40; k4++) {
+  for (var k5 = 0; k5 < 40; k5++) {
     var t4 = mkTable('nathan');
     var g4 = 0;
     while (!t4.handOver && g4++ < 40) {
@@ -605,7 +596,7 @@ function heroPolicy(table, idx) {
 
   // (c2) Nathan springs the trap on the river with the nuts.
   var trapBets = 0, trapSpots = 0;
-  for (var k5 = 0; k5 < 200; k5++) {
+  for (var k6 = 0; k6 < 200; k6++) {
     var t5 = mkTable('nathan');
     var g5 = 0;
     while (!t5.handOver && g5++ < 40) {

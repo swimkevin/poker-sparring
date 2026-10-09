@@ -44,7 +44,7 @@ export class RoomDO {
   _meta(ws) {
     let meta = this.sessions.get(ws);
     if (!meta) {
-      try { meta = ws.deserializeAttachment(); } catch (e) { meta = null; }
+      try { meta = ws.deserializeAttachment(); } catch { meta = null; }
       // Hibernated socket on a restarted DO: the sessions map is empty, so
       // re-register it — otherwise broadcasts (lobby/state) never reach it.
       if (meta) this.sessions.set(ws, meta);
@@ -66,18 +66,18 @@ export class RoomDO {
       // The DO instance is already scoped to one room code (idFromName), so a
       // stored room is always ours; the code check is belt-and-braces.
       if (data && (!code || data.code === code)) this.room = Room.fromJSON(data);
-    } catch (e) { /* storage unavailable; stay memory-only */ }
+    } catch { /* storage unavailable; stay memory-only */ }
   }
 
   async _saveRoom() {
     try {
       if (this.room) await this.state.storage.put('room', this.room.toJSON());
-    } catch (e) { /* persistence is best-effort */ }
+    } catch { /* persistence is best-effort */ }
   }
 
   async webSocketMessage(ws, raw) {
     let msg;
-    try { msg = JSON.parse(raw); } catch (e) { return; }
+    try { msg = JSON.parse(raw); } catch { return; }
     const meta = this._meta(ws);
     if (!meta) return;
     const code = meta.code;
@@ -133,7 +133,7 @@ export class RoomDO {
     } else if (msg.t === 'leave') {
       room.removePlayer(meta.clientId);
       changed = true;
-      try { ws.close(1000, 'left'); } catch (e) {}
+      try { ws.close(1000, 'left'); } catch {}
     } else {
       ws.send(JSON.stringify({ t: 'error', message: 'Unknown message.' }));
       return;
@@ -174,7 +174,7 @@ export class RoomDO {
         } else {
           ws.send(JSON.stringify(room.getSnapshot(p.seat)));
         }
-      } catch (e) { /* dead socket; close handler cleans up */ }
+      } catch { /* dead socket; close handler cleans up */ }
     }
   }
 
@@ -195,7 +195,7 @@ export class RoomDO {
     } else if (this.room.state === 'playing' && !this.room.paused && this.room.config.turnTimerSec > 0) {
       const msLeft = this.room._msLeft();
       for (const [ws] of this.sessions) {
-        try { ws.send(JSON.stringify({ t: 'timer', msLeft: msLeft })); } catch (e) {}
+        try { ws.send(JSON.stringify({ t: 'timer', msLeft: msLeft })); } catch {}
       }
     }
     this.scheduleTick();

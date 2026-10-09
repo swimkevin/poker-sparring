@@ -4,7 +4,6 @@
 var path = require('path');
 var js = function (f) { return require(path.join(__dirname, '..', 'js', f)); };
 js('cards.js'); js('evaluator.js'); // loaded for engine's transitive requires
-var EN = js('engine.js');
 var RS = js('room-server.js');
 var NP = js('netplay.js');
 
@@ -83,7 +82,7 @@ function lastState(client) {
   var created = srv.createRoom({ maxPlayers: 6, startingStack: 1000, sb: 5, bb: 10, turnTimerSec: 0 }, 'Ann');
   var code = created.code;
   var ann = created.client;
-  var bob = srv.connect(code, 'Bob').client;
+  srv.connect(code, 'Bob'); // Bob takes a seat (client unused here)
   ann.send({ t: 'start' });
   ok(lastState(ann).state === 'playing', 'game started');
   // Ann's old socket is still "connected" (server hasn't seen the drop yet).
@@ -317,7 +316,7 @@ function lastState(client) {
 
   // Backoff caps at 8s (consecutive drops without a successful open).
   FakeWS.instances = []; delays = [];
-  var c2 = freshClient(12);
+  freshClient(12); // client unused; only its FakeWS instance matters
   FakeWS.instances[0]._open();
   for (var i = 0; i < 5; i++) {
     FakeWS.instances[FakeWS.instances.length - 1]._drop();
