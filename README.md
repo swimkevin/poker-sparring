@@ -24,12 +24,27 @@ An offline-first poker practice app. Play cash games, heads-up, and tournaments 
 
 **It's a rules engine, not a neural net — and that's deliberate.** Every piece of advice traces to a named principle (pot odds, MDF, SPR, ICM) you can verify in a poker book. No black box, no hallucinated ranges.
 
-**How it improves:** a daily loop keeps it honest.
-- **Automated test hands** — hundreds of simulated hands check the coach's advice stays legal and mathematically consistent.
-- **Verification playthroughs** — full games are played with the coach's advice followed, and every decision is reviewed for quality (latest: 10 hands, 14 decisions, all sound).
-- **Research** — solver outputs and poker literature (books, training sites) are studied; when a principle is missing or a bad outcome is found, it's encoded as a new rule with a regression test.
+### Coach improvement methodology
 
-The coach doesn't rewrite itself — improvements are deliberate, tested, and shipped as versions, like any good training program.
+The coach improves through a **human-in-the-loop verification cycle** — real hands played, real mistakes caught, real fixes shipped:
+
+**1. Live hand review** — Full hands are played on the live app (not just simulations). Every coach message is audited against five criteria:
+- *Correctness:* Is the recommended action right for this exact spot?
+- *Multiway awareness:* In 3+ player pots, does it address the crowd or fixate on one villain?
+- *Beginner clarity:* Do opponent reads explain the player type ("calling station — calls with anything") or just name it ("Station")?
+- *Jargon-free:* No 3-bet, TAG, MDF, SPR, ICM, or other terms a new player wouldn't know.
+- *Intellectual honesty:* Does it present options ("you can raise or call") instead of false certainty? Does it know when to give up?
+
+**2. Bug → regression test → fix** — Every coach mistake found in review becomes a deterministic test that fails without the fix. Examples from real reviews:
+- Bottom pair misclassified as "second pair" → now distinguishes 2nd pair from 3rd pair+
+- Winning bluffs getting contradictory "slow leak" lectures → recap now celebrates the win
+- Iso-raise spots (5 limpers, dead money) saying "fold" → now suggests the profitable raise as an option
+
+**3. Competitive calibration** — Other training tools are studied for what they do better (see `docs/competitive-analysis-2026-10-09.md`). Best ideas are adapted, not copied.
+
+**4. Automated verification** — The unit suite (1,800+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change.
+
+The coach doesn't rewrite itself — improvements are deliberate, tested, and shipped as versions, like any good training program. When the coach is wrong, that's a bug report, not a shrug.
 
 ## Fair dealing
 

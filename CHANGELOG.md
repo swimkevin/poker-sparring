@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.61] — 2026-10-09
+
+### Docs — coach methodology + competitive analysis
+- **README**: Rewrote "How the coach works" with FANG-style improvement
+  methodology — human-in-the-loop verification cycle, 5 audit criteria,
+  bug→test→fix workflow with real examples.
+- **New docs**: `docs/competitive-analysis-2026-10-09.md` (SparringPoker
+  comparison, 5 learnings, prioritized roadmap) and
+  `docs/coach-improvement-loop.md` (Tuesday automation plan).
+
 ## [1.8.60] — 2026-10-09
 
 ### Fixed — coach no longer value-bets bottom pair
