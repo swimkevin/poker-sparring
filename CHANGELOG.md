@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.67] — 2026-10-09
+
+### Docs — loop hardening for Tuesday automation
+- **Known issues documented**: coach text duplication (under investigation),
+  absent on checked-around streets (decision needed).
+- **Automation plan updated**: Phase 0 fast static checks (scenarios + unit +
+  lint) before browser audit; duplication check as P0; 60s CDN wait in verify.
+- Tests: 22 coach-advice + 15 scenarios, all passing.
+
 ## [1.8.66] — 2026-10-09
 
 ### Hardening — unified decision tracking + scenario verification

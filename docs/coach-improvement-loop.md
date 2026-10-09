@@ -6,6 +6,12 @@
 
 ## What it does each day
 
+### Phase 0: Fast static checks (new, < 30 seconds)
+1. Run `node tests/coach-scenarios.js` — 15 static verifications
+2. Run `node tests/coach-advice.test.js` — 22 unit tests
+3. Run `npx eslint js/` — lint gate
+4. If any fail, fix before proceeding to browser audit
+
 ### Phase 1: Live hand audit (the core loop)
 1. Play 5 full cash-game hands on the live site via browser automation
 2. Record every coach message (preflop + postflop)
@@ -16,17 +22,21 @@
    - Jargon-free language
    - Intellectual honesty (options, not commands; knows when to give up)
 4. Rank issues by severity
+5. **Check for duplication**: if coach text appears doubled, flag as P0
 
 ### Phase 2: Fix and test
 1. Fix the top 1-3 issues found
 2. Add regression tests (must fail without the fix)
-3. Run full test suite + ESLint
-4. Bump version, update CHANGELOG
+3. Add scenario to `tests/coach-scenarios.js` if applicable
+4. Run full test suite + ESLint + scenario verification
+5. Bump version, update CHANGELOG
 
 ### Phase 3: Ship and verify
 1. Push to GitHub via PAT
-2. Verify live deployment (version.txt + footer)
-3. Re-run browser test on the new version to confirm fixes
+2. Verify live deployment (version.txt + footer + commit SHA)
+3. Wait 60s for CDN, re-verify version
+4. Re-run browser test on the new version to confirm fixes
+5. If duplication or critical bug found, fix immediately (don't wait for next day)
 
 ### Phase 4: Competitive research (weekly, not daily)
 Every Tuesday, check one competitor or poker training resource for ideas.
@@ -53,6 +63,21 @@ Document in `docs/` with what to adopt vs ignore.
 - Week-over-week stat deltas
 - Bot-vs-bot simulation stats
 - "Export for AI review" button
+
+## Known issues (from 2026-10-09 audits)
+
+### Coach text duplication (v1.8.66, under investigation)
+**Symptom:** Every coach suffix (position, multiway note, opponent bullets) renders twice.
+First copy has empty values, second has filled values.
+**Status:** Critical 3+ limpers bug is FIXED (coach renders). Duplication is cosmetic
+but blocks automation parsing. Needs browser DevTools debugging.
+**Hypothesis:** Race condition in equity calculation (first render before async
+complete, second after). Or double `coachVerdict()` invocation.
+
+### Coach absent on checked-around streets
+Coach doesn't render when action checks around to hero on flop/turn.
+**Decision needed:** Is this intentional (only key spots) or a gap?
+Automation expects coach on every hero decision.
 
 ## Audit process improvements (from 2026-10-09 second audit)
 
