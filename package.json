@@ -1,7 +1,8 @@
 {
   "author": "Kevin Song",
-  "description": "Offline Texas Hold'em training app \u2014 vanilla JS, zero runtime dependencies. Heuristic AI opponents, Monte Carlo equity engine, push/fold drills.",
+  "description": "Offline Texas Hold'em training app — vanilla JS, zero runtime dependencies. Heuristic AI opponents, Monte Carlo equity engine, push/fold drills.",
   "devDependencies": {
+    "eslint": "^10.12.0",
     "jsdom": "^30.1.2"
   },
   "engines": {
@@ -22,5 +23,5 @@
     "test:component": "node tests/component.test.js",
     "test:unit": "node tests/test.js"
   },
-  "version": "1.8.47"
+  "version": "1.8.48"
 }

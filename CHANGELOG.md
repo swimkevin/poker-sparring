@@ -3,6 +3,20 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.48] — 2026-10-09
+
+### Changed — code quality & debloat pass
+- **ESLint gate added** (`eslint.config.js`, dev-only): catches unused vars,
+  unreachable code, and redeclarations. Full codebase now lint-clean.
+- **Dead code removed**: unused `foldEquityNote` coach helper, 9 orphaned CSS
+  classes, dead `advancedStats` feature flag, unused catch params (76× `catch
+  {`), dead stores in online/evaluator/test files.
+- **Fixed**: `index.html` cache-busters now track the version (v1.8.47 shipped
+  with stale `?v=1.8.46` — caught by the component suite).
+- **README**: added "How the coach works (and how it gets better)" and "Fair
+  dealing" sections — honest docs on the rules-engine coach, the daily
+  improvement loop, and CSPRNG shuffling.
+
 ## [1.8.47] — 2026-10-08
 
 ### Changed — solver-grade coach upgrade

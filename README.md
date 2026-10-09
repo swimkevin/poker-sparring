@@ -20,6 +20,21 @@ An offline-first poker practice app. Play cash games, heads-up, and tournaments 
 
 **Solver-informed coaching engine.** The coach encodes solver-derived principles — minimum defense frequency, pot-odds math, SPR commitment tiers, range/nut advantage, ICM risk premiums, push/fold charts — plus exploitative adjustments per opponent type, grounded in standard training literature (Sklansky, Harrington, Janda, Clarke).
 
+## How the coach works (and how it gets better)
+
+**It's a rules engine, not a neural net — and that's deliberate.** Every piece of advice traces to a named principle (pot odds, MDF, SPR, ICM) you can verify in a poker book. No black box, no hallucinated ranges.
+
+**How it improves:** a daily loop keeps it honest.
+- **Automated test hands** — hundreds of simulated hands check the coach's advice stays legal and mathematically consistent.
+- **Verification playthroughs** — full games are played with the coach's advice followed, and every decision is reviewed for quality (latest: 10 hands, 14 decisions, all sound).
+- **Research** — solver outputs and poker literature (books, training sites) are studied; when a principle is missing or a bad outcome is found, it's encoded as a new rule with a regression test.
+
+The coach doesn't rewrite itself — improvements are deliberate, tested, and shipped as versions, like any good training program.
+
+## Fair dealing
+
+Shuffled like the pros. Each hand starts with a full 52-card Fisher-Yates shuffle driven by a **cryptographic RNG** (Web Crypto in the browser, Node crypto in tests) — the same class of randomness regulated sites use — with rejection sampling so every shuffle index is unbiased. The whole deck is shuffled once per hand and dealt in order, exactly like a live dealer (PokerStars documents the same approach: once shuffled, the order is set). `Math.random` is never used for dealing — it's predictable and fails the fairness bar. The shuffle is covered by statistical tests in the suite.
+
 ## Features
 
 **Play**

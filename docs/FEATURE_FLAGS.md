@@ -10,7 +10,6 @@ Poker Sparring follows Flappy Bird simplicity: the default experience is **one t
 | `headsUpMode` | off | Heads-Up mode card |
 | `pushFoldTrainer` | off | Push/Fold trainer mode card |
 | `customBots` | off | Custom bot builder section |
-| `advancedStats` | off | Leak tracker, detailed per-archetype stats |
 
 ## Enabling flags
 
@@ -31,7 +30,6 @@ Every feature here was built for a reason and tested. Hiding ≠ deleting:
 - Heads-up: for drilling one specific opponent
 - Push/fold trainer: for short-stack decisions
 - Custom bots: for modeling specific friends' play styles
-- Advanced stats: for serious leak-finding
 
 The default stays simple. Power users can opt in.
 
