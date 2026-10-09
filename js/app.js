@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.54';
+  var APP_VERSION = '1.8.55';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -117,7 +117,7 @@
     try { localStorage.setItem(rosterKey(), JSON.stringify(Array.from(selectedBots))); }
     catch {}
   }
-  var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
+  var selectedBots = new Set(loadRoster() || ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'shark', 'station']);
   var preHuSelection = null; // full table remembered across a heads-up detour
   // Prune the selection to bots available in the current game mode.
   // Prevents stale tournament picks from blocking cash-game selection.
@@ -134,7 +134,7 @@
     if (ids) selectedBots = new Set(ids);
     else selectedBots = new Set(mode === 'tourney'
       ? ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'pro', 'nit']
-      : ['lag', 'rohan', 'amogh']);
+      : ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'shark', 'station']);
     pruneSelection();
   }
   pruneSelection(); // clean any stale picks from a previous mode
@@ -2141,7 +2141,7 @@
         } else if (prev === 'hu' && mode !== 'hu' && preHuSelection) {
           // Restore the pre-heads-up table.
           selectedBots = new Set(preHuSelection.filter(function (id) { return botById(id); }).slice(0, 7));
-          if (!selectedBots.size) selectedBots = new Set(['lag', 'rohan', 'amogh']);
+          if (!selectedBots.size) loadModeRoster();
           preHuSelection = null;
         } else if (prev !== 'hu' && mode !== 'hu' && prev !== mode) {
           // Cash <-> tournament: each mode remembers its own roster.

@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.55] — 2026-10-09
+
+### Changed — cash game defaults to 7 opponents
+- **Full table by default**: cash games now default to 7 opponents (Alice,
+  swimkev, Rohan, Amogh, Nathan, Shark, Station) instead of 3.
+
 ## [1.8.54] — 2026-10-09
 
 ### Fixed — Skip button UI state
