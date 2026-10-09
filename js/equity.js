@@ -263,7 +263,7 @@ function villainBluffy(archetype) {
 
 // One-line exploit per bot id; custom bots get a read from their sliders.
 var EXPLOIT_LINES = {
-  lag: 'brings constant pressure — 3-bet strong hands, never float light',
+  lag: 'brings constant pressure — re-raise strong hands, never call light',
   rohan: 'calls everything, raises nothing — value bet, never bluff',
   amogh: 'bombs pots with real hands — let him bet into you, don\'t bluff-catch light',
   nathan: 'never raises before the river — value bet relentlessly, believe his river bet',

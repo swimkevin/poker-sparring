@@ -3,6 +3,18 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.56] — 2026-10-09
+
+### Changed — coach now suggests iso-raise bluffs
+- **Punish limpers**: with 3+ limpers on the button/cutoff, coach now suggests
+  <b>Raise 4×</b> as an iso-raise bluff with any playable hand (tier 5+) —
+  the dead money + fold equity + position makes it profitable long-term.
+- **Recap fix**: winning by fold no longer shows a contradictory "tighten up"
+  lecture. Iso-raise wins get "Nice iso-raise! 🎉 You punished the limpers
+  and took the dead money."
+- **Jargon**: "3-bet strong hands, never float light" → "re-raise strong hands,
+  never call light".
+
 ## [1.8.55] — 2026-10-09
 
 ### Changed — cash game defaults to 7 opponents

@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.55';
+  var APP_VERSION = '1.8.56';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1276,18 +1276,22 @@
     if (!good && !bad && !won) return null;
     var lines = [];
     // Win first: if you ignored the coach but took the pot, say so.
-    // Distinguish semi-bluffs (draw + aggression) from pure bluffs.
+    // Distinguish semi-bluffs (draw + aggression) from pure bluffs and iso-raises.
     if (won && !good && bad) {
       var isSemi = bad.hc === 'draw-strong' || bad.hc === 'draw';
+      var isIso = bad.action === 'raise' && bad.advice === 'fold' && bad.street === 'preflop';
       var winMsg = wonByFold
         ? (isSemi ? 'Nice semi-bluff! 🎉 Your draw + aggression took it down.'
+           : isIso ? 'Nice iso-raise! 🎉 You punished the limpers and took the dead money.'
            : 'Bluff worked! 🎉 Everyone folded — nice aggression.')
         : 'You won the hand! 🎉 Your play got through.';
       lines.push({ kind: 'good', text: winMsg });
     } else if (good) {
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
     }
-    if (bad) {
+    // Don't second-guess a winning bluff: if you took it down by fold,
+    // the aggression worked — no "tighten up" lecture.
+    if (bad && !(won && wonByFold)) {
       var prefix = (won && !good) ? 'One thing to tighten up: ' : 'To improve: ';
       lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
         ', you went ' + bad.action + '. ' + bad.lesson });
@@ -1511,6 +1515,14 @@
         return mkVerdict('raise', 'marginal',
           '<b>Raise 4×</b> to isolate — limpers rarely have much, and you have position.',
           'Attack limpers from late position; they fold or play bloated pots out of position.');
+      // Iso-raise bluff: 3+ limpers = lots of dead money. On the button/cutoff
+      // with any playable hand, raising wins outright often enough to profit —
+      // limpers fold too much, and you have position when called.
+      if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
+        return mkVerdict('raise', 'marginal',
+          '<b>Raise 4×</b> to punish the limpers — ' + countLimpers() + ' limpers means ' +
+          UI.fmt(table.potTotal()) + ' of dead money. They fold a lot, and you have position when they don\'t.',
+          'Iso-raising limpers is profitable: the dead money plus position makes this a winning play long-term, even as a bluff.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
         return mkVerdict('call', 'marginal',
           '<b>Call</b> behind — speculative hand, deep stacks, great implied odds if you crack a limper.',
