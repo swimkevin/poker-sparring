@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.56';
+  var APP_VERSION = '1.8.57';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -883,11 +883,8 @@
       else style = 'tricky — play straightforward';
       return '<b>' + name + '</b>: ' + style;
     });
-    // 1-2 opponents: one per line, easy to scan. 3+: compact single line.
-    if (reads.length <= 2) {
-      return '<div class="coach-opps">🎯<br>' + reads.join('<br>') + '</div>';
-    }
-    return '<div class="coach-opps">🎯 ' + reads.join(' · ') + '</div>';
+    // Always one per line as bullet points — easy to scan even with many opponents.
+    return '<div class="coach-opps">🎯 Opponents:<br>• ' + reads.join('<br>• ') + '</div>';
   }
 
   // Suitedness and multi-way are woven into the advice naturally, not as
@@ -1224,10 +1221,15 @@
         nmHtml: '<b>' + esc(nm) + '</b>', esc: esc, fmt: UI.fmt
       };
       var v = (table.street === 'preflop') ? coachPreflop(ctx) : coachPostflop(ctx);
-      var tail = villainLine(V);
+      // In multiway limped pots, don't focus on a single villain — the
+      // multiwayNote covers the situation. Single-villain reads are for
+      // heads-up or 3-way pots.
+      var isMultiLimp = table.street === 'preflop' && countLimpers() >= 3;
+      var tail = isMultiLimp ? '' : villainLine(V);
       var posNote = ' <span class="coach-pos">📍 You\'re on the ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
-      v.html = v.msg ? v.msg + tail + posNote + stageNote + opponentReads() : null;
+      var multiNote = multiwayNote();
+      v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + opponentReads() : null;
       return v;
     } catch { return { advice: null, strength: 'marginal', msg: '', lesson: '', html: null }; }
   }
@@ -1323,6 +1325,19 @@
     if (st === 'middle') return ' <span class="coach-stage">Middle stage: blinds rising — steal more, defend less. Antes make steals profitable.</span>';
     if (st === 'bubble') return ' <span class="coach-stage">🫧 Bubble: 3 get paid! Tighten up as a medium stack; bully as the big stack.</span>';
     return ' <span class="coach-stage">🏁 Final 3: every elimination is a pay jump. Survival is everything.</span>';
+  }
+  // Multiway pot awareness: when 3+ players are in, bluffs work less often
+  // but the pot is bigger. Coach should acknowledge the crowd, not just
+  // focus on a single villain.
+  function multiwayNote() {
+    if (table.street !== 'preflop') {
+      var n = table.livePlayers().length - 1;
+      if (n >= 4) return ' <span class="coach-multi">👥 ' + n + '-way pot — bluffs rarely work multiway; bet only for value.</span>';
+      return '';
+    }
+    var limps = countLimpers();
+    if (limps >= 3) return ' <span class="coach-multi">👥 ' + limps + ' limpers in the pot (' + UI.fmt(table.potTotal()) + ' dead money) — great spot to raise and take it down.</span>';
+    return '';
   }
   // Tournament risk premium: near pay jumps, chips are worth more than face
   // value, so the pot-odds bar rises. Approximated from effective stack depth

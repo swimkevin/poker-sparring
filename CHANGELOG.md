@@ -3,6 +3,18 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.57] — 2026-10-09
+
+### Changed — coach multiway awareness + cleaner opponent reads
+- **Multiway pots**: with 3+ limpers preflop, coach now leads with
+  "👥 3 limpers in the pot (45 dead money) — great spot to raise and take it down."
+  instead of focusing on a single villain. Postflop 4-way+ pots get
+  "bluffs rarely work multiway; bet only for value."
+- **Opponent reads as bullet points**: no more mashed-up single line —
+  each opponent gets their own bullet (• Alice: tricky — play straightforward).
+- **No single-villain focus in limped pots**: the "vs X:" line is skipped
+  when 3+ limpers are in, since the situation is about the crowd.
+
 ## [1.8.56] — 2026-10-09
 
 ### Changed — coach now suggests iso-raise bluffs
