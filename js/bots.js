@@ -45,7 +45,7 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, raises nothing.',
-    desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — neverRaise converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair. Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
+    desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — the neverRaise flag converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair. Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
     beat: 'Value bet thin — he will call with worse. Never bluff him; he does not fold pairs.',
     openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 1,
     aggression: 0.05, bluff: 0.05, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,

@@ -832,9 +832,10 @@ var UI = (function () {
       var row = document.createElement('div');
       row.className = 'arch-table-row';
       var wr = a.hands ? Math.round(100 * a.won / a.hands) : 0;
+      var handWord = a.hands === 1 ? 'hand' : 'hands';
       row.innerHTML = '<span class="ae">' + (a.emoji || '🤖') + '</span>' +
         '<span class="an">' + escapeHtml(dispName(a) || id) + '</span>' +
-        '<span class="as">' + a.hands + ' hands · won ' + a.won + ' (' + wr + '%)</span>';
+        '<span class="as">' + a.hands + ' ' + handWord + ' · won ' + a.won + ' (' + wr + '%)</span>';
       at.appendChild(row);
     });
     var hl = $('history-list');

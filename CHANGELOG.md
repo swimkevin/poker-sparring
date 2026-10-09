@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.69] — 2026-10-09
+
+### Fixed — copy bugs from FANG audit
+- **Bots page**: Rohan description "neverRaise converts" → "the neverRaise flag converts" (missing space).
+- **Stats**: "1 hands · won 0" → "1 hand · won 0" (grammar).
+- **Hand log**: Added non-breaking space before hand name in win messages to prevent "wins 50Pair of Kings" concatenation.
+
 ## [1.8.68] — 2026-10-09
 
 ### Fixed — CRITICAL: posName undefined in coachPostflop (blank coach on checked streets)

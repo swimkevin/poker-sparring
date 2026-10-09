@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.68';
+  var APP_VERSION = '1.8.69';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -408,7 +408,7 @@
       if (w.uncalled) bits.push(names + ' ' + takeVerb + ' ' + UI.fmt(w.amount) + ' back (uncalled bet)');
       else if (w.byFold) bits.push(names + ' ' + verb + ' ' + UI.fmt(w.amount));
       else bits.push(potLabel + ': ' + names + ' ' + verb + ' ' + UI.fmt(w.each || w.amount) +
-        ' <span class="wsub">' + UI.escapeHtml(w.hand || '') + '</span>');
+        ' <span class="wsub"> ' + UI.escapeHtml(w.hand || '') + '</span>');
     });
     var title;
     if (won) {
