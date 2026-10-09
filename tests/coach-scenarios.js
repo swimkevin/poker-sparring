@@ -100,5 +100,18 @@ console.log('\n8. Debug mode and test hooks (v1.8.64 hardening)');
   ok(src.includes('[coach] verdict failed'), 'error logging in debug mode');
 }
 
+console.log('\n9. posName destructured in coachPostflop (v1.8.68 critical bug)');
+{
+  // The fix: var V = c.V, vIdx = c.vIdx, vName = c.vName, posName = c.posName;
+  // Without it, the air-bluff branch (checkedAround) throws ReferenceError
+  // when currentBet === 0, the try/catch swallows it, and the coach panel
+  // goes blank on checked-around streets.
+  const match = src.match(/function coachPostflop\(c\) \{[^}]*var V = c\.V[^;]*;/s);
+  const hasPosName = match && match[0].includes('posName = c.posName');
+  ok(hasPosName, 'posName destructured in coachPostflop');
+  ok(!/var checkedAround = table\.currentBet === 0 && \(posName/.test(src) ||
+     hasPosName, 'checkedAround posName read is guarded by destructure');
+}
+
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);

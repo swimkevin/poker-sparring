@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.67';
+  var APP_VERSION = '1.8.68';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1682,7 +1682,7 @@
   function coachPostflop(c) {
     var esc = c.esc, fmt = c.fmt;
     var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
-    var V = c.V, vIdx = c.vIdx, vName = c.vName;
+    var V = c.V, vIdx = c.vIdx, vName = c.vName, posName = c.posName;
     var hc = handClass(hero.hole, table.community);
     var pos = positionScore(table, 0);
     var inPos = pos > 0.6;

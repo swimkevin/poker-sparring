@@ -74,10 +74,16 @@ but blocks automation parsing. Needs browser DevTools debugging.
 **Hypothesis:** Race condition in equity calculation (first render before async
 complete, second after). Or double `coachVerdict()` invocation.
 
-### Coach absent on checked-around streets
-Coach doesn't render when action checks around to hero on flop/turn.
-**Decision needed:** Is this intentional (only key spots) or a gap?
-Automation expects coach on every hero decision.
+### Coach absent on checked-around streets — RESOLVED v1.8.68
+Was "decision needed"; root cause found by the 2026-10-09 automation: NOT a
+product decision. `coachPostflop()` read the undeclared variable `posName`
+in the air-bluff branch (`checkedAround = table.currentBet === 0 &&
+(posName === 'button' || ...)`). Same bug class as the v1.8.65 preflop fix.
+Whenever hero had air postflop with no bet to face, the ReferenceError was
+swallowed by coachVerdict's try/catch and the panel went blank — 12 of 15
+such spots blanked in a jsdom gameplay repro. Fixed by destructuring
+`posName` in `coachPostflop`; regression check #9 in
+`tests/coach-scenarios.js` guards it (verified it fails without the fix).
 
 ## Audit process improvements (from 2026-10-09 second audit)
 

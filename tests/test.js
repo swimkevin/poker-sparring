@@ -955,8 +955,8 @@ function heroPolicy(table, idx) {
       'exploit line for ' + a.id);
   });
   ok(/never bluff/.test(E.exploitLine({ id: 'station' })), 'station line says never bluff');
-  ok(/trap/.test(E.exploitLine({ id: 'maniac' })), 'maniac line says trap');
-  ok(/steal/.test(E.exploitLine({ id: 'rock' })), 'rock line says steal');
+  ok(/trap/i.test(E.exploitLine({ id: 'maniac' })), 'maniac line says trap');
+  ok(/steal/i.test(E.exploitLine({ id: 'rock' })), 'rock line says steal');
   ok(/bluff target/.test(E.exploitLine({ id: 'custom-1', stubborn: 0.2, bluff: 0.1 })),
     'foldy custom is a bluff target');
   ok(/value bet/.test(E.exploitLine({ id: 'custom-2', stubborn: 0.9, bluff: 0.1 })),
@@ -995,12 +995,12 @@ function heroPolicy(table, idx) {
   });
   ok(B.getArchetype('maniac').tiltProne > B.getArchetype('rock').tiltProne, 'maniac tilts harder than rock');
   // Tournament archetypes.
-  var grinder = B.getArchetype('grinder'), bubble = B.getArchetype('bubble');
-  ok(grinder && grinder.openTier <= 3, 'grinder is tight preflop (a touch looser since v1.8.45)');
-  ok(grinder.threeBetTier <= 2, 'grinder 3-bets aggressively');
-  ok(grinder.pushTier >= 5, 'grinder shoves short stacks');
-  ok(bubble && bubble.openTier <= 2, 'bubble boy barely plays (a touch looser since v1.8.45)');
-  ok(bubble.rebuy < 0.3, 'bubble boy rarely rebuys');
+  var pro = B.getArchetype('pro'), nit = B.getArchetype('nit');
+  ok(pro && pro.openTier <= 3, 'pro is tight preflop (a touch looser since v1.8.45)');
+  ok(pro.threeBetTier <= 2, 'pro 3-bets aggressively');
+  ok(pro.pushTier >= 5, 'pro shoves short stacks');
+  ok(nit && nit.openTier <= 2, 'nit barely plays (a touch looser since v1.8.45)');
+  ok(nit.rebuy < 0.3, 'nit rarely rebuys');
   // Custom bots get calibration fields.
   var c = B.customArchetype({ looseness: 40, aggression: 50, bluff: 20, stubborn: 50, tiltProne: 80, rebuy: 30 });
   ok(c.tiltProne === 0.8 && c.rebuy === 0.3, 'custom tilt/rebuy sliders stored');
@@ -1175,7 +1175,7 @@ function heroPolicy(table, idx) {
   ok(sharkR > 0, 'shark 3-bets JJ sometimes (' + sharkR + '/' + N + ')');
   ok(rockR < sharkR, 'rock 3-bets JJ less than shark (' + rockR + ' vs ' + sharkR + ')');
   ok(threeBetRate('lag', JJ, N) > 0, 'lag 3-bets JJ sometimes');
-  ['shark', 'lag', 'grinder', 'maniac'].forEach(function (id) {
+  ['shark', 'lag', 'pro', 'maniac'].forEach(function (id) {
     var r = threeBetRate(id, QQ, N);
     ok(r >= N * 0.3, id + ' 3-bets QQ at a healthy clip (' + r + '/' + N + ')');
   });
@@ -1248,8 +1248,8 @@ function heroPolicy(table, idx) {
 
   // Named bots slightly looser; training archetypes untouched.
   ok(BOTS.getArchetype('shark').openTier === 4, 'shark a touch looser (openTier 4)');
-  ok(BOTS.getArchetype('grinder').openTier === 3, 'grinder a touch looser (openTier 3)');
-  ok(BOTS.getArchetype('bubble').openTier === 2, 'bubble a touch looser (openTier 2)');
+  ok(BOTS.getArchetype('pro').openTier === 3, 'pro a touch looser (openTier 3)');
+  ok(BOTS.getArchetype('nit').openTier === 2, 'nit a touch looser (openTier 2)');
   ok(BOTS.getArchetype('rohan').callTier === 5, 'rohan a touch looser (callTier 5)');
   var st = BOTS.getArchetype('station'), ma = BOTS.getArchetype('maniac'), rk = BOTS.getArchetype('rock');
   ok(st.openTier === 4 && st.callTier === 5, 'calling station untouched (training)');

@@ -3,6 +3,25 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.68] — 2026-10-09
+
+### Fixed — CRITICAL: posName undefined in coachPostflop (blank coach on checked streets)
+- **Root cause of "coach absent on checked-around streets"**: `coachPostflop()`
+  didn't destructure `posName` from context, but the air-bluff branch reads it
+  (`checkedAround = table.currentBet === 0 && (posName === 'button' || ...)`).
+  Same bug class as v1.8.65's preflop fix. Whenever hero had air postflop with
+  no bet to face, the ReferenceError was swallowed by coachVerdict's try/catch
+  and the coach panel went blank — 12 of 15 such spots in a jsdom gameplay
+  repro. One-line fix: destructure `posName` in `coachPostflop`.
+- **Regression test**: `tests/coach-scenarios.js` check #9 (static, mirrors the
+  v1.8.65 preflop check; verified it fails without the fix). Behavioral repro
+  confirms 0 blanked spots after the fix.
+- **Pre-existing test failures fixed**: `tests/test.js` exploit-line assertions
+  for maniac/rock used case-sensitive regexes (`/trap/`, `/steal/`) but the
+  lines begin "Trap…"/"Steal…". Made the two regexes case-insensitive — test
+  intent unchanged, no user-facing text altered.
+- Tests: 22 coach-advice + 17 scenarios + full `npm test`, all passing.
+
 ## [1.8.67] — 2026-10-09
 
 ### Docs — loop hardening for Tuesday automation
