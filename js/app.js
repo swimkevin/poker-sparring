@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.62';
+  var APP_VERSION = '1.8.63';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1537,8 +1537,13 @@
         'Respect 4-bets: players don\'t bluff them often enough to call light.');
     }
 
-    // ---- limpers ahead, no raise yet
-    if (countLimpers() > 0) {
+    // ---- limpers ahead, no raise yet (0 raises, but calls exist)
+    var nRaises = 0;
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t === 'action' && t.street === 'preflop' &&
+          (t.action === 'bet' || t.action === 'raise')) nRaises++;
+    });
+    if (nRaises === 0 && countLimpers() > 0) {
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
           c.nmHtml + ' — limpers are weak. <b>Raise 4×</b> to isolate one of them and play for stacks.',
@@ -1565,21 +1570,29 @@
         'Limping behind with weak hands is a slow leak — fold and stay disciplined.');
     }
 
-    // ---- facing a single open: 3-bet premiums, otherwise the call/fold math
+    // ---- facing a single open: re-raise premiums, otherwise the call/fold math
     var open = table.currentBet;
     var need = toCall / (pot + toCall);
     var multiway = isMultiway();
     var suited = isSuited(hero.hole);
 
-    // Value 3-bet with position-aware sizing: 3x in position, 4x out of position.
+    // Trash hands: fold immediately, don't even do the math. 52o and similar
+    // have no playability — raw equity lies.
+    if (tier >= 6) {
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — ' + c.nmHtml + ' is trash. Don\'t pay to see a flop with it.',
+        'The worst hands lose money even when the math looks close — they\'re hard to play and often dominated.');
+    }
+
+    // Value re-raise with position-aware sizing: 3x in position, 4x out of position.
     if (tier <= 2 && legal.canRaise) {
       var mult = inPos ? 3 : 4;
       var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * mult)));
       return mkVerdict('raise', 'strong',
-        '<b>3-bet</b> ' + c.nmHtml + ' to ~<b>' + fmt(three) + '</b> (' + mult + '× their open' +
+        '<b>Re-raise</b> ' + c.nmHtml + ' to ~<b>' + fmt(three) + '</b> (' + mult + '× their open' +
         (inPos ? ') — you have position' : ') — out of position, size up to charge them') +
         '. You\'re usually ahead, so build the pot now.',
-        '3-bet premiums for value: 3× in position, 4× out of position.');
+        'Re-raise premiums for value: 3× in position, 4× out of position.');
     }
 
     // Small pairs: set-mine only with ~15:1 implied odds behind.

@@ -3,6 +3,29 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.63] — 2026-10-09
+
+### Fixed — second audit (critical rendering bug + 4 more)
+From second 5-hand live audit:
+
+**CRITICAL:**
+- **Coach silent on 3+ limpers**: the limpers branch required `spot === 'open'`,
+  but limpers are `spot === 'facing-open'`. Coach returned null → silent failure.
+  Fixed to check `nRaises === 0 && countLimpers() > 0` directly.
+
+**HIGH:**
+- **Limpers vs raise priority**: 1 limp + raise was showing "isolate limpers"
+  instead of facing-raise logic. Fixed by the nRaises check above.
+
+**MEDIUM:**
+- **Trash filter**: 52o was getting "the math says call" (37% raw equity).
+  Added tier >= 6 instant fold — raw equity lies for trash hands.
+
+**LOW:**
+- **"3-bet" jargon**: remaining instances → "re-raise".
+- **Loop docs**: updated `docs/coach-improvement-loop.md` with audit process
+  improvements (absent-coach protocol, no mid-hand code reading, rare-spot hunting).
+
 ## [1.8.62] — 2026-10-09
 
 ### Fixed — 5-hand coach audit (11 issues)
