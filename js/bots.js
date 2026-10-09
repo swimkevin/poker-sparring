@@ -25,9 +25,9 @@ var ARCHETYPES = [
   {
     id: 'lag', name: 'swimkev', emoji: '🏊',
     tagline: 'Wild and unpredictable — wins big or rebuys instantly.',
-    desc: 'Loose-aggressive skilled: ~30% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
+    desc: 'Loose-aggressive skilled: ~35% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
     beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
-    openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
+    openTier: 4, openTierLate: 6, callTier: 5, threeBetTier: 3,
     aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15,
     tiltProne: 0.70, rebuy: 0.90,
     friendly: true,
@@ -37,7 +37,7 @@ var ARCHETYPES = [
     tagline: 'Straightforward and safe. Calls everything, raises nothing.',
     desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — neverRaise converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair. Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
     beat: 'Value bet thin — he will call with worse. Never bluff him; he does not fold pairs.',
-    openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
+    openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 1,
     aggression: 0.05, bluff: 0.05, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
     tiltProne: 0.40, rebuy: 0.80,
     neverRaise: true
@@ -47,7 +47,7 @@ var ARCHETYPES = [
     tagline: 'Bombs every pot the moment he likes his hand.',
     desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in with monsters (QQ+/AKs) when the moment feels right. Value-heavy, not bluff-heavy — the sizing is the weapon, and it is a blast to play against. Some days Amogh gets super lucky and wins huge; other days he could not catch a card with a net. You never know which Amogh showed up today.',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
-    openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 3,
+    openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
     tiltProne: 0.80, rebuy: 0.85,
     friendly: true,
@@ -58,7 +58,7 @@ var ARCHETYPES = [
     tagline: 'Never raises. Has been trapping you since the flop.',
     desc: 'Ultra-safe trapper: never raises on any street before the river — monsters included — just calls everything down. On the river the trap springs: a small value bet, or a rare all-in. And fair warning: Nathan will leave the table right after winning a few big hands. Hit-and-run champion — if you want your chips back, win them fast.',
     beat: 'Bet your strong hands for value — he will never raise you off them. But when Nathan finally bets the river, believe him.',
-    openTier: 3, openTierLate: 4, callTier: 4, threeBetTier: 1,
+    openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 1,
     aggression: 0.05, bluff: 0.02, stubborn: 0.9, pushTier: 3, callPushTier: 3, limp: 0.6,
     tiltProne: 0.30, rebuy: 0.50,
     neverRaise: true, riverTrap: true
@@ -68,7 +68,7 @@ var ARCHETYPES = [
     tagline: 'Tournament pro. Tight early, lethal with 20 big blinds.',
     desc: 'Tournament TAG: folds ~85% of hands, but 3-bets relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
     beat: 'Steal his blinds early when stacks are deep. Never pay off a shove without a real hand — his all-in range is brutally strong.',
-    openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 2,
+    openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 2,
     aggression: 0.65, bluff: 0.12, stubborn: 0.40, pushTier: 5, callPushTier: 2, limp: 0.05,
     tiltProne: 0.25, rebuy: 0.60,
     friendly: true,
@@ -76,18 +76,18 @@ var ARCHETYPES = [
   {
     id: 'bubble', name: 'Bubble Boy', emoji: '🫧',
     tagline: 'Here to cash, not to win. Folds everything but the nuts.',
-    desc: 'Extreme survival mode: plays ~7% of hands and treats every all-in like the tournament bubble. Will blind down to 5 big blinds waiting for aces — then shove them with total conviction.',
+    desc: 'Extreme survival mode: plays ~10% of hands and treats every all-in like the tournament bubble. Will blind down to 5 big blinds waiting for aces — then shove them with total conviction.',
     beat: 'Rob his blinds with any two cards. When he finally plays back at you, believe the strength and get out of the way.',
-    openTier: 1, openTierLate: 2, callTier: 1, threeBetTier: 1,
+    openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.30, bluff: 0.02, stubborn: 0.30, pushTier: 2, callPushTier: 1, limp: 0.10,
     tiltProne: 0.45, rebuy: 0.15
   },
   {
     id: 'shark', name: 'TAG Shark', emoji: '🦈',
     tagline: 'Tight, aggressive, disciplined. The winning baseline.',
-    desc: 'Tight-aggressive: ~20% of hands, position-aware, value bets and bluffs at balanced frequencies. The style winning players are taught — measure yourself against it.',
+    desc: 'Tight-aggressive: ~25% of hands, position-aware, value bets and bluffs at balanced frequencies. The style winning players are taught — measure yourself against it.',
     beat: 'Respect their aggression and avoid marginal spots. Steal their blinds when they show weakness.',
-    openTier: 3, openTierLate: 5, callTier: 3, threeBetTier: 2,
+    openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 2,
     aggression: 0.70, bluff: 0.25, stubborn: 0.50, pushTier: 4, callPushTier: 3, limp: 0.10,
     tiltProne: 0.25, rebuy: 0.70
   },
@@ -117,6 +117,16 @@ var ARCHETYPES = [
     openTier: 2, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.20, bluff: 0.02, stubborn: 0.20, pushTier: 3, callPushTier: 2, limp: 0.05,
     tiltProne: 0.20, rebuy: 0.40
+  },
+  {
+    id: 'alice', name: 'Alice', emoji: '👩',
+    tagline: 'The vault. Never bluffs, never pays you off light.',
+    desc: 'Super-safe: folds almost every starting hand that is not genuinely good and never bluffs. But when Alice has something, her sizing is deliberately unpredictable — sometimes a small feeler, sometimes a huge overbet. Disciplined enough to fold when beat, yet she almost always calls with two pair or better. Very hard to win money from.',
+    beat: 'Steal her blinds relentlessly — she folds everything marginal. When Alice bets or raises, believe her: she has it. Never try to bluff her; just take the small pots she gives you.',
+    openTier: 1, openTierLate: 2, callTier: 1, threeBetTier: 1,
+    aggression: 0.35, bluff: 0, stubborn: 0.85, pushTier: 2, callPushTier: 1, limp: 0.05,
+    tiltProne: 0.10, rebuy: 0.50,
+    friendly: true,
   }
 
 ];
@@ -222,6 +232,25 @@ function botDecide(table, p) {
       !(A.riverTrap && table.street === 'river')) {
     var legal = table.legalActions(p.idx);
     mv = legal.canCheck ? { a: 'check' } : { a: 'call' };
+  }
+  // Alice: unpredictable preflop value sizing — when she bets/raises (always
+  // for value; she never bluffs), randomly go small (min-raise) or big
+  // (~1.5x pot, sometimes a bomb). Shoves are left alone.
+  if (mv && A.id === 'alice' && table.street === 'preflop' &&
+      (mv.a === 'bet' || mv.a === 'raise')) {
+    var al = table.legalActions(p.idx);
+    if (mv.amount < al.maxRaiseTo * 0.97) {
+      var apot = table.potTotal();
+      var tgt;
+      if (Math.random() < 0.5) {
+        tgt = al.canRaise ? al.minRaiseTo : al.minBetTo; // small
+      } else {
+        tgt = Math.random() < 0.25 ? al.maxRaiseTo : Math.round(apot * 1.5); // big / bomb
+      }
+      var alo = al.canRaise ? al.minRaiseTo : al.minBetTo;
+      tgt = Math.max(alo, Math.min(al.maxRaiseTo, Math.round(tgt)));
+      mv = { a: mv.a, amount: tgt };
+    }
   }
   return mv;
 }
@@ -381,6 +410,11 @@ function botPostflop(table, p, A) {
   if (A.id === 'nathan' && street === 'river') {
     return nathanRiver(table, p, A, legal, toCall, pot, ms, eq);
   }
+  // Alice: the vault — never bluffs, folds marginal hands, random small/big
+  // value sizing, near-always calls two pair or better.
+  if (A.id === 'alice') {
+    return alicePostflop(table, p, A, legal, toCall, pot, eq, ms);
+  }
 
   function betSized(frac) {
     // Friendly bots lean into slightly bigger sizing (home-game feel).
@@ -452,6 +486,39 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
   return null;
 }
 
+// Alice's postflop: the vault. She never bluffs and never stabs — without a
+// real hand she checks and folds to any meaningful bet. With two pair or
+// better (madeStrength >= 0.52) she almost always calls, and her own bets
+// are deliberately unpredictable: sometimes a small feeler, sometimes a
+// huge overbet. Always returns a move (never null).
+function alicePostflop(table, p, A, legal, toCall, pot, eq, ms) {
+  var monster = ms > 0.78; // flush or better
+  var hasIt = ms >= 0.52;  // two pair or better
+  function shove() {
+    return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
+  }
+  if (toCall === 0) {
+    if (!hasIt && eq < 0.62) return { a: 'check' };
+    if (!legal.canBet && !legal.canRaise) return { a: 'check' };
+    if (monster && Math.random() < 0.30) return shove(); // occasional bomb
+    // Random value sizing: small (0.3-0.5 pot) or big (1.2-2x pot).
+    var frac = Math.random() < 0.5 ? 0.3 + Math.random() * 0.2 : 1.2 + Math.random() * 0.8;
+    var to = clampRaise(table, p, legal, pot * frac);
+    if (to == null) return { a: 'check' };
+    if (to >= legal.maxRaiseTo * 0.97) return shove();
+    return { a: 'bet', amount: to };
+  }
+  // Facing a bet: two pair or better almost always continues; otherwise she
+  // is disciplined — only continues with a clear price.
+  if (hasIt) {
+    if (monster && Math.random() < 0.40 && legal.canRaise) return shove();
+    return { a: 'call' };
+  }
+  var need = toCall / (pot + toCall);
+  if (eq > need + 0.08) return { a: 'call' };
+  return { a: 'fold' };
+}
+
 // Nathan springs the trap on the river: a small value bet (or a rare bomb)
 // with near-nut hands; otherwise he checks down. Facing a bet he only
 // calls — never raises.
@@ -475,6 +542,6 @@ if (typeof module !== 'undefined' && module.exports) {
     ARCHETYPES: ARCHETYPES, getArchetype: getArchetype, customArchetype: customArchetype,
     effectiveArchetype: effectiveArchetype,
     positionScore: positionScore, botDecide: botDecide, holeTier: holeTier,
-    amoghPostflop: amoghPostflop, nathanRiver: nathanRiver
+    amoghPostflop: amoghPostflop, nathanRiver: nathanRiver, alicePostflop: alicePostflop
   };
 }

@@ -272,7 +272,8 @@ var EXPLOIT_LINES = {
   shark: 'solid TAG — stay balanced, steal when he shows weakness',
   station: 'calls down with anything — value bet big, never bluff',
   maniac: 'raises everything — trap strong hands, call down lighter, never bluff',
-  rock: 'only plays monsters — steal his blinds, fold when he bets'
+  rock: 'only plays monsters — steal his blinds, fold when he bets',
+  alice: 'never bluffs — believe every bet, steal her blinds relentlessly'
 };
 function exploitLine(archetype) {
   var a = archetype || {};
