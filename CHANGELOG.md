@@ -3,6 +3,26 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.45] — 2026-10-08
+
+### Added
+- New prebuilt bot **Alice** ("The vault"): ultra-safe, never bluffs, folds
+  almost every weak starting hand, sizes value bets unpredictably (small or
+  big), disciplined folds, and almost always calls with two pair or better.
+  Very hard to win money from. Coach exploit line included.
+
+### Changed
+- Named bots play slightly more hands (one tier looser each: swimkev, Rohan,
+  Amogh, Nathan, The Grinder, Bubble Boy, TAG Shark). The classic training
+  archetypes (Calling Station, The Maniac, The Rock) are untouched.
+
+### Fixed
+- **Mobile raise panel**: on phones it slid under the bottom tab bar, hiding
+  Confirm/Cancel with no way out. It is now a compact fixed dialog centered
+  on the felt (fully visible, always tappable). Desktop unchanged.
+- **Mobile dark-mode bottom seam**: the tab bar height and the hero-bar
+  offset now share one variable, so no gap/overlap line shows between them.
+
 ## [1.8.44] — 2026-10-08
 
 ### Removed

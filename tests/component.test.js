@@ -351,6 +351,43 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(/id="bet-amount"[^>]*inputmode="numeric"/.test(html), 'bet amount is a typeable numeric field');
 })();
 
+// ---------- update-toast removal + bet-amount readability (v1.8.44) ----------
+// The "New version available" toast was unreliable and removed; the footer
+// "Check for updates" button (updateReloadURL) is the single update path.
+// The typeable bet amount must declare a fixed light color: the bet panel is
+// always dark (#1a2230) while light-theme --gold is dark bronze (unreadable).
+(function () {
+  var html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  ok(html.indexOf('update-check.js') === -1, 'index.html no longer loads update-check.js');
+  ok(html.indexOf('update-toast') === -1, 'index.html has no update-toast markup');
+  ok(!fs.existsSync(path.join(__dirname, '..', 'js', 'update-check.js')), 'js/update-check.js is deleted');
+
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  // No live toast rules — only the retired comment may mention update-toast.
+  var toastRules = css.match(/\.update-toast[\s\.\{:]/g) || [];
+  ok(toastRules.length === 0, 'no live .update-toast CSS rules remain');
+
+  // input.bet-amount must set an explicit light color for the dark panel.
+  var m = css.match(/input\.bet-amount\s*\{[^}]*\}/);
+  ok(!!m, 'input.bet-amount has a dedicated CSS rule');
+  var colorMatch = m && m[0].match(/color\s*:\s*(#[0-9a-fA-F]{3,6})/);
+  ok(!!colorMatch, 'input.bet-amount declares an explicit hex color');
+  // Light enough to read on #1a2230: relative luminance above 0.4.
+  var hex = colorMatch[1].replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+  var r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255,
+      b = parseInt(hex.slice(4, 6), 16) / 255;
+  function lin(c) { return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  var lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  ok(lum > 0.4, 'input.bet-amount color is light enough for the dark panel');
+
+  // The footer update path must still be wired: button in index.html, handler
+  // in js/app.js routes through updateReloadURL (not location.reload).
+  ok(html.indexOf('id="btn-check-update"') !== -1, 'footer check-for-updates button still exists');
+  var appSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+  ok(/btn-check-update[\s\S]{0,2000}updateReloadURL/.test(appSrc), 'footer button handler routes through updateReloadURL');
+})();
+
 // ---------- smooth table fx ----------
 // Cards must be diff-synced (same DOM nodes across renders) so the deal
 // animation only plays for newly dealt cards — never a full-table flash.
@@ -443,6 +480,30 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 // (update-check.js retired in v1.8.44 — the footer "Check for updates" button,
 // via updateReloadURL, is the reliable update path. Its tests live in
 // tests/update-flow.test.js.)
+
+// ---------- mobile bet panel + tab bar (v1.8.45) ----------
+// The raise panel must be a fully-visible fixed dialog on phones: the old
+// top:50%-of-controls placement slid under the tab bar (z-index 100),
+// hiding Confirm/Cancel with no way out. The tab bar height and the
+// hero-bar offset share one variable so no gap/overlap seam shows.
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  // Find the mobile bet-panel rule (the last #screen-table .bet-panel block).
+  var blocks = css.match(/#screen-table \.bet-panel\s*\{[^}]*\}/g) || [];
+  var mobile = blocks[blocks.length - 1] || '';
+  ok(/position:\s*fixed/.test(mobile), 'mobile bet panel is position:fixed');
+  ok(/top:\s*36%/.test(mobile), 'mobile bet panel floats on the felt (top 36%)');
+  ok(/z-index:\s*150/.test(mobile), 'mobile bet panel sits above the tab bar (z-index 150)');
+  ok(/width:\s*min\(340px,\s*92vw\)/.test(mobile), 'mobile bet panel fits narrow screens');
+  ok(/max-height:\s*52dvh/.test(mobile), 'mobile bet panel never exceeds the viewport');
+  // One shared tab-bar height: hero-bar offset and tab bar height match.
+  ok(/--m-tabbar:\s*calc\(58px \+ env\(safe-area-inset-bottom/.test(css),
+    '--m-tabbar accounts for the iPhone home-indicator area');
+  ok(/\.mobile-tabs\s*\{[^}]*height:\s*var\(--m-tabbar\)/.test(css),
+    'tab bar uses the shared height');
+  ok(/#screen-table \.hero-bar\s*\{[^}]*bottom:\s*var\(--m-tabbar\)/.test(css),
+    'hero bar offset matches the tab bar height (no gap seam)');
+})();
 
 // ---------- hand end: results pause, bot reveal, hero show/muck ----------
 // Bots always show their hole cards at hand end (practice mode); a folded

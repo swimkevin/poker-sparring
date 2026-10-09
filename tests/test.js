@@ -991,7 +991,7 @@ function heroPolicy(table, idx) {
   ok(tilted.aggression > shark.aggression, 'tilt raises aggression');
   ok(tilted.bluff > shark.bluff, 'tilt bluffs more');
   ok(tilted.stubborn > shark.stubborn, 'tilt calls down lighter');
-  ok(shark.openTier === 3 && shark.aggression === 0.70, 'base archetype not mutated');
+  ok(shark.openTier === 4 && shark.aggression === 0.70, 'base archetype not mutated');
   ok(tilted.aggression <= 1 && tilted.stubborn <= 1 && tilted.openTier <= 6, 'tilt params clamped');
   var half = B.effectiveArchetype(shark, 0.5);
   ok(half.aggression > shark.aggression && half.aggression < tilted.aggression, 'tilt scales monotonically');
@@ -1005,10 +1005,10 @@ function heroPolicy(table, idx) {
   ok(B.getArchetype('maniac').tiltProne > B.getArchetype('rock').tiltProne, 'maniac tilts harder than rock');
   // Tournament archetypes.
   var grinder = B.getArchetype('grinder'), bubble = B.getArchetype('bubble');
-  ok(grinder && grinder.openTier <= 2, 'grinder is tight preflop');
+  ok(grinder && grinder.openTier <= 3, 'grinder is tight preflop (a touch looser since v1.8.45)');
   ok(grinder.threeBetTier <= 2, 'grinder 3-bets aggressively');
   ok(grinder.pushTier >= 5, 'grinder shoves short stacks');
-  ok(bubble && bubble.openTier <= 1, 'bubble boy barely plays');
+  ok(bubble && bubble.openTier <= 2, 'bubble boy barely plays (a touch looser since v1.8.45)');
   ok(bubble.rebuy < 0.3, 'bubble boy rarely rebuys');
   // Custom bots get calibration fields.
   var c = B.customArchetype({ looseness: 40, aggression: 50, bluff: 20, stubborn: 50, tiltProne: 80, rebuy: 30 });
@@ -1188,6 +1188,82 @@ function heroPolicy(table, idx) {
     var r = threeBetRate(id, QQ, N);
     ok(r >= N * 0.3, id + ' 3-bets QQ at a healthy clip (' + r + '/' + N + ')');
   });
+})();
+
+
+// ---------- Alice: the vault (never bluffs, super safe) ----------
+// Alice folds almost every weak starting hand, never bluffs, sizes value
+// bets unpredictably (small or big), and almost always calls with two pair
+// or better (madeStrength >= 0.52). Named bots got slightly looser tiers;
+// the classic training archetypes (station/maniac/rock) are untouched.
+(function () {
+  var AL = BOTS.getArchetype('alice');
+  ok(!!AL, 'alice archetype exists');
+  ok(AL.bluff === 0, 'alice never bluffs (bluff param is 0)');
+  ok(AL.openTier === 1 && AL.callTier === 1, 'alice plays only premium tiers preflop');
+  ok(AL.stubborn >= 0.8, 'alice is stubborn with made hands');
+
+  function mkTable(players) {
+    return new EN.PokerTable({ players: players, sb: 5, bb: 10, startingStack: 1000, onEvent: function () {} });
+  }
+  // Folds trash to a min-open, always continues with QQ+.
+  var trash = [{ r: 7, s: 0 }, { r: 2, s: 1 }], prem = [{ r: 12, s: 0 }, { r: 12, s: 1 }];
+  var folds = 0, cont = 0, trials = 0;
+  for (var i = 0; i < 24 && trials < 40; i++) {
+    var t = mkTable([
+      { name: 'You', isHero: true },
+      { name: 'A', archetype: AL },
+      { name: 'Z', archetype: BOTS.getArchetype('shark') }
+    ]);
+    t.startHand();
+    if (t.acting !== 0 || t.currentBet !== 10) continue;
+    t.act(0, 'raise', 20);
+    if (t.acting !== 1) continue;
+    trials++;
+    t.players[1].hole = i % 2 ? prem : trash;
+    var mv = BOTS.botDecide(t, t.players[1]);
+    if (i % 2) { if (mv && (mv.a === 'call' || mv.a === 'raise')) cont++; }
+    else if (mv && mv.a === 'fold') folds++;
+  }
+  var trashTrials = Math.ceil(trials / 2), premTrials = Math.floor(trials / 2);
+  ok(folds >= trashTrials - 1, 'alice folds trash preflop (' + folds + '/' + trashTrials + ')');
+  ok(cont === premTrials && premTrials > 0, 'alice always continues QQ+ (' + cont + '/' + premTrials + ')');
+
+  // Postflop via alicePostflop directly (mocked table): never bluffs, calls 2p+.
+  var mt = { street: 'flop', currentBet: 0, potTotal: function () { return 200; } };
+  var p = { stack: 900, bet: 0 };
+  var free = { canBet: true, canRaise: false, minBetTo: 20, maxRaiseTo: 980 };
+  var faced = { canBet: false, canRaise: true, minRaiseTo: 100, maxRaiseTo: 980 };
+  for (var k = 0; k < 10; k++) {
+    var chk = BOTS.alicePostflop(mt, p, AL, free, 0, 200, 0.25 + k * 0.01, 0.20);
+    if (chk.a !== 'check') break;
+  }
+  ok(k === 10, 'alice never bluffs: checks air 10/10');
+  ok(BOTS.alicePostflop(mt, p, AL, free, 0, 200, 0.80, 0.55).a === 'bet',
+    'alice bets two pair');
+  var mt2 = { street: 'turn', currentBet: 50, potTotal: function () { return 200; } };
+  ok(BOTS.alicePostflop(mt2, p, AL, faced, 50, 200, 0.80, 0.55).a === 'call',
+    'alice calls with two pair facing a bet');
+  ok(BOTS.alicePostflop(mt2, p, AL, faced, 50, 200, 0.15, 0.25).a === 'fold',
+    'alice folds weak hands facing a bet (disciplined)');
+  // Unpredictable value sizing: both small and big bets appear.
+  var small = 0, big = 0;
+  for (var s = 0; s < 40; s++) {
+    var bm = BOTS.alicePostflop(mt, p, AL, free, 0, 200, 0.95, 0.85);
+    if (bm.a === 'bet' && bm.amount < 120) small++;
+    if (bm.a === 'bet' && bm.amount > 220) big++;
+  }
+  ok(small > 0 && big > 0, 'alice mixes small and big value sizes (' + small + ' small, ' + big + ' big)');
+
+  // Named bots slightly looser; training archetypes untouched.
+  ok(BOTS.getArchetype('shark').openTier === 4, 'shark a touch looser (openTier 4)');
+  ok(BOTS.getArchetype('grinder').openTier === 3, 'grinder a touch looser (openTier 3)');
+  ok(BOTS.getArchetype('bubble').openTier === 2, 'bubble a touch looser (openTier 2)');
+  ok(BOTS.getArchetype('rohan').callTier === 5, 'rohan a touch looser (callTier 5)');
+  var st = BOTS.getArchetype('station'), ma = BOTS.getArchetype('maniac'), rk = BOTS.getArchetype('rock');
+  ok(st.openTier === 4 && st.callTier === 5, 'calling station untouched (training)');
+  ok(ma.openTier === 6 && ma.bluff === 0.55, 'maniac untouched (training)');
+  ok(rk.openTier === 2 && rk.callTier === 2, 'rock untouched (training)');
 })();
 
 

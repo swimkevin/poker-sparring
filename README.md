@@ -23,11 +23,32 @@ An offline-first poker practice app. Spar against 10 AI opponents — each model
 ## Features
 
 **Spar vs bots (offline)**
-- Cash games, heads-up, and tournaments vs 10 distinct AI archetypes
+- Cash games, heads-up, and tournaments vs 11 distinct AI archetypes — including Alice, the ultra-safe vault who never bluffs
 - Build custom opponents — tune looseness, aggression, bluff frequency; name them after your friends
 - Push/fold trainer with range-based feedback
 - Hand replayer, training stats (VPIP/PFR/bb/100), leak tracker
-- Pot-odds coach that explains the math in plain English
+- Pot-odds coach that explains the math in plain English — range-aware equity,
+  SPR/commitment guidance, implied + reverse-implied odds, exploit adjustments
+  by opponent archetype, and post-hand recaps (one praise line, one leak line)
+
+**Coach theory sources.** The coach's rules are distilled from standard poker
+training literature (summarized in own words in
+[`hidden_files/coach-deep-dive.md`](hidden_files/coach-deep-dive.md)):
+- David Sklansky, *The Theory of Poker* — pot odds, the Fundamental Theorem
+- Dan Harrington, *Harrington on Hold'em* — positional hand selection
+- Matthew Janda, *Applications of No-Limit Hold'em* — range-vs-range play, SPR
+- Peter Clarke, *The Grinder's Manual* — TAG fundamentals
+- Alex Fitzgerald, *Exploitative Play in Live Poker* — player-type exploits
+- Training sites: [Upswing Poker](https://upswingpoker.com),
+  [Red Chip Poker](https://redchippoker.com) (SplitSuit),
+  [BlackRain79](https://www.blackrain79.com) (micro-stakes),
+  [PokerCoaching.com](https://www.pokercoaching.com),
+  [888poker](https://www.888poker.com)
+- Open guides: [jameswu5/poker](https://github.com/jameswu5/poker) (6-max NLHE guide)
+
+**Updates.** The app checks for new releases only when you tap the footer
+"Check for updates" button — there is no automatic update popup (removed in
+v1.8.44 as unreliable).
 
 **Online with friends**
 - Host a table, share a 6-letter code, up to 8 players
