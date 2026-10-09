@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.58] — 2026-10-09
+
+### Changed — coach less rigid, more options
+- **Iso-raise as option**: "You can raise 4× to punish the limpers... Or call
+  behind; both are fine. Mix in the raise sometimes." — not a command.
+- **Flop check-around steals**: when everyone checks to you on the button/
+  cutoff, coach now suggests a bluff even multiway ("everyone checked to you").
+  The bar is lower because checked-around weakness is a green light.
+
 ## [1.8.57] — 2026-10-09
 
 ### Changed — coach multiway awareness + cleaner opponent reads

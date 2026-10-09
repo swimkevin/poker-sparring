@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.57';
+  var APP_VERSION = '1.8.58';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1530,14 +1530,15 @@
         return mkVerdict('raise', 'marginal',
           '<b>Raise 4×</b> to isolate — limpers rarely have much, and you have position.',
           'Attack limpers from late position; they fold or play bloated pots out of position.');
-      // Iso-raise bluff: 3+ limpers = lots of dead money. On the button/cutoff
-      // with any playable hand, raising wins outright often enough to profit —
-      // limpers fold too much, and you have position when called.
+      // Iso-raise option: 3+ limpers = lots of dead money. On the button/cutoff
+      // with any playable hand, raising is a profitable option — limpers fold
+      // a lot, and you have position when called. But calling is fine too;
+      // mix in the raise, don't auto-bluff every time.
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          '<b>Raise 4×</b> to punish the limpers — ' + countLimpers() + ' limpers means ' +
-          UI.fmt(table.potTotal()) + ' of dead money. They fold a lot, and you have position when they don\'t.',
-          'Iso-raising limpers is profitable: the dead money plus position makes this a winning play long-term, even as a bluff.');
+          'You can <b>raise 4×</b> to punish the limpers — ' + countLimpers() + ' limpers means ' +
+          UI.fmt(table.potTotal()) + ' of dead money. Or call behind; both are fine. Mix in the raise sometimes.',
+          'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
         return mkVerdict('call', 'marginal',
           '<b>Call</b> behind — speculative hand, deep stacks, great implied odds if you crack a limper.',
@@ -1690,14 +1691,18 @@
       // Air: bluff only with a real story behind it.
       if (canBet) {
         var scare = scareCardRank();
-        var spot = (inPos ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) -
-          (foldy < 0.3 ? 2 : 0) - (multiway ? 2 : 0);
-        if (spot >= 2 && foldy >= 0.4 && !multiway) {
+        // Checked around to hero in late position? That's a green light to
+        // steal — everyone showing weakness. Lower the bar even multiway.
+        var checkedAround = table.currentBet === 0 && (posName === 'button' || posName === 'cutoff');
+        var spot = (inPos ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) +
+          (checkedAround ? 1 : 0) - (foldy < 0.3 ? 2 : 0) - (multiway && !checkedAround ? 2 : 0);
+        if (spot >= 2 && foldy >= 0.35) {
           var why = [];
           if (scare) why.push('the ' + esc(scare) + ' is a scare card');
           if (inPos) why.push('you have position');
           if (foldy > 0.55) why.push(vName + ' overfolds');
           if (heroFlushBlocker()) why.push('you block their best flush');
+          if (checkedAround) why.push('everyone checked to you');
           var b2 = Math.max(1, Math.round(pot / 2));
           return mkVerdict('bet', 'marginal',
             '<b>Bluff</b> ~½ pot (' + fmt(b2) + ') — needs <b>' + pct(bluffBE(b2, pot)) + '</b> folds (' + why.join(', ') +
