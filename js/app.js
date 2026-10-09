@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.48';
+  var APP_VERSION = '1.8.49';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -21,11 +21,11 @@
   /**
    * Feature flags — Flappy Bird simplicity by default.
    * Advanced features are preserved in code but hidden until enabled.
-   * Enable via console: PS_FLAGS.tournamentMode = true (then refresh).
-   * Or via URL: ?flags=tournamentMode,pushFoldTrainer
+   * Tournament mode is a core game type and always visible (not flagged).
+   * Enable via console: PS_FLAGS.pushFoldTrainer = true (then refresh).
+   * Or via URL: ?flags=headsUpMode,pushFoldTrainer
    */
   var DEFAULT_FLAGS = {
-    tournamentMode: false,  // Tournament mode card
     headsUpMode: false,     // Heads-Up mode card
     pushFoldTrainer: false, // Push/Fold trainer mode card
     customBots: false       // Custom bot builder section
@@ -84,6 +84,18 @@
   }
   function allBots() { return ARCHETYPES.concat(loadCustomBots()); }
   function botById(id) { return getArchetype(id, loadCustomBots()); }
+  // Roster for the setup screen: filtered by game mode, Alice + custom bots
+  // on top, then friends and mode-appropriate classics in array order.
+  // Bots without a `modes` field (Alice, friends, customs) show everywhere.
+  function rosterBots() {
+    var customs = loadCustomBots();
+    var listed = ARCHETYPES.filter(function (b) {
+      return !b.modes || b.modes.indexOf(mode) !== -1;
+    });
+    var alice = listed.filter(function (b) { return b.id === 'alice'; });
+    var rest = listed.filter(function (b) { return b.id !== 'alice'; });
+    return alice.concat(customs, rest);
+  }
 
   // ---------- setup state ----------
   var mode = 'cash';
@@ -108,7 +120,7 @@
   var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
   var preHuSelection = null; // full table remembered across a heads-up detour
   function maxOpp() { return mode === 'hu' ? 1 : 7; }
-  function rosterOrderIds() { return allBots().map(function (b) { return b.id; }); }
+  function rosterOrderIds() { return rosterBots().map(function (b) { return b.id; }); }
   // Transient hint under the bot roster ("Only 1 opponent for heads-up", …).
   var rosterHintTimer = null;
   function rosterHint(msg) {
@@ -326,12 +338,18 @@
   function onHandEnd(e) {
     UI.disableControls();
     // Post-hand coach recap (lives in the coach tab until the next hand).
+    // Win info comes first so the recap can celebrate bluffs that worked.
+    var won = heroWon(e);
+    var wonByFold = e.winners.some(function (w) {
+      if (!w.byFold) return false;
+      var ids = (w.idx !== undefined) ? [w.idx] : (w.winners || []);
+      return ids.indexOf(0) !== -1;
+    });
     var recap = null;
-    try { recap = coachRecap(e.handNo); } catch {}
+    try { recap = coachRecap(e.handNo, won, wonByFold); } catch {}
     UI.coachTip(recap ? recap.html : null);
     setTurnStatus('', false); // drop any stale "Waiting for X…" during the results pause
     var hero = table.players[0];
-    var won = heroWon(e);
     var revealed = {};
     (e.revealed || []).forEach(function (r) { revealed[r.idx] = true; });
     var winnerIdx = [];
@@ -767,18 +785,22 @@
       var A = p.archetype, name = UI.escapeHtml(p.name);
       if (!A) return name + ' (unknown style)';
       var style = '';
-      if (A.id === 'maniac') style = 'maniac — bluffs constantly, never fold to their bets without a hand';
-      else if (A.id === 'station') style = 'calling station — never bluff them, value-bet relentlessly';
-      else if (A.id === 'rock') style = 'rock — only plays premiums, fold when they show strength';
-      else if (A.id === 'lag') style = 'loose-aggressive — wide range, 3-bet your strong hands';
-      else if (A.id === 'shark') style = 'solid TAG — balanced, don\'t get fancy';
-      else if (A.id === 'nathan') style = 'trapper — never raises without a monster';
-      else if (A.id === 'amogh') style = 'sizing tell — big bets mean big hands';
-      else if (A.id === 'bubble') style = 'super tight — this is the nuts when they bet';
-      else if (A.id === 'grinder') style = 'tournament pro — polarized 3-bets, respect without a hand';
-      else style = (A.name || 'tricky') + ' — play straightforward';
-      return '<b>' + name + '</b> (' + style + ')';
+      if (A.id === 'maniac') style = 'bluffs a lot — only fold without a real hand';
+      else if (A.id === 'station') style = 'never bluff them, value-bet big';
+      else if (A.id === 'rock') style = 'only plays big hands — fold when they bet';
+      else if (A.id === 'lag') style = 'plays lots of hands — 3-bet your strong ones';
+      else if (A.id === 'shark') style = 'solid and balanced — keep it simple';
+      else if (A.id === 'nathan') style = 'traps — a raise means a monster';
+      else if (A.id === 'amogh') style = 'big bets mean big hands';
+      else if (A.id === 'bubble') style = 'super tight — a bet is the nuts';
+      else if (A.id === 'grinder') style = 'tournament pro — respect raises';
+      else style = 'tricky — play straightforward';
+      return '<b>' + name + '</b>: ' + style;
     });
+    // 1-2 opponents: one per line, easy to scan. 3+: compact single line.
+    if (reads.length <= 2) {
+      return '<div class="coach-opps">🎯<br>' + reads.join('<br>') + '</div>';
+    }
     return '<div class="coach-opps">🎯 ' + reads.join(' · ') + '</div>';
   }
 
@@ -1153,22 +1175,32 @@
     }
   }
 
-  // Post-hand recap: at most one line of praise + one leak to fix, drawn
-  // from this hand's strong (non-marginal) decisions vs the coach's advice.
-  // Shown in the coach tab after the hand; plain-text lines are also stored
-  // on the hand record for history.
-  function coachRecap(handNo) {
+  // Post-hand recap: celebrates wins first (even if you ignored the coach —
+  // winning is winning), then one leak to fix. Drawn from this hand's strong
+  // (non-marginal) decisions vs the coach's advice. Shown in the coach tab
+  // after the hand; plain-text lines are also stored on the hand record.
+  function coachRecap(handNo, won, wonByFold) {
     var good = null, bad = null;
     coachDecisions.forEach(function (d) {
       if (d.strength !== 'strong' || !d.lesson) return;
       if (d.followed && !good) good = d;
       else if (!d.followed && !bad) bad = d;
     });
-    if (!good && !bad) return null;
+    if (!good && !bad && !won) return null;
     var lines = [];
-    if (good) lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
-    if (bad) lines.push({ kind: 'bad', text: 'Leak to fix: coach said ' + bad.advice +
-      ', you went ' + bad.action + '. ' + bad.lesson });
+    // Win first: if you ignored the coach but took the pot, say so.
+    if (won && !good) {
+      lines.push({ kind: 'good', text: wonByFold
+        ? 'Bluff worked! 🎉 Everyone folded — nice aggression.'
+        : 'You won the hand! 🎉 Your play got through.' });
+    } else if (good) {
+      lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
+    }
+    if (bad) {
+      var prefix = (won && !good) ? 'One thing to tighten up: ' : 'Leak to fix: ';
+      lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
+        ', you went ' + bad.action + '. ' + bad.lesson });
+    }
     var h = '<div class="coach-recap-title">Hand #' + UI.escapeHtml(String(handNo)) + ' recap</div>';
     lines.forEach(function (l) {
       h += '<div class="coach-recap-' + l.kind + '">' +
@@ -1746,7 +1778,7 @@
       setChk('cfg-botrebuys', cfg.botRebuys); setChk('cfg-roundbets', cfg.roundBets);
       setChk('cfg-tourneyrebuys', cfg.tourneyRebuys);
       var oc = $('opp-count'); if (oc) oc.textContent = selectedBots.size;
-      UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint, function () {
+      UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint, function () {
         var oc2 = $('opp-count'); if (oc2) oc2.textContent = selectedBots.size;
         saveRoster();
       });
@@ -1974,7 +2006,7 @@
     var fsb = $('fb-submit');
     if (fsb) fsb.onclick = UI.submitFeedback;
     // Feature flags: hide advanced mode cards by default.
-    var flagForMode = { hu: 'headsUpMode', tourney: 'tournamentMode', pushfold: 'pushFoldTrainer' };
+    var flagForMode = { hu: 'headsUpMode', pushfold: 'pushFoldTrainer' };
     document.querySelectorAll('.mode-card').forEach(function (c) {
       var flag = flagForMode[c.dataset.mode];
       if (flag && !PS_FLAGS[flag]) { c.style.display = 'none'; return; }
@@ -1995,6 +2027,13 @@
           if (!selectedBots.size) selectedBots = new Set(['lag', 'rohan', 'amogh']);
           preHuSelection = null;
         }
+        // Prune bots that don't play this game type (e.g. cash classics when
+        // switching to tournament). Keep the remaining picks as-is.
+        var available = rosterBots().map(function (b) { return b.id; });
+        selectedBots = new Set(Array.from(selectedBots).filter(function (id) {
+          return available.indexOf(id) !== -1;
+        }));
+        if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
         syncOppUI();
       };
     });
@@ -2056,7 +2095,7 @@
     // and the highlighted cards can never disagree.
     function syncOppUI() {
       $('opp-count').textContent = selectedBots.size;
-      UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint, onRosterChange);
+      UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint, onRosterChange);
       syncQuickHint();
       saveRoster();
     }
@@ -2158,7 +2197,7 @@
       }
     };
 
-    UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint);
+    UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint);
     // Sync the counter on initial load — selectedBots may be restored from storage.
     var oc0 = document.getElementById('opp-count');
     if (oc0) oc0.textContent = selectedBots.size;
@@ -2202,7 +2241,7 @@
     selectedBots.delete(id);
     if (!selectedBots.size) selectedBots.add('lag'); // never drop to zero
     UI.renderArchetypes(loadCustomBots(), deleteCustom);
-    UI.renderRoster(allBots(), selectedBots, maxOpp(), rosterHint, function () {
+    UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint, function () {
       var oc = document.getElementById('opp-count');
       if (oc) oc.textContent = selectedBots.size;
       saveRoster();

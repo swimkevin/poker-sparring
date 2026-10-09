@@ -6,21 +6,22 @@ Poker Sparring follows Flappy Bird simplicity: the default experience is **one t
 
 | Flag | Default | What it hides |
 |------|---------|---------------|
-| `tournamentMode` | off | Tournament mode card |
 | `headsUpMode` | off | Heads-Up mode card |
 | `pushFoldTrainer` | off | Push/Fold trainer mode card |
 | `customBots` | off | Custom bot builder section |
+
+Tournament mode is a core game type and always visible (not flagged).
 
 ## Enabling flags
 
 **Console** (persists via localStorage):
 ```js
-enableFlag('tournamentMode')  // refresh to see it
+enableFlag('pushFoldTrainer')  // refresh to see it
 ```
 
 **URL** (one-time):
 ```
-https://swimkevin.github.io/poker-sparring/?flags=tournamentMode,pushFoldTrainer
+https://swimkevin.github.io/poker-sparring/?flags=headsUpMode,pushFoldTrainer
 ```
 
 ## Design philosophy

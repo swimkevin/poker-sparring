@@ -77,8 +77,19 @@ setTimeout(function () {
     // Lesson text is escaped (no HTML injection via lesson strings).
     H.setDecisions([{ street: 'flop', advice: 'fold', strength: 'strong',
       lesson: '<img src=x>', action: 'call', followed: false }]);
-    var r2 = H.recap(10);
-    ok(r2.html.indexOf('<img src=x>') === -1, 'recap escapes lesson text');
+    var r2 = H.recap(10);    ok(r2.html.indexOf('<img src=x>') === -1, 'recap escapes lesson text');
+
+    // Win-aware recap: ignoring the coach but winning still gets praise first.
+    H.setDecisions([{ street: 'river', advice: 'fold', strength: 'strong',
+      lesson: 'Folding saves chips.', action: 'raise', followed: false }]);
+    var rWin = H.recap(11, true, true);
+    ok(rWin.html.indexOf('Bluff worked') !== -1, 'bluff win praised even when coach ignored');
+    ok(rWin.html.indexOf('tighten up') !== -1, 'leak still shown below the praise');
+    var rWin2 = H.recap(12, true, false);
+    ok(rWin2.html.indexOf('You won the hand') !== -1, 'showdown win praised even when coach ignored');
+    var rLoss = H.recap(13, false, false);
+    ok(rLoss.html.indexOf('Leak to fix') !== -1 && rLoss.html.indexOf('won the hand') === -1,
+      'loss with ignored coach: leak only, no false praise');
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
