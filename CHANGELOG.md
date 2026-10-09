@@ -3,6 +3,19 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.52] — 2026-10-09
+
+### Fixed
+- **Skip button**: now immediately advances past bot thinking delays instead of
+  appearing to do nothing. Bot actions trigger instantly on skip.
+- **Coach jargon**: "3-bet your strong ones" → "re-raise your strong ones";
+  "solid TAG" → "strong tight-aggressive player".
+
+### Changed — per-mode rosters
+- **Each mode remembers its own opponents**: cash and tournament now have
+  independent selections. Switching modes no longer carries the other mode's
+  picks. Tournament defaults to 7 opponents; cash defaults to 3.
+
 ## [1.8.51] — 2026-10-09
 
 ### Changed — tournament requirements & payouts

@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.51';
+  var APP_VERSION = '1.8.52';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -104,17 +104,17 @@
   // The stepper, mode cards, and roster cards all mutate this set; the count
   // display derives from it, so the number and the highlighted cards can
   // never disagree. Persisted across reloads (stale ids are dropped).
-  var ROSTER_KEY = 'ps_roster_v1';
+  function rosterKey() { return 'ps_roster_' + mode + '_v1'; }
   function loadRoster() {
     try {
-      var raw = localStorage.getItem(ROSTER_KEY);
+      var raw = localStorage.getItem(rosterKey());
       if (!raw) return null;
       var ids = JSON.parse(raw).filter(function (id) { return botById(id); });
       return ids.length ? ids : null;
     } catch { return null; }
   }
   function saveRoster() {
-    try { localStorage.setItem(ROSTER_KEY, JSON.stringify(Array.from(selectedBots))); }
+    try { localStorage.setItem(rosterKey(), JSON.stringify(Array.from(selectedBots))); }
     catch {}
   }
   var selectedBots = new Set(loadRoster() || ['lag', 'rohan', 'amogh']);
@@ -127,6 +127,15 @@
       return available.indexOf(id) !== -1;
     }));
     if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
+  }
+  // Switch the selection when the mode changes — each mode remembers its own roster.
+  function loadModeRoster() {
+    var ids = loadRoster();
+    if (ids) selectedBots = new Set(ids);
+    else selectedBots = new Set(mode === 'tourney'
+      ? ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'pro', 'nit']
+      : ['lag', 'rohan', 'amogh']);
+    pruneSelection();
   }
   pruneSelection(); // clean any stale picks from a previous mode
   function maxOpp() { return mode === 'hu' ? 1 : 7; }
@@ -149,6 +158,8 @@
   var fastForward = false; // skip: collapse all hand-animation delays to ~instant
   var waitingForHero = false;
   var lastActions = {};
+  var botThinkTimer = null; // pending bot-action timeout, cancellable by Skip
+  var pendingBot = null; // { player, idx } for the bot currently thinking
   var handCtx = null;
   var handRec = null; // in-progress hand record for the replayer (js/replay.js)
   var coachDecisions = []; // hero decisions vs coach advice this hand (for the recap)
@@ -276,10 +287,14 @@
       pumping = true; // hold the pump until the bot moves
       setTurnStatus('Waiting for ' + p.name + '…', false);
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
-      setTimeout(function () {
-        var mv = botDecide(table, p);
+      if (botThinkTimer) clearTimeout(botThinkTimer);
+      pendingBot = { player: p, idx: e.player };
+      botThinkTimer = setTimeout(function () {
+        botThinkTimer = null;
+        var pb = pendingBot; pendingBot = null;
+        var mv = botDecide(table, pb.player);
         pumping = false;
-        if (mv) table.act(e.player, mv.a, mv.amount);
+        if (mv) table.act(pb.idx, mv.a, mv.amount);
         else pump();
       }, fastForward ? 0 : 650 + Math.random() * 750);
     }
@@ -531,6 +546,17 @@
     var nx = document.getElementById('btn-next-hand');
     if (nx) { nx.click(); return; }
     fastForward = true;
+    // If a bot is mid-think, cancel its delay and make it act immediately.
+    if (botThinkTimer && pendingBot) {
+      clearTimeout(botThinkTimer);
+      botThinkTimer = null;
+      var pb = pendingBot; pendingBot = null;
+      var mv = botDecide(table, pb.player);
+      pumping = false;
+      if (mv) table.act(pb.idx, mv.a, mv.amount);
+      else pump();
+      return;
+    }
     pump();
   }
 
@@ -834,7 +860,7 @@
       if (A.id === 'maniac') style = 'bluffs a lot — only fold without a real hand';
       else if (A.id === 'station') style = 'never bluff them, value-bet big';
       else if (A.id === 'rock') style = 'only plays big hands — fold when they bet';
-      else if (A.id === 'lag') style = 'plays lots of hands — 3-bet your strong ones';
+      else if (A.id === 'lag') style = 'plays lots of hands — re-raise your strong ones';
       else if (A.id === 'shark') style = 'solid and balanced — keep it simple';
       else if (A.id === 'nathan') style = 'traps — a raise means a monster';
       else if (A.id === 'amogh') style = 'big bets mean big hands';
@@ -939,7 +965,7 @@
       case 'nit': return base + ' — they fold everything but the best hands. Respect their bets.';
       case 'pro': return base + ' — a strong tournament player. When they re-raise, they usually have it. Don\'t fight back without a good hand.';
       case 'lag': return base + ' — plays lots of hands aggressively. Could have anything; re-raise your strong hands.';
-      case 'shark': return base + ' — solid TAG aggression, balanced between value and bluffs. Don\'t get fancy.';
+      case 'shark': return base + ' — strong tight-aggressive player, balanced between value and bluffs. Don\'t get fancy.';
       default:
         var lo = Math.round(((A.openTier || 3) / 6) * 100);
         return base + ' — fits a ~' + lo + '%-range profile. Play your standard exploit.';
@@ -2105,6 +2131,12 @@
           selectedBots = new Set(preHuSelection.filter(function (id) { return botById(id); }).slice(0, 7));
           if (!selectedBots.size) selectedBots = new Set(['lag', 'rohan', 'amogh']);
           preHuSelection = null;
+        } else if (prev !== 'hu' && mode !== 'hu' && prev !== mode) {
+          // Cash <-> tournament: each mode remembers its own roster.
+          // Save the old mode's picks, then load the new mode's.
+          try { localStorage.setItem('ps_roster_' + prev + '_v1', JSON.stringify(Array.from(selectedBots))); }
+          catch {}
+          loadModeRoster();
         }
         // Prune bots that don't play this game type (e.g. cash classics when
         // switching to tournament). Keep the remaining picks as-is.
