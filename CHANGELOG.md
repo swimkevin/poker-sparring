@@ -3,6 +3,19 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.70] — 2026-10-10
+
+### Docs — README upgrades for hiring-manager review
+- **New "By the numbers"**: 69 versions shipped, 1,800+ tests, 11 archetypes,
+  0 deps, 4 ADRs, 3 coach-audit rounds.
+- **New "Why this stack"**: one-line rationale per major decision, linked to ADRs.
+- **New "What I learned (and what I'd do differently)"**: silent-failure lesson
+  from the posName bug class, composition-vs-unit testing, scope-cutting, and
+  what TypeScript/mobile-first would have changed.
+- **Screenshot + demo-video placeholders**: `docs/screenshots/README.md` with
+  exact capture instructions (1 desktop + 1 mobile + optional GIF); commented
+  lines in README ready to uncomment.
+
 ## [1.8.69] — 2026-10-09
 
 ### Fixed — copy bugs from FANG audit

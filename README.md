@@ -6,9 +6,59 @@
 
 ![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20passing-brightgreen)
 
+## Screenshots
+
+<!--
+  SCREENSHOT INSTRUCTIONS (Kevin):
+  1. Take 1 desktop screenshot: mid-hand, coach tip visible → save as docs/screenshots/desktop.png
+  2. Take 1 mobile screenshot (390px wide): table + bottom tab bar → save as docs/screenshots/mobile.png
+  3. Uncomment the two lines below.
+-->
+<!-- ![Desktop — mid-hand with coach tip](docs/screenshots/desktop.png) -->
+<!-- ![Mobile — table view](docs/screenshots/mobile.png) -->
+
+## Demo video
+
+<!--
+  VIDEO INSTRUCTIONS (for Tuesday):
+  Option A (simplest): record 30–60s on your phone or with a screen recorder —
+    open the app → "Deal me in" → show a coach tip → play one hand → open the
+    hand replayer. Upload to YouTube (unlisted is fine), then replace the line
+    below with: [![Demo](thumbnail-url)](your-youtube-url)
+  Option B: save a GIF as docs/screenshots/demo.gif and uncomment the line below.
+    (GitHub renders GIFs inline; MP4s do not play inline in READMEs.)
+-->
+<!-- ![Demo — one hand with coach](docs/screenshots/demo.gif) -->
+
+## By the numbers
+
+- **69 versions shipped** (v1.8.69) — iterative, tested releases, not one big bang
+- **1,800+ test assertions** across unit, component, smoke (300 randomized hands), netplay, and worker suites
+- **11 AI opponent archetypes**, each with distinct, exploitable tendencies
+- **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
+- **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff
+- **3 live coach-audit rounds** — real hands played, every finding turned into a regression test
+
 ## What it is
 
 An offline-first poker practice app. Play cash games, heads-up, and tournaments against 11 AI opponents — each modeled on a real player archetype (the rock, the calling station, the maniac, Alice the ultra-tight vault) with distinct, exploitable tendencies. A solver-informed coach explains the math behind every decision in plain English. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
+
+## Why this stack
+
+- **Vanilla JS, zero dependencies** — no build step: the app runs by opening `index.html`. The poker core (`cards → evaluator → equity → engine → bots`) is DOM-free, so the exact same code runs in Node tests and the browser. (See `docs/adr/0001-vanilla-js-zero-dependencies.md`.)
+- **Local-first storage** — stats live in `localStorage`. A poker trainer doesn't need your email, and it works on a plane. (See `docs/adr/0002-local-first-storage.md`.)
+- **Heuristic bots, not ML** — every bot decision is a readable rule you can debug, test, and explain. A neural net would be a black box you can't fix when it plays badly. (See `docs/adr/0003-heuristic-bots-not-ml.md`.)
+- **GitHub Pages** — free hosting, instant deploys from `main`, versioned releases. (See `docs/adr/0004-static-deploy-github-pages.md`.)
+
+## What I learned (and what I'd do differently)
+
+**Silent failures are the worst bugs.** Twice (v1.8.65, v1.8.68) the coach panel went blank because an undeclared variable threw a `ReferenceError` that the coach's `try/catch` swallowed. The logic was correct; the error handling hid the evidence. Fix: a `?coachdebug=1` mode that surfaces coach errors to the console instead of swallowing them, plus static checks that fail without each fix. Lesson: error handling should never make bugs invisible.
+
+**Test the composition, not just the units.** Unit tests passed while the coach rendered nothing — the bug was in how pieces were wired together, not in any single function. The `tests/coach-scenarios.js` suite now checks end-to-end wiring (branch conditions, destructured context, HTML structure), not just isolated logic.
+
+**Cut scope earlier.** Heads-Up and Push/Fold Trainer shipped as hidden, half-finished modes (`display:none` in the DOM). They should have been cut or finished — shipped-but-hidden reads as unfinished, not ambitious.
+
+**What I'd do differently next time:** add JSDoc types or TypeScript from day one (the entire `posName` bug class was a typo-level error a type checker catches instantly), and build mobile-first instead of retrofitting it.
 
 ## Engineering highlights
 
