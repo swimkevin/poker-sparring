@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.72] — 2026-10-10
+
+### Fixed — version bump was missed on 6 pushes (critical)
+- **All of today's fixes were invisible on phones.** Six commits pushed as
+  "v1.8.71" without bumping the version, so the `?v=1.8.71` asset
+  cache-busters never changed and browsers kept loading the stale cached
+  JS. Bumped to 1.8.72 across `version.txt`, `APP_VERSION`, `package.json`,
+  and all 16 asset URLs in `index.html`. Lesson: every push gets a version
+  bump — the number IS the cache-busting mechanism.
+
 ## [1.8.71] — 2026-10-10
 
 ### Fixed — coach in limped multiway pots (from Kevin's live hand)
