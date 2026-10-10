@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.70';
+  var APP_VERSION = '1.8.71';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -869,31 +869,25 @@
 
   // One-line read on each opponent: name + style + what it means for you.
   function opponentReads() {
+    // Compact scouting report, shown once per hand (first verdict). Short
+    // style tags — the full exploit advice lives in the vs-line for the
+    // villain that matters (v1.8.71: full sentences per opponent bloated
+    // every first message to 600+ chars).
     var live = liveOpponents();
     if (!live.length) return '';
+    var tags = {
+      maniac: 'maniac', station: 'calling station', rock: 'rock',
+      lag: 'loose-aggressive', shark: 'solid', nathan: 'trapper',
+      amogh: 'straightforward', nit: 'nit', pro: 'pro', bully: 'bully',
+      gambler: 'gambler', alice: 'vault', rohan: 'calling station',
+      swimkev: 'loose-aggressive'
+    };
     var reads = live.map(function (p) {
       var A = p.archetype, name = UI.escapeHtml(p.name);
-      if (!A) return name + ' (unknown style)';
-      var style = '';
-      if (A.id === 'maniac') style = 'maniac — bluffs constantly, calls with anything. Only play back with real hands';
-      else if (A.id === 'station') style = 'calling station — calls with any pair or draw, never folds. Don\'t bluff; bet big for value when you have it';
-      else if (A.id === 'rock') style = 'rock — only plays premium hands. Fold when they bet or raise';
-      else if (A.id === 'lag') style = 'loose-aggressive — plays lots of hands with pressure. Re-raise your strong hands';
-      else if (A.id === 'shark') style = 'solid all-around player — keep it simple, no fancy plays';
-      else if (A.id === 'nathan') style = 'trap player — slow-plays monsters. A raise from him means a huge hand';
-      else if (A.id === 'amogh') style = 'straightforward — big bets mean big hands, small bets mean weak';
-      else if (A.id === 'nit') style = 'super tight — folds everything but the nuts. Steal their blinds';
-      else if (A.id === 'pro') style = 'tournament pro — balanced and tough. Respect their raises';
-      else if (A.id === 'bully') style = 'chip bully — pushes people around. Trap with strong hands, don\'t bluff into them';
-      else if (A.id === 'gambler') style = 'gambler — wildly aggressive, bluffs a lot. Let them bet into your strong hands';
-      else if (A.id === 'alice') style = 'the vault — super tight, never bluffs. Steal her blinds; believe her bets';
-      else if (A.id === 'rohan') style = 'calling station — calls everything, raises nothing. Value bet, never bluff';
-      else if (A.id === 'swimkev') style = 'loose-aggressive — plays lots of hands with pressure. Re-raise your strong hands';
-      else style = 'unfamiliar style — watch their bets and adjust';
-      return '<b>' + name + '</b>: ' + style;
+      var tag = (A && tags[A.id]) || 'unknown style';
+      return '<b>' + name + '</b> (' + tag + ')';
     });
-    // Always one per line as bullet points — easy to scan even with many opponents.
-    return '<div class="coach-opps">🎯 Opponents:<br>• ' + reads.join('<br>• ') + '</div>';
+    return '<div class="coach-opps">🎯 Table: ' + reads.join(' · ') + '</div>';
   }
 
   // Suitedness and multi-way are woven into the advice naturally, not as
@@ -1043,7 +1037,11 @@
       if (t.t !== 'action' || t.player !== idx) return;
       actions++;
       var size = t.bet || t.amount || 0, pot = t.pot || 1;
-      var ratio = size / pot;
+      // t.pot includes the bet just made (engine emits post-action), so the
+      // true sizing is bet vs the pot BEFORE it — same reconstruction as
+      // villainSizingTell. Without this, a 1.5x overbet reads as 0.6 and
+      // lands in the 'wide' gap (v1.8.71: Amogh's flop overbet advised a call).
+      var ratio = size / Math.max(1, pot - size);
       if (t.street === 'preflop') {
         if (t.action === 'raise' || t.action === 'bet') {
           label = 'strong'; strength = Math.max(strength, 0.75);
@@ -1248,11 +1246,19 @@
       // multiwayNote covers the situation. Single-villain reads are for
       // heads-up or 3-way pots.
       var isMultiLimp = table.street === 'preflop' && countLimpers() >= 3;
-      var tail = isMultiLimp ? '' : villainLine(V);
+      // Limped multiway pots: a single-villain read ("vs X") is noise when 4+
+      // players are still in and nobody has raised — the spot is about the
+      // dead money, not one opponent. Raised pots keep the aggressor read.
+      var limpedMulti = table.street === 'preflop' && table.currentBet <= table.bb && isMultiway();
+      var tail = (isMultiLimp || limpedMulti) ? '' : villainLine(V);
+      // Opponent reads are static reference: show once per hand (first verdict),
+      // not on every decision. Repeating them bloated every message to 600+
+      // chars (v1.8.71, found by the 10-hand audit loop).
       var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
-      v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + opponentReads() : null;
+      var reads = coachDecisions.length === 0 ? opponentReads() : '';
+      v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + reads : null;
       return v;
     } catch (err) {
       // Surface coach errors in debug mode; silent in production to avoid
@@ -1337,8 +1343,12 @@
            : 'Bluff worked! 🎉 Everyone folded — nice aggression.')
         : 'You won the hand! 🎉 Your play got through.';
       lines.push({ kind: 'good', text: winMsg });
-    } else if (good) {
+    } else if (good && won) {
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
+    } else if (good && !won && !bad) {
+      // Followed the plan but lost with no leak to name: never say
+      // "well played" for a losing hand (v1.8.71) — neutral process note.
+      lines.push({ kind: 'good', text: 'Tough loss — you stuck to the plan on the key decision. Sometimes the cards don\'t cooperate.' });
     }
     // Don't second-guess a winning bluff: if you took it down by fold,
     // the aggression worked — no "tighten up" lecture.
@@ -1593,6 +1603,14 @@
           'You can <b>raise 4×</b> to punish the limpers — ' + countLimpers() + ' limpers means ' +
           UI.fmt(table.potTotal()) + ' of dead money. Or call behind; both are fine. Mix in the raise sometimes.',
           'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
+      // 2+ limpers in late/middle position: dead money is worth attacking even
+      // without a third limper. Ace-high and playable hands can take it down
+      // preflop or isolate one player — but folding is fine too, don't force it.
+      if (countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position') && tier <= 5)
+        return mkVerdict('raise', 'marginal',
+          'You can <b>raise 4×</b> to attack the dead money — ' + countLimpers() + ' limpers means ' +
+          UI.fmt(table.potTotal()) + ' sitting there. Take it down now or isolate one player. Or fold; both are fine.',
+          'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — folding is fine too.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
         return mkVerdict('call', 'marginal',
           '<b>Call</b> behind — speculative hand, deep stacks, great implied odds if you crack a limper.',
@@ -1802,14 +1820,17 @@
     var bluffy = V ? villainBluffy(V.archetype) : 0.3;
     var rangeAdjust = 0;
     if (range.label === 'strong' && tight > 0.6) rangeAdjust += 0.08;
-    if (range.label === 'polarized') rangeAdjust += (tight > 0.6 ? 0.12 : -0.02);
+    // Polarized from a non-bluffer is effectively strong (v1.8.71: Amogh's
+    // overbet shove read as 'wide'/bluffy and advised a call with ace-high).
+    var polarStrong = range.label === 'polarized' && (tight > 0.6 || bluffy < 0.25);
+    if (range.label === 'polarized') rangeAdjust += (polarStrong ? 0.12 : -0.02);
     if (range.label === 'wide' || bluffy > 0.55) rangeAdjust -= 0.06;
     if (range.label === 'capped') rangeAdjust -= 0.03;
     if (multiway && betCallAhead()) rangeAdjust += 0.05;
 
     // Equity vs a strong/tight range runs lower than vs random hands.
     var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
-    if (range.label === 'strong' || (range.label === 'polarized' && tight > 0.6)) eq2 *= 0.75;
+    if (range.label === 'strong' || polarStrong) eq2 *= 0.75;
 
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
@@ -1859,7 +1880,10 @@
     // slightly to river aggression unless villain is a known bluffer.
     var riverPrior = (table.street === 'river' && bluffy <= 0.55) ? 0.03 : 0;
     threshold += riverPrior;
-    var mathLine = 'You need to win <b>' + pct(need2) + '</b> of the time' +
+    // Pot odds in plain English: the price vs the prize, not just a percentage
+    // (v1.8.71: beginners couldn't follow the raw "win X% of the time").
+    var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> \u2014 ' +
+      'you need to win <b>' + pct(need2) + '</b> of the time to break even' +
       (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
       (rangeAdjust > 0.005 ? ' (more — ' + vName + ' usually has a strong hand)'
         : rangeAdjust < -0.005 ? ' (less — ' + vName + ' plays lots of hands or bluffs)' : '') +
@@ -1868,6 +1892,11 @@
       '. ' +
       'You don\'t need to defend every hand — folding some is fine. ' +
       riskPremiumNote(rp2);
+    // Bluff-catching concept for beginners: when your hand only beats a bluff,
+    // name it explicitly (v1.8.71).
+    var bluffCatchNote = (hc === 'air' && toCall > 0)
+      ? " Bluff-catching = calling hoping they're bluffing. Works vs bluffers, not vs big bets for value."
+      : '';
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
         'Calling when you win often enough is how winning poker works.');
@@ -1877,10 +1906,10 @@
         'Against heavy bluffers, call lighter: their range holds more air than usual.');
     if (debit > 0 && adjEq <= threshold)
       return mkVerdict('fold', 'strong',
-        mathLine + 'Math says <b>fold</b> — and even hitting might not win (reverse implied odds).',
+        mathLine + 'Math says <b>fold</b> — and even hitting might not win (reverse implied odds).' + bluffCatchNote,
         'Non-nut draws against tight ranges are trap hands: hitting can still lose.');
     return mkVerdict('fold', adjEq > threshold - 0.06 ? 'marginal' : 'strong',
-      mathLine + 'Math says <b>fold</b>.',
+      mathLine + 'Math says <b>fold</b>.' + bluffCatchNote,
       'Folding when the price is wrong is a skill — most money is saved, not won.');
   }
 

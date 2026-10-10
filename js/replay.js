@@ -101,6 +101,16 @@ function finishHandRecord(rec, table, evt, heroProfitChips) {
   });
   rec.heroNet = Math.round(heroProfitChips);
   rec.heroNetBB = Math.round((heroProfitChips / rec.bb) * 10) / 10;
+  // Everyone's hole cards for the hand log (v1.8.71): hero always, opponents
+  // only if revealed at showdown. Unrevealed hands stay hidden (null).
+  var revByIdx = {};
+  (evt.revealed || []).forEach(function (r) { revByIdx[r.idx] = r.hole; });
+  rec.allHands = (rec.players || []).map(function (pl, idx) {
+    var hole = null;
+    if (pl.isHero) hole = (rec.heroHole || []).slice();
+    else if (revByIdx[idx]) hole = revByIdx[idx].map(rpCard);
+    return { name: pl.name, emoji: pl.emoji, hole: hole, isHero: !!pl.isHero };
+  });
   // Human-readable one-liner mirroring the winner banner.
   var main = null;
   winners.forEach(function (w) { if (!main && !w.uncalled) main = w; });

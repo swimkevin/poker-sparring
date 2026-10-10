@@ -3,6 +3,61 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.71] — 2026-10-10
+
+### Fixed — coach in limped multiway pots (from Kevin's live hand)
+- **Iso-raise option for 2+ limpers in late/middle position.** Kevin's spot:
+  A4o in MP with 2 limpers + dead money got a flat "fold" because the
+  iso-raise gate required 3+ limpers on the button/cutoff. Now 2+ limpers in
+  button/cutoff/middle with a playable hand (tier ≤ 5) offers the iso-raise
+  as an option ("You can raise 4× to attack the dead money… Or fold; both
+  are fine") instead of a bare fold.
+- **No single-villain read in limped multiway pots.** The same hand showed
+  "vs Amogh" with 4+ players in and no raise — a single read is noise there.
+  The villain line is now suppressed for limped multiway pots (preflop, no
+  raise yet, 4+ handed), not just 3+ limpers. Raised pots keep the aggressor
+  read, where it matters.
+
+### Fixed — engine stuck asking for action with everyone all-in (critical)
+- **No betting round when 0–1 players can act.** After Kevin called Amogh's
+  turn shove, the river was dealt and hero was asked to act with 5 chips
+  while Amogh was all-in — the hand couldn't reach showdown. `_bettingComplete`
+  now returns true with ≤ 1 actor (was only 0): streets are dealt out and the
+  hand goes to showdown.
+
+### Fixed — range estimator misread big bets as 'wide' (from Kevin's live hand)
+- **Bet sizing now measured vs pot-before-bet.** `estimateVillainRange` used
+  `size/pot` where the timeline's pot includes the bet just made, so Amogh's
+  225-into-135 flop overbet read as 0.625 → 'wide' → coach said "call" with
+  ace-high and claimed "Amogh plays lots of hands or bluffs". True ratio is
+  1.67 → polarized. Same reconstruction as `villainSizingTell`.
+- **Polarized range from a non-bluffer treated as strong.** Amogh (bluff 0.15)
+  shoving is not bluff-heavy: threshold now rises (+0.12) and equity is
+  discounted (×0.75) instead of the reverse. The turn shove now reads as a
+  clear fold (not "close"), matching the actual ~7% equity of 3 outs.
+- Regression checks #10–14 in `tests/coach-scenarios.js`.
+
+### Fixed — recap, explanations, and message length (from Kevin's live hand)
+- **Recap never says "well played" for a losing hand.** Following the coach's
+  (wrong) flop call and losing 980 still earned praise. Praise is now gated
+  on winning; losses get a neutral "tough loss — you stuck to the plan" note
+  when no leak was found.
+- **Pot odds in plain English.** "You need to win 38% of the time" → "Pot
+  odds: calling 225 to win 360 — you need to win 38% of the time to break
+  even." Beginners now see the price, the prize, and what the % means.
+- **Bluff-catching explained.** When hero holds air facing a bet, the fold
+  advice now names the concept: "Bluff-catching means calling with a hand
+  that only wins if they're bluffing — like ace-high here."
+- **Opponent reads shown once per hand, compact.** The full per-opponent
+  scouting report repeated on every decision (600+ char messages). Now shown
+  once (first verdict) as compact style tags: "🎯 Table: Alice (vault) ·
+  Rohan (calling station) · …".
+- **Hand log shows hole cards.** `finishHandRecord` now persists `allHands`
+  (hero always, opponents if revealed at showdown); the Hands tab already
+  rendered the grid but the data was never saved.
+- Regression checks #15–19 in `tests/coach-scenarios.js`; 10-hand
+  `coach-eval` audit loop re-run until clean.
+
 ## [1.8.70] — 2026-10-10
 
 ### Docs — README upgrades for hiring-manager review

@@ -215,6 +215,11 @@ class PokerTable {
     var self = this;
     var actors = this.players.filter(function (p) { return self.canAct(p); });
     if (actors.length === 0) return true;
+    // One player left able to act: a real decision exists only if they have a
+    // bet to match (call/fold vs a shove). Otherwise nobody can be bet into —
+    // deal the streets out and go to showdown (v1.8.71: hand stuck asking hero
+    // to act on the river with Amogh already all-in).
+    if (actors.length === 1 && actors[0].bet >= self.currentBet) return true;
     return actors.every(function (p) { return p.acted && p.bet === self.currentBet; });
   }
 

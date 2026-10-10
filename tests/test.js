@@ -714,18 +714,19 @@ function heroPolicy(table, idx) {
     else if (e.t === 'handEnd') RP.finishHandRecord(rec1, t1, e, t1.players[0].stack - s0);
   });
   var acts1 = rec1.timeline.filter(function (f) { return f.t === 'action'; });
-  // Villain is deep-stacked, so the board runs out after the all-in: the
-  // engine deals flop/turn/river with villain checking each street.
-  ok(rec1.timeline.length === 11, 'timeline: blinds + raise + call + 3 streets + end, got ' + rec1.timeline.length);
-  ok(acts1.map(function (a) { return a.action; }).join() === 'sb,bb,raise,call,check,check,check',
+  // Villain is deep-stacked and hero is all-in: the engine deals flop/turn/
+  // river with NO betting actions (v1.8.71 — real poker has no betting round
+  // when only one player can act; the old check/check/check was the bug
+  // Kevin hit: hero asked to act on the river vs an all-in player).
+  ok(rec1.timeline.length === 8, 'timeline: blinds + raise + call + 3 streets + end, got ' + rec1.timeline.length);
+  ok(acts1.map(function (a) { return a.action; }).join() === 'sb,bb,raise,call',
     'action sequence, got ' + acts1.map(function (a) { return a.action; }).join());
-  ok(acts1.map(function (a) { return a.pot; }).join() === '5,15,110,200,200,200,200',
+  ok(acts1.map(function (a) { return a.pot; }).join() === '5,15,110,200',
     'pot evolution, got ' + acts1.map(function (a) { return a.pot; }).join());
-  ok(acts1.slice(0, 4).every(function (a) { return a.street === 'preflop'; }) &&
-    acts1[4].street === 'flop' && acts1[5].street === 'turn' && acts1[6].street === 'river',
+  ok(acts1.every(function (a) { return a.street === 'preflop'; }),
     'actions tagged with their street');
   var streets1 = ev1.filter(function (e) { return e.t === 'actionTaken'; }).map(function (e) { return e.street; });
-  ok(streets1.join() === 'preflop,preflop,flop,turn,river',
+  ok(streets1.join() === 'preflop,preflop',
     'engine actionTaken events carry street, got ' + streets1.join());
   var end1 = rec1.timeline[rec1.timeline.length - 1];
   ok(end1.t === 'end' && end1.winners[0].names.join() === 'You' && end1.pot === 200, 'end frame: hero wins 200');
@@ -740,11 +741,11 @@ function heroPolicy(table, idx) {
   ok(st.actions.length === 2 && st.pot === 15, 'frame 2: blinds posted, pot 15');
   st = RP.replayState(rec1, 4);
   ok(st.actions.length === 4 && st.pot === 200 && !st.done, 'frame 4: all preflop actions, pot 200, not done');
-  st = RP.replayState(rec1, 11);
+  st = RP.replayState(rec1, 8);
   ok(st.done && st.winners && st.winners[0].names[0] === 'You', 'final frame: done with winners');
-  st = RP.replayState(rec1, 10);
+  st = RP.replayState(rec1, 7);
   ok(!st.done && st.winners === null, 'stepping back clears winners');
-  ok(RP.replayState(rec1, 999).idx === 11 && RP.replayState(rec1, -3).idx === 0, 'frame index clamped');
+  ok(RP.replayState(rec1, 999).idx === 8 && RP.replayState(rec1, -3).idx === 0, 'frame index clamped');
   ok(RP.frameIndexForStreet(rec1, 'preflop') === 0, 'preflop jump = 0');
   ok(RP.frameIndexForStreet(rec1, 'flop') === 5, 'flop jump lands after street frame');
 

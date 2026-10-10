@@ -87,7 +87,7 @@ console.log('\n6. Jargon-free coach');
 console.log('\n7. Friend bot archetypes in opponentReads');
 {
   const reads = ['alice', 'rohan', 'swimkev'];
-  const missing = reads.filter(id => !src.includes("A.id === '" + id + "'"));
+  const missing = reads.filter(id => !src.includes(id + ':'));
   ok(missing.length === 0, 'all friend bots have reads' + (missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''));
 }
 
@@ -111,6 +111,97 @@ console.log('\n9. posName destructured in coachPostflop (v1.8.68 critical bug)')
   ok(hasPosName, 'posName destructured in coachPostflop');
   ok(!/var checkedAround = table\.currentBet === 0 && \(posName/.test(src) ||
      hasPosName, 'checkedAround posName read is guarded by destructure');
+}
+
+console.log('\n10. Iso-raise option for 2+ limpers in late/middle (v1.8.71)');
+{
+  // Kevin's spot: A4o (tier 5) in MP with 2 limpers + dead money got a flat
+  // "fold" because the iso-raise gate required 3+ limpers on button/cutoff.
+  // Now 2+ limpers in button/cutoff/middle with a playable hand offers the
+  // iso-raise as an option instead of a bare fold.
+  ok(src.includes("countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position')"),
+    'iso-raise branch covers 2+ limpers in button/cutoff/middle');
+  ok(src.includes('attack the dead money'), 'iso-raise message mentions dead money');
+}
+
+console.log('\n11. No single-villain read in limped multiway pots (v1.8.71)');
+{
+  // Kevin's spot showed "vs Amogh" with 4+ players in a limped pot — the
+  // read is noise when nobody has raised. The tail must be suppressed for
+  // limped multiway pots, not just 3+ limpers.
+  ok(src.includes('limpedMulti'), 'limpedMulti suppression exists');
+  ok(/limpedMulti = table\.street === 'preflop' && table\.currentBet <= table\.bb && isMultiway\(\)/.test(src),
+    'limpedMulti requires preflop, no raise, and multiway');
+  ok(/var tail = \(isMultiLimp \|\| limpedMulti\)/.test(src),
+    'tail suppressed for limped multiway pots');
+}
+
+console.log('\n12. Engine: no betting round with 0-1 actors (v1.8.71)');
+{
+  // Kevin's hand: Amogh all-in on the turn, hero has 5 chips left. River was
+  // dealt and hero was asked to act with nobody to bet against — hand stuck.
+  // _bettingComplete must skip the round when the sole actor has no bet to
+  // match (but NOT when they still must call/fold vs a shove).
+  const engineSrc = fs.readFileSync('js/engine.js', 'utf8');
+  ok(/if \(actors\.length === 1 && actors\[0\]\.bet >= self\.currentBet\) return true;/.test(engineSrc),
+    '_bettingComplete skips round for solo actor with no bet to match');
+}
+
+console.log('\n13. Range ratio uses pot-before-bet (v1.8.71)');
+{
+  // t.pot includes the bet just made (engine emits post-action). Amogh's
+  // 225-into-135 flop overbet read as 225/360=0.625 → 'wide' → coach said
+  // call with ace-high. True ratio is 225/135=1.67 → polarized.
+  ok(src.includes('var ratio = size / Math.max(1, pot - size);'),
+    'estimateVillainRange divides by pot-before-bet');
+}
+
+console.log('\n14. Polarized range from non-bluffer treated as strong (v1.8.71)');
+{
+  // Amogh (bluff 0.15) shoving polarized = strong, not bluffy. Threshold must
+  // go up (+0.12) and equity discounted (×0.75), not the reverse.
+  ok(src.includes('polarStrong'), 'polarStrong flag exists');
+  ok(/polarStrong = range\.label === 'polarized' && \(tight > 0\.6 \|\| bluffy < 0\.25\)/.test(src),
+    'polarized + tight or non-bluffy counts as strong');
+  ok(src.includes("if (range.label === 'strong' || polarStrong) eq2 *= 0.75;"),
+    'equity discounted for polarized-strong ranges');
+}
+
+console.log('\n15. Recap never says "well played" for a losing hand (v1.8.71)');
+{
+  // Kevin's hand: lost 980 following the flop call, recap still praised it.
+  ok(!/else if \(good\) \{/.test(src), 'no unconditional "well played" on good');
+  ok(src.includes("} else if (good && won) {"), 'praise gated on winning the hand');
+  ok(src.includes("Tough loss \u2014 you stuck to the plan"), 'neutral process note for followed-plan losses');
+}
+
+console.log('\n16. Beginner-friendly pot odds and bluff-catching (v1.8.71)');
+{
+  ok(src.includes("Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot)"),
+    'math line explains pot odds as price vs prize');
+  ok(src.includes('to break even'), 'math line states the break-even meaning');
+  ok(src.includes('bluffCatchNote'), 'bluff-catching concept note exists');
+  ok(src.includes("Bluff-catching = calling hoping they're bluffing"), 'bluff-catching explained in plain English');
+}
+
+console.log('\n17. Hand log records revealed hole cards (v1.8.71)');
+{
+  // Kevin: hand log should show what each player had. finishHandRecord must
+  // persist allHands (hero always, opponents only if revealed at showdown).
+  const replaySrc = fs.readFileSync('js/replay.js', 'utf8');
+  ok(replaySrc.includes('rec.allHands = '), 'finishHandRecord writes rec.allHands');
+  ok(replaySrc.includes('revByIdx'), 'opponent cards keyed by revealed idx');
+  ok(/hole: hole, isHero/.test(replaySrc), 'allHands entries carry name/emoji/hole/isHero');
+}
+
+console.log('\n18. Opponent reads shown once per hand (v1.8.71)');
+{
+  // The static reads block repeated on every decision → 600+ char messages.
+  // Now gated on first verdict of the hand (coachDecisions empty).
+  ok(src.includes("var reads = coachDecisions.length === 0 ? opponentReads() : '';"),
+    'opponent reads gated on first verdict');
+  ok(src.includes("+ tail + posNote + stageNote + multiNote + reads"),
+    'reads appended via gated variable');
 }
 
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');

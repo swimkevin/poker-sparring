@@ -81,7 +81,7 @@ function adviceLegal(advice, st) {
 
 function checkMath(dec) {
   var txt = dec.msgText;
-  var mNeed = /need <b>(\d+)%/.exec(dec.msgHtml) || /need (\d+)%/.exec(txt);
+  var mNeed = /need to win <b>(\d+)%/.exec(dec.msgHtml) || /need <b>(\d+)%/.exec(dec.msgHtml) || /need (\d+)%/.exec(txt);
   if (mNeed && dec.toCall > 0) {
     var stated = +mNeed[1] / 100;
     var actual = dec.toCall / (dec.pot + dec.toCall);
