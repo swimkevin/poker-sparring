@@ -1907,7 +1907,7 @@
     // adjusted threshold vs strong ranges, how win% is simulated) are here
     // but tight — the 10-hand loop flags anything over 400 chars.
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
-      'need <b>' + pct(need2) + '</b> to break even (pays for itself)' +
+      'need <b>' + pct(need2) + '</b> to break even' + (strongAdj ? '' : ' (pays for itself)') +
       (strongAdj ? ', <b>' + pct(threshold) + '</b> vs ' + vName + '\'s strong range' : '') +
       (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
       (riverPrior > 0 ? ' (rivers are under-bluffed)' : '') +
