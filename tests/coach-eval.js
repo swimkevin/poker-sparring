@@ -145,10 +145,29 @@ function heroAct(dec) {
   // Round 2 (v1.8.71): 30% follow the coach, 70% random legal action — more
   // chaotic hero drives edge cases (weird calls, spewy bets, nitty folds)
   // and exercises the deviation path of the recap.
+  // v1.8.74: HERO_MODE='loose' — classic beginner leak: plays too many hands,
+  // calls down too light, raises marginal hands (Kevin's request to expose
+  // huge bugs in the spots where beginners need the coach most).
+  var HERO_MODE = 'loose';
   var st = dec.state;
   var legal = legalActionsFor(st);
   var action;
-  if (dec.advice && Math.random() < 0.3) {
+  function pickLoose() {
+    var weights = { fold: 1, check: 3, call: 5, bet: 3, raise: 3, 'all-in': 0.2 };
+    var total = 0, avail = [];
+    legal.forEach(function (a) {
+      var w = weights[a] || 1; total += w; avail.push([a, w]);
+    });
+    var r = Math.random() * total;
+    for (var i = 0; i < avail.length; i++) {
+      r -= avail[i][1];
+      if (r <= 0) return avail[i][0];
+    }
+    return avail[avail.length - 1][0];
+  }
+  if (HERO_MODE === 'loose') {
+    action = pickLoose();
+  } else if (dec.advice && Math.random() < 0.3) {
     action = dec.advice === 'bet' ? 'bet' : dec.advice === 'raise' ? 'raise' :
       dec.advice === 'check' ? 'check' : dec.advice === 'call' ? 'call' : 'fold';
     if (legal.indexOf(action) === -1) action = legal[Math.floor(Math.random() * legal.length)];

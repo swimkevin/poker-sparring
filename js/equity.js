@@ -273,7 +273,8 @@ var EXPLOIT_LINES = {
   station: 'calling station — calls down with anything. Value bet big, never bluff',
   maniac: 'maniac — raises everything. Trap strong hands, call down lighter, never bluff',
   rock: 'rock — only plays monsters. Steal his blinds, fold when he bets',
-  alice: 'never bluffs — believe every bet, steal her blinds relentlessly'
+  alice: 'never bluffs — believe every bet, steal her blinds relentlessly',
+  swimkev: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light'
 };
 function exploitLine(archetype) {
   var a = archetype || {};

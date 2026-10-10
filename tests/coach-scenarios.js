@@ -84,11 +84,14 @@ console.log('\n6. Jargon-free coach');
   ok(foundJargon.length === 0, 'no jargon in coach messages' + (foundJargon.length ? ' (found: ' + foundJargon.join(', ') + ')' : ''));
 }
 
-console.log('\n7. Friend bot archetypes in opponentReads');
+console.log('\n7. Friend bot archetypes have exploit lines');
 {
+  // v1.8.75: opponentReads uses exploitLine() directly; friend-bot lines
+  // live in EXPLOIT_LINES (js/equity.js).
+  const eqSrc = require('fs').readFileSync('js/equity.js', 'utf8');
   const reads = ['alice', 'rohan', 'swimkev'];
-  const missing = reads.filter(id => !src.includes(id + ':'));
-  ok(missing.length === 0, 'all friend bots have reads' + (missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''));
+  const missing = reads.filter(id => !eqSrc.includes(id + ':'));
+  ok(missing.length === 0, 'all friend bots have exploit lines' + (missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''));
 }
 
 console.log('\n8. Debug mode and test hooks (v1.8.64 hardening)');
@@ -251,4 +254,14 @@ console.log('\n19. v1.8.74: made straight+ beats draw label, bullets, no solo vi
     'rangeNote suppressed multiway with no aggressor');
   ok(src.includes("multiwayNoAggro"),
     'vs-line suppressed multiway with no aggressor');
+}
+
+console.log('\n20. v1.8.75: no "great spot to raise" after a raise; full exploit bullets');
+{
+  // Kevin: 3 limps then Shark raised to 55 — coach said Fold but the note
+  // said "great spot to raise and take it down". Contradiction.
+  ok(src.includes("limps >= 3 && table.currentBet <= table.bb"),
+    'multiway raise note suppressed once someone raises');
+  ok(src.includes("exploitLine(A)"),
+    'table bullets use full exploit lines');
 }

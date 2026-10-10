@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.75] — 2026-10-10
+
+### Fixed — contradiction + richer player reads (Kevin's screenshots)
+- **"Fold" vs "great spot to raise" contradiction.** 3 limps then Shark
+  raised to 55; coach said Fold T2o (correct) but the multiway note said
+  "great spot to raise and take it down". `multiwayNote()` now suppresses
+  the raise note once `currentBet > BB` — it's not dead money after a raise.
+- **Table bullets now teach.** Each player shows the full exploit line
+  (what the style means + how to beat it), not just the label. Added
+  swimkev's line (was missing from EXPLOIT_LINES).
+
 ## [1.8.74] — 2026-10-10
 
 ### Fixed — three coach bugs from Kevin's phone screenshots
