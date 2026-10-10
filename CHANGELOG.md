@@ -19,11 +19,11 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
   read, where it matters.
 
 ### Fixed — engine stuck asking for action with everyone all-in (critical)
-- **No betting round when 0–1 players can act.** After Kevin called Amogh's
+- **No betting round when nobody can act.** After Kevin called Amogh's
   turn shove, the river was dealt and hero was asked to act with 5 chips
   while Amogh was all-in — the hand couldn't reach showdown. `_bettingComplete`
-  now returns true with ≤ 1 actor (was only 0): streets are dealt out and the
-  hand goes to showdown.
+  now ends the round with 0 actors, or with 1 actor who has no outstanding
+  bet to match; a lone player still facing a bet keeps their call/fold.
 
 ### Fixed — range estimator misread big bets as 'wide' (from Kevin's live hand)
 - **Bet sizing now measured vs pot-before-bet.** `estimateVillainRange` used
@@ -34,7 +34,7 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 - **Polarized range from a non-bluffer treated as strong.** Amogh (bluff 0.15)
   shoving is not bluff-heavy: threshold now rises (+0.12) and equity is
   discounted (×0.75) instead of the reverse. The turn shove now reads as a
-  clear fold (not "close"), matching the actual ~7% equity of 3 outs.
+  clear fold, matching Kevin's live read that his ~3 outs were nearly dead.
 - Regression checks #10–14 in `tests/coach-scenarios.js`.
 
 ### Fixed — recap, explanations, and message length (from Kevin's live hand)
@@ -89,6 +89,16 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
   that range."
 - **Break-even explained inline** per Kevin's request.
 - Regression check #22 in `tests/coach-scenarios.js`.
+
+### Improved — win-% estimation explained, math line tightened
+- **How the win % is calculated.** Per Kevin's request, the coach now notes
+  the number is "played out vs random hands 150 times" and adjusted for the
+  opponent's style ("lowered for their strength") — beginner-friendly and
+  honest about what it assumes.
+- **Tighter phrasing.** The three explainers (break-even, adjusted bar,
+  simulation) were bloating messages past 600 chars; rewritten concisely to
+  stay under the 400-char loop budget.
+- Regression check #23 in `tests/coach-scenarios.js`.
 
 ## [1.8.70] — 2026-10-10
 

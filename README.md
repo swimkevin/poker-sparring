@@ -32,7 +32,7 @@
 
 ## By the numbers
 
-- **69 versions shipped** (v1.8.69) — iterative, tested releases, not one big bang
+- **71 versions shipped** (v1.8.71) — iterative, tested releases, not one big bang
 - **1,800+ test assertions** across unit, component, smoke (300 randomized hands), netplay, and worker suites
 - **11 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
