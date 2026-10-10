@@ -57,12 +57,10 @@ setTimeout(function () {
   try {
     // 1. Pure URL builder: the heart of the fix.
     ok(typeof w.updateReloadURL === 'function', 'updateReloadURL is exposed');
-    ok(w.updateReloadURL('/index.html', '9.9.9', '') === '/index.html?v=9.9.9',
-      'builds ?v=<new> URL, dropping the stale param');
-    ok(w.updateReloadURL('/index.html', '9.9.9', '#table') === '/index.html?v=9.9.9#table',
+    ok(w.updateReloadURL('/index.html', '9.9.9', '') === '/index.html',
+      'page URL stays clean (no ?v=, v1.8.71 best practice)');
+    ok(w.updateReloadURL('/index.html', '9.9.9', '#table') === '/index.html#table',
       'preserves the hash fragment');
-    ok(w.updateReloadURL('/index.html', '1.8.37 beta', '') === '/index.html?v=1.8.37%20beta',
-      'encodes the version string');
 
     // 2. Live wiring: the footer button reaches the navigation line and uses
     // the builder (not location.reload).

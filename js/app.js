@@ -12,8 +12,12 @@
   // Builds the URL to load after an update: we NAVIGATE instead of calling
   // location.reload(), because a reload keeps the stale ?v= query param in
   // the address bar (bug reported 2026-10-08). Pure function for testability.
+  // Best practice (v1.8.71): the page URL stays clean — never ?v=. The ?v=
+  // cache-busters live on the CSS/JS asset URLs in index.html (invisible to
+  // users); the version is shown in the app footer. Stuffing ?v= into the
+  // page URL was a workaround that made the address bar inconsistent.
   function updateReloadURL(pathname, v, hash) {
-    return pathname + '?v=' + encodeURIComponent(v) + hash;
+    return pathname + hash;
   }
   // Exposed for tests (tests/update-flow.test.js); the IIFE keeps the rest private.
   try { window.updateReloadURL = updateReloadURL; } catch {}
@@ -2510,12 +2514,13 @@
         var v = (t || '').trim();
         if (v && v !== APP_VERSION) {
           if (confirm('New version ' + v + ' available (you have ' + APP_VERSION + '). Reload now?')) {
-            // Navigate instead of reloading in place: a plain reload keeps the
-            // stale ?v= query param in the address bar, so the URL still
-            // shows the old version after the refresh (bug reported 2026-10-08).
-            // Navigating with the new version also guarantees a fresh
-            // index.html, since the changed URL bypasses the HTTP cache.
-            window.location.href = updateReloadURL(window.location.pathname, v, window.location.hash);
+            // Bust the HTTP cache for index.html, then land on the clean URL
+            // (no ?v= — see updateReloadURL). fetch with cache:'reload'
+            // bypasses cache and stores the fresh copy, so the navigation
+            // picks it up.
+            fetch(window.location.pathname, { cache: 'reload' }).catch(function () {}).then(function () {
+              window.location.href = updateReloadURL(window.location.pathname, v, window.location.hash);
+            });
           }
         } else {
           cu.textContent = 'Up to date ✓';
