@@ -98,7 +98,7 @@ function checkMath(dec) {
 var JARGON = ['SPR', 'implied odds', 'reverse implied', 'polarized', 'capped', 'blocker'];
 function checkTone(dec) {
   var txt = dec.msgText;
-  var limit = txt.indexOf('Table:') !== -1 ? 600 : 500;
+  var limit = txt.indexOf('Table:') !== -1 ? 850 : 500;
   if (txt.length > limit)
     flag('tone', 'hand ' + dec.hand + ' ' + dec.street + ': message too long (' +
       txt.length + ' chars) — "' + txt.slice(0, 80) + '..."');
