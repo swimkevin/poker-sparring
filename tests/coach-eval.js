@@ -117,11 +117,13 @@ function checkTone(dec) {
 }
 
 function checkContradictions() {
-  // Group by hand+street; flag fold<->bet/raise flips between consecutive
-  // hero decisions on the same street (no new cards dealt between them).
+  // Group by hand+street+facing-bet; flag fold<->bet/raise flips between
+  // consecutive hero decisions in the SAME situation. A bet->fold after
+  // getting raised is correct coaching (situation changed), not a
+  // contradiction (v1.8.71: chaotic hero found this false positive).
   var byKey = {};
   decisions.forEach(function (dec, i) {
-    var k = dec.hand + '|' + dec.street;
+    var k = dec.hand + '|' + dec.street + '|' + (dec.toCall > 0 ? 'facing' : 'open');
     (byKey[k] = byKey[k] || []).push(i);
   });
   Object.keys(byKey).forEach(function (k) {
