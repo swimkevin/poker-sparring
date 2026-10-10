@@ -73,6 +73,23 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
   unaffected — unknown opponent cards still show "—".
 - Regression check #17 updated in `tests/coach-scenarios.js`.
 
+### Fixed — hand-end pause + longer auto-deal
+- **Pause button.** The post-hand auto-deal can now be paused ("⏸ Pause" /
+  "▶ Resume") to review the hand as long as wanted; resume continues from
+  the remaining time.
+- **Auto-deal 10s → 13s.** Three extra seconds before the next hand deals.
+- Regression check #21 in `tests/coach-scenarios.js`.
+
+### Fixed — confusing pot-odds message (Kevin's J4 vs Amogh)
+- **Adjusted threshold now visible.** The message showed raw 41% needed, then
+  said "fold" despite 52% equity — contradictory. When a strong range
+  raises the bar, it now reads: "…you need 41% to break even (win this
+  often and the call pays for itself over time) — but Amogh bets big with
+  strong hands, so vs their range you need 53%, and you win about 52% vs
+  that range."
+- **Break-even explained inline** per Kevin's request.
+- Regression check #22 in `tests/coach-scenarios.js`.
+
 ## [1.8.70] — 2026-10-10
 
 ### Docs — README upgrades for hiring-manager review

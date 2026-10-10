@@ -48,7 +48,7 @@ setTimeout(function () {
       { street: 'turn', advice: 'call', strength: 'marginal', lesson: 'x',
         action: 'call', followed: true }
     ]);
-    var r = H.recap(7);
+    var r = H.recap(7, true);
     ok(!!r, 'recap built when strong decisions exist');
     ok(r.html.indexOf('Hand #7 recap') !== -1, 'recap names the hand');
     ok(r.html.indexOf('coach-recap-good') !== -1, 'recap has a praise line');
