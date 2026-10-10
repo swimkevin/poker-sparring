@@ -101,14 +101,18 @@ function finishHandRecord(rec, table, evt, heroProfitChips) {
   });
   rec.heroNet = Math.round(heroProfitChips);
   rec.heroNetBB = Math.round((heroProfitChips / rec.bb) * 10) / 10;
-  // Everyone's hole cards for the hand log (v1.8.71): hero always, opponents
-  // only if revealed at showdown. Unrevealed hands stay hidden (null).
-  var revByIdx = {};
-  (evt.revealed || []).forEach(function (r) { revByIdx[r.idx] = r.hole; });
+  // Everyone's hole cards for the hand log (v1.8.71): this is a training
+  // app, so history shows ALL hands — even folded ones (Kevin's request).
+  // Engine keeps hole cards until the next hand starts, so folded players'
+  // cards are still on table.players here. In netplay opponent cards aren't
+  // known locally → hole stays null (shows "—").
   rec.allHands = (rec.players || []).map(function (pl, idx) {
     var hole = null;
     if (pl.isHero) hole = (rec.heroHole || []).slice();
-    else if (revByIdx[idx]) hole = revByIdx[idx].map(rpCard);
+    else {
+      var tp = table.players[idx];
+      if (tp && tp.hole && tp.hole.length === 2) hole = tp.hole.map(rpCard);
+    }
     return { name: pl.name, emoji: pl.emoji, hole: hole, isHero: !!pl.isHero };
   });
   // Human-readable one-liner mirroring the winner banner.

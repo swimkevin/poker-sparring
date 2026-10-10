@@ -128,6 +128,20 @@
     }));
     if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
   }
+  // Repair: cash/tourney default to a full table of 7. Stale saves could
+  // persist fewer (v1.8.71: Kevin's cash roster had 6). Top up from the
+  // mode defaults; never remove a deliberate pick.
+  function topUpRoster() {
+    if (mode === 'hu') return;
+    var defaults = mode === 'tourney'
+      ? ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'pro', 'nit']
+      : ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'shark', 'station'];
+    var before = selectedBots.size;
+    defaults.forEach(function (id) {
+      if (selectedBots.size < 7 && botById(id)) selectedBots.add(id);
+    });
+    if (selectedBots.size !== before) saveRoster();
+  }
   // Switch the selection when the mode changes — each mode remembers its own roster.
   function loadModeRoster() {
     var ids = loadRoster();
@@ -136,8 +150,10 @@
       ? ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'pro', 'nit']
       : ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'shark', 'station']);
     pruneSelection();
+    topUpRoster();
   }
   pruneSelection(); // clean any stale picks from a previous mode
+  topUpRoster(); // repair short rosters to a full table
   function maxOpp() { return mode === 'hu' ? 1 : 7; }
   function rosterOrderIds() { return rosterBots().map(function (b) { return b.id; }); }
   // Transient hint under the bot roster ("Only 1 opponent for heads-up", …).

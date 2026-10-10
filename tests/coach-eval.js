@@ -139,12 +139,13 @@ function checkContradictions() {
 }
 
 function heroAct(dec) {
-  // 50% follow the coach, else take a random legal action (drives exploration
-  // and exercises the deviation path of the recap).
+  // Round 2 (v1.8.71): 30% follow the coach, 70% random legal action — more
+  // chaotic hero drives edge cases (weird calls, spewy bets, nitty folds)
+  // and exercises the deviation path of the recap.
   var st = dec.state;
   var legal = legalActionsFor(st);
   var action;
-  if (dec.advice && Math.random() < 0.5) {
+  if (dec.advice && Math.random() < 0.3) {
     action = dec.advice === 'bet' ? 'bet' : dec.advice === 'raise' ? 'raise' :
       dec.advice === 'check' ? 'check' : dec.advice === 'call' ? 'call' : 'fold';
     if (legal.indexOf(action) === -1) action = legal[Math.floor(Math.random() * legal.length)];

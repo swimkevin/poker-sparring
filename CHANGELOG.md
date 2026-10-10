@@ -58,6 +58,13 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 - Regression checks #15–19 in `tests/coach-scenarios.js`; 10-hand
   `coach-eval` audit loop re-run until clean.
 
+### Fixed — cash roster topped up to 7 bots
+- **Stale 6-bot rosters repaired.** Cash games showed 6 bots instead of 7
+  (persisted `ps_roster_cash_v1`). `topUpRoster()` now fills cash/tournament
+  rosters to the full 7 from mode defaults on load and mode switch — never
+  removing a deliberate pick; heads-up untouched.
+- Regression check #20 in `tests/coach-scenarios.js`.
+
 ## [1.8.70] — 2026-10-10
 
 ### Docs — README upgrades for hiring-manager review

@@ -184,13 +184,13 @@ console.log('\n16. Beginner-friendly pot odds and bluff-catching (v1.8.71)');
   ok(src.includes("Bluff-catching = calling hoping they're bluffing"), 'bluff-catching explained in plain English');
 }
 
-console.log('\n17. Hand log records revealed hole cards (v1.8.71)');
+console.log('\n17. Hand log records ALL hole cards incl. folded (v1.8.71)');
 {
-  // Kevin: hand log should show what each player had. finishHandRecord must
-  // persist allHands (hero always, opponents only if revealed at showdown).
+  // Kevin: hand history shows every player's hand, even folded early.
+  // Training app — no hidden info after the hand is over.
   const replaySrc = fs.readFileSync('js/replay.js', 'utf8');
   ok(replaySrc.includes('rec.allHands = '), 'finishHandRecord writes rec.allHands');
-  ok(replaySrc.includes('revByIdx'), 'opponent cards keyed by revealed idx');
+  ok(replaySrc.includes('tp.hole.map(rpCard)'), 'opponent cards read from table (incl. folded)');
   ok(/hole: hole, isHero/.test(replaySrc), 'allHands entries carry name/emoji/hole/isHero');
 }
 
@@ -202,6 +202,14 @@ console.log('\n18. Opponent reads shown once per hand (v1.8.71)');
     'opponent reads gated on first verdict');
   ok(src.includes("+ tail + posNote + stageNote + multiNote + reads"),
     'reads appended via gated variable');
+}
+
+console.log('\n20. Cash/tourney rosters top up to 7 bots (v1.8.71)');
+{
+  // Kevin's cash game showed 6 bots; default is 7. Stale saves persist.
+  ok(src.includes('function topUpRoster()'), 'topUpRoster exists');
+  ok(src.includes("if (mode === 'hu') return;"), 'heads-up untouched (stays 1)');
+  ok(src.includes('selectedBots.size < 7 && botById(id)'), 'tops up from mode defaults');
 }
 
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');
