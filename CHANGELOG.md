@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.73] — 2026-10-10
+
+### Fixed — table reads visible mid-hand again
+- **Opponent play types show once per street.** Kevin: "coach doesnt show
+  other players play type anymore mid turn." The v1.8.71 optimization showed
+  the compact table reads only on the hand's first verdict; now they appear
+  on the first verdict of each street (preflop/flop/turn/river).
+- Regression check #18 updated in `tests/coach-scenarios.js`.
+
 ## [1.8.72] — 2026-10-10
 
 ### Fixed — version bump was missed on 6 pushes (critical)

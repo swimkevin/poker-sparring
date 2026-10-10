@@ -194,14 +194,13 @@ console.log('\n17. Hand log records ALL hole cards incl. folded (v1.8.71)');
   ok(/hole: hole, isHero/.test(replaySrc), 'allHands entries carry name/emoji/hole/isHero');
 }
 
-console.log('\n18. Opponent reads shown once per hand (v1.8.71)');
+console.log('\n18. Opponent reads shown once per street (v1.8.72)');
 {
   // The static reads block repeated on every decision → 600+ char messages.
-  // Now gated on first verdict of the hand (coachDecisions empty).
-  ok(src.includes("var reads = coachDecisions.length === 0 ? opponentReads() : '';"),
-    'opponent reads gated on first verdict');
-  ok(src.includes("+ tail + posNote + stageNote + multiNote + reads"),
-    'reads appended via gated variable');
+  // Now shown on first verdict of EACH STREET (Kevin: wants them mid-hand).
+  ok(src.includes("isNewStreet"), 'street-change detection for reads');
+  ok(src.includes("(coachDecisions.length === 0 || isNewStreet) ? opponentReads()"),
+    'reads shown on first verdict per street');
 }
 
 console.log('\n20. Cash/tourney rosters top up to 7 bots (v1.8.71)');
