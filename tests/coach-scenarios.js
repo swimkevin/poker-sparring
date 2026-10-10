@@ -132,7 +132,7 @@ console.log('\n11. No single-villain read in limped multiway pots (v1.8.71)');
   ok(src.includes('limpedMulti'), 'limpedMulti suppression exists');
   ok(/limpedMulti = table\.street === 'preflop' && table\.currentBet <= table\.bb && isMultiway\(\)/.test(src),
     'limpedMulti requires preflop, no raise, and multiway');
-  ok(/var tail = \(isMultiLimp \|\| limpedMulti\)/.test(src),
+  ok(/var tail = \(isMultiLimp \|\| limpedMulti \|\| multiwayNoAggro\)/.test(src),
     'tail suppressed for limped multiway pots');
 }
 
@@ -236,3 +236,19 @@ console.log('\n23. Win-% estimation explained (v1.8.71)');
 
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);
+
+console.log('\n19. v1.8.74: made straight+ beats draw label, bullets, no solo villain multiway');
+{
+  // Kevin's 7cJc on 9c3d8dTc: J-high straight + flush redraw was called
+  // "semi-bluff". handClass must check ev.cat >= 4 before draw labels.
+  ok(src.includes("if (ev && ev.cat >= 4) return 'nut'; // straight+ beats any draw label"),
+    'made straight+ returns nut before draw check');
+  // Table reads back to bullet points (Kevin).
+  ok(src.includes("reads.join('<br>\u2022 ')"),
+    'table reads use bullet points');
+  // Multiway with no aggressor: no single-villain range note or vs-line.
+  ok(src.includes("var noAggro = isMultiway()"),
+    'rangeNote suppressed multiway with no aggressor');
+  ok(src.includes("multiwayNoAggro"),
+    'vs-line suppressed multiway with no aggressor');
+}

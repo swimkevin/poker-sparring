@@ -3,6 +3,20 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.74] — 2026-10-10
+
+### Fixed — three coach bugs from Kevin's phone screenshots
+- **Made straight + flush redraw called "semi-bluff".** Kevin had 7cJc on
+  9c3d8dTc (J-high straight + 4-flush). `handClass` checked flushDraw+OESD
+  before made hands, returning 'draw-strong'. Now `ev.cat >= 4` is checked
+  first — straight+ always classifies as 'nut' (value bet).
+- **Table reads back to bullet points.** The compact inline format (v1.8.73)
+  is now one-per-line bullets as Kevin prefers.
+- **No solo villain read in multiway pots without an aggressor.** Coach said
+  "swimkev's range..." and "vs swimkev:" in a 4-way pot where swimkev did
+  nothing. `pickVillain` fell back to an arbitrary opponent. Now both the
+  range note and vs-line are suppressed multiway unless someone bet/raised.
+
 ## [1.8.73] — 2026-10-10
 
 ### Fixed — table reads visible mid-hand again
