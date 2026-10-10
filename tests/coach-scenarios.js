@@ -224,8 +224,15 @@ console.log('\n22. Adjusted threshold shown vs strong ranges (v1.8.71)');
 {
   // Kevin's J4 vs Amogh: raw 41% needed but real bar 53% — message showed
   // 41% then said "fold" vs 52% equity (contradictory). Now shows adjusted bar.
-  ok(src.includes("so vs their range you need <b>"), 'adjusted threshold displayed vs strong range');
-  ok(src.includes('win this often and the call pays for itself over time'), 'break-even explained');
+  ok(src.includes("s strong range'"), 'adjusted threshold displayed vs strong range');
+  ok(src.includes('(the call pays for itself)'), 'break-even explained');
+}
+
+console.log('\n23. Win-% estimation explained (v1.8.71)');
+{
+  // Kevin: explain how the "you win X%" is calculated, beginner-friendly.
+  ok(src.includes('played out vs random hands 150 times'), 'Monte Carlo explained');
+  ok(src.includes('lowered for their strength'), 'adjustment direction stated');
 }
 
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');

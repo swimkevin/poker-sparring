@@ -1902,16 +1902,19 @@
     // 41% then saying "fold" vs 52% equity was contradictory and confusing
     // (v1.8.71: Kevin's J4 vs Amogh's big bet).
     var strongAdj = rangeAdjust > 0.005;
-    var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> \u2014 ' +
-      'you need to win <b>' + pct(need2) + '</b> of the time to break even' +
-      ' (win this often and the call pays for itself over time)' +
+    // Concise math line (v1.8.71): pot odds + adjusted bar + equity source in
+    // one breath. The three explainers Kevin asked for (break-even meaning,
+    // adjusted threshold vs strong ranges, how win% is simulated) are here
+    // but tight — the 10-hand loop flags anything over 400 chars.
+    var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
+      'need <b>' + pct(need2) + '</b> to break even (the call pays for itself)' +
+      (strongAdj ? ', <b>' + pct(threshold) + '</b> vs ' + vName + '\'s strong range' : '') +
       (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
-      (strongAdj ? ' — but ' + vName + ' bets big with strong hands, so vs their range you need <b>' + pct(threshold) + '</b>'
-        : rangeAdjust < -0.005 ? ' (less — ' + vName + ' plays lots of hands or bluffs)' : '') +
-      (riverPrior > 0 ? ' (players bluff the river less than you\'d think)' : '') +
-      ', and you win about <b>' + pct(adjEq) + '</b> vs that range' +
-      '. ' +
-      'You don\'t need to defend every hand — folding some is fine. ' +
+      (riverPrior > 0 ? ' (rivers are under-bluffed)' : '') +
+      '. You win about <b>' + pct(adjEq) + '</b>' +
+      ' (played out vs random hands 150 times' +
+      (strongAdj ? ', lowered for their strength' : rangeAdjust < -0.005 ? ', raised for their looseness' : '') +
+      '). ' +
       riskPremiumNote(rp2);
     // Bluff-catching concept for beginners: when your hand only beats a bluff,
     // name it explicitly (v1.8.71).
