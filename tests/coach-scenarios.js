@@ -212,5 +212,21 @@ console.log('\n20. Cash/tourney rosters top up to 7 bots (v1.8.71)');
   ok(src.includes('selectedBots.size < 7 && botById(id)'), 'tops up from mode defaults');
 }
 
+console.log('\n21. Hand-end pause button + 13s auto-deal (v1.8.71)');
+{
+  const uiSrc = fs.readFileSync('js/ui.js', 'utf8');
+  ok(uiSrc.includes("id = 'btn-pause-auto'"), 'pause button rendered');
+  ok(/paused = !paused/.test(uiSrc), 'pause toggles countdown');
+  ok(src.includes('autoMs: 13000'), 'auto-deal is 13s (was 10s)');
+}
+
+console.log('\n22. Adjusted threshold shown vs strong ranges (v1.8.71)');
+{
+  // Kevin's J4 vs Amogh: raw 41% needed but real bar 53% — message showed
+  // 41% then said "fold" vs 52% equity (contradictory). Now shows adjusted bar.
+  ok(src.includes("so vs their range you need <b>"), 'adjusted threshold displayed vs strong range');
+  ok(src.includes('win this often and the call pays for itself over time'), 'break-even explained');
+}
+
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);

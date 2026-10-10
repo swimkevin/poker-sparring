@@ -698,13 +698,35 @@ var UI = (function () {
     hint.className = 'fineprint';
     row.appendChild(hint);
     host.appendChild(row);
+    // Pause button (v1.8.71): stops the auto-deal countdown so the hand can
+    // be reviewed as long as wanted. Resume continues from the remaining time.
+    var pauseBtn = document.createElement('button');
+    pauseBtn.className = 'ghost'; pauseBtn.id = 'btn-pause-auto';
+    pauseBtn.textContent = '\u23F8 Pause';
+    if (bar) pauseBtn.style.flex = '1';
+    row.appendChild(pauseBtn);
     var ms = o.autoMs || 8000;
-    var t0 = Date.now();
+    var remaining = ms, lastTick = Date.now(), paused = false;
     function tick() {
-      var s = Math.ceil((ms - (Date.now() - t0)) / 1000);
+      if (paused) return;
+      var now = Date.now();
+      remaining -= (now - lastTick);
+      lastTick = now;
+      var s = Math.ceil(remaining / 1000);
       if (s <= 0) { hideHandEndControls(); o.onNext(); return; }
       hint.textContent = 'auto-dealing in ' + s + 's';
     }
+    pauseBtn.onclick = function () {
+      paused = !paused;
+      if (paused) {
+        pauseBtn.textContent = '\u25B6 Resume';
+        hint.textContent = 'paused \u2014 review as long as you like';
+      } else {
+        pauseBtn.textContent = '\u23F8 Pause';
+        lastTick = Date.now();
+        tick();
+      }
+    };
     btn.onclick = function () { hideHandEndControls(); o.onNext(); };
     tick();
     handEndTimer = setInterval(tick, 500);

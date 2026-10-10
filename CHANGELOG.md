@@ -65,6 +65,14 @@ footer (`APP_VERSION` in `js/app.js`) and `package.json`.
   removing a deliberate pick; heads-up untouched.
 - Regression check #20 in `tests/coach-scenarios.js`.
 
+### Fixed — hand history shows every player's cards
+- **All hole cards in history, even folded.** Kevin: "i want to see all players
+  hands in history, even if they folded early." `finishHandRecord` now reads
+  every player's hole cards from the table at hand end (engine keeps them
+  until the next hand) instead of only showdown-revealed ones. Netplay
+  unaffected — unknown opponent cards still show "—".
+- Regression check #17 updated in `tests/coach-scenarios.js`.
+
 ## [1.8.70] — 2026-10-10
 
 ### Docs — README upgrades for hiring-manager review

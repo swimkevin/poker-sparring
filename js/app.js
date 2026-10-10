@@ -538,16 +538,16 @@
     // Persist the session so leaving the page doesn't lose the stacks.
     saveSession();
 
-    // Give the result room to breathe: a Next-hand button plus a 10s auto-deal
-    // countdown, so the splash, board, and revealed hands can actually be read.
-    // Skipped (fast-forward) hands stay instant.
+    // Give the result room to breathe: a Next-hand button, a pause button,
+    // and a 13s auto-deal countdown, so the splash, board, and revealed hands
+    // can actually be read. Skipped (fast-forward) hands stay instant.
     if (fastForward) {
       setTimeout(function () { if (table) prepareNextHand(); }, 600);
     } else {
-      // Give the result room to breathe: a Next-hand button plus a 10s auto-deal
-      // countdown, so the board and revealed hands stay readable.
+      // Next-hand + pause buttons plus a 13s auto-deal countdown (v1.8.71:
+      // was 10s; Kevin wanted longer + a pause for hand review).
       UI.showHandEndControls({
-        autoMs: 10000,
+        autoMs: 13000,
         onNext: function () { if (table) prepareNextHand(); },
         onShowHero: hero.folded ? function () { heroShow = true; renderEndTable(); } : null
       });
@@ -1898,13 +1898,18 @@
     threshold += riverPrior;
     // Pot odds in plain English: the price vs the prize, not just a percentage
     // (v1.8.71: beginners couldn't follow the raw "win X% of the time").
+    // When the range is strong, show the ADJUSTED bar explicitly — showing raw
+    // 41% then saying "fold" vs 52% equity was contradictory and confusing
+    // (v1.8.71: Kevin's J4 vs Amogh's big bet).
+    var strongAdj = rangeAdjust > 0.005;
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> \u2014 ' +
       'you need to win <b>' + pct(need2) + '</b> of the time to break even' +
+      ' (win this often and the call pays for itself over time)' +
       (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
-      (rangeAdjust > 0.005 ? ' (more — ' + vName + ' usually has a strong hand)'
+      (strongAdj ? ' — but ' + vName + ' bets big with strong hands, so vs their range you need <b>' + pct(threshold) + '</b>'
         : rangeAdjust < -0.005 ? ' (less — ' + vName + ' plays lots of hands or bluffs)' : '') +
       (riverPrior > 0 ? ' (players bluff the river less than you\'d think)' : '') +
-      ', you win about <b>' + pct(adjEq) + '</b> of the time' +
+      ', and you win about <b>' + pct(adjEq) + '</b> vs that range' +
       '. ' +
       'You don\'t need to defend every hand — folding some is fine. ' +
       riskPremiumNote(rp2);
