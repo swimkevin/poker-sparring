@@ -542,6 +542,9 @@ var UI = (function () {
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
+    // v1.8.87: for raises, need currentBet to compute pot-fraction raise-TO
+    // correctly (was minTo + pot*f, which overshot — Kevin).
+    var currentBet = opts.currentBet || 0;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
     function clamp(v) { return Math.max(minTo, Math.min(maxTo, snap(v))); }
     var panel = $('bet-panel');
@@ -551,7 +554,8 @@ var UI = (function () {
       slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
     }
     function setFromFrac(f) {
-      var target = isRaise ? (minTo + (pot * f)) : (pot * f);
+      // v1.8.87: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
+      var target = isRaise ? (currentBet + (pot * f)) : (pot * f);
       target = clamp(Math.round(target));
       syncSlider(target);
       paint(target);

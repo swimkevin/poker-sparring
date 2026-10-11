@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.87] — 2026-10-11
+
+### Fix bet panel 3/4-pot raise + game lockup (Kevin)
+- 3/4-pot raise used `minTo + pot*0.75` (overshot). Now `currentBet + pot*0.75`,
+  clamped to legal range.
+- If the engine rejects an amount, the game no longer locks up with disabled
+  controls — it re-enables and lets you try again.
+
 ## [1.8.86] — 2026-10-10
 
 ### Fix empty coach recap after losing all-in (Kevin)
