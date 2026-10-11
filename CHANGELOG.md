@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.91] — 2026-10-11
+
+### Coach all-in sizing + Rohan raises monsters (Kevin)
+- Coach said "bet ½ pot (300)" when hero had 885 and was committed. Now
+  shoves instead of suggesting a small fraction when SPR says commit.
+- Rohan had Aces full and only called. Added monsterThrough: with a monster
+  (flush+), his raises now go through the neverRaise gate like a normal person.
+
 ## [1.8.90] — 2026-10-11
 
 ### Bulletproof coach recap — never empty (Kevin)
