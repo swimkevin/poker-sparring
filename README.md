@@ -4,7 +4,7 @@
 
 ▶️ **Live:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1800%2B%20passing-brightgreen)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1450%2B%20passing-brightgreen)
 
 ## Screenshots
 
@@ -32,16 +32,16 @@
 
 ## By the numbers
 
-- **80 versions shipped** (v1.8.80) — iterative, tested releases, not one big bang
-- **1,800+ test assertions** across unit, component, smoke (300 randomized hands), netplay, and worker suites
-- **11 AI opponent archetypes**, each with distinct, exploitable tendencies
+- **97 versions shipped** (v1.8.97) — iterative, tested releases, not one big bang
+- **1,450+ test assertions** across unit, component, smoke, netplay, and worker suites
+- **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
 - **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff
 - **3 live coach-audit rounds** — real hands played, every finding turned into a regression test
 
 ## What it is
 
-An offline-first poker practice app. Play cash games, heads-up, and tournaments against 11 AI opponents — each modeled on a real player archetype (the rock, the calling station, the maniac, Alice the ultra-tight vault) with distinct, exploitable tendencies. A solver-informed coach explains the math behind every decision in plain English. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
+An offline-first poker practice app. Play cash games, heads-up, and tournaments against 14 AI opponents — each modeled on a real player archetype (the rock, the calling station, the maniac, Alice the ultra-tight vault) with distinct, exploitable tendencies. A solver-informed coach explains the math behind every decision in plain English. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
 
 ## Why this stack
 
@@ -64,7 +64,7 @@ An offline-first poker practice app. Play cash games, heads-up, and tournaments 
 
 **Zero-dependency vanilla JS.** No framework, no bundler, no build step. The poker core (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser.
 
-**1,800+ test assertions, 5 layers.** Unit, component, smoke (300 randomized hands), netplay, and worker tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
+**1,450+ test assertions, 5 layers.** Unit, component, smoke (300 randomized hands), netplay, and worker tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
 
 **Real-time multiplayer on Cloudflare Workers.** One Durable Object per room, authoritative game state, per-seat snapshots so hole cards never leak. Auto-reconnect with backoff, host migration if the host drops.
 
@@ -92,7 +92,7 @@ The coach improves through a **human-in-the-loop verification cycle** — real h
 
 **3. Competitive calibration** — Other training tools are studied for what they do better (see `docs/competitive-analysis-2026-10-09.md`). Best ideas are adapted, not copied.
 
-**4. Automated verification** — The unit suite (1,800+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change.
+**4. Automated verification** — The unit suite (1,450+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change.
 
 The coach doesn't rewrite itself — improvements are deliberate, tested, and shipped as versions, like any good training program. When the coach is wrong, that's a bug report, not a shrug.
 
@@ -106,18 +106,23 @@ Shuffled like the pros. Each hand starts with a full 52-card Fisher-Yates shuffl
 - Cash games, heads-up, and tournaments vs 14 AI archetypes — including Alice, the ultra-safe vault who never bluffs, and Donald, the sticky semi-bluffer
 - Custom opponents: tune looseness, aggression, bluff frequency; name them after your friends
 - Session resume: leave mid-session, pick up with the exact same stacks
+- Leave mid-hand, come back to the exact same spot — switching tabs freezes the game (bots, timers, auto-deal countdown) and resumes it untouched
+- Live hand-strength label under your cards ("Two Pair, Eights and Sixes") and a winner line after showdown ("Rohan won with Full House, Aces over Eights")
 - Push/fold trainer with range-based feedback
 - Hand replayer with street-by-street review, training stats (VPIP/PFR/bb/100), leak tracker
 
 **Coach**
 - Every spot explained in plain English: pot odds vs your equity, implied and reverse-implied odds, SPR commitment, minimum defense frequency
 - Tournament-aware: ICM risk premiums near pay jumps, shove-or-fold guidance under 12bb, bubble exploitation for big stacks
-- Exploit adjustments by opponent archetype; post-hand recaps (one praise line, one leak line)
+- Exploit adjustments by opponent archetype; post-hand recaps that grade the hand-defining decision
+- Range reads in plain words, adjusted for the player and the board: "his range is capped — mostly one pair or a draw; a monster would have raised on this draw-heavy board"
 
 **Online with friends**
 - Host a table, share a 6-letter code, up to 8 players
 - Table chat, session ledger, rebuys, sit-out
 - Resilient: auto-reconnect, host migration, spectator mode
+
+**Learn tab.** Hand-rankings table (what beats what, with examples), 8 beginner rules, glossary, and curated books/sites.
 
 **Mobile-first.** Minimalist table layout, always-visible hero cards, thumb-zone controls. No scrolling on game screens.
 

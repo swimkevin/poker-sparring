@@ -131,7 +131,7 @@ function madeStrength(hole, community) {
 }
 
 function detectDraws(hole, community) {
-  // Defensive (v1.8.96): unit tests call bot postflop fns with stub players.
+  // Defensive (v1.8.97): unit tests call bot postflop fns with stub players.
   if (!hole || !community) return { flushDraw: false, oesd: false, gutshot: false, overcards: 0 };
   var cards = hole.concat(community);
   var suitCount = [0, 0, 0, 0];

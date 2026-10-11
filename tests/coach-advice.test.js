@@ -58,12 +58,15 @@ setTimeout(function () {
       'plain-text lines for history use +/- prefixes');
     ok(r.html.indexOf('<script') === -1, 'recap HTML has no script tags');
 
-    // Marginal-only decisions -> no recap (avoid noise).
+    // Marginal-only / zero decisions: coach STILL speaks (v1.8.90, Kevin —
+    // an empty recap after a hand was a bug, never a feature).
     H.setDecisions([{ street: 'flop', advice: 'call', strength: 'marginal',
       lesson: 'x', action: 'call', followed: true }]);
-    ok(H.recap(8) === null, 'no recap when nothing strong happened');
+    var rMarg = H.recap(8);
+    ok(!!rMarg && rMarg.html.indexOf('recap') !== -1, 'recap speaks even when nothing strong happened');
     H.setDecisions([]);
-    ok(H.recap(9) === null, 'no recap with zero decisions');
+    var rZero = H.recap(9);
+    ok(!!rZero && rZero.html.indexOf('Tough loss') !== -1, 'recap speaks with zero decisions (tough-loss line)');
 
     // adviceFollowed: bet/raise interchangeable, everything else exact.
     ok(H.adviceFollowed('bet', 'raise') && H.adviceFollowed('raise', 'bet'),
@@ -83,7 +86,7 @@ setTimeout(function () {
     H.setDecisions([{ street: 'river', advice: 'fold', strength: 'strong',
       lesson: 'Folding saves chips.', action: 'raise', followed: false }]);
     var rWin = H.recap(11, true, true);
-    ok(rWin.html.indexOf('Bluff worked') !== -1, 'bluff win praised even when coach ignored');
+    ok(rWin.html.indexOf('Everyone folded') !== -1, 'bluff win praised even when coach ignored');
     ok(rWin.html.indexOf('tighten up') === -1, 'no lecture when the bluff worked');
     var rWin2 = H.recap(12, true, false);
     ok(rWin2.html.indexOf('You won the hand') !== -1, 'showdown win praised even when coach ignored');

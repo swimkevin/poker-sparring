@@ -3,6 +3,41 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.97] — 2026-10-11
+
+### Winner highlight + winner line fix (Kevin)
+- At showdown the winning best-5 cards now lift with a gold ring — the
+  winner's hole cards plus the board cards that make the hand — while the
+  rest of the board and the losers' cards dim, casino-style. The winner's
+  seat ring turned gold (was green, hard to see on the felt).
+- Bug found by the new test: the "X won with ..." line under the hero
+  cards was overwritten by the hand-end render the instant it was set —
+  it now applies after the render, so it actually stays visible.
+- Rebuy bug (Kevin): after rebuying, the top-right win/loss counter read
+  0 for the whole next hand — the Rebuy button zeroed it instead of
+  refreshing from lifetime stats. Fixed; the rebuy itself still isn't
+  counted as profit.
+
+### Shark discipline (Kevin)
+- Shark called pot-sized+ bets multiway with no pair — Monte Carlo equity
+  vs random hands plus the stack discount talked him into it. Disciplined
+  players (Shark, Pro) now fold no-pair hands at those prices outright:
+  need >= 0.30 multiway, >= 0.40 heads-up. His preflop calling tightened
+  too (callTier 4 -> 3). He still defends top pair at the same price and
+  still calls small bets heads-up with overcards.
+
+### Cleanup round (Kevin)
+- README refreshed with accurate numbers (97 versions, 14 archetypes,
+  1,450+ assertions) and the new features (hand label + winner line,
+  mid-hand freeze/resume, range reads, Learn rankings).
+- Removed the dead range.words rendering (replaced by concrete range
+  reads) and fixed three coach-advice tests that predated the
+  never-empty-recap rule.
+- New permanent tests: tests/live-loop-test.js (`npm run livetest`) plays
+  10 full hands in the real app (jsdom), hero calling/checking to the
+  river, asserting the coach speaks on every turn, the hand label shows
+  postflop, and no JS errors occur.
+
 ## [1.8.96] — 2026-10-11
 
 ### swimkev's iso identity + coach range reads (Kevin)

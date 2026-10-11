@@ -4,7 +4,7 @@ var UI = (function () {
   function $(id) { return document.getElementById(id); }
 
   // Screen-change listener (app.js conducts): notified on every showScreen
-  // so the game can freeze while the user is on another tab (v1.8.96).
+  // so the game can freeze while the user is on another tab (v1.8.97).
   var screenListener = null;
   function setScreenListener(fn) { screenListener = fn; }
 
@@ -514,7 +514,7 @@ var UI = (function () {
       if (table.bbIdx === 0) hb += ' <span class="pos-badge bb">BB</span>';
       hi.innerHTML = escapeHtml(hero.name) + ' · ' + fmt(hero.stack) + hb;
     }
-    // Hero hand strength (v1.8.96, PokerNow-style): what you currently hold.
+    // Hero hand strength (v1.8.97, PokerNow-style): what you currently hold.
     // Postflop: full description ("Two Pair, Eights and Sixes"). Preflop:
     // only a pocket pair is a made hand worth naming.
     var hd = $('hero-hand-desc');
@@ -564,7 +564,7 @@ var UI = (function () {
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
-    // v1.8.96: for raises, need currentBet to compute pot-fraction raise-TO
+    // v1.8.97: for raises, need currentBet to compute pot-fraction raise-TO
     // correctly (was minTo + pot*f, which overshot — Kevin).
     var currentBet = opts.currentBet || 0;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
@@ -576,7 +576,7 @@ var UI = (function () {
       slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
     }
     function setFromFrac(f) {
-      // v1.8.96: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
+      // v1.8.97: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
       var target = isRaise ? (currentBet + (pot * f)) : (pot * f);
       target = clamp(Math.round(target));
       syncSlider(target);
@@ -629,6 +629,46 @@ var UI = (function () {
     if (!html) { c.hidden = true; return; }
     c.hidden = false;
     c.innerHTML = '<div class="coach-head">Coach</div>' + html;
+  }
+
+  // Winner highlight (v1.8.97, Kevin): at showdown, lift the winning best-5
+  // cards — the winner's hole cards plus the board cards that make the hand
+  // — and dim everything else, casino-style, so the winning hand reads at a
+  // glance. Fold wins have no best5: the gold seat ring (renderTable) is the
+  // highlight there. Classes are re-derived on every call, so re-renders
+  // (e.g. "Show my hand") can simply call it again.
+  function highlightWin(table, results) {
+    var all = document.querySelectorAll('.card-win, .card-dim');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('card-win', 'card-dim');
+    var showdown = (results || []).filter(function (w) { return !w.uncalled && !w.byFold && w.best5; });
+    if (!showdown.length || !table) return;
+    function key(c) { return 'U' + c.r + '-' + c.s; }
+    var boardKeys = {};
+    table.community.forEach(function (c) { boardKeys[key(c)] = true; });
+    var winBoard = {}, winHole = {}; // idx -> {key: true}
+    showdown.forEach(function (w) {
+      var inBoard = {}, inHole = {};
+      w.best5.forEach(function (c) {
+        if (boardKeys[key(c)]) inBoard[key(c)] = true; else inHole[key(c)] = true;
+      });
+      Object.keys(inBoard).forEach(function (k) { winBoard[k] = true; });
+      (w.winners || [w.idx]).forEach(function (idx) {
+        winHole[idx] = winHole[idx] || {};
+        Object.keys(inHole).forEach(function (k) { winHole[idx][k] = true; });
+      });
+    });
+    var comm = $('community');
+    if (comm) for (var b = 0; b < comm.children.length; b++) {
+      comm.children[b].classList.add(winBoard[comm.children[b]._ckey] ? 'card-win' : 'card-dim');
+    }
+    table.players.forEach(function (p, idx) {
+      var box = p.isHero ? $('hero-cards') : (function () { var s = $('seat-' + idx); return s ? s.querySelector('.pcards') : null; })();
+      if (!box) return;
+      var mine = winHole[idx] || {};
+      for (var j = 0; j < box.children.length; j++) {
+        box.children[j].classList.add(mine[box.children[j]._ckey] ? 'card-win' : 'card-dim');
+      }
+    });
   }
 
   // Amount the hero (player 0) actually won in a handEnd event: sums each pot
@@ -733,7 +773,7 @@ var UI = (function () {
     row.appendChild(pauseBtn);
     var ms = o.autoMs || 8000;
     var remaining = ms, lastTick = Date.now(), paused = false;
-    // Away-pause (v1.8.96): user switched to another tab mid-review — the
+    // Away-pause (v1.8.97): user switched to another tab mid-review — the
     // countdown freezes exactly where it was until they come back.
     var away = false;
     handEndAwayCtl = {
@@ -1391,6 +1431,7 @@ var UI = (function () {
     cardEl: cardEl, cardBackEl: cardBackEl,
     setControls: setControls, disableControls: disableControls, openBetPanel: openBetPanel,
     log: log, clearLog: clearLog, coachTip: coachTip, winnerBanner: winnerBanner, modal: modal,
+    highlightWin: highlightWin,
     showHandEndControls: showHandEndControls, hideHandEndControls: hideHandEndControls,
     setHandEndAway: setHandEndAway,
     handWinAmount: handWinAmount, firstWinnersTotal: firstWinnersTotal,

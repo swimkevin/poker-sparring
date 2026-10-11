@@ -178,7 +178,12 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   animation: think-pulse 0.9s ease-in-out infinite;
 }
 @keyframes think-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
-.seat.winner { border-color: var(--green); box-shadow: 0 0 14px rgba(63, 185, 80, 0.6); }
+.seat.winner { border-color: var(--gold); box-shadow: 0 0 16px rgba(230, 190, 60, 0.8); }
+.seat.winner .pname { color: var(--gold); }
+/* Winning cards lift (v1.8.97): best-5 rises with a gold ring, rest dims. */
+.card { transition: transform 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease; }
+.card.card-win { transform: translateY(-9px) scale(1.07); box-shadow: 0 0 0 2px var(--gold), 0 12px 20px rgba(0,0,0,0.5); z-index: 3; }
+.card.card-dim { opacity: 0.35; }
 .seat.out { opacity: 0.25; }
 .dealer-btn {
   position: absolute; right: -12px; top: -12px; background: #fff; color: #000;

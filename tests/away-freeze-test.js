@@ -32,7 +32,7 @@ function $(id) { return d.getElementById(id); }
 function snap() {
   return JSON.stringify({
     pot: ($('pot-display') || {}).textContent || '',
-    board: d.querySelectorAll('#board .card').length,
+    board: d.querySelectorAll('#community .card').length,
     hero: ($('hero-info') || {}).textContent || '',
     seats: Array.prototype.map.call(d.querySelectorAll('.seat .stack'), function (e) { return e.textContent; }).join('|'),
     status: ($('turn-status') || {}).textContent || ''

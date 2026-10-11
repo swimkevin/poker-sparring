@@ -18,10 +18,11 @@
   "name": "poker-sparring",
   "scripts": {
     "serve": "python3 -m http.server 8000",
-    "test": "node tests/test.js && node tests/component.test.js && node tests/smoke.js && node tests/netplay.test.js && node tests/worker.test.js && node tests/update-flow.test.js && node tests/coach-advice.test.js && node tests/coach-scenarios.js && node tests/session.test.js && node tests/sidepot-stress.js && node tests/allin-stress.js && node tests/hero-desc-test.js && node tests/away-freeze-test.js && node tests/alice-defense-test.js && node tests/swimkev-iso-test.js && node tests/pot-merge-test.js",
+    "livetest": "node tests/live-loop-test.js",
+    "test": "node tests/test.js && node tests/component.test.js && node tests/smoke.js && node tests/netplay.test.js && node tests/worker.test.js && node tests/update-flow.test.js && node tests/coach-advice.test.js && node tests/coach-scenarios.js && node tests/session.test.js && node tests/sidepot-stress.js && node tests/allin-stress.js && node tests/hero-desc-test.js && node tests/away-freeze-test.js && node tests/alice-defense-test.js && node tests/swimkev-iso-test.js && node tests/pot-merge-test.js && node tests/shark-discipline-test.js && node tests/winner-highlight-test.js",
     "test:smoke": "node tests/smoke.js",
     "test:component": "node tests/component.test.js",
     "test:unit": "node tests/test.js"
   },
-  "version": "1.8.96"
+  "version": "1.8.97"
 }
