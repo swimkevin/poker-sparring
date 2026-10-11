@@ -308,3 +308,12 @@ console.log('\n24. v1.8.83: uncalled refund is not a "win"');
   ok(appSrc.includes("if (w.uncalled) return; // refund, not a win"),
      'heroWon skips uncalled pots');
 }
+
+console.log('\n25. v1.8.84: default rosters include Donald, use lag id, no station');
+{
+  const appSrc = require('fs').readFileSync('js/app.js', 'utf8');
+  ok(appSrc.includes("['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'shark']"),
+     'cash defaults: donald in, lag (swimkev) by id, station out');
+  ok(!appSrc.includes("'swimkev', 'rohan'"),
+     'no stale swimkev id in defaults');
+}

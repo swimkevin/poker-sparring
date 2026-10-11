@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.84] — 2026-10-10
+
+### Fix default roster: Donald in, Station out, swimkev id (Kevin)
+- Cash defaults were `['alice','swimkev',...]` — but the bot named "swimkev"
+  has id `'lag'`, so `botById('swimkev')` failed silently and only 6 loaded.
+- New cash: Alice, Donald, swimkev(lag), Rohan, Amogh, Nathan, Shark.
+- Station removed from defaults. Same fix for tourney.
+
 ## [1.8.83] — 2026-10-10
 
 ### Fix: coach "You won!" when hero actually lost (live QA)
