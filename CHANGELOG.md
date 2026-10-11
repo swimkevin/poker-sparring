@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.90] — 2026-10-11
+
+### Bulletproof coach recap — never empty (Kevin)
+- Won at showdown with no recorded strong decision → empty recap.
+- Added catch-all: if no branch fires, show generic win/loss message.
+- Coach now ALWAYS says something after every hand.
+
 ## [1.8.89] — 2026-10-11
 
 ### Fix "Rohan bluffs constantly" bad advice (Kevin's screenshot)
