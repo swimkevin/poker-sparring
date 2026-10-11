@@ -264,7 +264,7 @@ function villainBluffy(archetype) {
 // One-line exploit per bot id; custom bots get a read from their sliders.
 var EXPLOIT_LINES = {
   lag: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
-  rohan: 'calling station — calls everything, raises nothing. Value bet big, never bluff',
+  rohan: 'calling station — calls everything, rarely raises. Value bet big; he bluffs sometimes so don\'t auto-fold to his bets',
   amogh: 'straightforward — bombs pots with real hands. Let him bet into you, don\'t bluff-catch light',
   nathan: 'trap player — never raises before the river. Value bet relentlessly, believe his river bet',
   grinder: 'tight-aggressive — steal blinds deep, never pay off a shove light',
@@ -275,7 +275,7 @@ var EXPLOIT_LINES = {
   rock: 'rock — only plays monsters. Steal his blinds, fold when he bets',
   alice: 'never bluffs — believe every bet, steal her blinds relentlessly',
   swimkev: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
-  donald: 'tight but sticky — folds preflop, never folds postflop. Respect his bets (often a draw); steal his blinds'
+  donald: 'tight but sticky — folds preflop, never folds postflop. His bets are often draws or big overbets when ahead; steal his blinds, don\'t try to push him off'
 };
 function exploitLine(archetype) {
   var a = archetype || {};

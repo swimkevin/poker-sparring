@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.79] — 2026-10-10
+
+### Exploit lines match new playstyles
+- Rohan: "he bluffs sometimes so don't auto-fold" (was "never bluff").
+- Donald: "His bets are often draws or big overbets when ahead".
+
 ## [1.8.78] — 2026-10-10
 
 ### Donald: semi-bluffs + Amogh-style bombs (Kevin)
