@@ -269,10 +269,12 @@ console.log('\n20. v1.8.75: no "great spot to raise" after a raise; full exploit
 console.log('\n21. v1.8.76: Rohan bluffs sometimes, Donald bot exists');
 {
   const botSrc = require('fs').readFileSync('js/bots.js', 'utf8');
-  // Rohan: bluffThrough lets occasional bluffs through neverRaise gate
-  ok(botSrc.includes("bluffThrough: 0.30"), 'rohan has bluffThrough');
-  ok(botSrc.includes("A.bluffThrough && Math.random() < A.bluffThrough"),
-    'neverRaise gate respects bluffThrough');
+  // Rohan: 15% bluff (bluff 0.68 * 0.22), bluffs pass neverRaise gate
+  ok(botSrc.includes("bluffThrough: 1.0"), 'rohan bluffs pass gate');
+  ok(botSrc.includes("mv.bluff && A.bluffThrough"),
+    'neverRaise gate checks bluff flag');
+  // Donald: 25% bluff (bluff 1.0 * 0.22 = 22% heads-up)
+  ok(/id: 'donald'[\s\S]*?bluff: 1\.0/.test(botSrc), 'donald bluffs 25%');
   // Donald: right below Alice, tighter than Rohan, sticky + semi-bluffs
   var aliceIdx = botSrc.indexOf("id: 'alice'");
   var donaldIdx = botSrc.indexOf("id: 'donald'");

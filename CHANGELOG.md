@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.77] — 2026-10-10
+
+### Bluff tuning (Kevin)
+- **Rohan bluffs 15%.** Bluff moves flagged (`mv.bluff`); neverRaise gate
+  lets bluffs through. Still a calling station otherwise.
+- **Donald bluffs ~25%.** Bluff param 1.0 (22% heads-up after scaling).
+
 ## [1.8.76] — 2026-10-10
 
 ### New bots + Rohan bluffs (Kevin's request)

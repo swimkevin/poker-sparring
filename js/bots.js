@@ -35,10 +35,10 @@ var ARCHETYPES = [
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
     tagline: 'Tight but sticky. Folds a lot preflop, never folds postflop.',
-    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light and fires semi-bluffs with draws (v1.8.76, Kevin's request). If Donald is betting, he usually has a draw or better.',
+    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light and fires semi-bluffs with draws (v1.8.77, Kevin's request). If Donald is betting, he usually has a draw or better.',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
-    aggression: 0.45, bluff: 0.20, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
+    aggression: 0.45, bluff: 1.0, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
     tiltProne: 0.25, rebuy: 0.70,
     friendly: true,
   },
@@ -55,12 +55,12 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
-    desc: 'Loose-passive: plays ~40%+ of hands, rarely raises and never 3-bets. Mostly calls you down light with just a pair — but sometimes throws in a random bluff to keep you honest (v1.8.76). Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
+    desc: 'Loose-passive: plays ~40%+ of hands, rarely raises and never 3-bets. Mostly calls you down light with just a pair — but sometimes throws in a random bluff to keep you honest (v1.8.77). Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
     beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 1,
-    aggression: 0.05, bluff: 0.12, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
+    aggression: 0.05, bluff: 0.68, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
     tiltProne: 0.40, rebuy: 0.80,
-    neverRaise: true, bluffThrough: 0.30
+    neverRaise: true, bluffThrough: 1.0
   },
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
@@ -257,11 +257,11 @@ function botDecide(table, p) {
   // bet/raise into a check (when free) or a call. This single gate covers
   // 3-bets, 4-bets, bluffs and shoves, so no raise path can leak through.
   // Nathan is exempt on the river, where his trap springs (see botPostflop).
-  // v1.8.76: bluffThrough lets occasional bluffs leak (Rohan sometimes
+  // v1.8.77: bluffThrough lets occasional bluffs leak (Rohan sometimes
   // randomly bluffs — Kevin).
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
       !(A.riverTrap && table.street === 'river') &&
-      !(A.bluffThrough && Math.random() < A.bluffThrough)) {
+      !(mv.bluff && A.bluffThrough && Math.random() < A.bluffThrough)) {
     var legal = table.legalActions(p.idx);
     mv = legal.canCheck ? { a: 'check' } : { a: 'call' };
   }
@@ -462,7 +462,7 @@ function botPostflop(table, p, A) {
     // Standard c-bet/value sizing: half-pot to three-quarter-pot.
     if (eq > betLine || ms > 0.74) return betSized(0.5 + A.aggression * 0.25);
     var bluffP = A.bluff * (liveOpp === 1 ? 0.22 : 0.10) * (street === 'river' ? 1 : 0.55);
-    if (Math.random() < bluffP && ms < 0.55) return betSized(0.65);
+    if (Math.random() < bluffP && ms < 0.55) { var bmv = betSized(0.65); bmv.bluff = true; return bmv; }
     return { a: 'check' };
   }
 
@@ -510,8 +510,10 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
     if (ms > 0.78 && Math.random() < 0.45) return shove(); // monster bomb
     var over = clampRaise(table, p, legal, pot * (1.5 + Math.random()));
     if (over == null) return { a: 'check' };
-    if (over >= legal.maxRaiseTo * 0.97) return shove();
-    return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: over };
+    if (over >= legal.maxRaiseTo * 0.97) { var smv = shove(); if (!wantsBet) smv.bluff = true; return smv; }
+    var omv = { a: table.currentBet === 0 ? 'bet' : 'raise', amount: over };
+    if (!wantsBet) omv.bluff = true;
+    return omv;
   }
   // Facing a bet: shove over the top with a monster, else standard logic.
   if (ms > 0.78 && Math.random() < 0.6 && legal.canRaise) return shove();
