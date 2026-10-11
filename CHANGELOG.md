@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.76] — 2026-10-10
+
+### New bots + Rohan bluffs (Kevin's request)
+- **Rohan sometimes randomly bluffs.** Was pure calling station
+  (`neverRaise` blocked everything). Now `bluffThrough: 0.30` lets ~30% of
+  his rare aggressive moves through — mostly bluffs. Still calls everything.
+- **New bot: Donald 🦆** (right below Alice). Tighter than Rohan preflop
+  (openTier 2/3), but once in a pot he never folds (stubborn 0.90) and
+  fires semi-bluffs with draws (bluff 0.20).
+
 ## [1.8.75] — 2026-10-10
 
 ### Fixed — contradiction + richer player reads (Kevin's screenshots)

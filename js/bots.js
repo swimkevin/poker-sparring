@@ -33,6 +33,16 @@ var ARCHETYPES = [
     friendly: true,
   },
   {
+    id: 'donald', name: 'Donald', emoji: '🦆',
+    tagline: 'Tight but sticky. Folds a lot preflop, never folds postflop.',
+    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light and fires semi-bluffs with draws (v1.8.76, Kevin's request). If Donald is betting, he usually has a draw or better.',
+    beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
+    openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
+    aggression: 0.45, bluff: 0.20, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
+    tiltProne: 0.25, rebuy: 0.70,
+    friendly: true,
+  },
+  {
     id: 'lag', name: 'swimkev', emoji: '🏊',
     tagline: 'Wild and unpredictable — wins big or rebuys instantly.',
     desc: 'Loose-aggressive skilled: ~35% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
@@ -44,13 +54,13 @@ var ARCHETYPES = [
   },
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
-    tagline: 'Straightforward and safe. Calls everything, raises nothing.',
-    desc: 'Loose-passive: plays ~40%+ of hands but never raises and never 3-bets — the neverRaise flag converts every aggressive action into a check or a call. Rarely bluffs, but will call you down light with just a pair. Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
-    beat: 'Value bet thin — he will call with worse. Never bluff him; he does not fold pairs.',
+    tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
+    desc: 'Loose-passive: plays ~40%+ of hands, rarely raises and never 3-bets. Mostly calls you down light with just a pair — but sometimes throws in a random bluff to keep you honest (v1.8.76). Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
+    beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 1,
-    aggression: 0.05, bluff: 0.05, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
+    aggression: 0.05, bluff: 0.12, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
     tiltProne: 0.40, rebuy: 0.80,
-    neverRaise: true
+    neverRaise: true, bluffThrough: 0.30
   },
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
@@ -247,8 +257,11 @@ function botDecide(table, p) {
   // bet/raise into a check (when free) or a call. This single gate covers
   // 3-bets, 4-bets, bluffs and shoves, so no raise path can leak through.
   // Nathan is exempt on the river, where his trap springs (see botPostflop).
+  // v1.8.76: bluffThrough lets occasional bluffs leak (Rohan sometimes
+  // randomly bluffs — Kevin).
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
-      !(A.riverTrap && table.street === 'river')) {
+      !(A.riverTrap && table.street === 'river') &&
+      !(A.bluffThrough && Math.random() < A.bluffThrough)) {
     var legal = table.legalActions(p.idx);
     mv = legal.canCheck ? { a: 'check' } : { a: 'call' };
   }

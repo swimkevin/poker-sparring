@@ -265,3 +265,21 @@ console.log('\n20. v1.8.75: no "great spot to raise" after a raise; full exploit
   ok(src.includes("exploitLine(A)"),
     'table bullets use full exploit lines');
 }
+
+console.log('\n21. v1.8.76: Rohan bluffs sometimes, Donald bot exists');
+{
+  const botSrc = require('fs').readFileSync('js/bots.js', 'utf8');
+  // Rohan: bluffThrough lets occasional bluffs through neverRaise gate
+  ok(botSrc.includes("bluffThrough: 0.30"), 'rohan has bluffThrough');
+  ok(botSrc.includes("A.bluffThrough && Math.random() < A.bluffThrough"),
+    'neverRaise gate respects bluffThrough');
+  // Donald: right below Alice, tighter than Rohan, sticky + semi-bluffs
+  var aliceIdx = botSrc.indexOf("id: 'alice'");
+  var donaldIdx = botSrc.indexOf("id: 'donald'");
+  var lagIdx = botSrc.indexOf("id: 'lag'");
+  ok(donaldIdx > aliceIdx && donaldIdx < lagIdx, 'donald sits below alice');
+  ok(botSrc.includes("stubborn: 0.90") && botSrc.includes("id: 'donald'"),
+    'donald is sticky (stubborn 0.90)');
+  const eqSrc = require('fs').readFileSync('js/equity.js', 'utf8');
+  ok(eqSrc.includes("donald:"), 'donald has exploit line');
+}

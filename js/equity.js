@@ -274,7 +274,8 @@ var EXPLOIT_LINES = {
   maniac: 'maniac — raises everything. Trap strong hands, call down lighter, never bluff',
   rock: 'rock — only plays monsters. Steal his blinds, fold when he bets',
   alice: 'never bluffs — believe every bet, steal her blinds relentlessly',
-  swimkev: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light'
+  swimkev: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
+  donald: 'tight but sticky — folds preflop, never folds postflop. Respect his bets (often a draw); steal his blinds'
 };
 function exploitLine(archetype) {
   var a = archetype || {};
