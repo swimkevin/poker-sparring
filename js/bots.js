@@ -36,7 +36,7 @@ var ARCHETYPES = [
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
     tagline: 'Tight but sticky. Folds a lot preflop, never folds postflop.',
-    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.92).',
+    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.93).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
     aggression: 0.45, bluff: 1.0, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
@@ -56,7 +56,7 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
-    desc: 'Loose-passive: plays lots of hands, rarely raises and never 3-bets. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.92).',
+    desc: 'Loose-passive: plays lots of hands, rarely raises and never 3-bets. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.93).',
     beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.68, stubborn: 0.65, pushTier: 4, callPushTier: 3, limp: 0.9,
@@ -66,7 +66,7 @@ var ARCHETYPES = [
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
     tagline: 'Bombs every pot the moment he likes his hand.',
-    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with any pair or better to take down small pots, and shoves all-in with monsters (QQ+/AKs) when the moment feels right. Value-heavy, not bluff-heavy — the sizing is the weapon, and it is a blast to play against. Some days Amogh gets super lucky and wins huge; other days he could not catch a card with a net. You never know which Amogh showed up today.',
+    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with strong hands to take down pots, and shoves all-in with monsters (QQ+/AKs). But he plays it more normal now: pairs usually check down to see the river, and he only bluff-shoves with a real draw (semi-bluff), never pure air (v1.8.93).',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
@@ -258,7 +258,7 @@ function botDecide(table, p) {
   // bet/raise into a check (when free) or a call. This single gate covers
   // 3-bets, 4-bets, bluffs and shoves, so no raise path can leak through.
   // Nathan is exempt on the river, where his trap springs (see botPostflop).
-  // v1.8.92: bluffThrough lets occasional bluffs leak (Rohan sometimes
+  // v1.8.93: bluffThrough lets occasional bluffs leak (Rohan sometimes
   // randomly bluffs — Kevin).
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
       !(A.riverTrap && table.street === 'river') &&
@@ -450,7 +450,7 @@ function botPostflop(table, p, A) {
     return alicePostflop(table, p, A, legal, toCall, pot, eq, ms);
   }
   // Donald: semi-bluffs draws often; bombs big when ahead but vulnerable
-  // (like Amogh) instead of small value bets (v1.8.92, Kevin).
+  // (like Amogh) instead of small value bets (v1.8.93, Kevin).
   if (A.id === 'donald') {
     var dmv = donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street);
     if (dmv) return dmv;
@@ -508,17 +508,40 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
     return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
   }
   if (toCall === 0) {
-    var betLine = 0.62 - A.aggression * 0.22 + (street === 'river' ? 0.04 : 0);
+    // v1.8.93 (Kevin): more normal Amogh. Pairs check down to see the river;
+    // bluffs only with a draw (semi-bluff), never pure air all-ins.
+    var betLine = 0.62 - A.aggression * 0.12 + (street === 'river' ? 0.04 : 0);
     var wantsBet = eq > betLine || ms > 0.74;
+    var d = detectDraws(p.hole, table.community);
+    var hasDraw = d.flushDraw || d.oesd;
+    // Pair-range pot control: one pair / weak two pair usually checks down
+    // to see the next card instead of bombing (Kevin). River: value bet ok.
+    if (ms >= 0.3 && ms <= 0.6 && street !== 'river' && !hasDraw &&
+        Math.random() < 0.7) {
+      return { a: 'check' };
+    }
     if (!wantsBet) {
-      var bluffP = A.bluff * (liveOpp === 1 ? 0.22 : 0.10) * (street === 'river' ? 1 : 0.55);
-      if (!(Math.random() < bluffP && ms < 0.55)) return { a: 'check' };
+      // Medium hands (pair+) pot-control: check and see the next card.
+      if (ms >= 0.3) return { a: 'check' };
+      // Semi-bluff only: needs a real draw to fire.
+      var bluffP = A.bluff * (liveOpp === 1 ? 0.30 : 0.12) * (street === 'river' ? 1 : 0.55);
+      if (!(hasDraw && Math.random() < bluffP && ms < 0.55)) return { a: 'check' };
     }
     if (!legal.canBet && !legal.canRaise) return { a: 'check' };
     if (ms > 0.78 && Math.random() < 0.45) return shove(); // monster bomb
     var over = clampRaise(table, p, legal, pot * (1.5 + Math.random()));
     if (over == null) return { a: 'check' };
-    if (over >= legal.maxRaiseTo * 0.97) { var smv = shove(); if (!wantsBet) smv.bluff = true; return smv; }
+    if (over >= legal.maxRaiseTo * 0.97) {
+      // All-in only for value or a draw semi-bluff — never pure air (Kevin).
+      if (!wantsBet && !hasDraw) {
+        var capped = clampRaise(table, p, legal, pot * 1.2);
+        if (capped == null) return { a: 'check' };
+        var cmv = { a: table.currentBet === 0 ? 'bet' : 'raise', amount: capped };
+        cmv.bluff = true;
+        return cmv;
+      }
+      var smv = shove(); if (!wantsBet) smv.bluff = true; return smv;
+    }
     var omv = { a: table.currentBet === 0 ? 'bet' : 'raise', amount: over };
     if (!wantsBet) omv.bluff = true;
     return omv;
@@ -528,7 +551,7 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
   return null;
 }
 
-// Donald's postflop (v1.8.92, Kevin): semi-bluffs draws often; when ahead
+// Donald's postflop (v1.8.93, Kevin): semi-bluffs draws often; when ahead
 // but vulnerable (top pair good kicker+ on a wet board), bombs big like
 // Amogh to take it down now instead of small value betting. Returns a move
 // or null to fall through to standard logic.

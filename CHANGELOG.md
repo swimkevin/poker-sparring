@@ -3,6 +3,15 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.93] — 2026-10-11
+
+### Amogh plays more normal (Kevin)
+- Was too loose + bluff-heavy with crazy all-ins. Now:
+- Pairs (one pair / weak two pair) usually check down to see the river
+  instead of bombing.
+- Bluffs only as semi-bluffs with a real draw (flush draw / open-ender) —
+  never a pure-air all-in. Overbet line raised (bets strong hands only).
+
 ## [1.8.92] — 2026-10-11
 
 ### New features for beginners (Kevin)
