@@ -4,7 +4,13 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __commonJS = (cb, mod) => function __require() {
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
+var __commonJS = (cb, mod) => function __require2() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   } catch (e) {
@@ -70,13 +76,54 @@ var require_cards = __commonJS({
         for (var r = 2; r <= 14; r++) d.push({ r, s });
       return d;
     }
+    var _getU32 = null;
+    function getU32() {
+      if (_getU32) return _getU32();
+      if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        var buf = new Uint32Array(1);
+        _getU32 = function() {
+          crypto.getRandomValues(buf);
+          return buf[0];
+        };
+      } else if (typeof __require !== "undefined" && typeof module !== "undefined" && module.exports) {
+        try {
+          var nodeCrypto = __require("crypto");
+          if (nodeCrypto && nodeCrypto.randomInt) {
+            _getU32 = function() {
+              return nodeCrypto.randomInt(0, 4294967296);
+            };
+          }
+        } catch {
+        }
+      }
+      if (!_getU32) _getU32 = function() {
+        return Math.floor(Math.random() * 4294967296);
+      };
+      return _getU32();
+    }
+    function randInt(n) {
+      var limit = Math.floor(4294967296 / n) * n;
+      var x;
+      do {
+        x = getU32();
+      } while (x >= limit);
+      return x % n;
+    }
     function shuffle(a, rng) {
-      rng = rng || Math.random;
-      for (var i = a.length - 1; i > 0; i--) {
-        var j = Math.floor(rng() * (i + 1));
-        var t = a[i];
-        a[i] = a[j];
-        a[j] = t;
+      if (typeof rng === "function") {
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(rng() * (i + 1));
+          var t = a[i];
+          a[i] = a[j];
+          a[j] = t;
+        }
+        return a;
+      }
+      for (var k = a.length - 1; k > 0; k--) {
+        var m = randInt(k + 1);
+        var u = a[k];
+        a[k] = a[m];
+        a[m] = u;
       }
       return a;
     }
@@ -98,7 +145,9 @@ var require_cards = __commonJS({
         cardsName,
         makeDeck,
         shuffle,
-        sortCardsDesc
+        sortCardsDesc,
+        getU32,
+        randInt
       };
     }
   }
@@ -109,11 +158,10 @@ var require_evaluator = __commonJS({
   "js/evaluator.js"(exports, module) {
     if (typeof module !== "undefined" && module.exports) {
       __cards = require_cards();
-      rankName = __cards.rankName, rankChar = __cards.rankChar;
+      rankName = __cards.rankName;
     }
     var __cards;
     var rankName;
-    var rankChar;
     var CATEGORY_NAMES = [
       "High Card",
       "Pair",
@@ -160,7 +208,7 @@ var require_evaluator = __commonJS({
       }).sort(function(a, b) {
         return b.c - a.c || b.r - a.r;
       });
-      var g = groups, kick;
+      var g = groups;
       if (flush && straightHigh)
         return pack(8, [straightHigh], cards);
       if (g[0].c === 4)
@@ -204,7 +252,6 @@ var require_evaluator = __commonJS({
             return b.r - a.r || b.s - a.s;
           }).slice(0, 5);
         } else {
-          var counts2 = {};
           kickers.forEach(function(rk, idx) {
             var n = cat === 7 && idx === 0 ? 4 : cat === 6 ? idx === 0 ? 3 : 2 : cat === 3 && idx === 0 ? 3 : cat === 2 && idx < 2 ? 2 : cat === 1 && idx === 0 ? 2 : 1;
             take(rk, n);
@@ -233,7 +280,8 @@ var require_evaluator = __commonJS({
         return String(r);
       };
       function plural(r) {
-        return rn(r) + "s";
+        var n = rn(r);
+        return n === "Six" ? "Sixes" : n + "s";
       }
       switch (ev.cat) {
         case 8:
@@ -334,7 +382,7 @@ var require_engine = __commonJS({
         this.eventQueue.push(evt);
         try {
           this.onEvent(evt);
-        } catch (e) {
+        } catch {
         }
       }
       drainEvents() {
@@ -542,6 +590,7 @@ var require_engine = __commonJS({
           return self.canAct(p);
         });
         if (actors.length === 0) return true;
+        if (actors.length === 1 && actors[0].bet >= self.currentBet) return true;
         return actors.every(function(p) {
           return p.acted && p.bet === self.currentBet;
         });
@@ -612,7 +661,17 @@ var require_engine = __commonJS({
           if (amount > 0) pots.push({ amount, eligible, level: L, prev });
           prev = L;
         });
-        return pots;
+        var merged = [];
+        pots.forEach(function(pot) {
+          var last = merged[merged.length - 1];
+          if (last && last.eligible.length === pot.eligible.length && last.eligible.every(function(v, i) {
+            return v === pot.eligible[i];
+          })) {
+            last.amount += pot.amount;
+            last.level = pot.level;
+          } else merged.push(pot);
+        });
+        return merged;
       }
       _showdown() {
         var self = this;
@@ -731,6 +790,8 @@ var require_room_server = __commonJS({
         this.lastResult = null;
         this.champion = null;
         this.recent = [];
+        this.chat = [];
+        this.shownHands = {};
         this.closed = false;
         this.onEvent = opts.onEvent || function() {
         };
@@ -742,7 +803,7 @@ var require_room_server = __commonJS({
         evt.room = this.code;
         try {
           this.onEvent(evt);
-        } catch (e) {
+        } catch {
         }
       }
       _pushRecent(s) {
@@ -770,7 +831,8 @@ var require_room_server = __commonJS({
         }).length;
       }
       // ---------- lobby ----------
-      addPlayer(clientId, name) {
+      addPlayer(clientId, name, opts) {
+        opts = opts || {};
         name = String(name == null ? "" : name).trim().slice(0, MAX_NAME_LEN);
         if (!name) return { ok: false, error: "Enter a name to join." };
         var existing = this.playerByClientId(clientId);
@@ -797,7 +859,7 @@ var require_room_server = __commonJS({
           break;
         }
         var isHost = this.players.length === 0;
-        this.players.push({ clientId, name, seat, stack: this.config.startingStack, connected: true, isHost, sittingOut: false });
+        this.players.push({ clientId, name, seat, stack: this.config.startingStack, connected: true, isHost, sittingOut: false, buyins: 1, emoji: opts.emoji || null });
         this._emit({ t: "playerJoined", seat, name, isHost });
         return { ok: true, seat, isHost, rejoined: false };
       }
@@ -831,9 +893,66 @@ var require_room_server = __commonJS({
         p.connected = connected;
         this._emit({ t: connected ? "playerRejoined" : "playerDisconnected", seat: p.seat, name: p.name });
       }
+      _migrateHost() {
+        var cur = this.host();
+        if (cur && cur.connected) return cur;
+        if (cur) cur.isHost = false;
+        var nxt = this.players.filter(function(q) {
+          return q.connected;
+        }).sort(function(a, b) {
+          return a.seat - b.seat;
+        })[0];
+        if (nxt) {
+          nxt.isHost = true;
+          this._emit({ t: "hostMigrated", seat: nxt.seat, name: nxt.name });
+        }
+        return nxt || null;
+      }
+      // ---------- chat ----------
+      // Voluntary show: a player reveals their mucked cards to the table.
+      // hole comes from the client (they know their own cards from their snapshot).
+      showCards(clientId, hole) {
+        var p = this.playerByClientId(clientId);
+        if (!p) return { ok: false, error: "not at this table" };
+        if (!Array.isArray(hole) || hole.length !== 2) return { ok: false, error: "bad cards" };
+        var clean = hole.map(function(c) {
+          return { r: Math.max(2, Math.min(14, parseInt(c.r, 10) || 0)), s: Math.max(0, Math.min(3, parseInt(c.s, 10) || 0)) };
+        });
+        if (!clean[0].r || !clean[1].r) return { ok: false, error: "bad cards" };
+        this.shownHands[p.seat] = clean;
+        this._emit({ t: "cardsShown", seat: p.seat, name: p.name });
+        return { ok: true };
+      }
+      sendChat(clientId, text) {
+        var p = this.playerByClientId(clientId);
+        if (!p) return { ok: false, error: "not at this table" };
+        text = String(text == null ? "" : text).trim().slice(0, 200);
+        if (!text) return { ok: false, error: "empty message" };
+        this.chat.push({ from: p.name, text, ts: this._now() });
+        if (this.chat.length > 50) this.chat = this.chat.slice(-50);
+        return { ok: true };
+      }
+      // ---------- rebuy ----------
+      rebuy(clientId) {
+        var p = this.playerByClientId(clientId);
+        if (!p) return { ok: false, error: "not at this table" };
+        if (this.state !== "playing") return { ok: false, error: "game not running" };
+        var target = this.config.startingStack || 1e3;
+        if (p.stack >= target) return { ok: false, error: "already topped up" };
+        p.stack = target;
+        p.buyins = (p.buyins || 1) + 1;
+        if (this.table && this.table.players[p.seat]) this.table.players[p.seat].stack = target;
+        this._emit({ t: "playerRebuy", seat: p.seat, name: p.name, stack: target });
+        return { ok: true };
+      }
       // ---------- game flow ----------
       start(clientId) {
         var p = this.playerByClientId(clientId);
+        if (p && !p.isHost) {
+          var h = this.host();
+          if (!h || !h.connected) this._migrateHost();
+          p = this.playerByClientId(clientId);
+        }
         if (!p || !p.isHost) return { ok: false, error: "Only the host can start the game." };
         if (this.state !== "lobby") return { ok: false, error: "Game already running." };
         if (this.connectedCount() < 2) return { ok: false, error: "Need at least 2 players to start." };
@@ -868,6 +987,7 @@ var require_room_server = __commonJS({
         return { ok: true };
       }
       _startHand() {
+        this.shownHands = {};
         if (this.table.activeCount() < 2) return false;
         var self = this;
         this.players.forEach(function(p) {
@@ -890,11 +1010,26 @@ var require_room_server = __commonJS({
         } else if (e.t === "street") {
           this._pushRecent("\u2014 " + e.street + " \u2014");
         } else if (e.t === "handEnd") {
-          var winners = (e.winners || []).map(function(w) {
-            var idx = w.idx != null ? w.idx : w.winners && w.winners[0];
-            return { idx, amount: w.amount != null ? w.amount : 0, hand: w.hand || null, byFold: !!w.byFold };
+          var winners = [];
+          (e.winners || []).forEach(function(w) {
+            if (w.uncalled) return;
+            var ids = w.winners || (w.idx != null ? [w.idx] : []);
+            ids.forEach(function(idx) {
+              winners.push({ idx, amount: w.each != null ? w.each : w.amount || 0, hand: w.hand || null, byFold: !!w.byFold });
+            });
           });
-          this.lastResult = { winners, revealed: e.revealed || [], handNo: this.table.handNo };
+          if (!winners.length) {
+            var w0 = (e.winners || [])[0];
+            if (w0) winners.push({ idx: w0.idx != null ? w0.idx : (w0.winners || [0])[0], amount: w0.amount || 0, hand: w0.hand || null, byFold: !!w0.byFold });
+          }
+          var winIdx = {};
+          winners.forEach(function(w) {
+            winIdx[w.idx] = true;
+          });
+          var revealed = (e.revealed || []).filter(function(r) {
+            return winIdx[r.idx];
+          });
+          this.lastResult = { winners, revealed, handNo: this.table.handNo };
           var self = this;
           winners.forEach(function(w) {
             var pl = self.playerBySeat(w.idx);
@@ -956,9 +1091,10 @@ var require_room_server = __commonJS({
         if (out && this.table && !this.table.handOver && ep && !ep.folded && !ep.allIn) {
           try {
             this.table.act(p.seat, "fold");
-          } catch (e) {
+          } catch {
             ep.folded = true;
             ep.acted = true;
+            this.table._step();
           }
         }
         this._pushRecent(p.name + (out ? " sits out." : " is back in."));
@@ -972,8 +1108,12 @@ var require_room_server = __commonJS({
           var action = legal.canCheck ? "check" : "fold";
           this.table.act(seat, action);
           var p = this.playerBySeat(seat);
-          this._pushRecent((p ? p.name : "Seat " + seat) + " auto-" + action + "s (" + reason + ")");
-        } catch (e) {
+          var nm = p ? p.name : "Seat " + seat;
+          var last = this.recent[this.recent.length - 1];
+          if (last && last.indexOf(nm + " " + action) === 0) {
+            this.recent[this.recent.length - 1] = nm + " auto-" + action + "s (" + reason + ")";
+          }
+        } catch {
         }
         this._afterTableChange();
       }
@@ -1049,7 +1189,6 @@ var require_room_server = __commonJS({
       }
       // ---------- snapshots ----------
       getLobby() {
-        var self = this;
         return {
           t: "lobby",
           code: this.code,
@@ -1060,7 +1199,8 @@ var require_room_server = __commonJS({
             return a.seat - b.seat;
           }).map(function(p) {
             return { seat: p.seat, name: p.name, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut };
-          })
+          }),
+          chat: this.chat.slice(-50)
         };
       }
       // Per-seat snapshot. Hole cards are included ONLY for the requesting seat.
@@ -1090,13 +1230,14 @@ var require_room_server = __commonJS({
           showdown: null,
           recent: this.recent.slice(-8),
           champion: this.champion,
-          nextHandInMs: 0
+          nextHandInMs: 0,
+          chat: this.chat.slice(-50)
         };
         if (this.state === "lobby" || !this.table) {
           snap.players = this.players.slice().sort(function(a, b) {
             return a.seat - b.seat;
           }).map(function(p) {
-            return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut };
+            return { seat: p.seat, name: p.name, stack: p.stack, connected: p.connected, isHost: p.isHost, sittingOut: !!p.sittingOut, buyins: p.buyins || 1, emoji: p.emoji || null };
           });
           return snap;
         }
@@ -1107,6 +1248,8 @@ var require_room_server = __commonJS({
         snap.pot = t.potTotal();
         snap.acting = t.handOver ? -1 : t.acting;
         snap.button = t.button;
+        snap.sbIdx = t.sbIdx;
+        snap.bbIdx = t.bbIdx;
         snap.timerMsLeft = this._msLeft();
         snap.nextHandInMs = t.handOver ? Math.max(0, this.nextHandAt - this._now()) : 0;
         snap.players = t.players.map(function(p) {
@@ -1122,7 +1265,9 @@ var require_room_server = __commonJS({
             hasCards: p.hole.length === 2 && !p.folded,
             connected: rp ? rp.connected : true,
             isHost: rp ? rp.isHost : false,
-            sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut
+            sittingOut: rp ? !!rp.sittingOut : !!p.sittingOut,
+            buyins: rp ? rp.buyins || 1 : 1,
+            emoji: rp ? rp.emoji || null : null
           };
         }, this);
         if (me && !t.handOver) {
@@ -1133,7 +1278,7 @@ var require_room_server = __commonJS({
           if (!this.paused && t.acting === me.seat) {
             try {
               snap.legal = t.legalActions(me.seat);
-            } catch (e) {
+            } catch {
               snap.legal = null;
             }
           }
@@ -1146,6 +1291,11 @@ var require_room_server = __commonJS({
             }) };
           });
         }
+        var shown = [];
+        for (var seat in this.shownHands) {
+          shown.push({ seat: parseInt(seat, 10), hole: this.shownHands[seat] });
+        }
+        if (shown.length) snap.shown = shown;
         return snap;
       }
       // ---- Durable Object persistence ----
@@ -1202,6 +1352,7 @@ var require_room_server = __commonJS({
       room.lastResult = data.lastResult || null;
       room.champion = data.champion || null;
       room.recent = data.recent || [];
+      room.chat = data.chat || [];
       room.closed = !!data.closed;
       room._lastActing = data._lastActing != null ? data._lastActing : -1;
       room._pauseStartedAt = data._pauseStartedAt || 0;
@@ -1240,12 +1391,13 @@ var RoomDO = class {
     const code = m[1].toUpperCase();
     if (!(0, import_room_server.isValidRoomCode)(code)) return new Response("bad room code", { status: 400 });
     const name = (url.searchParams.get("name") || "Player").slice(0, 18);
+    const emoji = (url.searchParams.get("emoji") || "").slice(0, 8) || null;
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.state.acceptWebSocket(server);
     const clientId = "c" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    server.serializeAttachment({ clientId, name, code });
-    this.sessions.set(server, { clientId, name, code });
+    server.serializeAttachment({ clientId, name, code, emoji });
+    this.sessions.set(server, { clientId, name, code, emoji });
     return new Response(null, { status: 101, webSocket: client });
   }
   _meta(ws) {
@@ -1253,7 +1405,7 @@ var RoomDO = class {
     if (!meta) {
       try {
         meta = ws.deserializeAttachment();
-      } catch (e) {
+      } catch {
         meta = null;
       }
       if (meta) this.sessions.set(ws, meta);
@@ -1271,20 +1423,20 @@ var RoomDO = class {
     try {
       var data = await this.state.storage.get("room");
       if (data && (!code || data.code === code)) this.room = import_room_server.Room.fromJSON(data);
-    } catch (e) {
+    } catch {
     }
   }
   async _saveRoom() {
     try {
       if (this.room) await this.state.storage.put("room", this.room.toJSON());
-    } catch (e) {
+    } catch {
     }
   }
   async webSocketMessage(ws, raw) {
     let msg;
     try {
       msg = JSON.parse(raw);
-    } catch (e) {
+    } catch {
       return;
     }
     const meta = this._meta(ws);
@@ -1304,7 +1456,7 @@ var RoomDO = class {
     const room = this.room;
     let changed = false;
     if (msg.t === "join") {
-      const r = room.addPlayer(meta.clientId, meta.name);
+      const r = room.addPlayer(meta.clientId, meta.name, { emoji: msg.emoji || meta.emoji || null });
       if (!r.ok) {
         ws.send(JSON.stringify({ t: "error", message: r.error }));
         return;
@@ -1326,12 +1478,24 @@ var RoomDO = class {
       const r = room.setSitOut(meta.clientId, msg.out);
       if (!r.ok) ws.send(JSON.stringify({ t: "error", message: r.error }));
       else changed = true;
+    } else if (msg.t === "chat") {
+      const r = room.sendChat(meta.clientId, msg.text);
+      if (!r.ok) ws.send(JSON.stringify({ t: "error", message: r.error }));
+      else changed = true;
+    } else if (msg.t === "show") {
+      const r = room.showCards(meta.clientId, msg.hole);
+      if (!r.ok) ws.send(JSON.stringify({ t: "error", message: r.error }));
+      else changed = true;
+    } else if (msg.t === "rebuy") {
+      const r = room.rebuy(meta.clientId);
+      if (!r.ok) ws.send(JSON.stringify({ t: "error", message: r.error }));
+      else changed = true;
     } else if (msg.t === "leave") {
       room.removePlayer(meta.clientId);
       changed = true;
       try {
         ws.close(1e3, "left");
-      } catch (e) {
+      } catch {
       }
     } else {
       ws.send(JSON.stringify({ t: "error", message: "Unknown message." }));
@@ -1370,7 +1534,7 @@ var RoomDO = class {
         } else {
           ws.send(JSON.stringify(room.getSnapshot(p.seat)));
         }
-      } catch (e) {
+      } catch {
       }
     }
   }
@@ -1395,7 +1559,7 @@ var RoomDO = class {
       for (const [ws] of this.sessions) {
         try {
           ws.send(JSON.stringify({ t: "timer", msLeft }));
-        } catch (e) {
+        } catch {
         }
       }
     }
