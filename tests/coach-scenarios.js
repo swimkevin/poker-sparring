@@ -294,3 +294,10 @@ console.log('\n22. v1.8.78: Donald semi-bluffs + Amogh-style bombs');
   ok(botSrc.includes("Semi-bluff: Donald"), 'semi-bluff logic present');
   ok(botSrc.includes("Ahead but vulnerable"), 'big-bet-when-vulnerable logic present');
 }
+
+console.log('\n23. v1.8.80: Donald overbet not auto-folded as nuts');
+{
+  const botSrc = require('fs').readFileSync('js/bots.js', 'utf8');
+  ok(botSrc.includes("wideOverbet: true"), 'donald has wideOverbet flag');
+  ok(src.includes("V.archetype.wideOverbet"), 'coach exempts wideOverbet from nuts fold');
+}

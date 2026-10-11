@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.80] — 2026-10-10
+
+### Coach: don't fold to Donald's overbets as "the nuts"
+- Donald (tight preflop) overbets draws and vulnerable top pairs, not just
+  the nuts. Added `wideOverbet` flag; coach exempts him from the
+  "tight overbet = nuts" auto-fold.
+
 ## [1.8.79] — 2026-10-10
 
 ### Exploit lines match new playstyles
