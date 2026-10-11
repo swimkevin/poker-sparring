@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.85] — 2026-10-10
+
+### Fix empty coach recap after winning by fold (Kevin)
+- Raised preflop per coach, everyone folded, but recap was empty: none of
+  the branches fired when won=true but no "strong" decision was recorded.
+- Now `won && wonByFold` always shows a message ("Nice aggression! 🎉").
+
 ## [1.8.84] — 2026-10-10
 
 ### Fix default roster: Donald in, Station out, swimkev id (Kevin)
