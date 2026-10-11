@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.88] — 2026-10-11
+
+### Rohan tighter + roster repair (Kevin)
+- Rohan: callTier 5→4, stubborn 0.80→0.65, callPushTier 4→3. Still
+  loose-passive but folds air like a normal person.
+- topUpRoster now ensures ALL defaults present (was fill-to-7). Stale saves
+  with Station get him swapped for swimkev (lag).
+
 ## [1.8.87] — 2026-10-11
 
 ### Fix bet panel 3/4-pot raise + game lockup (Kevin)

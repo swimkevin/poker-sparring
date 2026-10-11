@@ -264,7 +264,7 @@ function villainBluffy(archetype) {
 // One-line exploit per bot id; custom bots get a read from their sliders.
 var EXPLOIT_LINES = {
   lag: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
-  rohan: 'calling station — calls everything, rarely raises. Value bet big; he bluffs sometimes so don\'t auto-fold to his bets',
+  rohan: 'loose-passive — plays lots of hands, rarely raises. Value bet big; he calls with pairs but folds air, and bluffs sometimes so don\'t auto-fold to his bets',
   amogh: 'straightforward — bombs pots with real hands. Let him bet into you, don\'t bluff-catch light',
   nathan: 'trap player — never raises before the river. Value bet relentlessly, believe his river bet',
   grinder: 'tight-aggressive — steal blinds deep, never pay off a shove light',

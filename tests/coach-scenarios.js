@@ -211,7 +211,8 @@ console.log('\n20. Cash/tourney rosters top up to 7 bots (v1.8.71)');
   // Kevin's cash game showed 6 bots; default is 7. Stale saves persist.
   ok(src.includes('function topUpRoster()'), 'topUpRoster exists');
   ok(src.includes("if (mode === 'hu') return;"), 'heads-up untouched (stays 1)');
-  ok(src.includes('selectedBots.size < 7 && botById(id)'), 'tops up from mode defaults');
+  // v1.8.88: ensures ALL defaults present, swaps out non-defaults.
+  ok(src.includes('var missing = defaults.filter'), 'tops up missing defaults');
 }
 
 console.log('\n21. Hand-end pause button + 13s auto-deal (v1.8.71)');
