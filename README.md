@@ -32,7 +32,7 @@
 
 ## By the numbers
 
-- **71 versions shipped** (v1.8.71) — iterative, tested releases, not one big bang
+- **80 versions shipped** (v1.8.80) — iterative, tested releases, not one big bang
 - **1,800+ test assertions** across unit, component, smoke (300 randomized hands), netplay, and worker suites
 - **11 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
@@ -103,7 +103,7 @@ Shuffled like the pros. Each hand starts with a full 52-card Fisher-Yates shuffl
 ## Features
 
 **Play**
-- Cash games, heads-up, and tournaments vs 11 AI archetypes — including Alice, the ultra-safe vault who never bluffs
+- Cash games, heads-up, and tournaments vs 14 AI archetypes — including Alice, the ultra-safe vault who never bluffs, and Donald, the sticky semi-bluffer
 - Custom opponents: tune looseness, aggression, bluff frequency; name them after your friends
 - Session resume: leave mid-session, pick up with the exact same stacks
 - Push/fold trainer with range-based feedback

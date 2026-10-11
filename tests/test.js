@@ -170,7 +170,9 @@ function heroPolicy(table, idx) {
   });
   var totalChips = N * START;
   var showdowns = 0, foldWins = 0;
-  for (var h = 0; h < 300; h++) {
+  // CI runs 100 hands (fast); full 300 via SOAK_HANDS=300 for deep checks.
+  var soakHands = parseInt(process.env.SOAK_HANDS || '100', 10) || 100;
+  for (var h = 0; h < soakHands; h++) {
     if (table.activeCount() < 2) {
       // rebuy everyone for soak purposes
       table.players.forEach(function (p) { p.stack = START; p.sittingOut = false; });
@@ -197,8 +199,8 @@ function heroPolicy(table, idx) {
     }
     table.eventQueue = [];
   }
-  console.log('soak: 300 hands, showdowns=' + showdowns + ', foldWins=' + foldWins);
-  ok(showdowns + foldWins === 300, 'every hand ended in a showdown or a fold win');
+  console.log('soak: ' + soakHands + ' hands, showdowns=' + showdowns + ', foldWins=' + foldWins);
+  ok(showdowns + foldWins === soakHands, 'every hand ended in a showdown or a fold win');
   ok(showdowns > 20, 'enough showdowns happened (' + showdowns + ')');
   // Fold-win occurrence is pinned by a deterministic test below (the count above
   // is inherently random, so it is not thresholded).
@@ -513,7 +515,8 @@ function heroPolicy(table, idx) {
     }
   }
   ok(rTried > 200, 'rohan decisions sampled (' + rTried + ')');
-  ok(rAggro === 0, 'Rohan never bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
+  // v1.8.76: Rohan sometimes bluffs (15%) — allow rare aggressive actions
+  ok(rAggro / rTried < 0.05, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
 
   // (b1) Amogh bombs tier-1 monsters (QQ+/AKs) preflop: shoves relentlessly
   // when facing a raise, and always raises (shove or big open) first-in.

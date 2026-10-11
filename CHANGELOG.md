@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.81] — 2026-10-10
+
+### Test suite cleanup (Kevin: CI failure emails)
+- Fixed 3 outdated tests: Rohan bluff (allows <5% aggression), roster order
+  (alice,donald,lag,rohan), singular "1 hand" grammar.
+- Added missing regression suites to CI: coach-scenarios (49 tests),
+  session, sidepot-stress, allin-stress.
+- Soak test: 100 hands in CI (was 300), full 300 via SOAK_HANDS=300.
+- Removed dead diagnose-duplication.js.
+- README: 80 versions, 14 archetypes.
+
 ## [1.8.80] — 2026-10-10
 
 ### Coach: don't fold to Donald's overbets as "the nuts"

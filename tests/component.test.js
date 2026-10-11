@@ -269,7 +269,8 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   ok(delta && delta.textContent === '+125',
     'history row shows chip delta "+125", got "' + (delta && delta.textContent) + '"');
   var arch = document.getElementById('arch-table').textContent;
-  ok(arch.indexOf('1 hands · won 1 (100%)') !== -1,
+  // v1.8.81: singular "1 hand" (was "1 hands") — grammar fix.
+  ok(arch.indexOf('1 hand · won 1 (100%)') !== -1,
     'per-archetype row shows hands/won/win% (no misleading split profit), got "' + arch.trim().slice(0, 80) + '"');
   var vals = {};
   document.querySelectorAll('#stat-cards .stat-card').forEach(function (el) {
@@ -694,8 +695,9 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(badges.join(',') === '1,2', 'badges follow roster order, got ' + badges.join(','));
 
   // Named bots come first in the built-in order.
+  // v1.8.76: Alice at top, Donald directly below her (Kevin).
   var ids = global.ARCHETYPES.map(function (a) { return a.id; });
-  ok(ids.slice(0, 4).join(',') === 'lag,rohan,amogh,nathan',
+  ok(ids.slice(0, 4).join(',') === 'alice,donald,lag,rohan',
     'named bots lead the roster, got ' + ids.slice(0, 4).join(','));
   // Fallback still resolves to the shark by id, not by position.
   ok(bots.getArchetype('nope').id === 'shark', 'unknown id falls back to shark');
