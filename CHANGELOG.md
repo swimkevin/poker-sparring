@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.86] — 2026-10-10
+
+### Fix empty coach recap after losing all-in (Kevin)
+- Lost all-in with no recorded "strong" decision → recap returned null →
+  placeholder "coach speaks up on your turn".
+- Now always shows a message: "Tough loss — sometimes the cards don't
+  cooperate."
+
 ## [1.8.85] — 2026-10-10
 
 ### Fix empty coach recap after winning by fold (Kevin)

@@ -36,7 +36,7 @@ var ARCHETYPES = [
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
     tagline: 'Tight but sticky. Folds a lot preflop, never folds postflop.',
-    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.85).',
+    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.86).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
     aggression: 0.45, bluff: 1.0, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
@@ -56,7 +56,7 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
-    desc: 'Loose-passive: plays ~40%+ of hands, rarely raises and never 3-bets. Mostly calls you down light with just a pair — but sometimes throws in a random bluff to keep you honest (v1.8.85). Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
+    desc: 'Loose-passive: plays ~40%+ of hands, rarely raises and never 3-bets. Mostly calls you down light with just a pair — but sometimes throws in a random bluff to keep you honest (v1.8.86). Rohan will win a lot, then lose a lot — sometimes in the same orbit. Buckle up.',
     beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 1,
     aggression: 0.05, bluff: 0.68, stubborn: 0.80, pushTier: 4, callPushTier: 4, limp: 0.9,
@@ -258,7 +258,7 @@ function botDecide(table, p) {
   // bet/raise into a check (when free) or a call. This single gate covers
   // 3-bets, 4-bets, bluffs and shoves, so no raise path can leak through.
   // Nathan is exempt on the river, where his trap springs (see botPostflop).
-  // v1.8.85: bluffThrough lets occasional bluffs leak (Rohan sometimes
+  // v1.8.86: bluffThrough lets occasional bluffs leak (Rohan sometimes
   // randomly bluffs — Kevin).
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
       !(A.riverTrap && table.street === 'river') &&
@@ -449,7 +449,7 @@ function botPostflop(table, p, A) {
     return alicePostflop(table, p, A, legal, toCall, pot, eq, ms);
   }
   // Donald: semi-bluffs draws often; bombs big when ahead but vulnerable
-  // (like Amogh) instead of small value bets (v1.8.85, Kevin).
+  // (like Amogh) instead of small value bets (v1.8.86, Kevin).
   if (A.id === 'donald') {
     var dmv = donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street);
     if (dmv) return dmv;
@@ -527,7 +527,7 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
   return null;
 }
 
-// Donald's postflop (v1.8.85, Kevin): semi-bluffs draws often; when ahead
+// Donald's postflop (v1.8.86, Kevin): semi-bluffs draws often; when ahead
 // but vulnerable (top pair good kicker+ on a wet board), bombs big like
 // Amogh to take it down now instead of small value betting. Returns a move
 // or null to fall through to standard logic.
