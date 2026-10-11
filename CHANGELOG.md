@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.78] — 2026-10-10
+
+### Donald: semi-bluffs + Amogh-style bombs (Kevin)
+- **Semi-bluffs draws often** (65% when checked to with a draw).
+- **Bombs big when ahead but vulnerable** — top pair+ on wet boards gets
+  1.5x-2.3x pot overbets like Amogh, instead of small value bets.
+
 ## [1.8.77] — 2026-10-10
 
 ### Bluff tuning (Kevin)

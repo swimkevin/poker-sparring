@@ -285,3 +285,12 @@ console.log('\n21. v1.8.76: Rohan bluffs sometimes, Donald bot exists');
   const eqSrc = require('fs').readFileSync('js/equity.js', 'utf8');
   ok(eqSrc.includes("donald:"), 'donald has exploit line');
 }
+
+console.log('\n22. v1.8.78: Donald semi-bluffs + Amogh-style bombs');
+{
+  const botSrc = require('fs').readFileSync('js/bots.js', 'utf8');
+  ok(botSrc.includes("function donaldPostflop"), 'donaldPostflop exists');
+  ok(botSrc.includes("donaldPostflop: donaldPostflop"), 'donaldPostflop exported');
+  ok(botSrc.includes("Semi-bluff: Donald"), 'semi-bluff logic present');
+  ok(botSrc.includes("Ahead but vulnerable"), 'big-bet-when-vulnerable logic present');
+}
