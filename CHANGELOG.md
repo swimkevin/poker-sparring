@@ -3,6 +3,16 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.94] — 2026-10-11
+
+### Fix hand-strength label (Kevin's screenshot: no "Pair of 2s")
+- evaluate() takes ONE combined array; the label code passed (hole, board)
+  separately, threw, and silently rendered empty postflop. Preflop pairs
+  worked, which masked it.
+- Fixed to evaluate(hole.concat(board)). Verified live in jsdom with
+  Kevin's exact spot (T2 on A-2-5 = "Pair of Twos") + new regression test
+  tests/hero-desc-test.js (in npm test): flop/turn/river/preflop cases.
+
 ## [1.8.93] — 2026-10-11
 
 ### Amogh plays more normal (Kevin)

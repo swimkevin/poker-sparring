@@ -1760,6 +1760,11 @@ label { font-weight: 600; }
     font-size: 0.6rem;
     margin-bottom: 0.1rem;
   }
+  #screen-table #hero-hand-desc {
+    font-size: 0.78rem;
+    margin-top: 0;
+    margin-bottom: 0.15rem;
+  }
   /* Buttons: single compact row */
   #screen-table .hero-bar .ctl {
     min-height: 32px;
