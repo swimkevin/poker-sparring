@@ -3,6 +3,12 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.82] — 2026-10-10
+
+### Fix CI: push missing test files
+- v1.8.81 added sidepot-stress.js and allin-stress.js to the CI script but
+  never pushed the files — CI failed with "Cannot find module". Pushed.
+
 ## [1.8.81] — 2026-10-10
 
 ### Test suite cleanup (Kevin: CI failure emails)
