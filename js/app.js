@@ -5,14 +5,14 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.94';
+  var APP_VERSION = '1.8.95';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
   // Builds the URL to load after an update: we NAVIGATE instead of calling
   // location.reload(), because a reload keeps the stale ?v= query param in
   // the address bar (bug reported 2026-10-08). Pure function for testability.
-  // Best practice (v1.8.94): the page URL stays clean — never ?v=. The ?v=
+  // Best practice (v1.8.95): the page URL stays clean — never ?v=. The ?v=
   // cache-busters live on the CSS/JS asset URLs in index.html (invisible to
   // users); the version is shown in the app footer. Stuffing ?v= into the
   // page URL was a workaround that made the address bar inconsistent.
@@ -133,7 +133,7 @@
     if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
   }
   // Repair: cash/tourney default to a full table of 7. Stale saves could
-  // persist fewer (v1.8.94: Kevin's cash roster had 6). Top up from the
+  // persist fewer (v1.8.95: Kevin's cash roster had 6). Top up from the
   // mode defaults; never remove a deliberate pick.
   function topUpRoster() {
     if (mode === 'hu') return;
@@ -141,7 +141,7 @@
       ? ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'pro']
       : ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'shark'];
     var before = selectedBots.size;
-    // v1.8.94: ensure ALL defaults are present, not just fill to 7.
+    // v1.8.95: ensure ALL defaults are present, not just fill to 7.
     // If a stale save has station but not lag, swap them (Kevin).
     var missing = defaults.filter(function (id) {
       return !selectedBots.has(id) && botById(id);
@@ -187,6 +187,34 @@
   var table = null;
   var evtQueue = [];
   var pumping = false;
+  // Away-freeze (v1.8.95, Kevin): leaving the table tab mid-hand used to lose
+  // the hand — the pump kept running with nobody watching. Now the game
+  // freezes exactly where it is and resumes in the same spot on return.
+  // The table lives in memory, so no re-deal and no state is rebuilt.
+  var awayFromTable = false;
+  var pendingNextHand = false;
+
+  function setAwayFromTable(away) {
+    if (!table) away = false;
+    if (away === awayFromTable) return;
+    awayFromTable = away;
+    try { UI.setHandEndAway(away); } catch {}
+    if (away) return;
+    // Back at the table: repaint the exact state and pick up where we left.
+    try {
+      UI.renderTable(table, { lastActions: lastActions, button: table.button });
+    } catch {}
+    if (pendingNextHand) {
+      pendingNextHand = false;
+      prepareNextHand();
+      return;
+    }
+    if (waitingForHero) {
+      setTurnStatus('Your turn', true);
+      enableHeroControls();
+    }
+    pump();
+  }
   var fastForward = false; // skip: collapse all hand-animation delays to ~instant
   var waitingForHero = false;
   var lastActions = {};
@@ -242,7 +270,7 @@
   }
 
   function pump() {
-    if (pumping || waitingForHero || !evtQueue.length) return;
+    if (pumping || waitingForHero || awayFromTable || !evtQueue.length) return;
     pumping = true;
     var e = evtQueue.shift();
     var delay = handleEvent(e);
@@ -326,14 +354,18 @@
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
       if (botThinkTimer) clearTimeout(botThinkTimer);
       pendingBot = { player: p, idx: e.player };
-      botThinkTimer = setTimeout(function () {
+      var botActNow = function () {
         botThinkTimer = null;
+        // Away-freeze: hold the bot's move until the user is back (v1.8.95).
+        if (awayFromTable) { botThinkTimer = setTimeout(botActNow, 400); return; }
         var pb = pendingBot; pendingBot = null;
+        if (!pb || !table) { pumping = false; pump(); return; }
         var mv = botDecide(table, pb.player);
         pumping = false;
         if (mv) table.act(pb.idx, mv.a, mv.amount);
         else pump();
-      }, fastForward ? 0 : 650 + Math.random() * 750);
+      };
+      botThinkTimer = setTimeout(botActNow, fastForward ? 0 : 650 + Math.random() * 750);
     }
   }
 
@@ -398,7 +430,7 @@
 
   function heroWon(e) {
     // e.winners: winByFold -> [{idx...}]; showdown -> [{winners:[idx]}]
-    // v1.8.94: uncalled refunds don't count as "winning" — hero must win a
+    // v1.8.95: uncalled refunds don't count as "winning" — hero must win a
     // contested pot, not just get their own uncalled bet back.
     var ids = [];
     e.winners.forEach(function (w) {
@@ -455,7 +487,7 @@
     }
     UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
     UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
-    // v1.8.94: persistent winner line by the hero cards (Kevin) — what won
+    // v1.8.95: persistent winner line by the hero cards (Kevin) — what won
     // and what beat you, stays visible during the results pause.
     var hdEl = document.getElementById('hero-hand-desc');
     if (hdEl) {
@@ -578,9 +610,13 @@
     // and a 13s auto-deal countdown, so the splash, board, and revealed hands
     // can actually be read. Skipped (fast-forward) hands stay instant.
     if (fastForward) {
-      setTimeout(function () { if (table) prepareNextHand(); }, 600);
+      setTimeout(function () {
+        if (!table) return;
+        if (awayFromTable) { pendingNextHand = true; return; }
+        prepareNextHand();
+      }, 600);
     } else {
-      // Next-hand + pause buttons plus a 13s auto-deal countdown (v1.8.94:
+      // Next-hand + pause buttons plus a 13s auto-deal countdown (v1.8.95:
       // was 10s; Kevin wanted longer + a pause for hand review).
       UI.showHandEndControls({
         autoMs: 13000,
@@ -825,7 +861,7 @@
     UI.disableControls();
     UI.coachTip(null);
     resumeFromHero();
-    // v1.8.94: if the engine rejects the amount, don't leave the game stuck
+    // v1.8.95: if the engine rejects the amount, don't leave the game stuck
     // with disabled controls — re-enable so the player can act again (Kevin).
     try {
       table.act(0, a, amount);
@@ -931,7 +967,7 @@
   function opponentReads() {
     // Compact scouting report, shown once per hand (first verdict). Short
     // style tags — the full exploit advice lives in the vs-line for the
-    // villain that matters (v1.8.94: full sentences per opponent bloated
+    // villain that matters (v1.8.95: full sentences per opponent bloated
     // every first message to 600+ chars).
     var live = liveOpponents();
     if (!live.length) return '';
@@ -940,7 +976,7 @@
       var exploit = A ? UI.escapeHtml(exploitLine(A)) : 'unknown style';
       return '<b>' + name + '</b> — ' + exploit;
     });
-    // v1.8.94: Kevin wants bullet points (one per line), not inline.
+    // v1.8.95: Kevin wants bullet points (one per line), not inline.
     return '<div class="coach-opps">🎯 Table:<br>• ' + reads.join('<br>• ') + '</div>';
   }
 
@@ -1094,7 +1130,7 @@
       // t.pot includes the bet just made (engine emits post-action), so the
       // true sizing is bet vs the pot BEFORE it — same reconstruction as
       // villainSizingTell. Without this, a 1.5x overbet reads as 0.6 and
-      // lands in the 'wide' gap (v1.8.94: Amogh's flop overbet advised a call).
+      // lands in the 'wide' gap (v1.8.95: Amogh's flop overbet advised a call).
       var ratio = size / Math.max(1, pot - size);
       if (t.street === 'preflop') {
         if (t.action === 'raise' || t.action === 'bet') {
@@ -1182,7 +1218,7 @@
   // Made-hand class for SPR commitment decisions, from the evaluator directly:
   // nut (straight+) | overpair (trips+, two pair, or a pair above the board) |
   // toppair | secondpair | weakpair | draw-strong (combo) | draw | draw-weak | air.
-  // v1.8.94: A made straight+ with a draw (e.g. straight + flush redraw) must
+  // v1.8.95: A made straight+ with a draw (e.g. straight + flush redraw) must
   // classify as 'nut' (value bet), not 'draw-strong' (semi-bluff). Kevin's
   // 7cJc on 9c3d8dTc: J-high straight + 4-flush — coach said "semi-bluff",
   // completely wrong. Check made hands before draws.
@@ -1308,14 +1344,14 @@
       // players are still in and nobody has raised — the spot is about the
       // dead money, not one opponent. Raised pots keep the aggressor read.
       var limpedMulti = table.street === 'preflop' && table.currentBet <= table.bb && isMultiway();
-      // v1.8.94: same rule postflop — multiway with no aggressor means no
+      // v1.8.95: same rule postflop — multiway with no aggressor means no
       // single-villain read (Kevin: "unless that player did the specific raise").
       var multiwayNoAggro = isMultiway() && table.street !== 'preflop' &&
         !(V && (V.bet || 0) > 0);
       var tail = (isMultiLimp || limpedMulti || multiwayNoAggro) ? '' : villainLine(V);
       // Opponent reads are static reference: show once per hand (first verdict),
       // not on every decision. Repeating them bloated every message to 600+
-      // chars (v1.8.94, found by the 10-hand audit loop).
+      // chars (v1.8.95, found by the 10-hand audit loop).
       var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
@@ -1393,7 +1429,7 @@
       if (d.followed && !good) good = d;
       else if (!d.followed && !bad) bad = d;
     });
-    // v1.8.94: never return null — a loss with no recorded decision still
+    // v1.8.95: never return null — a loss with no recorded decision still
     // gets a message (was empty recap — Kevin).
     if (!good && !bad && !won) {
       var h0 = '<div class="coach-recap-title">Hand #' + UI.escapeHtml(String(handNo)) + ' recap</div>';
@@ -1403,7 +1439,7 @@
     var lines = [];
     // Win first: if you ignored the coach but took the pot, say so.
     // Distinguish semi-bluffs (draw + aggression) from pure bluffs and iso-raises.
-    // v1.8.94: won by fold always gets a message, even with no recorded
+    // v1.8.95: won by fold always gets a message, even with no recorded
     // strong decision (was empty recap — Kevin).
     if (won && wonByFold) {
       var isSemi = bad && (bad.hc === 'draw-strong' || bad.hc === 'draw');
@@ -1422,7 +1458,7 @@
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
     } else if (good && !won && !bad) {
       // Followed the plan but lost with no leak to name: never say
-      // "well played" for a losing hand (v1.8.94) — neutral process note.
+      // "well played" for a losing hand (v1.8.95) — neutral process note.
       lines.push({ kind: 'good', text: 'Tough loss — you stuck to the plan on the key decision. Sometimes the cards don\'t cooperate.' });
     }
     // Don't second-guess a winning bluff: if you took it down by fold,
@@ -1432,7 +1468,7 @@
       lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
         ', you went ' + bad.action + '. ' + bad.lesson });
     }
-    // v1.8.94: bulletproof — never return an empty recap. If no branch fired
+    // v1.8.95: bulletproof — never return an empty recap. If no branch fired
     // (e.g. won at showdown with no recorded strong decision), add a generic
     // message so the coach always says something (Kevin).
     if (!lines.length) {
@@ -1481,7 +1517,7 @@
       return '';
     }
     var limps = countLimpers();
-    // v1.8.94: only a "great spot to raise" if no one has raised yet (Kevin:
+    // v1.8.95: only a "great spot to raise" if no one has raised yet (Kevin:
     // Shark raised to 55 after 3 limps — not dead money, and coach said Fold
     // while the note said "raise", a direct contradiction).
     if (limps >= 3 && table.currentBet <= table.bb)
@@ -1802,7 +1838,7 @@
     var canBet = legal.canBet || legal.canRaise;
     var range = V ? estimateVillainRange(vIdx)
       : { label: 'unknown', strength: 0.5, words: 'no read yet', actions: 0 };
-    // v1.8.94: don't single out one player's range in a multiway pot unless
+    // v1.8.95: don't single out one player's range in a multiway pot unless
     // they did something specific (bet/raised). pickVillain falls back to an
     // arbitrary opponent when no one's bet — naming them is noise (Kevin).
     var noAggro = isMultiway() && !(V && (V.bet || 0) > 0);
@@ -1812,7 +1848,7 @@
 
     // ---------------- no bet to face ----------------
     if (toCall === 0) {
-      // v1.8.94: "bluffs constantly" needs HIGH AGGRESSION too, not just bluff
+      // v1.8.95: "bluffs constantly" needs HIGH AGGRESSION too, not just bluff
       // param. Rohan has bluff 0.68 but aggression 0.05 — he's a station who
       // occasionally bluffs, not a maniac (Kevin's screenshot).
       var vManiac = V && villainBluffy(V.archetype) > 0.6 &&
@@ -1826,7 +1862,7 @@
         var tex = boardTexture(table.community);
         var frac = (tex === 'wet' || foldy < 0.25) ? 0.75 : 0.5;
         var betSize = Math.max(1, Math.round(pot * frac));
-        // v1.8.94: if committed (SPR low), don't suggest a pot fraction that's
+        // v1.8.95: if committed (SPR low), don't suggest a pot fraction that's
         // much smaller than the stack — just go all-in (Kevin: "½ pot is not
         // same as all-in at all").
         var heroStack = hero.stack;
@@ -1930,7 +1966,7 @@
     var bluffy = V ? villainBluffy(V.archetype) : 0.3;
     var rangeAdjust = 0;
     if (range.label === 'strong' && tight > 0.6) rangeAdjust += 0.08;
-    // Polarized from a non-bluffer is effectively strong (v1.8.94: Amogh's
+    // Polarized from a non-bluffer is effectively strong (v1.8.95: Amogh's
     // overbet shove read as 'wide'/bluffy and advised a call with ace-high).
     var polarStrong = range.label === 'polarized' && (tight > 0.6 || bluffy < 0.25);
     if (range.label === 'polarized') rangeAdjust += (polarStrong ? 0.12 : -0.02);
@@ -1964,7 +2000,7 @@
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');
-      // v1.8.94: Donald overbets draws/vulnerable hands, not just the nuts
+      // v1.8.95: Donald overbets draws/vulnerable hands, not just the nuts
       // (wideOverbet) — don't auto-fold.
       if (tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
           !(V && V.archetype && V.archetype.wideOverbet))
@@ -1994,12 +2030,12 @@
     var riverPrior = (table.street === 'river' && bluffy <= 0.55) ? 0.03 : 0;
     threshold += riverPrior;
     // Pot odds in plain English: the price vs the prize, not just a percentage
-    // (v1.8.94: beginners couldn't follow the raw "win X% of the time").
+    // (v1.8.95: beginners couldn't follow the raw "win X% of the time").
     // When the range is strong, show the ADJUSTED bar explicitly — showing raw
     // 41% then saying "fold" vs 52% equity was contradictory and confusing
-    // (v1.8.94: Kevin's J4 vs Amogh's big bet).
+    // (v1.8.95: Kevin's J4 vs Amogh's big bet).
     var strongAdj = rangeAdjust > 0.005;
-    // Concise math line (v1.8.94): pot odds + adjusted bar + equity source in
+    // Concise math line (v1.8.95): pot odds + adjusted bar + equity source in
     // one breath. The three explainers Kevin asked for (break-even meaning,
     // adjusted threshold vs strong ranges, how win% is simulated) are here
     // but tight — the 10-hand loop flags anything over 400 chars.
@@ -2014,7 +2050,7 @@
       '). ' +
       riskPremiumNote(rp2);
     // Bluff-catching concept for beginners: when your hand only beats a bluff,
-    // name it explicitly (v1.8.94).
+    // name it explicitly (v1.8.95).
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing. Works vs bluffers, not vs big bets for value."
       : '';
@@ -2225,7 +2261,25 @@
     refreshResumeButton();
   }
 
+  // Setup screen: when a game is live (user stepped away mid-hand), offer a
+  // one-tap return to the exact same spot (v1.8.95).
+  function refreshBackToGameButton() {
+    var btn = $('btn-back-to-game');
+    if (!btn) return;
+    if (table) {
+      btn.hidden = false;
+      btn.textContent = '▶ Back to your game — Hand #' + (table.handNo || 1) + ' in progress';
+      btn.onclick = function () { UI.showScreen('table'); };
+      // A live game supersedes the saved-session resume offer.
+      var rb = $('btn-resume'); if (rb) rb.hidden = true;
+      var rh = $('resume-hint'); if (rh) rh.hidden = true;
+    } else {
+      btn.hidden = true;
+    }
+  }
+
   function refreshResumeButton() {
+    if (table) { refreshBackToGameButton(); return; }
     var btn = $('btn-resume'), hint = $('resume-hint');
     if (!btn) return;
     var s = loadSession();
@@ -2347,17 +2401,29 @@
     if (themeBtn) themeBtn.onclick = function () {
       applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
     };
+    // Away-freeze wiring (v1.8.95): any non-table screen freezes the live
+    // game; showing the table again resumes it in the exact same spot.
+    if (UI.setScreenListener) {
+      UI.setScreenListener(function (name) {
+        setAwayFromTable(name !== 'table' && name !== 'online');
+        refreshBackToGameButton();
+      });
+    }
     var brandBtn = $('brand-home');
     if (brandBtn) brandBtn.onclick = function () { showSetup(); };
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.onclick = function () {
         var dest = b.dataset.nav;
-        if (dest === 'setup') showSetup();
+        // Play with a live game = back to your table, exactly as you left it.
+        if (dest === 'setup') {
+          if (table) UI.showScreen('table');
+          else showSetup();
+        }
         else if (dest === 'archetypes') { UI.renderArchetypes(loadCustomBots(), deleteCustom); UI.showScreen('archetypes'); }
         else if (dest === 'hands') { openHandList(); }
         else if (dest === 'stats') { UI.renderStats(); UI.showScreen('stats'); }
         else if (dest === 'learn') { UI.renderLearn(); UI.showScreen('learn'); }
-        else if (dest === 'online') { Online.show(); }
+        else if (dest === 'online') { setAwayFromTable(true); Online.show(); }
       };
     });
     // Feedback opens a modal, not a screen.

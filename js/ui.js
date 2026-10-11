@@ -3,6 +3,11 @@
 var UI = (function () {
   function $(id) { return document.getElementById(id); }
 
+  // Screen-change listener (app.js conducts): notified on every showScreen
+  // so the game can freeze while the user is on another tab (v1.8.95).
+  var screenListener = null;
+  function setScreenListener(fn) { screenListener = fn; }
+
   function showScreen(name) {
     ['setup', 'table', 'pf', 'archetypes', 'hands', 'stats', 'learn'].forEach(function (s) {
       $('screen-' + s).hidden = (s !== name);
@@ -11,6 +16,7 @@ var UI = (function () {
       b.classList.toggle('active', b.dataset.nav === name || (name === 'pf' && b.dataset.nav === 'setup'));
     });
     window.scrollTo(0, 0);
+    if (screenListener) { try { screenListener(name); } catch {} }
   }
 
   // ---------- learn screen ----------
@@ -508,7 +514,7 @@ var UI = (function () {
       if (table.bbIdx === 0) hb += ' <span class="pos-badge bb">BB</span>';
       hi.innerHTML = escapeHtml(hero.name) + ' · ' + fmt(hero.stack) + hb;
     }
-    // Hero hand strength (v1.8.94, PokerNow-style): what you currently hold.
+    // Hero hand strength (v1.8.95, PokerNow-style): what you currently hold.
     // Postflop: full description ("Two Pair, Eights and Sixes"). Preflop:
     // only a pocket pair is a made hand worth naming.
     var hd = $('hero-hand-desc');
@@ -558,7 +564,7 @@ var UI = (function () {
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
-    // v1.8.94: for raises, need currentBet to compute pot-fraction raise-TO
+    // v1.8.95: for raises, need currentBet to compute pot-fraction raise-TO
     // correctly (was minTo + pot*f, which overshot — Kevin).
     var currentBet = opts.currentBet || 0;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
@@ -570,7 +576,7 @@ var UI = (function () {
       slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
     }
     function setFromFrac(f) {
-      // v1.8.94: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
+      // v1.8.95: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
       var target = isRaise ? (currentBet + (pot * f)) : (pot * f);
       target = clamp(Math.round(target));
       syncSlider(target);
@@ -727,8 +733,18 @@ var UI = (function () {
     row.appendChild(pauseBtn);
     var ms = o.autoMs || 8000;
     var remaining = ms, lastTick = Date.now(), paused = false;
+    // Away-pause (v1.8.95): user switched to another tab mid-review — the
+    // countdown freezes exactly where it was until they come back.
+    var away = false;
+    handEndAwayCtl = {
+      setAway: function (b) {
+        if (b === away) return;
+        away = b;
+        if (!away) lastTick = Date.now(); // don't count away time
+      }
+    };
     function tick() {
-      if (paused) return;
+      if (paused || away) return;
       var now = Date.now();
       remaining -= (now - lastTick);
       lastTick = now;
@@ -753,9 +769,12 @@ var UI = (function () {
   }
   function hideHandEndControls() {
     if (handEndTimer) { clearInterval(handEndTimer); handEndTimer = null; }
+    handEndAwayCtl = null;
     var row = $('handend-row');
     if (row && row.parentNode) row.parentNode.removeChild(row);
   }
+  var handEndAwayCtl = null;
+  function setHandEndAway(b) { if (handEndAwayCtl) handEndAwayCtl.setAway(b); }
 
   function modal(o) {
     // o: { title, body, buttons: [{label, primary, cb}] }
@@ -1367,12 +1386,13 @@ var UI = (function () {
   }
 
   return {
-    showScreen: showScreen, renderRoster: renderRoster,
+    showScreen: showScreen, renderRoster: renderRoster, setScreenListener: setScreenListener,
     buildSeats: buildSeats, seatPos: seatPos, renderTable: renderTable,
     cardEl: cardEl, cardBackEl: cardBackEl,
     setControls: setControls, disableControls: disableControls, openBetPanel: openBetPanel,
     log: log, clearLog: clearLog, coachTip: coachTip, winnerBanner: winnerBanner, modal: modal,
     showHandEndControls: showHandEndControls, hideHandEndControls: hideHandEndControls,
+    setHandEndAway: setHandEndAway,
     handWinAmount: handWinAmount, firstWinnersTotal: firstWinnersTotal,
     renderArchetypes: renderArchetypes, renderStats: renderStats, renderLearn: renderLearn,
     renderPFScenario: renderPFScenario, renderPFFeedback: renderPFFeedback,

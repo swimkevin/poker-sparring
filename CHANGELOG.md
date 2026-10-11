@@ -3,6 +3,29 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.95] — 2026-10-11
+
+### Leave mid-hand, come back to the exact same spot (Kevin)
+- Switching to Learn/Stats/etc mid-hand used to lose the hand (bots kept
+  playing with nobody watching). Now the game FREEZES when you leave the
+  table tab — pump, bot timers, and the auto-deal countdown all pause —
+  and resumes exactly where it stopped when you return. Nothing is
+  rebuilt or re-dealt; the table lives in memory.
+- Play button with a live game = back to your table. Setup also gains a
+  "▶ Back to your game — Hand #N in progress" button.
+- Verified by tests/away-freeze-test.js (state identical after 3s away,
+  game moves again on return).
+
+### Alice + everyone: stack-relative looseness (Kevin)
+- Alice folded ATs to a 75 bet with 1000 behind: a 7.5bb open tripped the
+  "facing a 3-bet" branch on size alone, and the stack discount gave zero
+  relief at 7.5% of stack.
+- stackDiscount bands widened (relief up to ~12% of stack), Alice callTier
+  1→2 / openTierLate 2→3, postflop cheap-call factor 0.18→0.25, and the
+  big-bet branch now lets playable hands defend when the price is small
+  vs the stack. Trash still folds; real stack-threatening bets still
+  respected. tests/alice-defense-test.js locks it in (38/40 continue).
+
 ## [1.8.94] — 2026-10-11
 
 ### Fix hand-strength label (Kevin's screenshot: no "Pair of 2s")

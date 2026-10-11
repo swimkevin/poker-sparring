@@ -28,7 +28,7 @@ var ARCHETYPES = [
     tagline: 'The vault. Never bluffs, never pays you off light.',
     desc: 'Super-safe: folds almost every starting hand that is not genuinely good and never bluffs. But when Alice has something, her sizing is deliberately unpredictable — sometimes a small feeler, sometimes a huge overbet. Disciplined enough to fold when beat, yet she almost always calls with two pair or better. Very hard to win money from.',
     beat: 'Steal her blinds relentlessly — she folds everything marginal. When Alice bets or raises, believe her: she has it. Never try to bluff her; just take the small pots she gives you.',
-    openTier: 1, openTierLate: 2, callTier: 1, threeBetTier: 1,
+    openTier: 1, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.35, bluff: 0, stubborn: 0.85, pushTier: 2, callPushTier: 1, limp: 0.05,
     tiltProne: 0.10, rebuy: 0.50,
     friendly: true,
@@ -36,7 +36,7 @@ var ARCHETYPES = [
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
     tagline: 'Tight but sticky. Folds a lot preflop, never folds postflop.',
-    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.94).',
+    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.95).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
     aggression: 0.45, bluff: 1.0, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
@@ -56,7 +56,7 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
-    desc: 'Loose-passive: plays lots of hands, rarely raises and never 3-bets. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.94).',
+    desc: 'Loose-passive: plays lots of hands, rarely raises and never 3-bets. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.95).',
     beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.68, stubborn: 0.65, pushTier: 4, callPushTier: 3, limp: 0.9,
@@ -66,7 +66,7 @@ var ARCHETYPES = [
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
     tagline: 'Bombs every pot the moment he likes his hand.',
-    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with strong hands to take down pots, and shoves all-in with monsters (QQ+/AKs). But he plays it more normal now: pairs usually check down to see the river, and he only bluff-shoves with a real draw (semi-bluff), never pure air (v1.8.94).',
+    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with strong hands to take down pots, and shoves all-in with monsters (QQ+/AKs). But he plays it more normal now: pairs usually check down to see the river, and he only bluff-shoves with a real draw (semi-bluff), never pure air (v1.8.95).',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
@@ -237,16 +237,19 @@ function effectiveArchetype(A, tilt) {
   });
 }
 
-// Friendly-game looseness: when the price to call is trivial relative to the
-// bot's stack (e.g. 40 chips from a 3000 stack), even tight bots play looser —
+// Friendly-game looseness: when the price to call is small relative to the
+// bot's stack (e.g. 75 from a 1000 stack), even tight bots play looser —
 // just like a real home game. Returns 0..1, higher = call wider.
 // Friend-named bots (friendly: true) get roughly double the discount.
+// v1.8.95 (Kevin): bands widened — Alice folded ATs to a 75 bet with 1000
+// behind because 7.5% of stack got ZERO discount under the old bands.
 function stackDiscount(p, toCall, A) {
   var total = p.stack + p.bet;
   if (total <= 0 || toCall <= 0) return 0;
   var frac = toCall / total;
-  var base = frac >= 0.05 ? 0 : frac >= 0.03 ? 0.15 : frac >= 0.015 ? 0.35 : 0.55;
-  if (A && A.friendly) base = Math.min(0.8, base * 1.8);
+  var base = frac >= 0.12 ? 0 : frac >= 0.08 ? 0.2 : frac >= 0.05 ? 0.35 :
+    frac >= 0.03 ? 0.5 : frac >= 0.015 ? 0.65 : 0.8;
+  if (A && A.friendly) base = Math.min(0.9, base * 1.8);
   return base;
 }
 
@@ -258,7 +261,7 @@ function botDecide(table, p) {
   // bet/raise into a check (when free) or a call. This single gate covers
   // 3-bets, 4-bets, bluffs and shoves, so no raise path can leak through.
   // Nathan is exempt on the river, where his trap springs (see botPostflop).
-  // v1.8.94: bluffThrough lets occasional bluffs leak (Rohan sometimes
+  // v1.8.95: bluffThrough lets occasional bluffs leak (Rohan sometimes
   // randomly bluffs — Kevin).
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
       !(A.riverTrap && table.street === 'river') &&
@@ -375,6 +378,12 @@ function botPreflop(table, p, A) {
     if (tier <= A.callTier && (need < 0.30 || Math.random() < A.stubborn * 0.5)) return { a: 'call' };
     // Pocket pairs call 3-bets too (set-mining is profitable) — only fold vs all-ins.
     if (isPair && toCall < p.stack) return { a: 'call' };
+    // Cheap relative to the stack: playable hands still defend (v1.8.95,
+    // Kevin). A 75 open at 5/10 with 1000 behind trips this "big bet" branch
+    // on size alone, but at ~7% of the stack it's a cheap call — Alice was
+    // folding ATs here, which no normal player does.
+    var sdBig = stackDiscount(p, toCall, A);
+    if (tier <= A.callTier + 1 && sdBig > 0.3 && need < 0.45) return { a: 'call' };
     return { a: 'fold' };
   }
 
@@ -450,7 +459,7 @@ function botPostflop(table, p, A) {
     return alicePostflop(table, p, A, legal, toCall, pot, eq, ms);
   }
   // Donald: semi-bluffs draws often; bombs big when ahead but vulnerable
-  // (like Amogh) instead of small value bets (v1.8.94, Kevin).
+  // (like Amogh) instead of small value bets (v1.8.95, Kevin).
   if (A.id === 'donald') {
     var dmv = donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street);
     if (dmv) return dmv;
@@ -483,7 +492,8 @@ function botPostflop(table, p, A) {
   }
   var margin = (0.5 - A.stubborn) * 0.12 + (street === 'river' ? 0.03 : 0);
   // Stack-relative looseness: cheap calls need less equity (friendly game).
-  margin -= stackDiscount(p, toCall, A) * 0.18;
+  // v1.8.95: factor 0.18 -> 0.25 alongside the widened stackDiscount bands.
+  margin -= stackDiscount(p, toCall, A) * 0.25;
   if (eq > need + margin) {
     if (eq > 0.74 && Math.random() < A.aggression * 0.55 && legal.canRaise) {
       var to = clampRaise(table, p, legal, (pot + toCall) * (0.7 + Math.random() * 0.5));
@@ -508,7 +518,7 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
     return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
   }
   if (toCall === 0) {
-    // v1.8.94 (Kevin): more normal Amogh. Pairs check down to see the river;
+    // v1.8.95 (Kevin): more normal Amogh. Pairs check down to see the river;
     // bluffs only with a draw (semi-bluff), never pure air all-ins.
     var betLine = 0.62 - A.aggression * 0.12 + (street === 'river' ? 0.04 : 0);
     var wantsBet = eq > betLine || ms > 0.74;
@@ -551,7 +561,7 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
   return null;
 }
 
-// Donald's postflop (v1.8.94, Kevin): semi-bluffs draws often; when ahead
+// Donald's postflop (v1.8.95, Kevin): semi-bluffs draws often; when ahead
 // but vulnerable (top pair good kicker+ on a wet board), bombs big like
 // Amogh to take it down now instead of small value betting. Returns a move
 // or null to fall through to standard logic.
