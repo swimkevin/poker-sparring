@@ -301,3 +301,10 @@ console.log('\n23. v1.8.80: Donald overbet not auto-folded as nuts');
   ok(botSrc.includes("wideOverbet: true"), 'donald has wideOverbet flag');
   ok(src.includes("V.archetype.wideOverbet"), 'coach exempts wideOverbet from nuts fold');
 }
+
+console.log('\n24. v1.8.83: uncalled refund is not a "win"');
+{
+  const appSrc = require('fs').readFileSync('js/app.js', 'utf8');
+  ok(appSrc.includes("if (w.uncalled) return; // refund, not a win"),
+     'heroWon skips uncalled pots');
+}

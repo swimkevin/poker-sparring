@@ -3,6 +3,13 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.83] — 2026-10-10
+
+### Fix: coach "You won!" when hero actually lost (live QA)
+- Hand #7: hero shoved, lost 843 net, got 147 back as uncalled refund.
+  `heroWon()` counted the refund as a win → "You won the hand! 🎉".
+- Fix: `heroWon()` skips `uncalled` pots; hero must win a contested pot.
+
 ## [1.8.82] — 2026-10-10
 
 ### Fix CI: push missing test files
