@@ -508,6 +508,22 @@ var UI = (function () {
       if (table.bbIdx === 0) hb += ' <span class="pos-badge bb">BB</span>';
       hi.innerHTML = escapeHtml(hero.name) + ' · ' + fmt(hero.stack) + hb;
     }
+    // Hero hand strength (v1.8.92, PokerNow-style): what you currently hold.
+    // Postflop: full description ("Two Pair, Eights and Sixes"). Preflop:
+    // only a pocket pair is a made hand worth naming.
+    var hd = $('hero-hand-desc');
+    if (hd) {
+      var desc = '';
+      if (hero && !hero.sittingOut && !hero.folded && hero.hole && hero.hole.length === 2) {
+        var comm = table.community || [];
+        if (comm.length >= 3) {
+          try { desc = describeHand(evaluate(hero.hole, comm)); } catch { desc = ''; }
+        } else if (hero.hole[0].r === hero.hole[1].r) {
+          desc = 'Pair of ' + rankName(hero.hole[0].r) + 's';
+        }
+      }
+      hd.textContent = desc;
+    }
   }
 
   // ---------- controls ----------
@@ -542,7 +558,7 @@ var UI = (function () {
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
-    // v1.8.91: for raises, need currentBet to compute pot-fraction raise-TO
+    // v1.8.92: for raises, need currentBet to compute pot-fraction raise-TO
     // correctly (was minTo + pot*f, which overshot — Kevin).
     var currentBet = opts.currentBet || 0;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
@@ -554,7 +570,7 @@ var UI = (function () {
       slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
     }
     function setFromFrac(f) {
-      // v1.8.91: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
+      // v1.8.92: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
       var target = isRaise ? (currentBet + (pot * f)) : (pot * f);
       target = clamp(Math.round(target));
       syncSlider(target);

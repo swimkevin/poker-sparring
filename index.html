@@ -12,8 +12,8 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Poker Sparring — Practice vs AI Opponents">
 <meta name="twitter:description" content="Free, no-signup Texas Hold'em practice app: spar against offline AI opponents modeled on real player types, or host a private online table with friends.">
-<link rel="stylesheet" href="css/style.css?v=1.8.91">
-<link rel="stylesheet" href="css/online.css?v=1.8.91">
+<link rel="stylesheet" href="css/style.css?v=1.8.92">
+<link rel="stylesheet" href="css/online.css?v=1.8.92">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -140,7 +140,10 @@
     <div class="hero-bar">
       <div class="hero-cards-wrap">
         <div id="hero-cards" class="hero-cards" aria-label="Your hole cards"></div>
-        <div id="hero-info" class="hero-info">You</div>
+        <div class="hero-meta">
+          <div id="hero-info" class="hero-info">You</div>
+          <div id="hero-hand-desc" class="hero-hand-desc" aria-live="polite"></div>
+        </div>
       </div>
       <div id="controls" class="controls">
         <button id="btn-fold" class="ctl danger fold-btn">Fold</button>
@@ -293,6 +296,31 @@
     <div class="setup-wrap">
       <h1>📖 Learn poker</h1>
       <p class="subtitle">The books and sites the bots are modeled on — plus a plain-English glossary of every term this app uses.</p>
+      <h2>Hand rankings — what beats what</h2>
+      <p class="subtitle">Strongest to weakest. In a showdown, the best 5-card hand wins.</p>
+      <div id="hand-rankings" class="rankings-table">
+        <div class="rank-row"><span class="rank-num">1</span><span class="rank-name">Royal Flush</span><span class="rank-ex">A♠ K♠ Q♠ J♠ T♠ — the best possible hand</span></div>
+        <div class="rank-row"><span class="rank-num">2</span><span class="rank-name">Straight Flush</span><span class="rank-ex">9♥ 8♥ 7♥ 6♥ 5♥ — five in a row, same suit</span></div>
+        <div class="rank-row"><span class="rank-num">3</span><span class="rank-name">Four of a Kind</span><span class="rank-ex">A♣ A♦ A♥ A♠ 9♣ — four cards of one rank</span></div>
+        <div class="rank-row"><span class="rank-num">4</span><span class="rank-name">Full House</span><span class="rank-ex">K♠ K♥ K♦ 8♣ 8♦ — three of a kind + a pair</span></div>
+        <div class="rank-row"><span class="rank-num">5</span><span class="rank-name">Flush</span><span class="rank-ex">A♦ J♦ 8♦ 5♦ 3♦ — five cards, same suit</span></div>
+        <div class="rank-row"><span class="rank-num">6</span><span class="rank-name">Straight</span><span class="rank-ex">T♣ 9♦ 8♠ 7♥ 6♣ — five in a row, any suits</span></div>
+        <div class="rank-row"><span class="rank-num">7</span><span class="rank-name">Three of a Kind</span><span class="rank-ex">Q♠ Q♥ Q♦ 7♣ 2♦ — three cards of one rank</span></div>
+        <div class="rank-row"><span class="rank-num">8</span><span class="rank-name">Two Pair</span><span class="rank-ex">J♠ J♥ 8♦ 8♣ A♠ — two different pairs</span></div>
+        <div class="rank-row"><span class="rank-num">9</span><span class="rank-name">One Pair</span><span class="rank-ex">T♠ T♥ A♦ 6♣ 3♠ — two cards of one rank</span></div>
+        <div class="rank-row"><span class="rank-num">10</span><span class="rank-name">High Card</span><span class="rank-ex">A♠ Q♦ 9♣ 6♥ 3♦ — nothing matched; highest card plays</span></div>
+      </div>
+      <h2>Beginner rules to live by</h2>
+      <div class="rules-list">
+        <div class="rule-item"><b>1. Play fewer hands.</b> Most beginners play too many. Fold weak hands preflop — patience is profit.</div>
+        <div class="rule-item"><b>2. Position is power.</b> Acting last (on the button) lets you see what everyone else does first. Play more hands in late position, fewer in early.</div>
+        <div class="rule-item"><b>3. Don't call just to "see".</b> If you can't beat much, fold. Curiosity is expensive.</div>
+        <div class="rule-item"><b>4. Bet your strong hands.</b> Checking monsters to "trap" usually wins less. Make worse hands pay.</div>
+        <div class="rule-item"><b>5. Respect big bets.</b> Most players don't bluff big. When someone fires a huge bet, they usually have it.</div>
+        <div class="rule-item"><b>6. Know the pot odds.</b> Only chase a draw if the pot is paying you enough to hit it. The coach shows this math every hand.</div>
+        <div class="rule-item"><b>7. Watch your opponents.</b> Who plays every hand? Who only bets with monsters? Adjust — the Table reads in the Coach tab tell you.</div>
+        <div class="rule-item"><b>8. Manage your stack.</b> Don't risk your whole roll on one hand. If you bust, rebuy and keep learning — that's what practice is for.</div>
+      </div>
       <h2>Essential reading</h2>
       <div id="book-list" class="book-grid"></div>
       <h2>Free training sites</h2>
@@ -306,20 +334,20 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.91"></script>
-<script src="js/evaluator.js?v=1.8.91"></script>
-<script src="js/equity.js?v=1.8.91"></script>
-<script src="js/engine.js?v=1.8.91"></script>
-<script src="js/bots.js?v=1.8.91"></script>
-<script src="js/names.js?v=1.8.91"></script>
-<script src="js/pushfold.js?v=1.8.91"></script>
-<script src="js/stats.js?v=1.8.91"></script>
-<script src="js/replay.js?v=1.8.91"></script>
-<script src="js/room-server.js?v=1.8.91"></script>
-<script src="js/netplay.js?v=1.8.91"></script>
-<script src="js/ui.js?v=1.8.91"></script>
-<script src="js/online.js?v=1.8.91"></script>
-<script src="js/app.js?v=1.8.91"></script>
+<script src="js/cards.js?v=1.8.92"></script>
+<script src="js/evaluator.js?v=1.8.92"></script>
+<script src="js/equity.js?v=1.8.92"></script>
+<script src="js/engine.js?v=1.8.92"></script>
+<script src="js/bots.js?v=1.8.92"></script>
+<script src="js/names.js?v=1.8.92"></script>
+<script src="js/pushfold.js?v=1.8.92"></script>
+<script src="js/stats.js?v=1.8.92"></script>
+<script src="js/replay.js?v=1.8.92"></script>
+<script src="js/room-server.js?v=1.8.92"></script>
+<script src="js/netplay.js?v=1.8.92"></script>
+<script src="js/ui.js?v=1.8.92"></script>
+<script src="js/online.js?v=1.8.92"></script>
+<script src="js/app.js?v=1.8.92"></script>
 <!-- In-game hand history modal -->
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="Hand history">

@@ -3,6 +3,17 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.92] — 2026-10-11
+
+### New features for beginners (Kevin)
+- **Hand strength by your cards**: gold label under your hole cards shows
+  what you currently hold ("Two Pair, Eights and Sixes", "Flush, Ace high",
+  pocket pair preflop) — PokerNow-style.
+- **Winner line**: after showdown, "🏆 Rohan won with Full House, Aces over
+  Eights" stays by your cards so you know what beat you.
+- **Learn section**: hand rankings table (Royal Flush → High Card with
+  examples) + 8 beginner rules to live by.
+
 ## [1.8.91] — 2026-10-11
 
 ### Coach all-in sizing + Rohan raises monsters (Kevin)

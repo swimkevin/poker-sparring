@@ -294,6 +294,10 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 /* Hero strip info line (v1.8.21): name · stack · position badges under the cards. */
 .hero-info { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 .hero-info .pos-badge { margin-left: 0.3rem; }
+/* Hero hand strength (v1.8.92, PokerNow-style): what you currently hold,
+   shown right under the cards. */
+.hero-hand-desc { text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--gold, #f5c542); margin-top: 0.15rem; min-height: 1.2rem; }
+.hero-hand-desc:empty { display: none; }
 .controls { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; position: relative; }
 .ctl {
   border: 1px solid #2b3547; background: var(--panel2); color: var(--text);
@@ -480,6 +484,14 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 
 /* Learn screen */
 .book-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
+/* Hand rankings table + beginner rules (v1.8.92) */
+.rankings-table { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+.rank-row { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.55rem 0.8rem; background: var(--panel, #1c2330); border-radius: 8px; }
+.rank-num { font-weight: 800; color: var(--gold, #f5c542); min-width: 1.2rem; text-align: center; }
+.rank-name { font-weight: 700; min-width: 8.5rem; }
+.rank-ex { color: var(--muted); font-size: 0.88rem; }
+.rules-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem; }
+.rule-item { padding: 0.6rem 0.8rem; background: var(--panel, #1c2330); border-radius: 8px; font-size: 0.95rem; line-height: 1.45; }
 .book-card {
   display: block; padding: 0.9rem 1rem; border-radius: 10px; text-decoration: none;
   background: #141b28; border: 1px solid #2b3547; color: var(--text);
