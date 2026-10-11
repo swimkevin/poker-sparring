@@ -3,6 +3,14 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.89] — 2026-10-11
+
+### Fix "Rohan bluffs constantly" bad advice (Kevin's screenshot)
+- Coach said "Rohan bluffs constantly" but profile says "bluffs sometimes".
+- Root: vManiac check used bluff param > 0.6. Rohan has bluff 0.68 but
+  aggression 0.05 — not a maniac.
+- Fix: vManiac now requires aggression > 0.5 too.
+
 ## [1.8.88] — 2026-10-11
 
 ### Rohan tighter + roster repair (Kevin)
