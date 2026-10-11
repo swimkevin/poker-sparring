@@ -4,7 +4,7 @@ var UI = (function () {
   function $(id) { return document.getElementById(id); }
 
   // Screen-change listener (app.js conducts): notified on every showScreen
-  // so the game can freeze while the user is on another tab (v1.8.95).
+  // so the game can freeze while the user is on another tab (v1.8.96).
   var screenListener = null;
   function setScreenListener(fn) { screenListener = fn; }
 
@@ -514,7 +514,7 @@ var UI = (function () {
       if (table.bbIdx === 0) hb += ' <span class="pos-badge bb">BB</span>';
       hi.innerHTML = escapeHtml(hero.name) + ' · ' + fmt(hero.stack) + hb;
     }
-    // Hero hand strength (v1.8.95, PokerNow-style): what you currently hold.
+    // Hero hand strength (v1.8.96, PokerNow-style): what you currently hold.
     // Postflop: full description ("Two Pair, Eights and Sixes"). Preflop:
     // only a pocket pair is a made hand worth naming.
     var hd = $('hero-hand-desc');
@@ -564,7 +564,7 @@ var UI = (function () {
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
-    // v1.8.95: for raises, need currentBet to compute pot-fraction raise-TO
+    // v1.8.96: for raises, need currentBet to compute pot-fraction raise-TO
     // correctly (was minTo + pot*f, which overshot — Kevin).
     var currentBet = opts.currentBet || 0;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
@@ -576,7 +576,7 @@ var UI = (function () {
       slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
     }
     function setFromFrac(f) {
-      // v1.8.95: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
+      // v1.8.96: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
       var target = isRaise ? (currentBet + (pot * f)) : (pot * f);
       target = clamp(Math.round(target));
       syncSlider(target);
@@ -733,7 +733,7 @@ var UI = (function () {
     row.appendChild(pauseBtn);
     var ms = o.autoMs || 8000;
     var remaining = ms, lastTick = Date.now(), paused = false;
-    // Away-pause (v1.8.95): user switched to another tab mid-review — the
+    // Away-pause (v1.8.96): user switched to another tab mid-review — the
     // countdown freezes exactly where it was until they come back.
     var away = false;
     handEndAwayCtl = {

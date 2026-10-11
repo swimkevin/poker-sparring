@@ -277,7 +277,20 @@ class PokerTable {
       if (amount > 0) pots.push({ amount: amount, eligible: eligible, level: L, prev: prev });
       prev = L;
     });
-    return pots;
+    // Merge adjacent layers with IDENTICAL eligible sets (v1.8.96, Kevin):
+    // they are one pot in every real sense. Heads-up vs a short all-in, the
+    // folded players' small bets created a fake "side pot" split — Rohan
+    // just wins the main pot, and the hero's excess is the uncalled refund.
+    var merged = [];
+    pots.forEach(function (pot) {
+      var last = merged[merged.length - 1];
+      if (last && last.eligible.length === pot.eligible.length &&
+          last.eligible.every(function (v, i) { return v === pot.eligible[i]; })) {
+        last.amount += pot.amount;
+        last.level = pot.level;
+      } else merged.push(pot);
+    });
+    return merged;
   }
 
   _showdown() {

@@ -5,14 +5,14 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.95';
+  var APP_VERSION = '1.8.96';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
   // Builds the URL to load after an update: we NAVIGATE instead of calling
   // location.reload(), because a reload keeps the stale ?v= query param in
   // the address bar (bug reported 2026-10-08). Pure function for testability.
-  // Best practice (v1.8.95): the page URL stays clean — never ?v=. The ?v=
+  // Best practice (v1.8.96): the page URL stays clean — never ?v=. The ?v=
   // cache-busters live on the CSS/JS asset URLs in index.html (invisible to
   // users); the version is shown in the app footer. Stuffing ?v= into the
   // page URL was a workaround that made the address bar inconsistent.
@@ -133,7 +133,7 @@
     if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
   }
   // Repair: cash/tourney default to a full table of 7. Stale saves could
-  // persist fewer (v1.8.95: Kevin's cash roster had 6). Top up from the
+  // persist fewer (v1.8.96: Kevin's cash roster had 6). Top up from the
   // mode defaults; never remove a deliberate pick.
   function topUpRoster() {
     if (mode === 'hu') return;
@@ -141,7 +141,7 @@
       ? ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'pro']
       : ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'shark'];
     var before = selectedBots.size;
-    // v1.8.95: ensure ALL defaults are present, not just fill to 7.
+    // v1.8.96: ensure ALL defaults are present, not just fill to 7.
     // If a stale save has station but not lag, swap them (Kevin).
     var missing = defaults.filter(function (id) {
       return !selectedBots.has(id) && botById(id);
@@ -187,7 +187,7 @@
   var table = null;
   var evtQueue = [];
   var pumping = false;
-  // Away-freeze (v1.8.95, Kevin): leaving the table tab mid-hand used to lose
+  // Away-freeze (v1.8.96, Kevin): leaving the table tab mid-hand used to lose
   // the hand — the pump kept running with nobody watching. Now the game
   // freezes exactly where it is and resumes in the same spot on return.
   // The table lives in memory, so no re-deal and no state is rebuilt.
@@ -356,7 +356,7 @@
       pendingBot = { player: p, idx: e.player };
       var botActNow = function () {
         botThinkTimer = null;
-        // Away-freeze: hold the bot's move until the user is back (v1.8.95).
+        // Away-freeze: hold the bot's move until the user is back (v1.8.96).
         if (awayFromTable) { botThinkTimer = setTimeout(botActNow, 400); return; }
         var pb = pendingBot; pendingBot = null;
         if (!pb || !table) { pumping = false; pump(); return; }
@@ -391,6 +391,11 @@
           street: pendingAdvice.street, advice: pendingAdvice.advice,
           strength: pendingAdvice.strength, lesson: pendingAdvice.lesson,
           action: e.action, followed: adviceFollowed(pendingAdvice.advice, e.action),
+          // Pot at decision time: the recap grades the hand-DEFINING
+          // decision (biggest pot), not the first trivial one (v1.8.96 —
+          // a 10-chip limp was reported instead of the all-in that decided
+          // Kevin's hand, and described as a "call").
+          pot: (function () { try { return table.potTotal(); } catch { return 0; } })(),
           // Hand strength at decision time — lets the recap recognize
           // semi-bluffs (big bet with a draw) vs pure bluffs.
           hc: (typeof handClass === 'function')
@@ -430,7 +435,7 @@
 
   function heroWon(e) {
     // e.winners: winByFold -> [{idx...}]; showdown -> [{winners:[idx]}]
-    // v1.8.95: uncalled refunds don't count as "winning" — hero must win a
+    // v1.8.96: uncalled refunds don't count as "winning" — hero must win a
     // contested pot, not just get their own uncalled bet back.
     var ids = [];
     e.winners.forEach(function (w) {
@@ -487,7 +492,7 @@
     }
     UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
     UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
-    // v1.8.95: persistent winner line by the hero cards (Kevin) — what won
+    // v1.8.96: persistent winner line by the hero cards (Kevin) — what won
     // and what beat you, stays visible during the results pause.
     var hdEl = document.getElementById('hero-hand-desc');
     if (hdEl) {
@@ -616,7 +621,7 @@
         prepareNextHand();
       }, 600);
     } else {
-      // Next-hand + pause buttons plus a 13s auto-deal countdown (v1.8.95:
+      // Next-hand + pause buttons plus a 13s auto-deal countdown (v1.8.96:
       // was 10s; Kevin wanted longer + a pause for hand review).
       UI.showHandEndControls({
         autoMs: 13000,
@@ -861,7 +866,7 @@
     UI.disableControls();
     UI.coachTip(null);
     resumeFromHero();
-    // v1.8.95: if the engine rejects the amount, don't leave the game stuck
+    // v1.8.96: if the engine rejects the amount, don't leave the game stuck
     // with disabled controls — re-enable so the player can act again (Kevin).
     try {
       table.act(0, a, amount);
@@ -967,7 +972,7 @@
   function opponentReads() {
     // Compact scouting report, shown once per hand (first verdict). Short
     // style tags — the full exploit advice lives in the vs-line for the
-    // villain that matters (v1.8.95: full sentences per opponent bloated
+    // villain that matters (v1.8.96: full sentences per opponent bloated
     // every first message to 600+ chars).
     var live = liveOpponents();
     if (!live.length) return '';
@@ -976,7 +981,7 @@
       var exploit = A ? UI.escapeHtml(exploitLine(A)) : 'unknown style';
       return '<b>' + name + '</b> — ' + exploit;
     });
-    // v1.8.95: Kevin wants bullet points (one per line), not inline.
+    // v1.8.96: Kevin wants bullet points (one per line), not inline.
     return '<div class="coach-opps">🎯 Table:<br>• ' + reads.join('<br>• ') + '</div>';
   }
 
@@ -1130,7 +1135,7 @@
       // t.pot includes the bet just made (engine emits post-action), so the
       // true sizing is bet vs the pot BEFORE it — same reconstruction as
       // villainSizingTell. Without this, a 1.5x overbet reads as 0.6 and
-      // lands in the 'wide' gap (v1.8.95: Amogh's flop overbet advised a call).
+      // lands in the 'wide' gap (v1.8.96: Amogh's flop overbet advised a call).
       var ratio = size / Math.max(1, pot - size);
       if (t.street === 'preflop') {
         if (t.action === 'raise' || t.action === 'bet') {
@@ -1158,6 +1163,40 @@
       unknown: 'no read yet'
     }[label];
     return { label: label, strength: strength, actions: actions, words: words };
+  }
+
+  // Concrete range read (v1.8.96, Kevin): translate the abstract range
+  // label into likely holdings + what it means, adjusted for THIS player's
+  // personality and the board texture. Hand-reading in plain words:
+  // callers are capped (premiums re-raise), big bets from tight players are
+  // the nuts, big bets from bluffers are polarized, and on draw-heavy
+  // boards a caller is usually a pair or a draw (monsters raise to protect).
+  function concreteRangeRead(V, range) {
+    if (!V || !range || range.label === 'unknown') return '';
+    var name = V.isHero ? 'You' : V.name;
+    var A = V.archetype || {};
+    var wet = false;
+    try { wet = boardTexture(table.community) === 'wet'; } catch { wet = false; }
+    var bluffy = villainBluffy(A), tight = villainTighty(A);
+    switch (range.label) {
+      case 'capped':
+        return wet
+          ? name + "'s range is capped: mostly one pair or a draw — a monster would usually raise on this draw-heavy board."
+          : name + "'s range is capped: medium pairs and decent hands, no monster — premiums would have re-raised.";
+      case 'strong':
+        if (A.id === 'lag')
+          return name + ' shows strength, but his big raises are wide — pressure plays are in there too, not just monsters.';
+        return tight > 0.6
+          ? name + ' shows strength — and from a tight player that almost always means a big hand: a strong pair or better.'
+          : name + ' shows strength: likely a strong pair, two pair, or a big draw.';
+      case 'polarized':
+        return bluffy > 0.5
+          ? name + "'s range is either a monster or a bluff — and he bluffs enough that you can't fold everything."
+          : name + "'s range is either a monster or a bluff — but he rarely bluffs, so weight it heavily toward a monster.";
+      case 'wide':
+        return name + ' plays a wide range, so this barely narrows him down: pairs, draws, and some air are all in there.';
+    }
+    return '';
   }
 
   // The villain's last aggressive sizing this street. Preflop it's measured
@@ -1218,7 +1257,7 @@
   // Made-hand class for SPR commitment decisions, from the evaluator directly:
   // nut (straight+) | overpair (trips+, two pair, or a pair above the board) |
   // toppair | secondpair | weakpair | draw-strong (combo) | draw | draw-weak | air.
-  // v1.8.95: A made straight+ with a draw (e.g. straight + flush redraw) must
+  // v1.8.96: A made straight+ with a draw (e.g. straight + flush redraw) must
   // classify as 'nut' (value bet), not 'draw-strong' (semi-bluff). Kevin's
   // 7cJc on 9c3d8dTc: J-high straight + 4-flush — coach said "semi-bluff",
   // completely wrong. Check made hands before draws.
@@ -1344,14 +1383,14 @@
       // players are still in and nobody has raised — the spot is about the
       // dead money, not one opponent. Raised pots keep the aggressor read.
       var limpedMulti = table.street === 'preflop' && table.currentBet <= table.bb && isMultiway();
-      // v1.8.95: same rule postflop — multiway with no aggressor means no
+      // v1.8.96: same rule postflop — multiway with no aggressor means no
       // single-villain read (Kevin: "unless that player did the specific raise").
       var multiwayNoAggro = isMultiway() && table.street !== 'preflop' &&
         !(V && (V.bet || 0) > 0);
       var tail = (isMultiLimp || limpedMulti || multiwayNoAggro) ? '' : villainLine(V);
       // Opponent reads are static reference: show once per hand (first verdict),
       // not on every decision. Repeating them bloated every message to 600+
-      // chars (v1.8.95, found by the 10-hand audit loop).
+      // chars (v1.8.96, found by the 10-hand audit loop).
       var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
@@ -1426,10 +1465,12 @@
     var good = null, bad = null;
     coachDecisions.forEach(function (d) {
       if (d.strength !== 'strong' || !d.lesson) return;
-      if (d.followed && !good) good = d;
-      else if (!d.followed && !bad) bad = d;
+      // Grade the hand-defining decision: biggest pot wins, ties go to the
+      // later decision (v1.8.96).
+      if (d.followed && (!good || (d.pot || 0) >= (good.pot || 0))) good = d;
+      else if (!d.followed && (!bad || (d.pot || 0) >= (bad.pot || 0))) bad = d;
     });
-    // v1.8.95: never return null — a loss with no recorded decision still
+    // v1.8.96: never return null — a loss with no recorded decision still
     // gets a message (was empty recap — Kevin).
     if (!good && !bad && !won) {
       var h0 = '<div class="coach-recap-title">Hand #' + UI.escapeHtml(String(handNo)) + ' recap</div>';
@@ -1439,7 +1480,7 @@
     var lines = [];
     // Win first: if you ignored the coach but took the pot, say so.
     // Distinguish semi-bluffs (draw + aggression) from pure bluffs and iso-raises.
-    // v1.8.95: won by fold always gets a message, even with no recorded
+    // v1.8.96: won by fold always gets a message, even with no recorded
     // strong decision (was empty recap — Kevin).
     if (won && wonByFold) {
       var isSemi = bad && (bad.hc === 'draw-strong' || bad.hc === 'draw');
@@ -1458,7 +1499,7 @@
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
     } else if (good && !won && !bad) {
       // Followed the plan but lost with no leak to name: never say
-      // "well played" for a losing hand (v1.8.95) — neutral process note.
+      // "well played" for a losing hand (v1.8.96) — neutral process note.
       lines.push({ kind: 'good', text: 'Tough loss — you stuck to the plan on the key decision. Sometimes the cards don\'t cooperate.' });
     }
     // Don't second-guess a winning bluff: if you took it down by fold,
@@ -1466,9 +1507,9 @@
     if (bad && !(won && wonByFold)) {
       var prefix = (won && !good) ? 'One thing to tighten up: ' : 'To improve: ';
       lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
-        ', you went ' + bad.action + '. ' + bad.lesson });
+        ', you went ' + bad.action + (bad.street ? ' (' + bad.street + ')' : '') + '. ' + bad.lesson });
     }
-    // v1.8.95: bulletproof — never return an empty recap. If no branch fired
+    // v1.8.96: bulletproof — never return an empty recap. If no branch fired
     // (e.g. won at showdown with no recorded strong decision), add a generic
     // message so the coach always says something (Kevin).
     if (!lines.length) {
@@ -1517,7 +1558,7 @@
       return '';
     }
     var limps = countLimpers();
-    // v1.8.95: only a "great spot to raise" if no one has raised yet (Kevin:
+    // v1.8.96: only a "great spot to raise" if no one has raised yet (Kevin:
     // Shark raised to 55 after 3 limps — not dead money, and coach said Fold
     // while the note said "raise", a direct contradiction).
     if (limps >= 3 && table.currentBet <= table.bb)
@@ -1838,17 +1879,17 @@
     var canBet = legal.canBet || legal.canRaise;
     var range = V ? estimateVillainRange(vIdx)
       : { label: 'unknown', strength: 0.5, words: 'no read yet', actions: 0 };
-    // v1.8.95: don't single out one player's range in a multiway pot unless
+    // v1.8.96: don't single out one player's range in a multiway pot unless
     // they did something specific (bet/raised). pickVillain falls back to an
     // arbitrary opponent when no one's bet — naming them is noise (Kevin).
     var noAggro = isMultiway() && !(V && (V.bet || 0) > 0);
     var rangeNote = (V && range.label !== 'unknown' && !noAggro)
-      ? ' ' + vName + '\'s range looks ' + range.words + '.' : '';
+      ? ' ' + concreteRangeRead(V, range) : '';
     var anyDraw = (hc === 'draw-strong' || hc === 'draw' || hc === 'draw-weak');
 
     // ---------------- no bet to face ----------------
     if (toCall === 0) {
-      // v1.8.95: "bluffs constantly" needs HIGH AGGRESSION too, not just bluff
+      // v1.8.96: "bluffs constantly" needs HIGH AGGRESSION too, not just bluff
       // param. Rohan has bluff 0.68 but aggression 0.05 — he's a station who
       // occasionally bluffs, not a maniac (Kevin's screenshot).
       var vManiac = V && villainBluffy(V.archetype) > 0.6 &&
@@ -1862,7 +1903,7 @@
         var tex = boardTexture(table.community);
         var frac = (tex === 'wet' || foldy < 0.25) ? 0.75 : 0.5;
         var betSize = Math.max(1, Math.round(pot * frac));
-        // v1.8.95: if committed (SPR low), don't suggest a pot fraction that's
+        // v1.8.96: if committed (SPR low), don't suggest a pot fraction that's
         // much smaller than the stack — just go all-in (Kevin: "½ pot is not
         // same as all-in at all").
         var heroStack = hero.stack;
@@ -1966,7 +2007,7 @@
     var bluffy = V ? villainBluffy(V.archetype) : 0.3;
     var rangeAdjust = 0;
     if (range.label === 'strong' && tight > 0.6) rangeAdjust += 0.08;
-    // Polarized from a non-bluffer is effectively strong (v1.8.95: Amogh's
+    // Polarized from a non-bluffer is effectively strong (v1.8.96: Amogh's
     // overbet shove read as 'wide'/bluffy and advised a call with ace-high).
     var polarStrong = range.label === 'polarized' && (tight > 0.6 || bluffy < 0.25);
     if (range.label === 'polarized') rangeAdjust += (polarStrong ? 0.12 : -0.02);
@@ -2000,7 +2041,7 @@
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');
-      // v1.8.95: Donald overbets draws/vulnerable hands, not just the nuts
+      // v1.8.96: Donald overbets draws/vulnerable hands, not just the nuts
       // (wideOverbet) — don't auto-fold.
       if (tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
           !(V && V.archetype && V.archetype.wideOverbet))
@@ -2030,12 +2071,12 @@
     var riverPrior = (table.street === 'river' && bluffy <= 0.55) ? 0.03 : 0;
     threshold += riverPrior;
     // Pot odds in plain English: the price vs the prize, not just a percentage
-    // (v1.8.95: beginners couldn't follow the raw "win X% of the time").
+    // (v1.8.96: beginners couldn't follow the raw "win X% of the time").
     // When the range is strong, show the ADJUSTED bar explicitly — showing raw
     // 41% then saying "fold" vs 52% equity was contradictory and confusing
-    // (v1.8.95: Kevin's J4 vs Amogh's big bet).
+    // (v1.8.96: Kevin's J4 vs Amogh's big bet).
     var strongAdj = rangeAdjust > 0.005;
-    // Concise math line (v1.8.95): pot odds + adjusted bar + equity source in
+    // Concise math line (v1.8.96): pot odds + adjusted bar + equity source in
     // one breath. The three explainers Kevin asked for (break-even meaning,
     // adjusted threshold vs strong ranges, how win% is simulated) are here
     // but tight — the 10-hand loop flags anything over 400 chars.
@@ -2050,7 +2091,7 @@
       '). ' +
       riskPremiumNote(rp2);
     // Bluff-catching concept for beginners: when your hand only beats a bluff,
-    // name it explicitly (v1.8.95).
+    // name it explicitly (v1.8.96).
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing. Works vs bluffers, not vs big bets for value."
       : '';
@@ -2262,7 +2303,7 @@
   }
 
   // Setup screen: when a game is live (user stepped away mid-hand), offer a
-  // one-tap return to the exact same spot (v1.8.95).
+  // one-tap return to the exact same spot (v1.8.96).
   function refreshBackToGameButton() {
     var btn = $('btn-back-to-game');
     if (!btn) return;
@@ -2401,7 +2442,7 @@
     if (themeBtn) themeBtn.onclick = function () {
       applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
     };
-    // Away-freeze wiring (v1.8.95): any non-table screen freezes the live
+    // Away-freeze wiring (v1.8.96): any non-table screen freezes the live
     // game; showing the table again resumes it in the exact same spot.
     if (UI.setScreenListener) {
       UI.setScreenListener(function (name) {

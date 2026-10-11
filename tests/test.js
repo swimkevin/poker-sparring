@@ -576,7 +576,7 @@ function heroPolicy(table, idx) {
                                  0, 100, 0.9, 0.9, 'turn', 2);
     if (mvm && mvm.amount >= 990 * 0.97) bombs++;
   }
-  ok(bets > 30, 'amogh postflop bets sampled (' + bets + ')');
+  ok(bets > 3 && bets < 30, 'amogh checks pairs down postflop (v1.8.93: bets a minority, got ' + bets + ')');
   ok(over / bets > 0.9, 'Amogh overbets or bombs when he bets (' + over + '/' + bets + ')');
   ok(bombs > 10, 'Amogh bombs all-in with monsters (' + bombs + '/60)');
 
@@ -1195,7 +1195,8 @@ function heroPolicy(table, idx) {
   var AL = BOTS.getArchetype('alice');
   ok(!!AL, 'alice archetype exists');
   ok(AL.bluff === 0, 'alice never bluffs (bluff param is 0)');
-  ok(AL.openTier === 1 && AL.callTier === 1, 'alice plays only premium tiers preflop');
+  ok(AL.openTier === 1 && AL.callTier === 2 && AL.openTierLate === 3,
+    'alice plays strong tiers; defends good hands cheaply (v1.8.95)');
   ok(AL.stubborn >= 0.8, 'alice is stubborn with made hands');
 
   function mkTable(players) {
@@ -1254,7 +1255,7 @@ function heroPolicy(table, idx) {
   ok(BOTS.getArchetype('shark').openTier === 4, 'shark a touch looser (openTier 4)');
   ok(BOTS.getArchetype('pro').openTier === 3, 'pro a touch looser (openTier 3)');
   ok(BOTS.getArchetype('nit').openTier === 2, 'nit a touch looser (openTier 2)');
-  ok(BOTS.getArchetype('rohan').callTier === 5, 'rohan a touch looser (callTier 5)');
+  ok(BOTS.getArchetype('rohan').callTier === 4, 'rohan tightened by Kevin (callTier 4, v1.8.88)');
   var st = BOTS.getArchetype('station'), ma = BOTS.getArchetype('maniac'), rk = BOTS.getArchetype('rock');
   ok(st.openTier === 4 && st.callTier === 5, 'calling station untouched (training)');
   ok(ma.openTier === 6 && ma.bluff === 0.55, 'maniac untouched (training)');

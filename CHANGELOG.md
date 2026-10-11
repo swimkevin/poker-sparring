@@ -3,6 +3,34 @@
 All notable changes to Poker Sparring. Versions are also stamped in the app
 footer (`APP_VERSION` in `js/app.js`) and `package.json`.
 
+## [1.8.96] — 2026-10-11
+
+### swimkev's iso identity + coach range reads (Kevin)
+- swimkev limped A9 then folded to an iso raise. Now he IS the iso-raiser:
+  big ~1.5x-pot iso over limpers with good hands (pressure + information —
+  callers show monsters/premium high cards), doesn't fold good hands to
+  others' isos, and attacks low flops after his iso gets called (their
+  high-card range whiffed) while repping the raiser's range.
+- Coach now reads ranges out loud in plain words, adjusted for personality
+  and board: "Rohan's range is capped: mostly one pair or a draw — a
+  monster would usually raise on this draw-heavy board." Plus sizing-tell
+  lessons (tight player's overbet = the nuts; bluffer's = polarized).
+
+### No fake side pots heads-up (Kevin's hand #6)
+- Pot layers with identical eligible players are now merged: heads-up vs
+  a short all-in, Rohan wins ONE main pot — the hero's excess is simply
+  the uncalled refund, not a "side pot".
+
+### Recap grades the hand-defining decision (Kevin)
+- Recap picked the first mistake (a 10-chip limp, "you went call") over
+  the all-in that decided the hand. Decisions now record pot size and the
+  recap grades the biggest-pot one, naming the street.
+
+### Crash fix
+- detectDraws() hardened against stub players — a direct unit call has
+  crashed tests/test.js since v1.8.93's Amogh change (the CI failure
+  emails). Full suite green again: 1009 passed in tests/test.js.
+
 ## [1.8.95] — 2026-10-11
 
 ### Leave mid-hand, come back to the exact same spot (Kevin)
