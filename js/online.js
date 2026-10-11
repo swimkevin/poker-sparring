@@ -548,10 +548,18 @@ window.Online = (function () {
     var wrap = $('online-seats');
     wrap.innerHTML = '';
     var n = s.players.length;
+    // Winners of the finished hand (v1.8.98): their seats get the gold ring
+    // and ONLY their cards are revealed — losing showdown hands stay mucked
+    // unless voluntarily shown (Kevin; same rule as the server snapshot).
+    var winSet = {};
+    (s.winners || []).forEach(function (w) { winSet[w.idx] = true; });
+    var seatElsBySeat = {};
     s.players.forEach(function (p) {
       var pos = seatPos(p.seat, n);
       var d = document.createElement('div');
-      d.className = 'seat' + (p.folded ? ' folded' : '') + (s.acting === p.seat ? ' to-act' : '');
+      seatElsBySeat[p.seat] = d;
+      d.className = 'seat' + (p.folded ? ' folded' : '') + (s.acting === p.seat ? ' to-act' : '') +
+        (winSet[p.seat] ? ' winner' : '');
       d.style.left = pos.x + '%';
       d.style.top = pos.y + '%';
       var avatarEmoji = p.emoji || (p.seat === s.mySeat ? '🧑' : '👤');
@@ -570,8 +578,11 @@ window.Online = (function () {
         '<div class="timer-secs"></div>';
       var pc = d.querySelector('.pcards');
       if (p.hasCards) {
-        var revealed = s.showdown && s.showdown.some(function (r) { return r.seat === p.seat; });
-        var sd = revealed ? s.showdown.filter(function (r) { return r.seat === p.seat; })[0] : null;
+        // Showdown reveal applies to WINNERS only (v1.8.98) — everyone else
+        // mucks. (Older relays still send all showdown hands; the display
+        // rule here enforces the muck regardless.)
+        var sdEntry = s.showdown && s.showdown.filter(function (r) { return r.seat === p.seat; })[0];
+        var sd = (sdEntry && winSet[p.seat]) ? sdEntry : null;
         // Voluntarily shown cards (PokerNow-style "Show").
         var sh = !sd && s.shown && s.shown.filter(function (r) { return r.seat === p.seat; })[0];
         // Hero's own seat shows their real cards (like the offline table);
@@ -601,6 +612,43 @@ window.Online = (function () {
       s.hole.forEach(function (c) { hero.appendChild(UI.cardEl(c, true)); });
     }
 
+    // Winner card lift (v1.8.98, Kevin — same language as solo play): the
+    // winning best-5 rises with a gold ring, the rest of the board dims.
+    // The best-5 is computed locally from the winner's shown cards.
+    try {
+      var sdWinners = (s.winners || []).filter(function (w) { return w.hand && !w.byFold; });
+      if (sdWinners.length && s.community.length >= 3 && typeof evaluate7 === 'function') {
+        var keyOf = function (c) { return c.r + '-' + c.s; };
+        var boardWinKeys = {};
+        sdWinners.forEach(function (w) {
+          var holeW = null;
+          var sdE = s.showdown && s.showdown.filter(function (r) { return r.seat === w.idx; })[0];
+          if (sdE) holeW = sdE.hole;
+          else if (w.idx === s.mySeat && s.hole) holeW = s.hole;
+          if (!holeW) return;
+          var best5 = evaluate7(holeW.concat(s.community)).best5 || [];
+          var bestKeys = {};
+          best5.forEach(function (c) { bestKeys[keyOf(c)] = true; });
+          s.community.forEach(function (c) { if (bestKeys[keyOf(c)]) boardWinKeys[keyOf(c)] = true; });
+          // Winner's own cards: seat pcards (and the hero strip if it's me).
+          var seatEl = seatElsBySeat[w.idx] || null;
+          var boxes = [];
+          if (seatEl) boxes.push(seatEl.querySelector('.pcards'));
+          if (w.idx === s.mySeat) boxes.push(hero);
+          boxes.forEach(function (box) {
+            if (!box) return;
+            // Positional match: pcards order equals hole order.
+            for (var cj = 0; cj < box.children.length && cj < holeW.length; cj++) {
+              box.children[cj].classList.add(bestKeys[keyOf(holeW[cj])] ? 'card-win' : 'card-dim');
+            }
+          });
+        });
+        for (var bi = 0; bi < comm.children.length && bi < s.community.length; bi++) {
+          comm.children[bi].classList.add(boardWinKeys[keyOf(s.community[bi])] ? 'card-win' : 'card-dim');
+        }
+      }
+    } catch {}
+
     // Timer bar on the to-act seat
     updateTimerBar(s.timerMsLeft);
 
@@ -619,7 +667,7 @@ window.Online = (function () {
     try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch {}
     var showBtn = $('on-show-btn');
     var canShow = s.state === 'playing' && cachedHole && cachedHole.length === 2 &&
-      !(s.showdown && s.showdown.some(function (r) { return r.seat === s.mySeat; })) &&
+      !winSet[s.mySeat] &&
       !(s.shown && s.shown.some(function (r) { return r.seat === s.mySeat; })) &&
       (s.winners || (function () { var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0]; return me && me.folded; })());
     if (showBtn) {
@@ -634,17 +682,26 @@ window.Online = (function () {
     // The hand name and details stay in the feed below.
     var banner = $('on-banner');
     if (s.winners && s.winners.length) {
-      var w = s.winners[0];
-      var pl = s.players.filter(function (p) { return p.seat === w.idx; })[0];
-      // Only rebuild if the winner changed (preserves the splash timer
-      // across re-renders of the same result).
-      var sig = w.idx + ':' + w.amount + ':' + (w.hand || '');
+      // All winners (split pots included), total, and the winning hand name
+      // (v1.8.98 — matches the solo winner line).
+      var seenIdx = {};
+      var wNames = [];
+      s.winners.forEach(function (w) {
+        if (seenIdx[w.idx]) return;
+        seenIdx[w.idx] = true;
+        var pl = s.players.filter(function (p) { return p.seat === w.idx; })[0];
+        wNames.push(pl ? pl.name : 'Seat ' + w.idx);
+      });
+      var wTotal = s.winners.reduce(function (sum, w) { return sum + (w.amount || 0); }, 0);
+      var wHand = (s.winners.filter(function (w) { return w.hand; })[0] || {}).hand || '';
+      var sig = s.winners.map(function (w) { return w.idx + ':' + w.amount; }).join('|') + ':' + wHand;
       if (banner.dataset.sig !== sig) {
         banner.dataset.sig = sig;
         if (banner._splashT) { clearTimeout(banner._splashT); banner._splashT = null; }
         banner.className = 'winner-banner win-splash';
         banner.innerHTML = '<div class="wtitle">' +
-          esc(pl ? pl.name : 'Seat ' + w.idx) + ' wins ' + fmt(w.amount) + '</div>';
+          esc(wNames.join(' & ')) + (wNames.length > 1 ? ' win ' : ' wins ') + fmt(wTotal) +
+          (wHand ? ' · ' + esc(wHand) : '') + '</div>';
         banner.hidden = false;
         banner._splashT = setTimeout(function () {
           banner._splashT = null;

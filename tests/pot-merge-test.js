@@ -16,7 +16,6 @@ t.players[1].totalBet = 942; t.players[1].hole = [C(14, 3), C(12, 3)]; t.players
 for (var i = 2; i < 6; i++) { t.players[i].totalBet = 35; t.players[i].folded = true; t.players[i].hole = [C(2, 0), C(3, 1)]; }
 t.community = [C(9, 1), C(6, 3), C(8, 2), C(6, 0), C(14, 1)];
 t.pot = 3881 + 942 + 35 * 4;
-var before = t.players.map(function (p) { return p.stack; });
 var pots = t._buildPots();
 console.log('pots:', JSON.stringify(pots.map(function (p) { return { amount: p.amount, eligible: p.eligible }; })));
 var total = pots.reduce(function (s, p) { return s + p.amount; }, 0);

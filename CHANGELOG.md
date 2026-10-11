@@ -1,3 +1,22 @@
+## v1.8.98 — Online winner presentation + mucked losers
+
+- Winner treatment online now matches solo: gold seat ring, the winning hand named
+  in the splash ("Guest-1 wins 20 · Two Pair, Aces and Kings"), and the winning
+  best-5 cards lift with a gold ring while the rest of the board dims (best-5
+  computed in the client from the winner's shown cards).
+- Losing showdown hands are mucked by default: only winners' cards are revealed;
+  everyone else shows card backs unless they tap "Show my cards". Enforced in the
+  client display immediately and in the room server's snapshot (live on the next
+  worker deploy).
+- Room server: split pots now expand to per-winner entries with per-winner
+  amounts (co-winners were previously dropped and the whole pot credited to one
+  player in the banner/feed); uncalled refunds are no longer listed as wins.
+- Show-my-cards button now appears for losing players even against older relays.
+- New tests: online-winners (server normalization + reveal filtering) and
+  online-winner-dom (full mock game in jsdom: ring, face-up winner, mucked loser,
+  lifted board). Live-verified: 3 full hands on the production relay, chips
+  conserved, no errors.
+
 # Changelog
 
 All notable changes to Poker Sparring. Versions are also stamped in the app

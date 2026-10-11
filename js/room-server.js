@@ -283,12 +283,28 @@ class Room {
     } else if (e.t === 'street') {
       this._pushRecent('— ' + e.street + ' —');
     } else if (e.t === 'handEnd') {
-      var winners = (e.winners || []).map(function (w) {
-        // handEnd winners shape differs for fold-wins vs showdowns; normalize.
-        var idx = (w.idx != null) ? w.idx : (w.winners && w.winners[0]);
-        return { idx: idx, amount: w.amount != null ? w.amount : 0, hand: w.hand || null, byFold: !!w.byFold };
+      // Normalize to PER-WINNER entries with per-winner amounts (v1.8.98):
+      // split pots previously lost every co-winner after the first and
+      // showed the whole pot as one player's win. Uncalled refunds are not
+      // wins and are dropped from the display list.
+      var winners = [];
+      (e.winners || []).forEach(function (w) {
+        if (w.uncalled) return;
+        var ids = w.winners || (w.idx != null ? [w.idx] : []);
+        ids.forEach(function (idx) {
+          winners.push({ idx: idx, amount: w.each != null ? w.each : (w.amount || 0), hand: w.hand || null, byFold: !!w.byFold });
+        });
       });
-      this.lastResult = { winners: winners, revealed: e.revealed || [], handNo: this.table.handNo };
+      if (!winners.length) { // degenerate fallback: keep the raw first entry
+        var w0 = (e.winners || [])[0];
+        if (w0) winners.push({ idx: (w0.idx != null ? w0.idx : (w0.winners || [0])[0]), amount: w0.amount || 0, hand: w0.hand || null, byFold: !!w0.byFold });
+      }
+      // Reveal ONLY the winners' cards (v1.8.98, Kevin): losing showdown
+      // hands stay mucked unless the player voluntarily shows (snap.shown).
+      var winIdx = {};
+      winners.forEach(function (w) { winIdx[w.idx] = true; });
+      var revealed = (e.revealed || []).filter(function (r) { return winIdx[r.idx]; });
+      this.lastResult = { winners: winners, revealed: revealed, handNo: this.table.handNo };
       var self = this;
       winners.forEach(function (w) {
         var pl = self.playerBySeat(w.idx);
