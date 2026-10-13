@@ -327,3 +327,22 @@ console.log('\n25. v1.8.84: default rosters include Donald, use lag id, no stati
   ok(!appSrc.includes("'swimkev', 'rohan'"),
      'no stale swimkev id in defaults');
 }
+
+console.log('\n26. v1.8.101: hero plays the board (Kevin\'s QQQ77 river)');
+{
+  const appSrc = require('fs').readFileSync('js/app.js', 'utf8');
+  // Classifier: straight+ with no hole card in the best 5 is 'board', not 'nut'.
+  ok(appSrc.includes("if (boardOnly) return 'board';"),
+     'handClass returns board when no hole card plays');
+  // Facing a bet: fold — raising for value is impossible (no worse hand
+  // exists) and a bet is never a bluff on a self-playing board.
+  ok(/if \(hc === 'board'\)\s*\n?\s*return mkVerdict\('fold'/.test(appSrc),
+     'board-play facing a bet advises fold');
+  ok(appSrc.includes("a bet on this board is never a bluff"),
+     'fold message explains why bets are never bluffs');
+  // Checked to hero: check — nothing to value-bet, no fold to win.
+  ok(/if \(hc === 'board'\)\s*\n?\s*return mkVerdict\('check'/.test(appSrc),
+     'board-play with no bet to face advises check');
+  ok(!/hc === 'board'[^]*mkVerdict\('(raise|bet)'/.test(appSrc),
+     'board-play never advises raise or bet');
+}

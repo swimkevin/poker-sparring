@@ -1,4 +1,18 @@
-## v1.8.100 — Flaky equity test hardened
+## [1.8.101] — Coach no longer value-raises when hero plays the board
+
+Kevin's river spot: A-K on Q-Q-7-Q-7. The old coach classified the board's
+full house as the hero's 'nut' and said "Raise for value ~3x, charge the
+draws" — but when none of your cards are in the best 5, nobody can hold a
+worse hand than you (raising gets called only by better), and a bet is never
+a bluff (you can't bluff someone off a hand they already tie).
+- handClass returns 'board' for straight+ with no hole card in the best 5.
+- Facing a bet with 'board': Fold, with a plain-language explanation naming
+  the Queen/Seven danger vs tight players. Checked to: Check (nothing to
+  value-bet, no fold to win).
+- New tests: board-play (classifier incl. quad/sevens-full counter-cases
+  that must stay 'nut') + static verdict-branch checks in coach-scenarios.
+
+## [1.8.100] — Flaky equity test hardened
 
 - The v1.8.99 range-equity ordering assertion (tier2 < tier3 < random) flaked at
   500 Monte Carlo sims (SE ~0.022 vs a ~0.04 true gap — pure noise, caught on

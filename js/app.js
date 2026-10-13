@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.100';
+  var APP_VERSION = '1.8.101';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -1255,7 +1255,8 @@
   }
 
   // Made-hand class for SPR commitment decisions, from the evaluator directly:
-  // nut (straight+) | overpair (trips+, two pair, or a pair above the board) |
+  // nut (straight+) | board (straight+ but hero's cards don't play — nobody can
+  // hold worse) | overpair (trips+, two pair, or a pair above the board) |
   // toppair | secondpair | weakpair | draw-strong (combo) | draw | draw-weak | air.
   // v1.8.97: A made straight+ with a draw (e.g. straight + flush redraw) must
   // classify as 'nut' (value bet), not 'draw-strong' (semi-bluff). Kevin's
@@ -1264,7 +1265,16 @@
   function handClass(hole, community) {
     var d = detectDraws(hole, community);
     var ev = (hole.length + community.length >= 5) ? evaluate7(hole.concat(community)) : null;
-    if (ev && ev.cat >= 4) return 'nut'; // straight+ beats any draw label
+    if (ev && ev.cat >= 4) {
+      // v1.8.101 (Kevin's QQQ77 river): if none of the hero's hole cards are
+      // in the best 5, the hero "plays the board" — nobody can hold a worse
+      // hand, so this is NOT a value hand despite the category.
+      var boardOnly = (ev.best5 || []).every(function (c) {
+        return !hole.some(function (h) { return h.r === c.r && h.s === c.s; });
+      });
+      if (boardOnly) return 'board';
+      return 'nut'; // straight+ beats any draw label
+    }
     if (d.flushDraw && d.oesd) return 'draw-strong';
     if (ev) {
       if (ev.cat === 3 || ev.cat === 2) return 'overpair';
@@ -1291,7 +1301,8 @@
   function handClassName(hc) {
     return { nut: 'the nuts', overpair: 'an overpair', toppair: 'top pair',
       secondpair: 'second pair', weakpair: 'a weak pair', 'draw-strong': 'a monster draw', draw: 'a draw',
-      'draw-weak': 'a weak draw', air: 'nothing' }[hc] || 'your hand';
+      'draw-weak': 'a weak draw', air: 'nothing',
+      board: 'the board (your cards don\'t improve it)' }[hc] || 'your hand';
   }
 
   // Bet AND a call ahead of the hero this street — a reliable strength tell.
@@ -1424,6 +1435,7 @@
       recap: coachRecap,
       setDecisions: function (ds) { coachDecisions = ds; },
       adviceFollowed: adviceFollowed,
+      handClass: handClass,
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot,
       // Scenario testing: verify coach advice for specific spots without
@@ -1889,6 +1901,14 @@
 
     // ---------------- no bet to face ----------------
     if (toCall === 0) {
+      // v1.8.101 (Kevin's QQQ77 river): hero plays the board — no worse hand
+      // exists in the deck, so there's nothing to value-bet, and a bluff
+      // can't fold out a hand that already ties the board. Just check.
+      if (hc === 'board')
+        return mkVerdict('check', 'strong',
+          '<b>Check</b> — your cards don\'t improve the board at all, so everyone already has at least a split. ' +
+          'Betting can\'t get called by a worse hand (none exists), and a bluff can\'t fold out a chop.' + rangeNote,
+          'When you play the board, just check: there\'s no value to extract and no fold to win.');
       // v1.8.97: "bluffs constantly" needs HIGH AGGRESSION too, not just bluff
       // param. Rohan has bluff 0.68 but aggression 0.05 — he's a station who
       // occasionally bluffs, not a maniac (Kevin's screenshot).
@@ -2057,6 +2077,19 @@
           '<b>Fold</b> — an overbet from a tight player is almost always the nuts. Don\'t pay it off.' + rangeNote,
           'Respect overbets from tight players: it\'s the nuts far more often than a bluff.');
     }
+
+    // v1.8.101 (Kevin's QQQ77 river): hero plays the board. Nobody can hold a
+    // worse hand, so raising for value is impossible — and a bet here is
+    // never a bluff, because you can't bluff someone off a hand they already
+    // tie. Anyone betting has you beat (a Queen or a Seven) or is punting.
+    if (hc === 'board')
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — your cards don\'t improve the board at all: the best five are already out there, ' +
+        'so everyone is guaranteed at least a split. Nobody can hold a worse hand than you, which means raising ' +
+        'can never get called by worse — and a bet on this board is never a bluff, since a bluff can\'t fold out ' +
+        'a chop.' + (tight > 0.6 ? ' From a tight player this is a Queen or a Seven far more often than a split.' : '') +
+        ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
+        'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
     // Raise monsters for value; semi-bluff-raise strong draws.
     if (hc === 'nut' && legal.canRaise)
