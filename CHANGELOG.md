@@ -1,3 +1,10 @@
+## v1.8.100 — Flaky equity test hardened
+
+- The v1.8.99 range-equity ordering assertion (tier2 < tier3 < random) flaked at
+  500 Monte Carlo sims (SE ~0.022 vs a ~0.04 true gap — pure noise, caught on
+  2026-10-13 rerun). Sims raised to 5,000 for those three estimates (ordering
+  then held across 5 seeds); suite is back to 1,020/1,020.
+
 ## [1.8.99] — Honest coach equity, side-pot reconciliation, reveal hardening
 
 - Disputed equity spot FIXED (Kevin): the coach's "you win X%" vs a strong

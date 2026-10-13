@@ -399,9 +399,11 @@ function heroPolicy(table, idx) {
 // mostly better pairs. The coach now simulates vs the actual range.
 (function () {
   var j4 = hand('Jd 4c'), board = hand('Js 7c 2d');
-  var vsRandom = EQ.estimateEquity(j4, board, 1, 500);
-  var vsTier2 = EQ.estimateEquityVsRangePostflop(j4, board, 2, 500);
-  var vsTier3 = EQ.estimateEquityVsRangePostflop(j4, board, 3, 500);
+  // 5000 sims: at 500 the tier2/tier3 ordering was Monte Carlo noise
+  // (SE ~0.022 vs a ~0.04 true gap — coin-flip flakiness, caught 2026-10-13).
+  var vsRandom = EQ.estimateEquity(j4, board, 1, 5000);
+  var vsTier2 = EQ.estimateEquityVsRangePostflop(j4, board, 2, 5000);
+  var vsTier3 = EQ.estimateEquityVsRangePostflop(j4, board, 3, 5000);
   ok(vsTier2 >= 0 && vsTier2 <= 1, 'postflop range equity in [0,1], got ' + vsTier2.toFixed(3));
   ok(vsTier2 < vsRandom - 0.15,
     'J4o top pair far worse vs a premium range than vs random (' +
