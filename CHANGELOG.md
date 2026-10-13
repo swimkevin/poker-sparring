@@ -1,4 +1,35 @@
-## v1.8.98 — Online winner presentation + mucked losers
+## [1.8.99] — Honest coach equity, side-pot reconciliation, reveal hardening
+
+- Disputed equity spot FIXED (Kevin): the coach's "you win X%" vs a strong
+  read is now simulated against the villain's actual tier-bounded range on
+  the real board (`estimateEquityVsRangePostflop` in equity.js) — never vs
+  random hands with a fudge factor. Polarized-from-a-non-bluffer reads as a
+  tier-2 (premium/strong) range, 'strong' as tier-3; the x0.75 discount and
+  the compensating bar bumps are gone (they double-counted once the range is
+  priced into the equity). The math line now says "simulated 150× vs Amogh's
+  strong range" — the number shown is the number the advice is based on.
+- Side-pot 3k report investigated (Kevin): 150 fuzzed multi-level all-in
+  hands now assert per-player event-vs-actual credit agreement
+  (`tests/sidepot-reconcile.js`, 2,000+ assertions) — the handEnd event, the
+  winner banner, and the hand history can no longer disagree with real stack
+  credits. No reproduction of the 3,275: engine and event agree on every
+  reachable path; stays a watch item pending a hand number from Kevin.
+- Engine hardening: the degenerate no-eligible-winner refund now emits
+  per-player "takes back" entries instead of a winnerless pot (the old shape
+  rendered as "Side pot N: wins X" with no name).
+- Voluntary reveal hardened (online): the "Show my cards" button now appears
+  only after the hand completes — it was offered to players who folded
+  mid-hand, broadcasting their live cards to the table. The server now
+  rejects `show` while a hand is in progress (ships with Kevin's next
+  `wrangler deploy`; the client half is live immediately).
+- Mobile audit (online): `.online-table-top` is now a real flex row (the old
+  rule set flex-wrap without display:flex), the Show button is anchored
+  bottom-center of the felt (was in-flow over the top seats), and the paused
+  overlay is centered (was unstyled). Feature flags audited: all three map to
+  live elements, no dead references. Rabbit-hunting doesn't exist in the app
+  (nothing to validate); run-it-twice scoped but not built — Kevin's call.
+
+## [1.8.98] — Online winner presentation + mucked losers
 
 - Winner treatment online now matches solo: gold seat ring, the winning hand named
   in the splash ("Guest-1 wins 20 · Two Pair, Aces and Kings"), and the winning

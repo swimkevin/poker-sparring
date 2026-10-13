@@ -183,6 +183,9 @@ class Room {
   showCards(clientId, hole) {
     var p = this.playerByClientId(clientId);
     if (!p) return { ok: false, error: 'not at this table' };
+    // Only once the hand is over (v1.8.99): revealing mid-hand — e.g. right
+    // after folding — hands the live table free information.
+    if (!this.table || !this.table.handOver) return { ok: false, error: 'wait for the hand to end' };
     if (!Array.isArray(hole) || hole.length !== 2) return { ok: false, error: 'bad cards' };
     var clean = hole.map(function (c) {
       return { r: Math.max(2, Math.min(14, parseInt(c.r, 10) || 0)), s: Math.max(0, Math.min(3, parseInt(c.s, 10) || 0)) };

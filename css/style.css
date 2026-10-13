@@ -953,6 +953,25 @@ label { font-weight: 600; }
 .ledger-row .pos { color: var(--green); }
 .ledger-row .neg { color: var(--red); }
 
+/* ---- online table header (v1.8.99): flex row so the host controls wrap
+   instead of stacking as full-width blocks (the old mobile rule set
+   flex-wrap without display:flex, which did nothing) ---- */
+.online-table-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+/* Voluntary-reveal button: anchored bottom-center of the felt (v1.8.99).
+   It used to sit in normal flow at the top of the felt, under the top seats. */
+#on-show-btn {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  z-index: 40; white-space: nowrap;
+}
+/* Paused overlay: centered on the felt like the winner splash (v1.8.99 —
+   previously unstyled, rendering in-flow over the top seats). */
+.online-paused {
+  position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
+  z-index: 35; background: rgba(8, 12, 18, 0.88); border: 1px solid var(--line);
+  border-radius: 12px; padding: 0.7rem 1.2rem; font-weight: 700; text-align: center;
+}
+.online-paused .hint { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
 /* ============ MOBILE TAB BAR + PANELS (phones) ============ */
 .mobile-tabs, .mobile-panel { display: none; }
 

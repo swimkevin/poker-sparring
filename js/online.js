@@ -659,6 +659,9 @@ window.Online = (function () {
 
     // "Show cards" button (PokerNow-style): after a hand, if your cards weren't
     // revealed at showdown, offer to show them to the table voluntarily.
+    // v1.8.99: only once the hand is COMPLETE (s.winners set). The old
+    // folded-mid-hand clause offered the reveal while the hand was still
+    // live — broadcasting your cards to players still in the hand.
     // Cache hole cards: the server clears s.hole when the hand ends.
     if (s.hole && s.hole.length === 2) {
       try { window.__lastHole = JSON.stringify(s.hole); } catch {}
@@ -666,10 +669,11 @@ window.Online = (function () {
     var cachedHole = null;
     try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch {}
     var showBtn = $('on-show-btn');
+    var handComplete = !!(s.winners && s.winners.length);
     var canShow = s.state === 'playing' && cachedHole && cachedHole.length === 2 &&
       !winSet[s.mySeat] &&
       !(s.shown && s.shown.some(function (r) { return r.seat === s.mySeat; })) &&
-      (s.winners || (function () { var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0]; return me && me.folded; })());
+      handComplete;
     if (showBtn) {
       showBtn.hidden = !canShow;
       showBtn.onclick = function () {

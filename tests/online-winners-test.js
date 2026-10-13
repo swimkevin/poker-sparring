@@ -49,5 +49,23 @@ ok(revSeats.join(',') === '0,1', 'only winners cards revealed; loser (seat 2) mu
 // Snapshot carries the same filtered view to clients.
 var snap = room.getSnapshot(2);
 ok(snap.showdown && snap.showdown.length === 2, 'snapshot showdown has winners only');
+
+// Voluntary reveal only after the hand is over (v1.8.99): a mid-hand reveal
+// (e.g. right after folding) hands the live table free information. The
+// client button is gated too, but the server is the enforcement boundary.
+var room2 = new RS.Room({ code: 'SHOW99', config: {} });
+room2.addPlayer('c1', 'Ann', {});
+room2.addPlayer('c2', 'Bob', {});
+room2.state = 'playing';
+room2.table = { handOver: false, players: [] }; // hand in progress
+var rMid = room2.showCards('c1', [C(14, 0), C(13, 0)]);
+ok(!rMid.ok, 'showCards rejected while the hand is live');
+ok(!room2.shownHands[0], 'no cards recorded from the rejected reveal');
+room2.table.handOver = true; // hand complete
+var rAfter = room2.showCards('c1', [C(14, 0), C(13, 0)]);
+ok(rAfter.ok, 'showCards allowed after the hand ends');
+ok(room2.shownHands[0] && room2.shownHands[0].length === 2, 'shown cards recorded after the hand');
+var rBad = room2.showCards('c1', [C(14, 0)]);
+ok(!rBad.ok, 'malformed hole cards still rejected');
 console.log(fails === 0 ? 'ONLINE WINNERS TEST PASSED' : 'ONLINE WINNERS TEST FAILED (' + fails + ')');
 process.exit(fails ? 1 : 0);

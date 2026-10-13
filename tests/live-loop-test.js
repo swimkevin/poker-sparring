@@ -56,6 +56,14 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
         cc.click();
         await sleep(150);
       } else {
+        // Felted modal (the call-always hero can bust): rebuy and keep
+        // playing instead of stalling the loop with turns < 10 (v1.8.99 —
+        // this flaked the gate when the hero busted early).
+        var felted = d.querySelector('#modal-root .modal[aria-label^="You are felted"]');
+        if (felted) {
+          var rb = felted.querySelector('button.primary');
+          if (rb) { rb.click(); await sleep(150); }
+        }
         await sleep(120);
       }
     }

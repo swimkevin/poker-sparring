@@ -344,8 +344,9 @@ function heroPolicy(table, idx) {
   var tot = t.players[0].stack + t.players[1].stack;
   ok(tot === 2000, 'chip conservation on refund, got ' + tot);
   var end = t.eventQueue.filter(function (e) { return e.t === 'handEnd'; })[0];
-  ok(end && end.winners[1].refunded === true && end.winners[1].winners.length === 0,
-    'refund recorded on handEnd');
+  ok(end && end.winners[1].refunded === true && end.winners[1].uncalled === true &&
+     end.winners[1].winners.join() === '0' && end.winners[1].amount === 33,
+    'refund recorded on handEnd as a per-player take-back');
 })();
 
 // ---------- deterministic full hand through act() (rigged deck) ----------
@@ -390,6 +391,34 @@ function heroPolicy(table, idx) {
   var rRandAA = EQ.estimateEquity(aa, [], 1, 800);
   ok(Math.abs(rAnyTwo - rRandAA) < 0.07,
     'tier-6 range ~= random (' + rAnyTwo.toFixed(3) + ' vs ' + rRandAA.toFixed(3) + ')');
+})();
+
+// ---------- postflop equity vs a tier-capped range (v1.8.99) ----------
+// Kevin disputed the coach's vs-random win-% in the J4-vs-Amogh spot: top
+// pair vs random hands looks great, but a tight player's bombing range is
+// mostly better pairs. The coach now simulates vs the actual range.
+(function () {
+  var j4 = hand('Jd 4c'), board = hand('Js 7c 2d');
+  var vsRandom = EQ.estimateEquity(j4, board, 1, 500);
+  var vsTier2 = EQ.estimateEquityVsRangePostflop(j4, board, 2, 500);
+  var vsTier3 = EQ.estimateEquityVsRangePostflop(j4, board, 3, 500);
+  ok(vsTier2 >= 0 && vsTier2 <= 1, 'postflop range equity in [0,1], got ' + vsTier2.toFixed(3));
+  ok(vsTier2 < vsRandom - 0.15,
+    'J4o top pair far worse vs a premium range than vs random (' +
+    vsTier2.toFixed(3) + ' vs ' + vsRandom.toFixed(3) + ')');
+  ok(vsTier3 > vsTier2 && vsTier3 < vsRandom,
+    'wider range tier falls between tight range and random (' +
+    vsTier2.toFixed(3) + ' < ' + vsTier3.toFixed(3) + ' < ' + vsRandom.toFixed(3) + ')');
+  // Tier 6 on a real board must approximate equity vs random hands.
+  var aa = hand('As Ah'), b2 = hand('Ks Qd 2c');
+  var r6 = EQ.estimateEquityVsRangePostflop(aa, b2, 6, 500);
+  var rR = EQ.estimateEquity(aa, b2, 1, 500);
+  ok(Math.abs(r6 - rR) < 0.08,
+    'postflop tier-6 range ~= random (' + r6.toFixed(3) + ' vs ' + rR.toFixed(3) + ')');
+  // Known cards are never dealt to the villain or the board.
+  var trips = hand('Ah Ad'), bd = hand('As Ks Qd');
+  var e = EQ.estimateEquityVsRangePostflop(trips, bd, 2, 300);
+  ok(e > 0.85, 'trip aces vs tier-2 range on A-high board still huge, got ' + e.toFixed(3));
 })();
 
 // ---------- push/fold verdicts are consistent with the displayed range equity ----------

@@ -91,6 +91,54 @@ function estimateEquityVsRange(hole, maxTier, iters) {
   }
   return score / iters;
 }
+
+// Estimate P(win) for `hole` vs a SINGLE opponent sampled from a tier-capped
+// range (holeTier <= maxTier), on the ACTUAL board — only the missing board
+// cards are dealt from the stub. The honest number for postflop "facing a
+// bet" spots: a tight player bombing the pot holds a strong range, not
+// random hands (v1.8.99: Kevin disputed the old vs-random J4-vs-Amogh
+// number, so the coach now prices the range into the equity itself).
+function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
+  iters = iters || 150;
+  maxTier = Math.min(6, Math.max(1, maxTier || 3));
+  var known = {};
+  hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  // All villain hole-card combos inside the range (known cards excluded).
+  var pool = [];
+  for (var i = 0; i < rest.length; i++)
+    for (var j = i + 1; j < rest.length; j++) {
+      var h = [rest[i], rest[j]];
+      if (holeTier(h) <= maxTier) pool.push(h);
+    }
+  if (!pool.length) return 0;
+  var boardNeed = 5 - community.length;
+  var score = 0;
+  for (var k = 0; k < iters; k++) {
+    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vknown = {};
+    vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
+    hole.concat(community).forEach(function (c) { vknown[_key(c)] = 1; });
+    var deck = [];
+    for (var s2 = 0; s2 < 4; s2++)
+      for (var r2 = 2; r2 <= 14; r2++)
+        if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
+    // Partial Fisher-Yates for the missing board cards only.
+    for (var d = 0; d < boardNeed; d++) {
+      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
+    }
+    var board = community.concat(deck.slice(0, boardNeed));
+    var myScore = evaluate7(hole.concat(board)).score;
+    var opScore = evaluate7(vh.concat(board)).score;
+    if (myScore > opScore) score += 1;
+    else if (myScore === opScore) score += 0.5;
+  }
+  return score / iters;
+}
 // Adds draw bonuses so semi-bluffing works.
 // Rough "how strong is my made hand right now" in [0,1], for bot heuristics.
 // Adds draw bonuses so semi-bluffing works.
@@ -292,6 +340,7 @@ function exploitLine(archetype) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
+    estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     madeStrength: madeStrength,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,

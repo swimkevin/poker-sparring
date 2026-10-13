@@ -309,12 +309,16 @@ class PokerTable {
         // Degenerate: no live player can win this level. Unreachable via _step
         // (the hand ends when a single contender remains), but _showdown is also
         // invoked directly — never crash the app. Refund each contributor their
-        // slice at this level so chips are exactly conserved.
-        self.players.forEach(function (p) {
+        // slice at this level so chips are exactly conserved. Itemized per
+        // player (v1.8.99): the old winners:[] entry rendered as "Side pot N:
+        // wins X" with no name in the banner/history — a refund reads as one.
+        self.players.forEach(function (p, pi) {
           var slice = Math.min(p.totalBet, pot.level) - Math.min(p.totalBet, pot.prev);
-          if (slice > 0) p.stack += slice;
+          if (slice > 0) {
+            p.stack += slice;
+            results.push({ potIndex: pi, amount: slice, winners: [pi], uncalled: true, refunded: true, hand: null });
+          }
         });
-        results.push({ potIndex: pi, amount: pot.amount, winners: [], refunded: true, hand: null });
         return;
       }
       var scored = pot.eligible.map(function (i) {

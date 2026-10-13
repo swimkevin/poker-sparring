@@ -159,15 +159,20 @@ console.log('\n13. Range ratio uses pot-before-bet (v1.8.71)');
     'estimateVillainRange divides by pot-before-bet');
 }
 
-console.log('\n14. Polarized range from non-bluffer treated as strong (v1.8.71)');
+console.log('\n14. Polarized range from non-bluffer treated as strong (v1.8.71, v1.8.99)');
 {
-  // Amogh (bluff 0.15) shoving polarized = strong, not bluffy. Threshold must
-  // go up (+0.12) and equity discounted (×0.75), not the reverse.
+  // Amogh (bluff 0.15) shoving polarized = strong, not bluffy. v1.8.99:
+  // equity is simulated vs the villain's actual tier-bounded range instead
+  // of vs random hands with a x0.75 fudge — the fudge's number is what
+  // Kevin disputed (52% shown for J4 vs Amogh's bomb).
   ok(src.includes('polarStrong'), 'polarStrong flag exists');
   ok(/polarStrong = range\.label === 'polarized' && \(tight > 0\.6 \|\| bluffy < 0\.25\)/.test(src),
-    'polarized + tight or non-bluffy counts as strong');
-  ok(src.includes("if (range.label === 'strong' || polarStrong) eq2 *= 0.75;"),
-    'equity discounted for polarized-strong ranges');
+    'polarized + tight or non-bluffer counts as strong');
+  ok(src.includes('estimateEquityVsRangePostflop'), 'range-based postflop equity used');
+  ok(src.includes('var rangeEqTier = polarStrong ? 2 : (range.label === \'strong\' ? 3 : 0);'),
+    'polarized-strong maps to tier 2, strong to tier 3');
+  ok(!src.includes('eq2 *= 0.75'), 'x0.75 fudge removed');
+  ok(!src.includes('rangeAdjust += (polarStrong ? 0.12'), 'strength bar-bump removed (range priced into equity)');
 }
 
 console.log('\n15. Recap never says "well played" for a losing hand (v1.8.71)');
@@ -223,19 +228,23 @@ console.log('\n21. Hand-end pause button + 13s auto-deal (v1.8.71)');
   ok(src.includes('autoMs: 13000'), 'auto-deal is 13s (was 10s)');
 }
 
-console.log('\n22. Adjusted threshold shown vs strong ranges (v1.8.71)');
+console.log('\n22. Honest equity vs strong ranges (v1.8.71, v1.8.99)');
 {
-  // Kevin's J4 vs Amogh: raw 41% needed but real bar 53% — message showed
-  // 41% then said "fold" vs 52% equity (contradictory). Now shows adjusted bar.
-  ok(src.includes("s strong range'"), 'adjusted threshold displayed vs strong range');
+  // Kevin's J4 vs Amogh: the old message showed 52%-vs-random then said
+  // "fold" (contradictory). v1.8.99: the win-% is simulated vs the
+  // villain's actual strong range on this board, so the number shown is the
+  // number the advice is based on — no inflated figure, no fudge factor.
+  ok(src.includes("s strong range'"), 'range named in the math line vs strong ranges');
   ok(src.includes('(pays for itself)'), 'break-even explained');
+  ok(src.includes("'simulated 150× vs ' + vName + '\\'s strong range'") ||
+     src.includes("simulated 150× vs ' + vName + '"), 'equity source names the strong range');
 }
 
 console.log('\n23. Win-% estimation explained (v1.8.71)');
 {
   // Kevin: explain how the "you win X%" is calculated, beginner-friendly.
   ok(src.includes('simulated 150× vs random hands'), 'Monte Carlo explained');
-  ok(src.includes('lowered for their strength'), 'adjustment direction stated');
+  ok(!src.includes('lowered for their strength'), 'no more fudge-factor wording');
 }
 
 console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');

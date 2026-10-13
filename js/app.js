@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.98';
+  var APP_VERSION = '1.8.99';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -2001,23 +2001,31 @@
     var need2 = toCall / (pot + toCall);
     var tell = V ? villainSizingTell(vIdx) : null;
 
-    // Range-based threshold shifts: strong/tight ranges demand more equity,
-    // wide or bluffy ones demand less.
+    // Range-based threshold shifts: wide or bluffy ranges demand less equity.
+    // (v1.8.99: a strong read no longer bumps the bar — the equity below is
+    // now simulated vs the villain's actual range, so the range is priced in.
+    // Bumping the bar on top was double-counting, and the x0.75 fudge it
+    // replaced was the number Kevin disputed in the J4-vs-Amogh spot.)
     var tight = V ? villainTighty(V.archetype) : 0.4;
     var bluffy = V ? villainBluffy(V.archetype) : 0.3;
     var rangeAdjust = 0;
-    if (range.label === 'strong' && tight > 0.6) rangeAdjust += 0.08;
     // Polarized from a non-bluffer is effectively strong (v1.8.97: Amogh's
     // overbet shove read as 'wide'/bluffy and advised a call with ace-high).
     var polarStrong = range.label === 'polarized' && (tight > 0.6 || bluffy < 0.25);
-    if (range.label === 'polarized') rangeAdjust += (polarStrong ? 0.12 : -0.02);
+    if (range.label === 'polarized' && !polarStrong) rangeAdjust -= 0.02;
     if (range.label === 'wide' || bluffy > 0.55) rangeAdjust -= 0.06;
     if (range.label === 'capped') rangeAdjust -= 0.03;
     if (multiway && betCallAhead()) rangeAdjust += 0.05;
 
-    // Equity vs a strong/tight range runs lower than vs random hands.
-    var eq2 = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
-    if (range.label === 'strong' || polarStrong) eq2 *= 0.75;
+    // Honest equity (v1.8.99): with a strong read, simulate vs the villain's
+    // tier-bounded range on this board instead of vs random hands — the old
+    // "vs random, then x0.75" number is what Kevin disputed (52% shown for
+    // J4 vs Amogh's bomb). Tier 2 = premium/strong for polarized-strong
+    // (nuts-or-air from a non-bluffer); tier 3 = strong pair+ for 'strong'.
+    var rangeEqTier = polarStrong ? 2 : (range.label === 'strong' ? 3 : 0);
+    var eq2 = rangeEqTier
+      ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 150)
+      : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
 
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
@@ -2076,6 +2084,13 @@
     // 41% then saying "fold" vs 52% equity was contradictory and confusing
     // (v1.8.97: Kevin's J4 vs Amogh's big bet).
     var strongAdj = rangeAdjust > 0.005;
+    // Equity source, stated honestly (v1.8.99): vs a strong read the number
+    // is simulated against their actual range, never vs random hands — that
+    // was the disputed figure in Kevin's J4-vs-Amogh spot.
+    var eqSource = rangeEqTier
+      ? 'simulated 150× vs ' + vName + '\'s strong range'
+      : 'simulated 150× vs random hands' +
+        (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     // Concise math line (v1.8.97): pot odds + adjusted bar + equity source in
     // one breath. The three explainers Kevin asked for (break-even meaning,
     // adjusted threshold vs strong ranges, how win% is simulated) are here
@@ -2086,9 +2101,7 @@
       (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
       (riverPrior > 0 ? ' (rivers are under-bluffed)' : '') +
       '. You win about <b>' + pct(adjEq) + '</b>' +
-      ' (simulated 150× vs random hands' +
-      (strongAdj ? ', lowered for their strength' : rangeAdjust < -0.005 ? ', raised for their looseness' : '') +
-      '). ' +
+      ' (' + eqSource + '). ' +
       riskPremiumNote(rp2);
     // Bluff-catching concept for beginners: when your hand only beats a bluff,
     // name it explicitly (v1.8.97).
