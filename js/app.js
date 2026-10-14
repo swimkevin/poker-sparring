@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.102';
+  var APP_VERSION = '1.8.103';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -977,15 +977,16 @@
   // One-line read on each opponent: name + style + what it means for you.
   function opponentReads() {
     // Compact scouting report, shown once per hand (first verdict). Short
-    // style tags — the full exploit advice lives in the vs-line for the
+    // taglines — the full exploit advice lives in the vs-line for the
     // villain that matters (v1.8.97: full sentences per opponent bloated
-    // every first message to 600+ chars).
+    // every first message to 600+ chars; v1.8.103: taglines, ~55 chars
+    // per bullet).
     var live = liveOpponents();
     if (!live.length) return '';
     var reads = live.map(function (p) {
       var A = p.archetype, name = UI.escapeHtml(p.name);
-      var exploit = A ? UI.escapeHtml(exploitLine(A)) : 'unknown style';
-      return '<b>' + name + '</b> — ' + exploit;
+      var tag = (A && A.tagline) ? String(A.tagline) : 'unknown style';
+      return '<b>' + name + '</b> — ' + UI.escapeHtml(tag);
     });
     // v1.8.97: Kevin wants bullet points (one per line), not inline.
     return '<div class="coach-opps">🎯 Table:<br>• ' + reads.join('<br>• ') + '</div>';
@@ -1350,7 +1351,7 @@
     // "make them pay" purposes — the draw already got there.
     if (suits.some(function (n) { return n >= 4; })) return 'completed';
     if (suits.some(function (n) { return n === 3; })) return 'wet';
-    // Straight draws need 3 distinct ranks within a 5-span. v1.8.102: the old
+    // Straight draws need 3 distinct ranks within a 5-span. v1.8.103: the old
     // max-min <= 4 check called paired boards like 6-6-2 "wet" — but no
     // straight draw can exist there (Kevin's screenshot: "not many draws").
     var seen = {};
@@ -1413,8 +1414,9 @@
       var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
-      var isNewStreet = !coachDecisions.some(function (d) { return d.street === table.street; });
-      var reads = (coachDecisions.length === 0 || isNewStreet) ? opponentReads() : '';
+      // v1.8.103: reads once per HAND, not per street — the 10-hand loop
+      // flagged 900-char messages on every street's first verdict.
+      var reads = coachDecisions.length === 0 ? opponentReads() : '';
       v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + reads : null;
       return v;
     } catch (err) {
@@ -1930,7 +1932,7 @@
             '<b>Check</b> your monster — ' + vName + ' bluffs constantly. Let them bet into you, then raise.' + rangeNote,
             'Against maniacs, trap strong hands: they build the pot for you.');
         var tex = boardTexture(table.community);
-        // v1.8.102 (Kevin): default to 1/4 pot on dry boards — big bets on
+        // v1.8.103 (Kevin): default to 1/4 pot on dry boards — big bets on
         // dry textures fold out everything you beat. Wet boards still want
         // 2/3 to charge draws; stations who never fold get the big sizing.
         var frac = tex === 'wet' ? 0.67 : 0.25;
@@ -2138,7 +2140,11 @@
     // is simulated against their actual range, never vs random hands — that
     // was the disputed figure in Kevin's J4-vs-Amogh spot.
     var eqSource = rangeEqTier
-      ? 'simulated 150× vs ' + vName + '\'s strong range'
+      ? (strongAdj
+        // v1.8.103: the threshold clause just named their strong range —
+        // don't repeat it here (10-hand loop flagged 525-char messages).
+        ? '150 Monte Carlo simulations'
+        : 'simulated 150× vs ' + vName + '\'s strong range')
       : 'simulated 150× vs random hands' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     // Concise math line (v1.8.97): pot odds + adjusted bar + equity source in

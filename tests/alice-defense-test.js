@@ -36,7 +36,7 @@ function scenario(hole, raiseTo, callerAlsoIn) {
   return { t: t, a: a };
 }
 var counts = { atsCall: 0, atsN: 0, trashCall: 0, trashN: 0, atsBigCall: 0, atsBigN: 0 };
-for (var i = 0; i < 40; i++) {
+for (var i = 0; i < 200; i++) {
   var s1 = scenario([C(14, 1), C(10, 1)], 75, true); // ATs
   var mv1 = BOTS.botDecide(s1.t, s1.a);
   counts.atsN++; if (mv1 && mv1.a !== 'fold') counts.atsCall++;
@@ -50,6 +50,6 @@ for (var i = 0; i < 40; i++) {
 console.log('ATs vs 75 (stack 1000): continued ' + counts.atsCall + '/' + counts.atsN);
 console.log('72o vs 75: continued ' + counts.trashCall + '/' + counts.trashN);
 console.log('ATs vs 600 (60% stack): continued ' + counts.atsBigCall + '/' + counts.atsBigN);
-var ok = counts.atsCall >= 34 && counts.trashCall <= 6 && counts.atsBigCall <= 10;
+var ok = counts.atsCall >= 170 && counts.trashCall <= 30 && counts.atsBigCall <= 50;
 console.log(ok ? 'ALICE TEST PASSED' : 'ALICE TEST FAILED');
 process.exit(ok ? 0 : 1);

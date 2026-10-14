@@ -602,9 +602,10 @@ var UI = (function () {
     panel.querySelectorAll('.chip-btn').forEach(function (b) {
       b.onclick = function () { setFromFrac(parseFloat(b.dataset.frac)); };
     });
-    // Both raises and opening bets start at the minimum legal amount —
-    // the user can slide up from there or type an exact amount.
-    slider.value = 0; paint(minTo);
+    // v1.8.103 (Kevin): the panel opens pre-set to 1/4 pot — the standard
+    // small value bet — instead of the minimum. Slide up or type for more.
+    var defTo = clamp(Math.round(isRaise ? (currentBet + pot * 0.25) : (pot * 0.25)));
+    syncSlider(defTo); paint(defTo);
     $('btn-bet-confirm').onclick = function () {
       var t = typedAmount();
       panel.hidden = true;

@@ -1,3 +1,23 @@
+## [1.8.103] — Shorter coach messages + 1/4-pot bet panel + loop hardening
+
+Four live-testing rounds (real hands, hero + coach audited every decision):
+- Round 1 caught hands stalling after the hero busted — the "felted" modal
+  blocked the next hand. Eval harness now auto-rebuys (correct app UX, the
+  harness just didn't handle it).
+- Rounds 2–3 flagged 900-char coach messages: the opponent scouting report
+  repeated on every street's first verdict. Reads now show once per hand,
+  using short archetype taglines ("Tight but sticky") instead of full
+  exploit paragraphs. Round 4: EVAL CLEAN, 0 flags across 7 hands.
+- Equity label dedup: "21% vs Donald's strong range… (simulated 150× vs
+  Donald's strong range)" said the range twice — now "(150 Monte Carlo
+  simulations)" when the threshold already names it.
+- Bet panel opens pre-set to 1/4 pot (Kevin) instead of the minimum; the
+  1.5× overbet quick button is now ¼ Pot.
+- Alice defense test: 40 trials was flaky (33/40 vs a 34/40 bar). Now 200
+  trials with proportional bars.
+- New permanent test: feature-sweep (every tab, screen, and game mode boots
+  and renders). coach-scenarios sections renumbered 1–29.
+
 ## [1.8.102] — Honest board texture + 1/4-pot default + calmer Donald
 
 Kevin's flop spot: 6h6s2d rainbow, coach said "Bet for value 3/4 pot (221) —

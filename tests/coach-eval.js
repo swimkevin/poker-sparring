@@ -12,7 +12,7 @@ var fs = require('fs');
 var jsdom = require('jsdom');
 var JSDOM = jsdom.JSDOM;
 
-var HANDS = 10;
+var HANDS = parseInt(process.argv[2] || '10', 10) || 10;
 
 var dir = path.join(__dirname, '..');
 var html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
@@ -200,6 +200,15 @@ var iv = setInterval(function () {
       handStartStack[hn] = st0.stack;
       if (hn > HANDS) { finish(); return; }
       console.log('--- hand #' + hn + ' ---');
+    }
+    // Felted modal: hero busted — click Rebuy so the loop keeps going.
+    // (Round 1 found hands stalling here: the modal blocks the next hand.)
+    var mr = d.getElementById('modal-root');
+    if (mr && /felted/i.test(mr.textContent || '')) {
+      var mb = mr.querySelectorAll('button');
+      for (var mi = 0; mi < mb.length; mi++) {
+        if (/rebuy/i.test(mb[mi].textContent || '')) { mb[mi].click(); break; }
+      }
     }
     // Skip the results pause quickly so 10 hands don't take forever.
     var nx = d.getElementById('btn-next-hand');

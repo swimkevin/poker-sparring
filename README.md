@@ -4,7 +4,7 @@
 
 ▶️ **Live:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-1450%2B%20passing-brightgreen)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-2000%2B%20passing-brightgreen)
 
 ## Screenshots
 
@@ -32,12 +32,12 @@
 
 ## By the numbers
 
-- **97 versions shipped** (v1.8.97) — iterative, tested releases, not one big bang
-- **1,450+ test assertions** across unit, component, smoke, netplay, and worker suites
+- **100+ versions shipped** (v1.8.103) — iterative, tested releases, not one big bang
+- **2,000+ test assertions** across 23 suites: unit, component, smoke, netplay, worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
 - **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff
-- **3 live coach-audit rounds** — real hands played, every finding turned into a regression test
+- **4 live coach-audit rounds** — real hands played, every finding turned into a regression test
 
 ## What it is
 
@@ -58,13 +58,15 @@ An offline-first poker practice app. Play cash games, heads-up, and tournaments 
 
 **Cut scope earlier.** Heads-Up and Push/Fold Trainer shipped as hidden, half-finished modes (`display:none` in the DOM). They should have been cut or finished — shipped-but-hidden reads as unfinished, not ambitious.
 
+**Test the harness, not just the app.** In v1.8.103 the 10-hand live eval kept stalling on hand 5 — not an app bug, but the harness never clicking "Rebuy" on the felted modal. A test loop that can't finish is a test loop that can't protect you: the harness now handles modals, takes a hand count, and the stall autopsy it grew is documented for the next one.
+
 **What I'd do differently next time:** add JSDoc types or TypeScript from day one (the entire `posName` bug class was a typo-level error a type checker catches instantly), and build mobile-first instead of retrofitting it.
 
 ## Engineering highlights
 
 **Zero-dependency vanilla JS.** No framework, no bundler, no build step. The poker core (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser.
 
-**1,450+ test assertions, 5 layers.** Unit, component, smoke (300 randomized hands), netplay, and worker tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
+**2,000+ test assertions, 6 layers.** Unit, component, smoke (300 randomized hands), netplay, worker, and live coach-audit tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
 
 **Real-time multiplayer on Cloudflare Workers.** One Durable Object per room, authoritative game state, per-seat snapshots so hole cards never leak. Auto-reconnect with backoff, host migration if the host drops.
 
@@ -92,7 +94,7 @@ The coach improves through a **human-in-the-loop verification cycle** — real h
 
 **3. Competitive calibration** — Other training tools are studied for what they do better (see `docs/competitive-analysis-2026-10-09.md`). Best ideas are adapted, not copied.
 
-**4. Automated verification** — The unit suite (1,450+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change.
+**4. Automated verification** — The full suite (2,000+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change. A 10-hand live eval plays real hands with a mixed hero policy and flags contradictions, illegal advice, math errors, and over-long messages — the loop that caught the 900-char scouting-report bloat in v1.8.103.
 
 The coach doesn't rewrite itself — improvements are deliberate, tested, and shipped as versions, like any good training program. When the coach is wrong, that's a bug report, not a shrug.
 

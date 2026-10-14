@@ -785,10 +785,10 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     '<input id="bet-amount" class="bet-amount" type="text" inputmode="numeric" value="0"></div>' +
     '<div class="bet-row quicks">' +
     '<button class="chip-btn" data-frac="0">Min</button>' +
+    '<button class="chip-btn" data-frac="0.25">\u00bc Pot</button>' +
     '<button class="chip-btn" data-frac="0.5">\u00bd Pot</button>' +
     '<button class="chip-btn" data-frac="0.75">\u00be Pot</button>' +
-    '<button class="chip-btn" data-frac="1">Pot</button>' +
-    '<button class="chip-btn" data-frac="1.5">1.5\u00d7</button></div>' +
+    '<button class="chip-btn" data-frac="1">Pot</button></div>' +
     '<div class="bet-row"><button id="btn-bet-confirm">Confirm</button>' +
     '<button id="btn-bet-cancel">Cancel</button></div>';
   d.body.appendChild(panel);
@@ -803,11 +803,18 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   document.getElementById('btn-bet-confirm').click();
   ok(got === 40, 'confirming untouched raise panel bets the min, got ' + got);
 
-  // Opening bet: opens at the minimum (v1.8.9 changed from 3/4-pot default).
+  // Opening bet: opens at 1/4 pot (v1.8.103, Kevin — was minimum).
   got = null;
   UI.openBetPanel(10, 1000, 200, false, function (amt) { got = amt; });
-  ok(amt() === '10',
-    'bet panel opens at minimum, got "' + amt() + '"');
+  ok(amt() === '50',
+    'bet panel opens at 1/4 pot, got "' + amt() + '"');
+
+  // 1/4-pot quick button (replaced the 1.5x overbet button, v1.8.103).
+  var qBtn = panel.querySelector('[data-frac="0.25"]');
+  ok(!!qBtn, '1/4 Pot quick button exists');
+  qBtn.click();
+  ok(amt() === '50',
+    '1/4 Pot button targets quarter pot, got "' + amt() + '"');
 
   // Min quick button jumps a raise back to the floor.
   var minBtn = panel.querySelector('[data-frac="0"]');
