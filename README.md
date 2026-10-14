@@ -8,14 +8,9 @@
 
 ## Screenshots
 
-<!--
-  SCREENSHOT INSTRUCTIONS (Kevin):
-  1. Take 1 desktop screenshot: mid-hand, coach tip visible → save as docs/screenshots/desktop.png
-  2. Take 1 mobile screenshot (390px wide): table + bottom tab bar → save as docs/screenshots/mobile.png
-  3. Uncomment the two lines below.
--->
-<!-- ![Desktop — mid-hand with coach tip](docs/screenshots/desktop.png) -->
+![Desktop — mid-hand with coach tip](docs/screenshots/desktop.png)
 <!-- ![Mobile — table view](docs/screenshots/mobile.png) -->
+<!-- Mobile screenshot: Kevin to capture on iPhone (390px) — table + bottom tab bar -->
 
 ## Demo video
 
