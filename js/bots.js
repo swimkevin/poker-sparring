@@ -39,7 +39,7 @@ var ARCHETYPES = [
     desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.97).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
-    aggression: 0.45, bluff: 1.0, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
+    aggression: 0.45, bluff: 0.5, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
     tiltProne: 0.25, rebuy: 0.70,
     friendly: true, wideOverbet: true,
   },
@@ -628,15 +628,20 @@ function donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street) {
     if (sb != null) { var smv = { a: 'bet', amount: sb }; smv.bluff = true; return smv; }
   }
   // Ahead but vulnerable: top pair+ (ms >= 0.4) on a wet board — bomb it
-  // like Amogh instead of value betting small. Wet = 3 to a suit or
-  // connected ranks.
+  // like Amogh instead of value betting small. Wet = 3 to a suit or 3
+  // distinct connected ranks (v1.8.102: paired boards like 6-6-2 have no
+  // straight draws — the old max-min check misfired there).
   if (ms >= 0.4 && ms < 0.78) {
     var suits = [0, 0, 0, 0];
     comm.forEach(function (c) { suits[c.s]++; });
     var wet = suits.some(function (n) { return n === 3; });
     if (!wet) {
-      var rs = comm.map(function (c) { return c.r; }).sort(function (a, b) { return a - b; });
-      wet = (rs[rs.length - 1] - rs[0] <= 4);
+      var seen = {};
+      comm.forEach(function (c) { seen[c.r] = true; });
+      var rs = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+      for (var i = 0; i + 2 < rs.length; i++) {
+        if (rs[i + 2] - rs[i] <= 4) { wet = true; break; }
+      }
     }
     if (wet && Math.random() < 0.7) {
       var over = clampRaise(table, p, legal, pot * (1.5 + Math.random() * 0.8));

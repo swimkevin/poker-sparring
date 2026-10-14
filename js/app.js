@@ -5,7 +5,7 @@
   'use strict';
 
   /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.101';
+  var APP_VERSION = '1.8.102';
   // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
   try { window.APP_VERSION = APP_VERSION; } catch {}
 
@@ -121,7 +121,7 @@
     try { localStorage.setItem(rosterKey(), JSON.stringify(Array.from(selectedBots))); }
     catch {}
   }
-  var selectedBots = new Set(loadRoster() || ['alice', 'swimkev', 'rohan', 'amogh', 'nathan', 'shark', 'station']);
+  var selectedBots = new Set(loadRoster() || ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'shark']);
   var preHuSelection = null; // full table remembered across a heads-up detour
   // Prune the selection to bots available in the current game mode.
   // Prevents stale tournament picks from blocking cash-game selection.
@@ -1350,8 +1350,16 @@
     // "make them pay" purposes — the draw already got there.
     if (suits.some(function (n) { return n >= 4; })) return 'completed';
     if (suits.some(function (n) { return n === 3; })) return 'wet';
-    var rs = community.map(function (c) { return c.r; }).sort(function (a, b) { return a - b; });
-    return (rs[rs.length - 1] - rs[0] <= 4) ? 'wet' : 'dry';
+    // Straight draws need 3 distinct ranks within a 5-span. v1.8.102: the old
+    // max-min <= 4 check called paired boards like 6-6-2 "wet" — but no
+    // straight draw can exist there (Kevin's screenshot: "not many draws").
+    var seen = {};
+    community.forEach(function (c) { seen[c.r] = true; });
+    var rs = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+    for (var i = 0; i + 2 < rs.length; i++) {
+      if (rs[i + 2] - rs[i] <= 4) return 'wet';
+    }
+    return 'dry';
   }
 
   // Equity vs the villain's likely range (not random hands) — preflop only,
@@ -1436,6 +1444,7 @@
       setDecisions: function (ds) { coachDecisions = ds; },
       adviceFollowed: adviceFollowed,
       handClass: handClass,
+      boardTexture: boardTexture,
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot,
       // Scenario testing: verify coach advice for specific spots without
@@ -1921,7 +1930,11 @@
             '<b>Check</b> your monster — ' + vName + ' bluffs constantly. Let them bet into you, then raise.' + rangeNote,
             'Against maniacs, trap strong hands: they build the pot for you.');
         var tex = boardTexture(table.community);
-        var frac = (tex === 'wet' || foldy < 0.25) ? 0.75 : 0.5;
+        // v1.8.102 (Kevin): default to 1/4 pot on dry boards — big bets on
+        // dry textures fold out everything you beat. Wet boards still want
+        // 2/3 to charge draws; stations who never fold get the big sizing.
+        var frac = tex === 'wet' ? 0.67 : 0.25;
+        if (foldy < 0.25) frac = 0.75;
         var betSize = Math.max(1, Math.round(pot * frac));
         // v1.8.97: if committed (SPR low), don't suggest a pot fraction that's
         // much smaller than the stack — just go all-in (Kevin: "½ pot is not
@@ -1938,9 +1951,13 @@
         sprLine = (commit === 'commit')
           ? ' The pot\'s already big compared to your stacks — you\'re all-in anyway, so get the money in.'
           : '';
+        var fracLabel = frac === 0.75 ? '¾' : (frac === 0.67 ? '⅔' : '¼');
+        var whyBet = tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
+          : (frac === 0.75 ? ' — they never fold, so size up for value'
+          : ' — dry board, few draws: bet small to keep worse hands calling');
         return mkVerdict('bet', 'strong',
-          '<b>Bet for value</b> ~' + (frac === 0.75 ? '¾' : '½') + ' pot (' + fmt(betSize) + ')' +
-          (tex === 'wet' ? ' — lots of draws out there, make them pay to chase' : '') + '.' + sprLine + rangeNote,
+          '<b>Bet for value</b> ~' + fracLabel + ' pot (' + fmt(betSize) + ')' +
+          whyBet + '.' + sprLine + rangeNote,
           'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
       // Draws: semi-bluff the strong ones, check weak ones and vs stations.

@@ -247,15 +247,18 @@ console.log('\n23. Win-% estimation explained (v1.8.71)');
   ok(!src.includes('lowered for their strength'), 'no more fudge-factor wording');
 }
 
-console.log('\n=== Results: ' + pass + ' passed, ' + fail + ' failed ===');
-process.exit(fail ? 1 : 0);
-
 console.log('\n19. v1.8.74: made straight+ beats draw label, bullets, no solo villain multiway');
 {
   // Kevin's 7cJc on 9c3d8dTc: J-high straight + flush redraw was called
   // "semi-bluff". handClass must check ev.cat >= 4 before draw labels.
-  ok(src.includes("if (ev && ev.cat >= 4) return 'nut'; // straight+ beats any draw label"),
-    'made straight+ returns nut before draw check');
+  // (v1.8.101 restructured the line to add the 'board' class — the ordering
+  // guarantee is what matters.)
+  var catIdx = src.indexOf('ev.cat >= 4');
+  var drawIdx = src.indexOf("return 'draw-strong'");
+  ok(catIdx !== -1 && drawIdx !== -1 && catIdx < drawIdx,
+    'made straight+ classified before draw labels');
+  ok(src.includes("if (boardOnly) return 'board';"),
+    'board-play (no hole card in best 5) classified separately');
   // Table reads back to bullet points (Kevin).
   ok(src.includes("reads.join('<br>\u2022 ')"),
     'table reads use bullet points');
@@ -283,8 +286,10 @@ console.log('\n21. v1.8.76: Rohan bluffs sometimes, Donald bot exists');
   ok(botSrc.includes("bluffThrough: 1.0"), 'rohan bluffs pass gate');
   ok(botSrc.includes("mv.bluff && A.bluffThrough"),
     'neverRaise gate checks bluff flag');
-  // Donald: 25% bluff (bluff 1.0 * 0.22 = 22% heads-up)
-  ok(/id: 'donald'[\s\S]*?bluff: 1\.0/.test(botSrc), 'donald bluffs 25%');
+  // Donald: air bluffs toned down v1.8.102 (bluff 0.5 * 0.22 = 11%
+  // heads-up river; was 1.0). Draw semi-bluffs stay at hardcoded 65%.
+  var dBluff = (botSrc.match(/id: 'donald'[\s\S]{0,1500}?bluff: ([0-9.]+)/) || [])[1];
+  ok(dBluff === '0.5', 'donald bluff param is 0.5 (got ' + dBluff + ')');
   // Donald: right below Alice, tighter than Rohan, sticky + semi-bluffs
   var aliceIdx = botSrc.indexOf("id: 'alice'");
   var donaldIdx = botSrc.indexOf("id: 'donald'");
@@ -300,7 +305,8 @@ console.log('\n22. v1.8.78: Donald semi-bluffs + Amogh-style bombs');
 {
   const botSrc = require('fs').readFileSync('js/bots.js', 'utf8');
   ok(botSrc.includes("function donaldPostflop"), 'donaldPostflop exists');
-  ok(botSrc.includes("donaldPostflop: donaldPostflop"), 'donaldPostflop exported');
+  ok(/A\.id === 'donald'/.test(botSrc) && botSrc.includes("donaldPostflop(table, p,"),
+     'donaldPostflop dispatched internally by archetype id');
   ok(botSrc.includes("Semi-bluff: Donald"), 'semi-bluff logic present');
   ok(botSrc.includes("Ahead but vulnerable"), 'big-bet-when-vulnerable logic present');
 }
@@ -343,6 +349,13 @@ console.log('\n26. v1.8.101: hero plays the board (Kevin\'s QQQ77 river)');
   // Checked to hero: check — nothing to value-bet, no fold to win.
   ok(/if \(hc === 'board'\)\s*\n?\s*return mkVerdict\('check'/.test(appSrc),
      'board-play with no bet to face advises check');
-  ok(!/hc === 'board'[^]*mkVerdict\('(raise|bet)'/.test(appSrc),
-     'board-play never advises raise or bet');
+  var boardBranches = [];
+  var bre = /if \(hc === 'board'\)\s*return mkVerdict\('(\w+)'/g, bm;
+  while ((bm = bre.exec(appSrc))) boardBranches.push(bm[1]);
+  ok(boardBranches.length === 2, 'two board-play branches (got ' + boardBranches.length + ')');
+  ok(boardBranches.every(function (b) { return b === 'fold' || b === 'check'; }),
+     'board-play advises only fold or check (got ' + boardBranches.join(',') + ')');
 }
+
+console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
+process.exit(fail ? 1 : 0);

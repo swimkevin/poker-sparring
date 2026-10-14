@@ -1,3 +1,22 @@
+## [1.8.102] — Honest board texture + 1/4-pot default + calmer Donald
+
+Kevin's flop spot: 6h6s2d rainbow, coach said "Bet for value 3/4 pot (221) —
+lots of draws out there". There are no draws on that board: the old texture
+check (rank spread <= 4) ignored the pair.
+- boardTexture now needs 3 distinct ranks within a 5-span for "wet" — paired
+  boards like 662 correctly read dry (Donald's own wet-board overbet check
+  fixed the same way).
+- Default value-bet sizing: 1/4 pot on dry boards (Kevin), 2/3 on wet, 3/4
+  only vs stations who never fold. Dry message explains the small sizing.
+- Donald bluffs less with nothing: bluff param 1.0 -> 0.5 (air stabs roughly
+  halved); his draw semi-bluffs (65%) are untouched — those have equity.
+- Test-harness repair: coach-scenarios.js had a process.exit() mid-file, so
+  sections 19-21 and 24-26 were dead code that never ran. Moved results+exit
+  to the end; revived sections exposed 5 stale assertions (fixed: v1.8.74 line
+  restructure, Donald bluff value, donaldPostflop dispatch vs export, stale
+  'swimkev' fallback roster default in app.js, board-play branch regex).
+- New test: texture-sizing (10 texture cases + sizing + Donald params).
+
 ## [1.8.101] — Coach no longer value-raises when hero plays the board
 
 Kevin's river spot: A-K on Q-Q-7-Q-7. The old coach classified the board's
