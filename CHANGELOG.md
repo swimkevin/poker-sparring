@@ -1,3 +1,32 @@
+## [1.8.104] — Bots fold air to big bets (fold-realism tuning)
+
+Kevin's observation from live play: bots called too loose and never folded
+after the flop. A 40-trial probe per archetype confirmed it — donald/lag/amogh
+folded air (no pair, no draw) to a 3/4-pot bet multiway exactly 0/40 times,
+and nobody folded air heads-up. It also caught the opposite leak: shark/pro
+folded the nut flush draw 40/40 (over-tight).
+
+- The old discipline rule (v1.8.97, disciplined bots only) is now a general
+  fold-realism rule: everyone but Station folds no-pair, no-draw hands
+  (ms < 0.30, flush draws and open-enders exempt) at need >= 0.25 (1/2-pot+,
+  heads-up or multiway). need is toCall/(potTotal+toCall) and potTotal
+  includes the bet, so 0.25 is exactly a half-pot bet.
+- Follow-up probe caught the first cut (0.30) only catching 3/4-pot+:
+  heads-up vs exactly 1/2-pot with air, sticky bots still folded 0/60.
+  Threshold unified at 0.25 — now 40/40 folds there too.
+- Station keeps its loose character: it only folds "absolutely nothing"
+  (ms < 0.15, no draw), and only at need >= 0.30 (3/4-pot+) — 40/40 in the
+  probe, while still calling with overcard air 38/40.
+- Draw exemption fixes shark/pro over-folding: both continue with the nut
+  flush draw 40/40 now. Pairs untouched everywhere (40/40 continue).
+- Taglines honed: donald "almost never folds postflop", station "almost
+  never folds".
+- 10-hand live sim with a bluff-heavy hero (55% stab when checked to, 25%
+  bluff-raise vs bets): bots folded air to big bets in live play
+  (donald 2/4, lag 2/2, amogh 3/3, rohan 1/1).
+- New permanent regression test: tests/fold-realism-test.js (21 assertions,
+  wired into npm test).
+
 ## [1.8.103] — Shorter coach messages + 1/4-pot bet panel + loop hardening
 
 Four live-testing rounds (real hands, hero + coach audited every decision):

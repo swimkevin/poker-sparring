@@ -35,7 +35,7 @@ var ARCHETYPES = [
   },
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
-    tagline: 'Tight but sticky. Folds a lot preflop, never folds postflop.',
+    tagline: 'Tight but sticky. Folds a lot preflop, almost never folds postflop.',
     desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.97).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
@@ -94,7 +94,7 @@ var ARCHETYPES = [
   },
   {
     id: 'station', name: 'Station', modes: ['cash', 'hu', 'pushfold'], emoji: '📞',
-    tagline: 'Sees every flop with a smile. Folding is not in the vocabulary.',
+    tagline: 'Sees every flop with a smile. Almost never folds.',
     desc: 'Loose-passive: sees ~45% of flops, calls down with middle pair or any draw, almost never raises. The friendliest seat in home games — always in the hand, always having a good time.',
     beat: 'Value bet big with any decent hand — and never bluff. They love to call, so size up your value bets and enjoy the ride.',
     openTier: 4, openTierLate: 5, callTier: 5, threeBetTier: 2,
@@ -522,14 +522,26 @@ function botPostflop(table, p, A) {
   }
 
   var need = toCall / (pot + toCall);
-  // Discipline rule (v1.8.97, Kevin): a TAG baseline does not pay big
-  // prices with no pair. Monte Carlo equity vs RANDOM hands overrates
-  // overcards here — a pot-sized+ bet multiway comes from a strong range,
-  // so disciplined players fold air regardless of the equity estimate.
-  // Multiway: fold no-pair hands at need >= 0.30 (~pot-sized bet). Heads-up:
-  // only overbet-sized prices (need >= 0.40) force the fold.
-  if (A.disciplined && ms < 0.30 &&
-      ((liveOpp >= 2 && need >= 0.30) || (liveOpp === 1 && need >= 0.40))) {
+  // Fold-realism rule (v1.8.104, Kevin): nobody pays big prices with
+  // nothing. Monte Carlo equity vs RANDOM hands overrates overcards here —
+  // a big bet usually comes from a strong range, so players fold air
+  // regardless of the equity estimate. (v1.8.97 had this only for
+  // disciplined bots; Kevin observed everyone else never folding postflop.)
+  // Draws are exempt: real players continue with a flush draw or open-ender
+  // (this also fixes shark/pro over-folding nut flush draws, v1.8.103).
+  // - Everyone but Station: no-pair, no-draw folds at need >= 0.25
+  //   (1/2-pot+, a real medium+ bet) — heads-up or multiway. (need here is
+  //   toCall/(potTotal+toCall) and potTotal includes the bet, so 0.25 is
+  //   exactly a half-pot bet; v1.8.104 probe: the first cut at 0.30 only
+  //   caught 3/4-pot+ and HU 1/2-pot with air was still 0/60 folds.)
+  // - Station: only folds "absolutely nothing" (ms < 0.15, no draw), and
+  //   only at need >= 0.30 (3/4-pot+) — it keeps its loose character.
+  var draws = detectDraws(p.hole, table.community);
+  var noDraw = !draws.flushDraw && !draws.oesd;
+  var bigBet = need >= 0.25;
+  if (A.id === 'station') {
+    if (ms < 0.15 && noDraw && need >= 0.30) return { a: 'fold' };
+  } else if (ms < 0.30 && noDraw && bigBet) {
     return { a: 'fold' };
   }
   var spr = pot > 0 ? p.stack / pot : 99;
