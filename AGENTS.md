@@ -28,3 +28,13 @@ first; this file is the 30-second version.
   `worker/` folder (plus `js/room-server.js`, `js/engine.js`, `js/evaluator.js`,
   `js/cards.js` which the bundle imports). The app and the worker deploy
   independently — a worker-only fix needs no app push and vice versa.
+
+## CI gotcha (2026-10-18)
+- `push.py` CANNOT delete files — it only adds/updates. Use `~/workspace/github-delete.py`
+  (Contents API) to delete. Leftover remote files WILL break CI: `tests/no-comments-test.js`
+  scans `js/` and failed on CI because a locally-deleted `js/update-check.js` still existed
+  on remote. When adding any test that scans directories, verify no orphaned files exist on
+  remote (`git ls-files` is stale locally; check via API).
+- To identify a failing CI suite without log access, push a diagnostic branch with a
+  `tests/chain.js` wrapper that prints `::error::`/`::notice::` annotations, open a PR to
+  trigger CI, then read annotations via the check-runs API. Close the PR without merging.

@@ -1,3 +1,9 @@
+## [1.8.106] — CI fix + coach grammar + deep live-test pass
+
+- **CI green again.** The v1.8.105 `no-comments-test.js` failed on CI (not locally) because a locally-deleted `js/update-check.js` still existed on the remote — `push.py` cannot delete files. Removed via the Contents API. Added the lesson to AGENTS.md: directory-scanning tests must account for orphaned remote files.
+- **Coach grammar.** Position note said "You're in button" — now "You're on the button" (and "in the small blind", "in early position", etc., each with the right preposition).
+- **Deep live-test round.** 8 hands in a real browser (all tabs, bet panel, edge cases) + 10-hand local live loop + full 27-suite CI. Found 4 minor issues: the button grammar (fixed), silent clamping of invalid bet amounts (by design — clamping prevents bad bets; no change), a transient theme-toggle blank on the Online tab (self-heals on re-select; not reproduced in tests), and a reported preflop min-raise of 21 vs 20 (engine math verified correct at 20 — likely a misread). No JS errors anywhere.
+
 ## [1.8.105] — Zero-comment source, jargon-free coach, debug-everywhere catches
 
 Kevin's directive: debloat the code, zero comments (matching the Lens project), FANG-level README with a real "why", and keep the loop improving itself. An independent adversarial audit (fresh-eyes review as FANG hiring manager + beginner) filed 10 findings; the high-impact ones are fixed here.

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.105';
+  var APP_VERSION = '1.8.106';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1258,7 +1258,8 @@
         !(V && (V.bet || 0) > 0);
       var tail = (isMultiLimp || limpedMulti || multiwayNoAggro) ? '' : villainLine(V);
 
-      var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
+      var posPhrase = { 'button': 'on the button', 'cutoff': 'in the cutoff', 'small blind': 'in the small blind', 'big blind': 'in the big blind', 'early position': 'in early position', 'middle position': 'in middle position' }[posName] || ('in ' + posName);
+      var posNote = ' <span class="coach-pos">📍 You\'re ' + esc(posPhrase) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
 
