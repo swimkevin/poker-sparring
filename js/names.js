@@ -1,12 +1,3 @@
-// names.js — Player and bot display names for Poker Sparring.
-// The user picks a username for themselves and can rename any bot archetype.
-// Overrides are keyed by archetype id and stored in localStorage, so the
-// underlying archetype (and its playstyle) never changes — only the label.
-//
-// DOM-free except for guarded localStorage access: in Node/tests the store
-// falls back to memory, so this file runs in the unit suite like the rest of
-// the core layer. Load order: after bots.js, before ui.js.
-
 var NamePrefs = (function () {
   'use strict';
 
@@ -14,12 +5,12 @@ var NamePrefs = (function () {
   var BOT_NAMES_KEY = 'ps_bot_names_v1';
   var MAX_LEN = 18;
 
-  var mem = {}; // fallback when localStorage is unavailable (Node/tests)
+  var mem = {};
 
   function rawStore() {
     try {
       if (typeof localStorage !== 'undefined') return localStorage;
-    } catch { /* private mode etc. */ }
+    } catch {  }
     return null;
   }
 
@@ -31,7 +22,7 @@ var NamePrefs = (function () {
 
   function write(key, val) {
     var s = rawStore();
-    if (s) { try { s.setItem(key, val); return; } catch { /* fall through */ } }
+    if (s) { try { s.setItem(key, val); return; } catch {  } }
     mem[key] = val;
   }
 
@@ -57,7 +48,7 @@ var NamePrefs = (function () {
   function setBotOverride(id, name) {
     var o = getBotOverrides();
     var n = clean(name);
-    if (n) o[id] = n; else delete o[id]; // empty name resets to the default
+    if (n) o[id] = n; else delete o[id];
     write(BOT_NAMES_KEY, JSON.stringify(o));
   }
 
@@ -65,8 +56,6 @@ var NamePrefs = (function () {
     setBotOverride(id, '');
   }
 
-  // Display name for an archetype object (or id with a lookup). Never mutates
-  // the archetype: the id stays the key for all game logic.
   function displayName(archetype, overrides) {
     if (!archetype) return '';
     var o = overrides || getBotOverrides();
@@ -75,7 +64,6 @@ var NamePrefs = (function () {
     return archetype.name || archetype.id || '';
   }
 
-  // Hero's seat label: username when set, 'You' otherwise.
   function heroName() {
     return getUsername() || 'You';
   }

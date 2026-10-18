@@ -1,21 +1,11 @@
-// online.js — UI controller for the Online (multiplayer prototype) screen.
-// Talks to MockRoomServer (local, no backend) or a NetClient WebSocket to the
-// Cloudflare Worker relay. Renders with the same CSS classes as the offline
-// table (.felt/.seat/.card/.pot/.ctl) for visual consistency.
-//
-// This module never computes game legality: the server snapshot carries the
-// legal actions for the current seat, and every click just forwards an intent.
-
 window.Online = (function () {
   'use strict';
 
+  function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
   function $(id) { return document.getElementById(id); }
   function esc(s) { return UI.escapeHtml(String(s == null ? '' : s)); }
   function fmt(n) { n = Math.round(n); return n.toLocaleString('en-US'); }
 
-  // ---------- table chat ----------
-  // Shared by the lobby and table views. Messages come from the server
-  // snapshot (s.chat); never innerHTML user text without esc().
   function chatHtml() {
     return '<div class="online-chat"><div class="chat-head">💬 Table chat</div>' +
       '<div class="chat-msgs" id="on-chat-msgs"></div>' +
@@ -54,17 +44,13 @@ window.Online = (function () {
   }
 
   var inited = false;
-  var view = 'home';            // home | lobby | table
-  var mode = 'mock';            // 'mock' | 'live'
-  var server = null;            // MockRoomServer (mock mode)
-  var client = null;            // mock rec or live adapter {send,close,onmessage}
+  var view = 'home';
+  var mode = 'mock';
+  var server = null;
+  var client = null;
   var wsUrl = '';
   var WSURL_KEY = 'ps_wsurl_v1';
-  // Default public relay (Kevin's Cloudflare worker). The workers.dev URL is
-  // stable — it only changes if the worker is renamed or recreated. Nothing
-  // secret lives in it; rooms are still gated by their 6-letter codes.
-  // Users can override per session in the Advanced field; clearing the field
-  // falls back to local mock mode.
+
   var DEFAULT_WS_URL = 'https://poker-sparring-relay.swimkevin1735.workers.dev';
   var EMOJI_CHOICES = ['🧑','👩','👨','🧔','👵','👴','🐶','🐱','🦊','🐼','🦁','🐯','🦄','🐸','👻','🤖','👽','🎃','😎','🤠','🥷','🧙','🦸','👑','💀','🔥','⚡','🌊','🍀','🎲'];
   var EMOJI_KEY = 'ps_player_emoji';
@@ -72,10 +58,10 @@ window.Online = (function () {
     try {
       var v = localStorage.getItem(EMOJI_KEY);
       if (v && EMOJI_CHOICES.indexOf(v) >= 0) return v;
-    } catch {}
+    } catch (e) { quiet(e); }
     return '🧑';
   }
-  function saveEmoji(e) { try { localStorage.setItem(EMOJI_KEY, e); } catch {} }
+  function saveEmoji(e) { try { localStorage.setItem(EMOJI_KEY, e); } catch (e) { quiet(e); } }
   function fillEmojiPick(sel) {
     if (!sel) return;
     sel.innerHTML = '';
@@ -88,43 +74,36 @@ window.Online = (function () {
     });
     sel.onchange = function () { saveEmoji(sel.value); };
   }
-  // The dashboard shows an https:// URL but WebSockets need wss://.
-  // Normalize pasted values so either form works.
   function normalizeWsUrl(u) {
     u = (u || '').trim().replace(/\/+$/, '');
-    if (/^https:\/\//i.test(u)) return 'wss://' + u.slice(8);
-    if (/^http:\/\//i.test(u)) return 'ws://' + u.slice(7);
+    var low = u.toLowerCase();
+    if (low.indexOf('https://') === 0) return 'wss://' + u.slice(8);
+    if (low.indexOf('http://') === 0) return 'ws://' + u.slice(7);
     return u;
   }
-  // Remembered relay URL: paste once, not every game night. Guarded storage
-  // (same pattern as names.js) so tests/Node get a memory fallback.
+
   var _wsMem = '';
   function loadWsUrl() {
     try {
-      // null = never set -> default relay. '' = user explicitly cleared ->
-      // mock mode. Don't conflate the two or clearing won't stick.
+
       if (typeof localStorage !== 'undefined') {
         var v = localStorage.getItem(WSURL_KEY);
         return v == null ? null : v;
       }
-    } catch { /* fall through */ }
+    } catch {  }
     return _wsMem;
   }
   function saveWsUrl(u) {
     try {
       if (typeof localStorage !== 'undefined') { localStorage.setItem(WSURL_KEY, u); return; }
-    } catch { /* fall through */ }
+    } catch {  }
     _wsMem = u;
   }
   var mySeat = -1, isHost = false;
-  var pendingAway = false; // join-with-away: sit out on first snapshot
+  var pendingAway = false;
   var roomCode = '';
   var lastState = null, lastLobby = null;
 
-  // ---------------- entry ----------------
-
-  // Called from the app.js nav hook. Switches to the Online screen and renders
-  // whatever view the session is currently in.
   function show() {
     if (!inited) { inited = true; buildSkeleton(); wireNavAway(); }
     document.querySelectorAll('main .screen').forEach(function (s) { s.hidden = true; });
@@ -136,8 +115,6 @@ window.Online = (function () {
     render();
   }
 
-  // UI.showScreen (used by the offline tabs) doesn't know about screen-online,
-  // so hide it on any other nav click. Capture phase runs before app.js's handler.
   function wireNavAway() {
     document.addEventListener('click', function (e) {
       var t = e.target;
@@ -160,10 +137,6 @@ window.Online = (function () {
       '</div>';
   }
 
-  // The home screen's connection pill must describe the CURRENT default: the
-  // relay URL is prefilled, so hosting/joining uses the live relay unless the
-  // user clears the field (mock mode). It used to hardcode "Local mock", which
-  // contradicted the prefilled relay and killed trust in friend invites.
   function updateHomeConn() {
     var wu = $('on-wsurl');
     var live = !wu || wu.value.trim() !== '';
@@ -178,8 +151,6 @@ window.Online = (function () {
     if (el) el.textContent = text;
   }
 
-  // ---------------- backend plumbing ----------------
-
   function ensureMock() {
     if (!server) server = new MockRoomServer();
     return server;
@@ -188,9 +159,7 @@ window.Online = (function () {
   function attachClient(c) {
     client = c;
     c.onmessage = onServerMessage;
-    // createRoom/connect broadcast the lobby synchronously on attach, before
-    // onmessage existed — the snapshot waits in rec.last. Replay it so the
-    // lobby renders immediately (otherwise renderLobby falls back to home).
+
     if (c.last) onServerMessage(c.last);
   }
 
@@ -207,7 +176,7 @@ window.Online = (function () {
       mySeat = m.mySeat;
       isHost = !!m.isHost;
       view = (m.state === 'lobby') ? 'lobby' : 'table';
-      // Honor "join sitting out": fire once on the first snapshot.
+
       if (pendingAway && client) {
         pendingAway = false;
         client.send({ t: 'sitout', out: true });
@@ -220,10 +189,9 @@ window.Online = (function () {
     }
   }
 
-  var lastAction = null; // 'host' | 'join' — routes async server errors to the right form
+  var lastAction = null;
   function showError(msg) {
-    // Server/connection errors belong to the form that triggered them:
-    // a failed join ("Room not found") must not appear under the host form.
+
     var el = $(lastAction === 'join' ? 'online-error2' : 'online-error') || $('online-error');
     if (el) { el.textContent = msg; el.hidden = false; }
   }
@@ -235,13 +203,11 @@ window.Online = (function () {
   }
 
   function leave() {
-    if (client) { try { client.close(); } catch {} client = null; }
+    if (client) { try { client.close(); } catch (e) { quiet(e); } client = null; }
     view = 'home'; lastState = null; lastLobby = null;
     mySeat = -1; isHost = false; roomCode = '';
     render();
   }
-
-  // ---------------- home view ----------------
 
   function fieldVal(id, dflt) {
     var el = $(id);
@@ -287,8 +253,6 @@ window.Online = (function () {
     $('on-create').onclick = hostGame;
     $('on-join').onclick = joinGame;
 
-    // Prefill with the saved username from the offline setup screen,
-    // and the saved relay URL (paste once, reused every session).
     if (typeof NamePrefs !== 'undefined' && NamePrefs) {
       var un = NamePrefs.getUsername();
       if (un) {
@@ -346,7 +310,7 @@ window.Online = (function () {
     if (!name) { errBox.textContent = 'Enter your name to join.'; errBox.hidden = false; return; }
     wsUrl = normalizeWsUrl(fieldVal('on-wsurl', ''));
     saveWsUrl(fieldVal('on-wsurl', '').trim().replace(/\/+$/, ''));
-    // "Join sitting out": send sitout as soon as the first snapshot arrives.
+
     pendingAway = !!($('on-join-away') && $('on-join-away').checked);
     if (wsUrl) { joinLive(code, name); return; }
     mode = 'mock';
@@ -360,19 +324,17 @@ window.Online = (function () {
     render();
   }
 
-  // Live (WebSocket) path. The worker relay owns the Room; this just adapts
-  // NetClient to the same {send, close, onmessage} shape the UI expects.
   function liveAdapter(url, code, name, firstMsg, emoji) {
     var nc = new NetClient();
-    var relayHost = url.replace(/^wss?:\/\//, '');
+    var relayHost = url.indexOf('wss://') === 0 ? url.slice(6)
+      : url.indexOf('ws://') === 0 ? url.slice(5) : url;
     var everConnected = false;
     var adapter = {
       send: function (m) { nc.send(m); },
       close: function () { nc.close(); },
       onmessage: null, seat: -1
     };
-    // Re-sent on every (re)connect: the Room reclaims our seat by name and
-    // the snapshot resyncs us to the current state, lobby or mid-game.
+
     nc.onopen = function () {
       everConnected = true;
       nc.send(firstMsg);
@@ -380,10 +342,10 @@ window.Online = (function () {
       clearErrors();
     };
     nc.onmessage = function (m) { if (adapter.onmessage) adapter.onmessage(m); };
-    nc.onerror = function () { /* onreconnecting/onclose own the status UX */ };
+    nc.onerror = function () {  };
     nc.onreconnecting = function () { setConn('Reconnecting…'); };
     nc.onclose = function () {
-      // Only fires after auto-reconnect gives up (intentional closes are silent).
+
       setConn('Disconnected');
       showError(everConnected
         ? 'Connection lost. Leave and rejoin to get back in.'
@@ -391,14 +353,12 @@ window.Online = (function () {
     };
     nc.connect(url + '/room/' + code + '/ws?name=' + encodeURIComponent(name) + (emoji ? '&emoji=' + encodeURIComponent(emoji) : ''),
                { autoReconnect: true, maxTries: 12 });
-    // If the tab was backgrounded (mobile app switch), the socket may have
-    // died silently. On return, nudge a reconnect — the server reclaims the
-    // seat by name, so the player lands back in their seat.
+
     if (!window.__psVisHandler) {
       window.__psVisHandler = true;
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden && mode === 'live' && client && client.reconnect) {
-          try { client.reconnect(); } catch {}
+          try { client.reconnect(); } catch (e) { quiet(e); }
         }
       });
     }
@@ -420,8 +380,6 @@ window.Online = (function () {
     var emoji = loadEmoji();
     liveAdapter(wsUrl, code, name, { t: 'join', name: name, emoji: emoji }, emoji);
   }
-
-  // ---------------- lobby view ----------------
 
   function renderLobby() {
     var v = $('online-view');
@@ -476,12 +434,10 @@ window.Online = (function () {
     renderChat(lob);
   }
 
-  // ---------------- table view ----------------
-
   function seatPos(i, n) {
-    // Ellipse around the felt, seat 0 at the bottom (hero position).
+
     var ang = (360 / n) * i - 90;
-    if (n > 2) ang = (360 / n) * i + 90; // seat 0 bottom for 3+
+    if (n > 2) ang = (360 / n) * i + 90;
     var rad = ang * Math.PI / 180;
     return { x: 50 + 42 * Math.cos(rad), y: 50 + 42 * Math.sin(rad) };
   }
@@ -537,20 +493,17 @@ window.Online = (function () {
   }
 
   function updateTableState(s) {
-    // Board
+
     $('on-pot').textContent = 'Pot: ' + fmt(s.pot);
     var comm = $('on-community');
     comm.innerHTML = '';
     s.community.forEach(function (c) { comm.appendChild(UI.cardEl(c, true)); });
     $('on-street').textContent = s.street === 'preflop' ? '' : (s.street || '');
 
-    // Seats
     var wrap = $('online-seats');
     wrap.innerHTML = '';
     var n = s.players.length;
-    // Winners of the finished hand (v1.8.98): their seats get the gold ring
-    // and ONLY their cards are revealed — losing showdown hands stay mucked
-    // unless voluntarily shown (Kevin; same rule as the server snapshot).
+
     var winSet = {};
     (s.winners || []).forEach(function (w) { winSet[w.idx] = true; });
     var seatElsBySeat = {};
@@ -578,15 +531,12 @@ window.Online = (function () {
         '<div class="timer-secs"></div>';
       var pc = d.querySelector('.pcards');
       if (p.hasCards) {
-        // Showdown reveal applies to WINNERS only (v1.8.98) — everyone else
-        // mucks. (Older relays still send all showdown hands; the display
-        // rule here enforces the muck regardless.)
+
         var sdEntry = s.showdown && s.showdown.filter(function (r) { return r.seat === p.seat; })[0];
         var sd = (sdEntry && winSet[p.seat]) ? sdEntry : null;
-        // Voluntarily shown cards (PokerNow-style "Show").
+
         var sh = !sd && s.shown && s.shown.filter(function (r) { return r.seat === p.seat; })[0];
-        // Hero's own seat shows their real cards (like the offline table);
-        // everyone else shows backs until the showdown reveals them.
+
         var mine = !sd && !sh && p.seat === s.mySeat && s.hole && s.hole.length === 2;
         if (sd) { sd.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
         else if (sh) { sh.hole.forEach(function (c) { pc.appendChild(UI.cardEl(c, true)); }); }
@@ -604,17 +554,12 @@ window.Online = (function () {
       wrap.appendChild(d);
     });
 
-    // Hero cards — always face-up to the hero (folding hides them from the
-    // table, not from yourself).
     var hero = $('on-hero');
     hero.innerHTML = '';
     if (s.hole && s.hole.length === 2) {
       s.hole.forEach(function (c) { hero.appendChild(UI.cardEl(c, true)); });
     }
 
-    // Winner card lift (v1.8.98, Kevin — same language as solo play): the
-    // winning best-5 rises with a gold ring, the rest of the board dims.
-    // The best-5 is computed locally from the winner's shown cards.
     try {
       var sdWinners = (s.winners || []).filter(function (w) { return w.hand && !w.byFold; });
       if (sdWinners.length && s.community.length >= 3 && typeof evaluate7 === 'function') {
@@ -630,14 +575,14 @@ window.Online = (function () {
           var bestKeys = {};
           best5.forEach(function (c) { bestKeys[keyOf(c)] = true; });
           s.community.forEach(function (c) { if (bestKeys[keyOf(c)]) boardWinKeys[keyOf(c)] = true; });
-          // Winner's own cards: seat pcards (and the hero strip if it's me).
+
           var seatEl = seatElsBySeat[w.idx] || null;
           var boxes = [];
           if (seatEl) boxes.push(seatEl.querySelector('.pcards'));
           if (w.idx === s.mySeat) boxes.push(hero);
           boxes.forEach(function (box) {
             if (!box) return;
-            // Positional match: pcards order equals hole order.
+
             for (var cj = 0; cj < box.children.length && cj < holeW.length; cj++) {
               box.children[cj].classList.add(bestKeys[keyOf(holeW[cj])] ? 'card-win' : 'card-dim');
             }
@@ -647,27 +592,19 @@ window.Online = (function () {
           comm.children[bi].classList.add(boardWinKeys[keyOf(s.community[bi])] ? 'card-win' : 'card-dim');
         }
       }
-    } catch {}
+    } catch (e) { quiet(e); }
 
-    // Timer bar on the to-act seat
     updateTimerBar(s.timerMsLeft);
 
-    // Paused overlay
     var pausedEl = $('on-paused');
     pausedEl.hidden = !s.paused;
     if (s.paused) $('on-paused-by').textContent = 'by ' + s.pausedBy;
 
-    // "Show cards" button (PokerNow-style): after a hand, if your cards weren't
-    // revealed at showdown, offer to show them to the table voluntarily.
-    // v1.8.99: only once the hand is COMPLETE (s.winners set). The old
-    // folded-mid-hand clause offered the reveal while the hand was still
-    // live — broadcasting your cards to players still in the hand.
-    // Cache hole cards: the server clears s.hole when the hand ends.
     if (s.hole && s.hole.length === 2) {
-      try { window.__lastHole = JSON.stringify(s.hole); } catch {}
+      try { window.__lastHole = JSON.stringify(s.hole); } catch (e) { quiet(e); }
     }
     var cachedHole = null;
-    try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch {}
+    try { cachedHole = window.__lastHole ? JSON.parse(window.__lastHole) : null; } catch (e) { quiet(e); }
     var showBtn = $('on-show-btn');
     var handComplete = !!(s.winners && s.winners.length);
     var canShow = s.state === 'playing' && cachedHole && cachedHole.length === 2 &&
@@ -681,13 +618,10 @@ window.Online = (function () {
         showBtn.hidden = true;
       };
     }
-    // Winner splash (v1.8.40): same ephemeral one-liner as offline play —
-    // fades on its own after ~3s, never blocks, nothing to dismiss.
-    // The hand name and details stay in the feed below.
+
     var banner = $('on-banner');
     if (s.winners && s.winners.length) {
-      // All winners (split pots included), total, and the winning hand name
-      // (v1.8.98 — matches the solo winner line).
+
       var seenIdx = {};
       var wNames = [];
       s.winners.forEach(function (w) {
@@ -720,7 +654,6 @@ window.Online = (function () {
       banner.dataset.sig = '';
     }
 
-    // Feed
     var feed = $('on-feed');
     feed.innerHTML = '';
     s.recent.forEach(function (line) {
@@ -760,7 +693,7 @@ window.Online = (function () {
     var me = s.players.filter(function (p) { return p.seat === s.mySeat; })[0];
     return !!(me && me.stack < s.config.startingStack);
   }
-  // Ledger: buy-ins, current stack, net per player. Net = stack - buyins*startingStack.
+
   function renderLedger(s) {
     var box = $('on-ledger');
     if (!box || !s) return;
@@ -821,8 +754,7 @@ window.Online = (function () {
     var lo = legal.minBetTo || legal.minRaiseTo;
     var hi = legal.maxRaiseTo;
     var pot = s.pot;
-    // Amounts are TOTAL street bet targets (engine convention). Quick buttons
-    // scale off the pot on top of the minimum target.
+
     function targetFor(frac) {
       return Math.max(lo, Math.min(hi, Math.round(lo + frac * pot)));
     }
@@ -862,8 +794,6 @@ window.Online = (function () {
     c.appendChild(okB);
     c.appendChild(cancel);
   }
-
-  // ---------------- render root ----------------
 
   function render() {
     if (view === 'lobby') renderLobby();

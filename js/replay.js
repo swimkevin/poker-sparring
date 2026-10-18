@@ -1,8 +1,4 @@
-// replay.js — Hand history capture, storage, and replay state machine.
-// DOM-free. The engine emits events as a hand plays; app.js feeds them here.
-// Records are plain JSON in localStorage (key ps_hands_v1, last 50), so the
-// replayer works offline and survives reloads. v1.4.
-
+var quiet = function (e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); };
 var HANDS_KEY = 'ps_hands_v1';
 var HANDS_CAP = 50;
 
@@ -16,11 +12,6 @@ function playerLabel(table, i) {
   };
 }
 
-// Build the record skeleton from the handStart event. Blinds/antes are posted
-// by the engine without action events, so we synthesize them here in emission
-// order (antes, then small blind, then big blind) to make the replay read
-// naturally. totalBet right after startHand() holds exactly what each player
-// has committed so far, so the synthesized pots are exact.
 function startHandRecord(table, evt, mode) {
   var rec = {
     v: 1,
@@ -47,14 +38,14 @@ function startHandRecord(table, evt, mode) {
       name: l.name, emoji: l.emoji, action: kind, amount: amount, pot: pot
     });
   }
-  // Antes first (engine order: every live player, seat order).
+
   table.players.forEach(function (p, i) {
     var blind = (i === evt.sbIdx) ? Math.min(evt.sb, p.totalBet)
       : (i === evt.bbIdx) ? Math.min(evt.bb, p.totalBet) : 0;
     var ante = Math.max(0, p.totalBet - blind);
     if (ante > 0) pushSyn(i, 'ante', ante);
   });
-  // Then the blinds.
+
   var sbBlind = Math.min(evt.sb, table.players[evt.sbIdx].totalBet);
   var bbBlind = Math.min(evt.bb, table.players[evt.bbIdx].totalBet);
   if (sbBlind > 0) pushSyn(evt.sbIdx, 'sb', sbBlind);
@@ -62,8 +53,6 @@ function startHandRecord(table, evt, mode) {
   return rec;
 }
 
-// Record one played action. evt is the engine's actionTaken event (which
-// carries street, amount, bet, and the running pot).
 function recordHandAction(rec, table, evt) {
   var l = playerLabel(table, evt.player);
   rec.timeline.push({
@@ -73,7 +62,6 @@ function recordHandAction(rec, table, evt) {
   });
 }
 
-// Record a dealt street. evt is the engine's street event.
 function recordHandStreet(rec, table, evt) {
   rec.timeline.push({
     t: 'street', street: evt.street,
@@ -81,8 +69,6 @@ function recordHandStreet(rec, table, evt) {
   });
 }
 
-// Close out the record at handEnd. heroProfitChips is the hero's stack delta
-// for the hand (app.js already computes it for stats).
 function finishHandRecord(rec, table, evt, heroProfitChips) {
   var winners = (evt.winners || []).map(function (w) {
     var ids = w.winners || [w.idx];
@@ -101,11 +87,7 @@ function finishHandRecord(rec, table, evt, heroProfitChips) {
   });
   rec.heroNet = Math.round(heroProfitChips);
   rec.heroNetBB = Math.round((heroProfitChips / rec.bb) * 10) / 10;
-  // Everyone's hole cards for the hand log (v1.8.71): this is a training
-  // app, so history shows ALL hands — even folded ones (Kevin's request).
-  // Engine keeps hole cards until the next hand starts, so folded players'
-  // cards are still on table.players here. In netplay opponent cards aren't
-  // known locally → hole stays null (shows "—").
+
   rec.allHands = (rec.players || []).map(function (pl, idx) {
     var hole = null;
     if (pl.isHero) hole = (rec.heroHole || []).slice();
@@ -115,7 +97,7 @@ function finishHandRecord(rec, table, evt, heroProfitChips) {
     }
     return { name: pl.name, emoji: pl.emoji, hole: hole, isHero: !!pl.isHero };
   });
-  // Human-readable one-liner mirroring the winner banner.
+
   var main = null;
   winners.forEach(function (w) { if (!main && !w.uncalled) main = w; });
   main = main || winners[0];
@@ -127,9 +109,6 @@ function finishHandRecord(rec, table, evt, heroProfitChips) {
   return rec;
 }
 
-// ---------- replay state machine ----------
-// upto = how many timeline entries are applied (0..timeline.length).
-// Returns { street, community, actions, pot, winners, done, idx, total }.
 function replayState(rec, upto) {
   var tl = rec.timeline || [];
   upto = Math.max(0, Math.min(upto == null ? tl.length : upto, tl.length));
@@ -155,8 +134,6 @@ function replayState(rec, upto) {
   return st;
 }
 
-// Frame index (as an `upto` count) where a street's cards are first visible.
-// 'preflop' -> 0. Streets never reached (hand ended early) -> end of timeline.
 function frameIndexForStreet(rec, street) {
   if (street === 'preflop') return 0;
   var tl = rec.timeline || [];
@@ -166,7 +143,6 @@ function frameIndexForStreet(rec, street) {
   return tl.length;
 }
 
-// ---------- storage (guarded: works in Node, private mode, file://) ----------
 function loadHandRecords() {
   try {
     if (typeof localStorage === 'undefined') return [];
@@ -183,13 +159,13 @@ function saveHandRecord(rec) {
     var list = loadHandRecords();
     list.unshift(rec);
     localStorage.setItem(HANDS_KEY, JSON.stringify(list.slice(0, HANDS_CAP)));
-  } catch { /* storage full/blocked: replayer is best-effort */ }
+  } catch {  }
 }
 
 function clearHandRecords() {
   try {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(HANDS_KEY);
-  } catch {}
+  } catch (e) { quiet(e); }
 }
 
 if (typeof module !== 'undefined' && module.exports) {

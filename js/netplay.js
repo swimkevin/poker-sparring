@@ -1,42 +1,15 @@
-// netplay.js — Online multiplayer transport for Poker Sparring.
-// DOM-free (except NetClient, which is browser-only).
-//
-// Message protocol (JSON over WebSocket; MockRoomServer delivers the same
-// objects via direct calls, so the UI code is identical for both):
-//
-//   Client -> server:
-//     {t:'create', config, name}   host a table (live worker path; mock uses createRoom)
-//     {t:'join', name}             join by room code (live worker path)
-//     {t:'start'}                  host starts the game (needs 2+ players)
-//     {t:'action', action, amount}  fold|check|call|bet|raise (amount = TOTAL bet target)
-//     {t:'pause'} / {t:'resume'}   host only
-//     {t:'leave'}
-//
-//   Server -> client:
-//     {t:'lobby', code, state, config, champion, players:[{seat,name,connected,isHost}]}
-//     {t:'state', ...}   full per-seat snapshot (see Room.getSnapshot); hole cards
-//                        are included ONLY for the requesting seat
-//     {t:'timer', msLeft}
-//     {t:'error', message}
-
-// Node: pull cross-file globals when running as a module.
-// (Browser: Room / makeRoomCode / isValidRoomCode are globals from the
-// room-server.js script tag. Room is aliased as RoomCtor on purpose: a hoisted
-// `var Room` would collide with room-server.js's `class Room` binding and this
-// script would fail to parse via browser script tags. `var` + `function` of the
-// same name is harmless, so makeRoomCode / isValidRoomCode keep their names.)
+var quiet = function (e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); };
 var __room = (typeof module !== 'undefined' && module.exports) ? require('./room-server.js') : null;
 var RoomCtor = __room ? __room.Room : Room;
 if (__room) { var makeRoomCode = __room.makeRoomCode, isValidRoomCode = __room.isValidRoomCode; }
 
-// ---------- NetClient: thin WebSocket wrapper (browser only) ----------
 function NetClient() {
   this.ws = null;
   this.onmessage = null;
   this.onopen = null;
-  this.onclose = null;        // fires only when the socket is gone for good
+  this.onclose = null;
   this.onerror = null;
-  this.onreconnecting = null; // fires before each automatic redial: (tryNumber)
+  this.onreconnecting = null;
   this._url = null;
   this._reconnectTries = 0;
   this._autoReconnect = false;
@@ -68,15 +41,12 @@ NetClient.prototype.connect = function (url, opts) {
     if (self.onmessage) self.onmessage(m);
   };
   ws.onclose = function () {
-    // A dropped socket redials with backoff while autoReconnect is on. The app
-    // re-sends its join on every onopen, which is how the Room reclaims the
-    // seat and the client resyncs to the current state (lobby or mid-game).
-    // Intentional close() is silent: no redial, no onclose.
+
     if (self._userClosed) return;
     if (self._autoReconnect && self._reconnectTries < self._maxTries) {
       self._reconnectTries++;
       var delay = Math.min(1000 * Math.pow(2, self._reconnectTries), 8000);
-      if (self.onreconnecting) { try { self.onreconnecting(self._reconnectTries); } catch {} }
+      if (self.onreconnecting) { try { self.onreconnecting(self._reconnectTries); } catch (e) { quiet(e); } }
       setTimeout(function () {
         if (self._userClosed) return;
         self.connect(url, opts);
@@ -91,22 +61,18 @@ NetClient.prototype.connect = function (url, opts) {
 
 NetClient.prototype.send = function (obj) {
   if (this.ws && this.ws.readyState === 1) {
-    try { this.ws.send(JSON.stringify(obj)); } catch { /* ignore */ }
+    try { this.ws.send(JSON.stringify(obj)); } catch {  }
   }
 };
 
 NetClient.prototype.close = function () {
-  this._userClosed = true; // intentional: the pending redial (if any) stands down
-  if (this.ws) { try { this.ws.close(); } catch {} this.ws = null; }
+  this._userClosed = true;
+  if (this.ws) { try { this.ws.close(); } catch (e) { quiet(e); } this.ws = null; }
 };
 
-// ---------- MockRoomServer: in-page server for prototype + tests ----------
-// Wraps one Room per room code and delivers messages via direct calls — the UI
-// and the test suite run with NO backend. In the browser it ticks rooms on a
-// 250ms interval; in tests pass {manualTick:true, now:fn} and drive the clock.
 function MockRoomServer(opts) {
   opts = opts || {};
-  this.rooms = {}; // code -> { room, clients: {clientId: rec} }
+  this.rooms = {};
   this._seq = 1;
   this._botSeq = 1;
   this.manual = !!opts.manualTick;
@@ -125,7 +91,6 @@ MockRoomServer.prototype._newClientId = function () {
   return 'c' + (this._seq++);
 };
 
-// Host path: creates the Room AND connects the host in one call.
 MockRoomServer.prototype.createRoom = function (config, hostName, emoji) {
   var code = makeRoomCode();
   var guard = 0;
@@ -137,7 +102,6 @@ MockRoomServer.prototype.createRoom = function (config, hostName, emoji) {
   return { code: code, client: res.client };
 };
 
-// Join path: attach to an existing room.
 MockRoomServer.prototype.connect = function (code, name) {
   code = String(code || '').toUpperCase().trim();
   var entry = this.rooms[code];
@@ -173,7 +137,7 @@ MockRoomServer.prototype._entryFor = function (rec) {
 MockRoomServer.prototype._deliver = function (rec, msg) {
   rec.last = msg;
   if (rec.onmessage) {
-    try { rec.onmessage(msg); } catch { /* UI errors must not break the server */ }
+    try { rec.onmessage(msg); } catch {  }
   }
 };
 
@@ -182,13 +146,13 @@ MockRoomServer.prototype._sendLobby = function (entry) {
   Object.keys(entry.clients).forEach(function (id) {
     var rec = entry.clients[id];
     if (!rec.closed) {
-      // Personalize isHost and seat per client (the live path needs `you`).
+
       var personal = Object.assign({}, lobby, {
         isHost: entry.room.playerBySeat(rec.seat).isHost,
         you: rec.seat
       });
       rec.last = personal;
-      if (rec.onmessage) { try { rec.onmessage(personal); } catch {} }
+      if (rec.onmessage) { try { rec.onmessage(personal); } catch (e) { quiet(e); } }
     }
   });
 };
@@ -263,7 +227,6 @@ MockRoomServer.prototype._removeClient = function (rec) {
   else this._broadcastState(entry);
 };
 
-// Advance all rooms' clocks. Returns nothing; clients get state/timer messages.
 MockRoomServer.prototype.tickAll = function (now) {
   var self = this;
   Object.keys(this.rooms).forEach(function (code) {
@@ -273,14 +236,14 @@ MockRoomServer.prototype.tickAll = function (now) {
       if (entry.room.state === 'lobby') self._sendLobby(entry);
       else self._broadcastState(entry);
     } else if (entry.room.state === 'playing' && !entry.room.paused && entry.room.config.turnTimerSec > 0) {
-      // Cheap countdown ticks so clients can animate the timer bar.
+
       var msLeft = entry.room._msLeft();
       Object.keys(entry.clients).forEach(function (id) {
         var rec = entry.clients[id];
         if (!rec.closed) self._deliver(rec, { t: 'timer', msLeft: msLeft });
       });
     }
-    // Demo bots act on fresh state.
+
     Object.keys(entry.clients).forEach(function (id) {
       var rec = entry.clients[id];
       if (rec.isBot && !rec.closed && !self.manual) self._botMaybeAct(entry, rec);
@@ -288,10 +251,6 @@ MockRoomServer.prototype.tickAll = function (now) {
   });
 };
 
-// ---------- demo bots (mock/prototype only) ----------
-// Lets a solo tester actually play a hand: clearly-labeled filler seats with a
-// trivial random-legal policy. NOT the offline archetype AI — production rooms
-// are humans-only.
 MockRoomServer.prototype.addDemoBot = function (code, name) {
   var entry = this.rooms[code];
   if (!entry) return { error: 'Room not found.' };
@@ -311,7 +270,6 @@ MockRoomServer.prototype._demoPolicy = function (state) {
   return { action: 'fold' };
 };
 
-// Manual driver for tests (deterministic): act once for the bot if it's its turn.
 MockRoomServer.prototype.botActNow = function (rec) {
   var entry = this._entryFor(rec);
   if (!entry || !rec.isBot) return false;

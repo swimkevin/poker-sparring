@@ -13,7 +13,8 @@ first; this file is the 30-second version.
 - `npm test` (unit + component) must pass before pushing. Add a targeted test
   with every engine/bot/equity change.
 - Never `innerHTML` user-controlled strings without `UI.escapeHtml`.
-- Keep functions small, comment the decision points, no emojis in code comments.
+- Keep functions small, no emojis in code comments.
+- **Zero comments in shipped source** (Kevin 2026-10-18): js/, css/, index.html ship with NO comments — `tests/no-comments-test.js` fails the build otherwise. Version-history notes go in CHANGELOG.md only. If a test asserts on comment text, rewrite it to assert on code.
 
 ## Release checklist (GitHub Pages)
 - Bump the version in three places: `APP_VERSION` in `js/app.js`, `"version"` in

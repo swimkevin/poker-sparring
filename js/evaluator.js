@@ -1,11 +1,3 @@
-// evaluator.js — 7-card Texas Hold'em hand evaluator. DOM-free.
-//
-// Scoring: single integer, higher = better.
-//   score = category * 16^5 + k1*16^4 + k2*16^3 + k3*16^2 + k4*16 + k5
-// Categories: 8 straight flush, 7 quads, 6 full house, 5 flush,
-//             4 straight, 3 trips, 2 two pair, 1 pair, 0 high card.
-
-// Node: pull cross-file globals when running as modules (browser uses script tags).
 if (typeof module !== 'undefined' && module.exports) {
   var __cards = require('./cards.js');
   var rankName = __cards.rankName;
@@ -16,7 +8,7 @@ var CATEGORY_NAMES = [
   'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush'
 ];
 
-function catOf(score) { return Math.floor(score / 1048576); } // 16^5
+function catOf(score) { return Math.floor(score / 1048576); }
 
 function encodeScore(cat, kickers) {
   var s = cat;
@@ -24,7 +16,6 @@ function encodeScore(cat, kickers) {
   return s;
 }
 
-// Evaluate exactly 5 cards. Returns { score, cat, kickers, best5 }.
 function evaluate5(cards) {
   var ranks = cards.map(function (c) { return c.r; }).sort(function (a, b) { return b - a; });
   var flush = cards.every(function (c) { return c.s === cards[0].s; });
@@ -37,7 +28,7 @@ function evaluate5(cards) {
   if (uniq.length === 5) {
     if (uniq[0] - uniq[4] === 4) straightHigh = uniq[0];
     else if (uniq[0] === 14 && uniq[1] === 5 && uniq[2] === 4 && uniq[3] === 3 && uniq[4] === 2)
-      straightHigh = 5; // wheel: A-2-3-4-5
+      straightHigh = 5;
   }
 
   var counts = {};
@@ -66,7 +57,7 @@ function evaluate5(cards) {
   return pack(0, ranks.slice(), cards);
 
   function pack(cat, kickers, allCards) {
-    // Reconstruct the actual best 5 cards for display: pick cards matching kickers.
+
     var used = {}, best = [];
     var pool = allCards.slice();
     function take(rank, n) {
@@ -78,7 +69,7 @@ function evaluate5(cards) {
       }
     }
     if (cat === 8 || cat === 4) {
-      // straight: take the 5 ranks of the straight
+
       var top = kickers[0], need = [];
       for (var t = 0; t < 5; t++) need.push(top === 5 && t === 4 ? 14 : top - t);
       need.forEach(function (rk) { take(rk, 1); });
@@ -98,7 +89,6 @@ function evaluate5(cards) {
   }
 }
 
-// Evaluate 5..7 cards (hole + community). Returns best 5-card result.
 function evaluate(cards) {
   if (cards.length === 5) return evaluate5(cards);
   if (cards.length < 5) throw new Error('evaluate needs at least 5 cards');
@@ -115,7 +105,6 @@ function evaluate(cards) {
 }
 var evaluate7 = evaluate;
 
-// Human-readable description, e.g. "Flush, Ace high" / "Two Pair, Kings and Tens".
 function describeHand(ev) {
   var k = ev.kickers, rn = (typeof rankName !== 'undefined') ? rankName : function (r) { return String(r); };
   function plural(r) { var n = rn(r); return n === 'Six' ? 'Sixes' : n + 's'; }
@@ -132,7 +121,6 @@ function describeHand(ev) {
   }
 }
 
-// Compare two evaluations: 1 = a wins, -1 = b wins, 0 = tie.
 function compareHands(a, b) {
   return a.score > b.score ? 1 : a.score < b.score ? -1 : 0;
 }

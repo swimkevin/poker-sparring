@@ -1,6 +1,3 @@
-// equity.js — Monte Carlo equity, made-hand strength, and draw detection. DOM-free.
-
-// Node: pull cross-file globals when running as modules (browser uses script tags).
 if (typeof module !== 'undefined' && module.exports) {
   var __ev = require('./evaluator.js');
   var evaluate7 = __ev.evaluate7;
@@ -10,8 +7,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
 function _key(c) { return c.r * 10 + c.s; }
 
-// Estimate P(win) for `hole` vs `opponents` random hands given `community` (0-5 cards).
-// Ties count as half a win (slight multiway approximation). iters trades speed/accuracy.
 function estimateEquity(hole, community, opponents, iters) {
   iters = iters || 300;
   opponents = Math.max(1, opponents || 1);
@@ -27,7 +22,7 @@ function estimateEquity(hole, community, opponents, iters) {
   var score = 0;
 
   for (var i = 0; i < iters; i++) {
-    // Partial Fisher-Yates: only shuffle the cards we need.
+
     var deck = full.slice();
     for (var d = 0; d < need; d++) {
       var j = d + Math.floor(Math.random() * (deck.length - d));
@@ -47,10 +42,6 @@ function estimateEquity(hole, community, opponents, iters) {
   return score / iters;
 }
 
-// Estimate P(win) for `hole` vs a SINGLE opponent whose hole cards are sampled
-// uniformly from hands with holeTier <= maxTier (a shoving/calling "range").
-// This is the honest number for "facing a shove" spots: a shover's range is
-// far stronger than random hands, so estimateEquity() would overstate our equity.
 function estimateEquityVsRange(hole, maxTier, iters) {
   iters = iters || 300;
   var known = {};
@@ -59,7 +50,7 @@ function estimateEquityVsRange(hole, maxTier, iters) {
   for (var s = 0; s < 4; s++)
     for (var r = 2; r <= 14; r++)
       if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
-  // All villain hole-card combos inside the range (hero's cards excluded).
+
   var pool = [];
   for (var i = 0; i < rest.length; i++)
     for (var j = i + 1; j < rest.length; j++) {
@@ -78,7 +69,7 @@ function estimateEquityVsRange(hole, maxTier, iters) {
     for (var s2 = 0; s2 < 4; s2++)
       for (var r2 = 2; r2 <= 14; r2++)
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
-    // Partial Fisher-Yates for the 5 board cards.
+
     for (var d = 0; d < 5; d++) {
       var jj = d + Math.floor(Math.random() * (deck.length - d));
       var t = deck[d]; deck[d] = deck[jj]; deck[jj] = t;
@@ -92,12 +83,6 @@ function estimateEquityVsRange(hole, maxTier, iters) {
   return score / iters;
 }
 
-// Estimate P(win) for `hole` vs a SINGLE opponent sampled from a tier-capped
-// range (holeTier <= maxTier), on the ACTUAL board — only the missing board
-// cards are dealt from the stub. The honest number for postflop "facing a
-// bet" spots: a tight player bombing the pot holds a strong range, not
-// random hands (v1.8.99: Kevin disputed the old vs-random J4-vs-Amogh
-// number, so the coach now prices the range into the equity itself).
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
@@ -107,7 +92,7 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   for (var s = 0; s < 4; s++)
     for (var r = 2; r <= 14; r++)
       if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
-  // All villain hole-card combos inside the range (known cards excluded).
+
   var pool = [];
   for (var i = 0; i < rest.length; i++)
     for (var j = i + 1; j < rest.length; j++) {
@@ -126,7 +111,7 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
     for (var s2 = 0; s2 < 4; s2++)
       for (var r2 = 2; r2 <= 14; r2++)
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
-    // Partial Fisher-Yates for the missing board cards only.
+
     for (var d = 0; d < boardNeed; d++) {
       var jj = d + Math.floor(Math.random() * (deck.length - d));
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
@@ -139,9 +124,7 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   }
   return score / iters;
 }
-// Adds draw bonuses so semi-bluffing works.
-// Rough "how strong is my made hand right now" in [0,1], for bot heuristics.
-// Adds draw bonuses so semi-bluffing works.
+
 function madeStrength(hole, community) {
   var cards = hole.concat(community);
   var ev = cards.length >= 5 ? evaluate7(cards) : null;
@@ -167,7 +150,7 @@ function madeStrength(hole, community) {
       default: base = 0.05 + (ev.kickers[0] / 14) * 0.08;
     }
   } else {
-    // Preflop: use hole-card tier as a proxy.
+
     base = 0.55 - holeTier(hole) * 0.07;
   }
   var d = detectDraws(hole, community);
@@ -179,7 +162,7 @@ function madeStrength(hole, community) {
 }
 
 function detectDraws(hole, community) {
-  // Defensive (v1.8.97): unit tests call bot postflop fns with stub players.
+
   if (!hole || !community) return { flushDraw: false, oesd: false, gutshot: false, overcards: 0 };
   var cards = hole.concat(community);
   var suitCount = [0, 0, 0, 0];
@@ -194,7 +177,7 @@ function detectDraws(hole, community) {
     var span = rs[i + 3] - rs[i];
     if (span === 3) { oesd = true; break; }
     if (span === 4 && !oesd) {
-      // 4 ranks spanning 5 (one gap) with board not yet complete => gutshot-ish
+
       gutshot = true;
     }
   }
@@ -206,16 +189,15 @@ function detectDraws(hole, community) {
   return { flushDraw: flushDraw, oesd: oesd && community.length < 5, gutshot: gutshot && community.length < 5, overcards: overcards };
 }
 
-// Preflop hole-card tier: 1 = premium ... 6 = trash. Used by bots + coach tips.
 function holeTier(hole) {
   var a = hole[0], b = hole[1];
   var hi = Math.max(a.r, b.r), lo = Math.min(a.r, b.r);
   var suited = a.s === b.s, pair = a.r === b.r;
   if (pair) {
-    if (hi >= 12) return 1;      // QQ+
-    if (hi >= 10) return 2;      // JJ TT
-    if (hi >= 7) return 3;       // 99-77
-    return 4;                    // 66-22
+    if (hi >= 12) return 1;
+    if (hi >= 10) return 2;
+    if (hi >= 7) return 3;
+    return 4;
   }
   var key = rankChar(hi) + rankChar(lo) + (suited ? 's' : 'o');
   var T1 = { 'AKs': 1 };
@@ -230,11 +212,11 @@ function holeTier(hole) {
     '98s': 1, '87s': 1, '76s': 1, '65s': 1, 'KQd': 0
   };
   if (T4[key]) return 4;
-  // Tier 5: remaining suited hands, offsuit broadways/connectors
+
   if (suited) return 5;
-  if (hi >= 11 && lo >= 9) return 5;                 // KJo QJo etc.
-  if (hi - lo <= 2 && hi >= 8) return 5;             // connectors/gappers
-  if (a.r === 14 || b.r === 14) return 5;            // any ace
+  if (hi >= 11 && lo >= 9) return 5;
+  if (hi - lo <= 2 && hi >= 8) return 5;
+  if (a.r === 14 || b.r === 14) return 5;
   return 6;
 }
 
@@ -248,20 +230,13 @@ var TIER_NAMES = {
 };
 function tierName(t) { return TIER_NAMES[t] || 'Unknown'; }
 
-// ---------- coach theory helpers (pure; also used by the in-app coach) ----------
-// Bluff break-even: the fold % a bet of `size` into `pot` needs to profit on
-// fold equity alone. Half-pot = 33%, third-pot = 25%, full pot = 50%.
 function bluffBE(size, pot) { return size / (size + pot); }
 
-// Effective stack-to-pot ratio. Answers "how strong a hand do I need to
-// stack off?" Small SPR = committed with one pair; big SPR = need a monster.
 function spr(effStack, pot) {
   if (!(pot > 0)) return 99;
   return Math.max(0, effStack / pot);
 }
 
-// Commitment verdict from SPR + hand class.
-// handClass: 'nut'|'overpair'|'toppair'|'secondpair'|'draw-strong'|'draw'|'draw-weak'|'air'
 function sprVerdict(s, handClass) {
   switch (handClass) {
     case 'nut': return s <= 8 ? 'commit' : 'decide';
@@ -275,23 +250,18 @@ function sprVerdict(s, handClass) {
   }
 }
 
-// Implied-odds credit: extra equity (0..0.15) added to a draw's or small
-// pair's raw equity when stacks are deep and the villain pays off — the
-// extra you expect to win on later streets when you hit.
 function impliedCredit(o) {
   o = o || {};
-  if (!(o.effStackBB >= 12)) return 0; // short stacks: nothing left to win
+  if (!(o.effStackBB >= 12)) return 0;
   if (!(o.draw || o.smallPair)) return 0;
   var c = 0.05;
   if (o.effStackBB >= 30) c += 0.03;
-  if (o.villainStubborn > 0.65) c += 0.04; // stations pay off draws
-  if (o.inPosition) c += 0.02;             // easier to extract in position
+  if (o.villainStubborn > 0.65) c += 0.04;
+  if (o.inPosition) c += 0.02;
   if (o.smallPair) c += 0.01;
   return Math.min(0.15, c);
 }
 
-// Reverse-implied-odds penalty: equity debit (0..0.10) for non-nut draws
-// that can hit and still lose — worst against tight ranges or multiway.
 function rioPenalty(o) {
   o = o || {};
   if (o.nutDraw) return 0;
@@ -301,7 +271,6 @@ function rioPenalty(o) {
   return Math.min(0.10, p);
 }
 
-// How often a villain folds to pressure, from their stubbornness slider.
 function villainFoldy(archetype) {
   var a = archetype || {};
   return 1 - ((typeof a.stubborn === 'number') ? a.stubborn : 0.5);
@@ -311,7 +280,6 @@ function villainBluffy(archetype) {
   return (typeof a.bluff === 'number') ? a.bluff : 0.3;
 }
 
-// One-line exploit per bot id; custom bots get a read from their sliders.
 var EXPLOIT_LINES = {
   lag: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
   rohan: 'loose-passive — plays lots of hands, rarely raises. Value bet big; he calls with pairs but folds air, and bluffs sometimes so don\'t auto-fold to his bets',

@@ -60,8 +60,8 @@ console.log('\n3. handClass: board pair ≠ hero pair (v1.8.62 fix)');
 console.log('\n4. No multiway semi-bluffs (v1.8.62 fix)');
 {
   // Should check multiway before suggesting semi-bluff
-  const drawSection = src.match(/Draws: semi-bluff[\s\S]*?if \(multiway\)/);
-  ok(!!drawSection, 'multiway check before semi-bluff');
+  ok(/\(hc === 'draw-strong' \|\| hc === 'draw'\) && legal\.canRaise && foldy > 0\.4 && !multiway\)/.test(src),
+     'semi-bluff raise requires !multiway');
 }
 
 console.log('\n5. Jargon-free coach');
@@ -311,8 +311,8 @@ console.log('\n25. v1.8.78: Donald semi-bluffs + Amogh-style bombs');
   ok(botSrc.includes("function donaldPostflop"), 'donaldPostflop exists');
   ok(/A\.id === 'donald'/.test(botSrc) && botSrc.includes("donaldPostflop(table, p,"),
      'donaldPostflop dispatched internally by archetype id');
-  ok(botSrc.includes("Semi-bluff: Donald"), 'semi-bluff logic present');
-  ok(botSrc.includes("Ahead but vulnerable"), 'big-bet-when-vulnerable logic present');
+  ok(/hasDraw && ms < 0\.55/.test(botSrc) && botSrc.includes("smv.bluff = true"), 'donald semi-bluffs draws (bluff flag set)');
+  ok(/ms >= 0\.4 && ms < 0\.78/.test(botSrc) && botSrc.includes("pot * (1.5"), 'donald overbets vulnerable medium-strength hands');
 }
 
 console.log('\n26. v1.8.80: Donald overbet not auto-folded as nuts');
@@ -325,7 +325,7 @@ console.log('\n26. v1.8.80: Donald overbet not auto-folded as nuts');
 console.log('\n27. v1.8.83: uncalled refund is not a "win"');
 {
   const appSrc = require('fs').readFileSync('js/app.js', 'utf8');
-  ok(appSrc.includes("if (w.uncalled) return; // refund, not a win"),
+  ok(/if \(w\.uncalled\) return;/.test(appSrc),
      'heroWon skips uncalled pots');
 }
 
@@ -359,6 +359,17 @@ console.log('\n29. v1.8.101: hero plays the board (Kevin\'s QQQ77 river)');
   ok(boardBranches.length === 2, 'two board-play branches (got ' + boardBranches.length + ')');
   ok(boardBranches.every(function (b) { return b === 'fold' || b === 'check'; }),
      'board-play advises only fold or check (got ' + boardBranches.join(',') + ')');
+}
+
+console.log('\n30. Coach and bot copy is jargon-free');
+{
+  var botsSrc = fs.readFileSync(__dirname + '/../js/bots.js', 'utf8');
+  var banned = ['3-bet', '4-bet'];
+  banned.forEach(function (term) {
+    ok(src.indexOf(term) === -1, 'coach (app.js) never says "' + term + '" to the user');
+    ok(botsSrc.indexOf(term) === -1, 'bot profiles (bots.js) never say "' + term + '"');
+  });
+  ok(src.indexOf('set-mine') === -1, 'coach never says "set-mine" (plain words instead)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

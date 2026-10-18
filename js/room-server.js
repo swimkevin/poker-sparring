@@ -1,26 +1,7 @@
-// room-server.js — Authoritative online room state machine for Poker Sparring.
-// DOM-free. Wraps the PokerTable engine (js/engine.js): the Room owns the lobby,
-// seating, turn timers, and pause; the engine owns the poker rules.
-// Runs in Node tests, in the browser (MockRoomServer in js/netplay.js), and
-// bundled into the Cloudflare Durable Object (worker/room-do.js).
-//
-// Design notes:
-// - All time goes through an injectable clock (opts.now) so tests are deterministic.
-// - Validation methods return {ok:true,...} / {ok:false,error} — never throw for
-//   protocol-level mistakes. The engine may still throw on illegal actions; the
-//   Room catches those and converts them to error results.
-// - Hole cards are NEVER in public state. getSnapshot(seatIdx) includes the
-//   requester's own hole cards only.
-
-// Node: pull the engine constructor when running as a module.
-// (Browser: PokerTable is a global class from the engine.js script tag. It is
-// aliased as PokerTableCtor on purpose: a hoisted `var PokerTable` would
-// collide with the `class PokerTable` binding and this script would fail to
-// parse when loaded via browser script tags.)
 var __engine = (typeof module !== 'undefined' && module.exports) ? require('./engine.js') : null;
 var PokerTableCtor = __engine ? __engine.PokerTable : PokerTable;
 
-var ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L
+var ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 function makeRoomCode() {
   var s = '';
   for (var i = 0; i < 6; i++) s += ROOM_CODE_ALPHABET[Math.floor(Math.random() * ROOM_CODE_ALPHABET.length)];
@@ -53,20 +34,20 @@ class Room {
       turnTimerSec: clampInt(cfg.turnTimerSec, 0, 300, 30)
     };
     if (this.config.bb <= this.config.sb) this.config.bb = this.config.sb * 2;
-    this.state = 'lobby'; // lobby | playing | gameOver(not used: game over returns to lobby)
-    this.players = [];    // {clientId, name, seat, stack, connected, isHost}
-    this.table = null;    // PokerTable while a game is running
+    this.state = 'lobby';
+    this.players = [];
+    this.table = null;
     this.paused = false;
     this.pausedBy = null;
     this._pauseStartedAt = 0;
-    this.turnDeadline = 0; // ms epoch; 0 = no active timer
+    this.turnDeadline = 0;
     this._lastActing = -1;
     this.nextHandAt = 0;
-    this.lastResult = null; // {winners, revealed, handNo} from the last handEnd
+    this.lastResult = null;
     this.champion = null;
     this.recent = [];
     this.chat = [];
-    this.shownHands = {}; // seat -> [{r,s}] voluntarily shown (PokerNow-style)              // [{from, text, ts}] — last 50, broadcast to all
+    this.shownHands = {};
     this.closed = false;
     this.onEvent = opts.onEvent || function () {};
     this._now = opts.now || function () { return Date.now(); };
@@ -74,7 +55,7 @@ class Room {
 
   _emit(evt) {
     evt.room = this.code;
-    try { this.onEvent(evt); } catch { /* transport errors must not break the room */ }
+    try { this.onEvent(evt); } catch {  }
   }
 
   _pushRecent(s) {
@@ -95,20 +76,13 @@ class Room {
     return this.players.filter(function (p) { return p.connected; }).length;
   }
 
-  // ---------- lobby ----------
-
   addPlayer(clientId, name, opts) {
     opts = opts || {};
     name = String(name == null ? '' : name).trim().slice(0, MAX_NAME_LEN);
     if (!name) return { ok: false, error: 'Enter a name to join.' };
     var existing = this.playerByClientId(clientId);
     if (existing) return { ok: true, seat: existing.seat, isHost: existing.isHost, rejoined: true };
-    // Session takeover: the same name rebinds to the new connection, whether the
-    // old seat is a disconnected ghost or its socket hasn't been recognized as
-    // closed yet (a fast redial would otherwise be rejected as "name taken",
-    // stranding the player with no seat). Names are unique per table, so the
-    // newcomer is the name-holder; the stale socket's later actions/close are
-    // no-ops once the clientId is rebound.
+
     var sameName = this.players.filter(function (p) { return p.name === name; })[0];
     if (sameName) {
       sameName.clientId = clientId;
@@ -135,15 +109,14 @@ class Room {
     if (this.state === 'lobby') {
       this.players = this.players.filter(function (q) { return q !== p; });
       if (p.isHost && this.players.length > 0) {
-        // Host migrates to the lowest remaining seat.
+
         var nxt = this.players.slice().sort(function (a, b) { return a.seat - b.seat; })[0];
         nxt.isHost = true;
       }
       if (this.players.length === 0) this.closed = true;
       this._emit({ t: 'playerLeft', seat: p.seat, name: p.name });
     } else {
-      // Mid-game leave: keep the seat (chips stay), mark disconnected. Their
-      // turns auto-fold via tick(). Rejoin with the same name reclaims the seat.
+
       p.connected = false;
       this._emit({ t: 'playerDisconnected', seat: p.seat, name: p.name });
       if (this.table && !this.table.handOver && this.table.acting === p.seat) {
@@ -158,9 +131,7 @@ class Room {
     if (!p) return;
     p.connected = connected;
     this._emit({ t: connected ? 'playerRejoined' : 'playerDisconnected', seat: p.seat, name: p.name });
-    // NOTE: host is NOT migrated here. Transient drops (phone sleeps) must not
-    // strip the crown; migration happens lazily in start() when a connected
-    // non-host tries to start a game whose host is gone.
+
   }
 
   _migrateHost() {
@@ -176,15 +147,10 @@ class Room {
     return nxt || null;
   }
 
-  // ---------- chat ----------
-
-  // Voluntary show: a player reveals their mucked cards to the table.
-  // hole comes from the client (they know their own cards from their snapshot).
   showCards(clientId, hole) {
     var p = this.playerByClientId(clientId);
     if (!p) return { ok: false, error: 'not at this table' };
-    // Only once the hand is over (v1.8.99): revealing mid-hand — e.g. right
-    // after folding — hands the live table free information.
+
     if (!this.table || !this.table.handOver) return { ok: false, error: 'wait for the hand to end' };
     if (!Array.isArray(hole) || hole.length !== 2) return { ok: false, error: 'bad cards' };
     var clean = hole.map(function (c) {
@@ -205,8 +171,6 @@ class Room {
     return { ok: true };
   }
 
-  // ---------- rebuy ----------
-
   rebuy(clientId) {
     var p = this.playerByClientId(clientId);
     if (!p) return { ok: false, error: 'not at this table' };
@@ -215,19 +179,15 @@ class Room {
     if (p.stack >= target) return { ok: false, error: 'already topped up' };
     p.stack = target;
     p.buyins = (p.buyins || 1) + 1;
-    // Sync the live table seat if a hand is running.
+
     if (this.table && this.table.players[p.seat]) this.table.players[p.seat].stack = target;
     this._emit({ t: 'playerRebuy', seat: p.seat, name: p.name, stack: target });
     return { ok: true };
   }
 
-  // ---------- game flow ----------
-
   start(clientId) {
     var p = this.playerByClientId(clientId);
-    // Lazy host migration: if the host is disconnected (app killed, not a
-    // clean leave), a connected player trying to start takes the crown
-    // instead of the room soft-locking.
+
     if (p && !p.isHost) {
       var h = this.host();
       if (!h || !h.connected) this._migrateHost();
@@ -236,7 +196,7 @@ class Room {
     if (!p || !p.isHost) return { ok: false, error: 'Only the host can start the game.' };
     if (this.state !== 'lobby') return { ok: false, error: 'Game already running.' };
     if (this.connectedCount() < 2) return { ok: false, error: 'Need at least 2 players to start.' };
-    // Fresh game: everyone buys in at the configured stack.
+
     var self = this;
     this.players.forEach(function (q) { q.stack = self.config.startingStack; q.sittingOut = false; });
     var seated = this.players.slice().sort(function (a, b) { return a.seat - b.seat; });
@@ -261,9 +221,7 @@ class Room {
   _startHand() {
     this.shownHands = {};
     if (this.table.activeCount() < 2) return false;
-    // The Room flag is the source of truth; mirror it onto the engine seats so
-    // blinds, action order, and pots skip sitters-out. (Mid-hand the engine
-    // flag is left alone so an all-in sitter keeps pot eligibility.)
+
     var self = this;
     this.players.forEach(function (p) {
       var ep = self.table.players[p.seat];
@@ -286,10 +244,7 @@ class Room {
     } else if (e.t === 'street') {
       this._pushRecent('— ' + e.street + ' —');
     } else if (e.t === 'handEnd') {
-      // Normalize to PER-WINNER entries with per-winner amounts (v1.8.98):
-      // split pots previously lost every co-winner after the first and
-      // showed the whole pot as one player's win. Uncalled refunds are not
-      // wins and are dropped from the display list.
+
       var winners = [];
       (e.winners || []).forEach(function (w) {
         if (w.uncalled) return;
@@ -298,12 +253,11 @@ class Room {
           winners.push({ idx: idx, amount: w.each != null ? w.each : (w.amount || 0), hand: w.hand || null, byFold: !!w.byFold });
         });
       });
-      if (!winners.length) { // degenerate fallback: keep the raw first entry
+      if (!winners.length) {
         var w0 = (e.winners || [])[0];
         if (w0) winners.push({ idx: (w0.idx != null ? w0.idx : (w0.winners || [0])[0]), amount: w0.amount || 0, hand: w0.hand || null, byFold: !!w0.byFold });
       }
-      // Reveal ONLY the winners' cards (v1.8.98, Kevin): losing showdown
-      // hands stay mucked unless the player voluntarily shows (snap.shown).
+
       var winIdx = {};
       winners.forEach(function (w) { winIdx[w.idx] = true; });
       var revealed = (e.revealed || []).filter(function (r) { return winIdx[r.idx]; });
@@ -316,7 +270,6 @@ class Room {
     }
   }
 
-  // Called after every table mutation: advance timers, detect hand end.
   _afterTableChange() {
     if (!this.table) return;
     if (this.table.handOver) { this._onHandEnd(); return; }
@@ -344,7 +297,7 @@ class Room {
       this.lastResult = null;
       this._startHand();
     } else {
-      // One player owns all the chips: crown them, back to lobby.
+
       var champ = this.table.players.filter(function (p) { return p.stack > 0; })[0];
       var seat = champ ? champ.idx : -1;
       var pl = seat >= 0 ? this.playerBySeat(seat) : null;
@@ -355,10 +308,6 @@ class Room {
     }
   }
 
-  // Sit out (or back in). Sitting out mid-hand kills the hand immediately;
-  // sitters are skipped for blinds and action until they return. An all-in
-  // player's pot eligibility is untouched: only the Room flag is set and the
-  // engine picks it up next hand.
   setSitOut(clientId, out) {
     var p = this.playerByClientId(clientId);
     if (!p) return { ok: false, error: 'You are not seated.' };
@@ -369,8 +318,7 @@ class Room {
     if (out && this.table && !this.table.handOver && ep && !ep.folded && !ep.allIn) {
       try { this.table.act(p.seat, 'fold'); }
       catch {
-        // Not their turn: mark folded manually, then let the engine check if
-        // the hand is over (_step -> _winByFold when one player remains).
+
         ep.folded = true; ep.acted = true;
         this.table._step();
       }
@@ -386,16 +334,14 @@ class Room {
       var legal = this.table.legalActions(seat);
       var action = legal.canCheck ? 'check' : 'fold';
       this.table.act(seat, action);
-      // The engine's actionTaken event already pushed "Name check/fold" to
-      // recent via _onEngineEvent; don't add a second line. Amend the last
-      // entry to note it was automatic.
+
       var p = this.playerBySeat(seat);
       var nm = p ? p.name : ('Seat ' + seat);
       var last = this.recent[this.recent.length - 1];
       if (last && last.indexOf(nm + ' ' + action) === 0) {
         this.recent[this.recent.length - 1] = nm + ' auto-' + action + 's (' + reason + ')';
       }
-    } catch { /* engine is the source of truth; a failed auto-action just stalls to next tick */ }
+    } catch {  }
     this._afterTableChange();
   }
 
@@ -438,8 +384,6 @@ class Room {
     return { ok: true };
   }
 
-  // Called on a timer (worker alarm / mock setInterval / test clock).
-  // Returns true if anything changed and clients should get a fresh snapshot.
   tick() {
     if (this.state !== 'playing' || this.paused || !this.table) return false;
     var now = this._now();
@@ -458,7 +402,7 @@ class Room {
   }
 
   needsTick() {
-    // For worker alarms: is there anything time-based pending?
+
     if (this.state !== 'playing' || this.paused || !this.table) return false;
     if (this.table.handOver) return true;
     return this.config.turnTimerSec > 0;
@@ -468,8 +412,6 @@ class Room {
     if (!this.turnDeadline || this.paused) return this.turnDeadline ? Math.max(0, this.turnDeadline - this._now()) : null;
     return Math.max(0, this.turnDeadline - this._now());
   }
-
-  // ---------- snapshots ----------
 
   getLobby() {
     return {
@@ -482,7 +424,6 @@ class Room {
     };
   }
 
-  // Per-seat snapshot. Hole cards are included ONLY for the requesting seat.
   getSnapshot(seatIdx) {
     var me = this.playerBySeat(seatIdx);
     var snap = {
@@ -536,7 +477,7 @@ class Room {
         return { seat: r.idx, hole: r.hole.map(function (c) { return { r: c.r, s: c.s }; }) };
       });
     }
-    // Voluntarily shown cards (cleared when a new hand starts)
+
     var shown = [];
     for (var seat in this.shownHands) {
       shown.push({ seat: parseInt(seat, 10), hole: this.shownHands[seat] });
@@ -545,10 +486,6 @@ class Room {
     return snap;
   }
 
-  // ---- Durable Object persistence ----
-  // Rooms must survive DO eviction (idle DOs are dropped; this.room is memory
-  // only). toJSON captures everything needed to revive the room, including a
-  // mid-hand engine state — all fields are plain JSON data.
   toJSON() {
     var t = this.table;
     return {

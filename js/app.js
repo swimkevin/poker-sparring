@@ -1,41 +1,45 @@
-// app.js — Game flow conductor: screens, event pump, hero controls, tournament,
-// push/fold trainer, coach tips, and stats recording.
-
 (function () {
   'use strict';
 
-  /** App version — single source of truth, mirrored in package.json and CHANGELOG.md. */
-  var APP_VERSION = '1.8.104';
-  // Read-only copy for the footer "Check for updates" button (this file's scope is an IIFE).
-  try { window.APP_VERSION = APP_VERSION; } catch {}
+  function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  // Builds the URL to load after an update: we NAVIGATE instead of calling
-  // location.reload(), because a reload keeps the stale ?v= query param in
-  // the address bar (bug reported 2026-10-08). Pure function for testability.
-  // Best practice (v1.8.97): the page URL stays clean — never ?v=. The ?v=
-  // cache-busters live on the CSS/JS asset URLs in index.html (invisible to
-  // users); the version is shown in the app footer. Stuffing ?v= into the
-  // page URL was a workaround that made the address bar inconsistent.
+  var APP_VERSION = '1.8.105';
+  try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
+
+  var COACH_INTRO_KEY = 'ps_coach_intro_seen';
+  function coachIntroSeen() {
+    try { return !!localStorage.getItem(COACH_INTRO_KEY); } catch (e) { quiet(e); return true; }
+  }
+  function markCoachIntroSeen() {
+    try { localStorage.setItem(COACH_INTRO_KEY, '1'); } catch (e) { quiet(e); }
+  }
+  function maybeCoachIntro() {
+    if (coachIntroSeen()) return;
+    UI.coachTip('New here? This is your <b>coach</b> — it explains every spot in plain English before you act. ' +
+      'Tap <b>Learn</b> anytime for hand rankings. ' +
+      '<button id="coach-intro-ok" class="ghost">Got it</button>');
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.id === 'coach-intro-ok') { markCoachIntroSeen(); UI.coachTip(null); }
+    });
+  }
+
+  try { window.APP_VERSION = APP_VERSION; } catch (e) { quiet(e); }
+
   function updateReloadURL(pathname, v, hash) {
     return pathname + hash;
   }
-  // Exposed for tests (tests/update-flow.test.js); the IIFE keeps the rest private.
-  try { window.updateReloadURL = updateReloadURL; } catch {}
 
-  /**
-   * Feature flags — Flappy Bird simplicity by default.
-   * Advanced features are preserved in code but hidden until enabled.
-   * Tournament mode is a core game type and always visible (not flagged).
-   * Enable via console: PS_FLAGS.pushFoldTrainer = true (then refresh).
-   * Or via URL: ?flags=headsUpMode,pushFoldTrainer
-   */
+  try { window.updateReloadURL = updateReloadURL; } catch (e) { quiet(e); }
+
   var DEFAULT_FLAGS = {
-    headsUpMode: false,     // Heads-Up mode card
-    pushFoldTrainer: false, // Push/Fold trainer mode card
-    customBots: false       // Custom bot builder section
+    headsUpMode: false,
+    pushFoldTrainer: false,
+    customBots: false
   };
   var PS_FLAGS = Object.assign({}, DEFAULT_FLAGS);
-  // URL override: ?flags=a,b
+
   try {
     var flagParam = new URLSearchParams(window.location.search).get('flags');
     if (flagParam) {
@@ -44,13 +48,13 @@
         if (f in PS_FLAGS) PS_FLAGS[f] = true;
       });
     }
-    // localStorage persistence for console-enabled flags
+
     var savedFlags = JSON.parse(localStorage.getItem('ps_feature_flags') || '{}');
     Object.keys(savedFlags).forEach(function (f) {
       if (f in PS_FLAGS && savedFlags[f]) PS_FLAGS[f] = true;
     });
-  } catch {}
-  // Expose for console toggling with persistence
+  } catch (e) { quiet(e); }
+
   window.PS_FLAGS = PS_FLAGS;
   window.enableFlag = function (name) {
     if (!(name in PS_FLAGS)) return 'Unknown flag: ' + name;
@@ -59,23 +63,20 @@
       var s = JSON.parse(localStorage.getItem('ps_feature_flags') || '{}');
       s[name] = true;
       localStorage.setItem('ps_feature_flags', JSON.stringify(s));
-    } catch {}
+    } catch (e) { quiet(e); }
     return name + ' enabled — refresh to see it.';
   };
 
-  // Last-resort error boundary: a UI glitch must never take down the table or
-  // lose the player's stats. Surfaces a calm notice instead of failing silently.
   window.addEventListener('error', function (ev) {
     try {
       if (typeof UI !== 'undefined' && UI.log && document.getElementById('hand-log')) {
         UI.log('⚠️ Something glitched, but the table is safe and your stats are saved.', 'hl-leak');
       }
-    } catch { /* error handler must never throw */ }
+    } catch {  }
   });
 
   function $(id) { return document.getElementById(id); }
 
-  // ---------- custom bots ----------
   var CUSTOM_KEY = 'ps_custom_bots_v1';
   function loadCustomBots() {
     try {
@@ -84,13 +85,11 @@
     } catch { return []; }
   }
   function saveCustomBots(list) {
-    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); } catch {}
+    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(list)); } catch (e) { quiet(e); }
   }
   function allBots() { return ARCHETYPES.concat(loadCustomBots()); }
   function botById(id) { return getArchetype(id, loadCustomBots()); }
-  // Roster for the setup screen: filtered by game mode, Alice + custom bots
-  // on top, then friends and mode-appropriate classics in array order.
-  // Bots without a `modes` field (Alice, friends, customs) show everywhere.
+
   function rosterBots() {
     var customs = loadCustomBots();
     var listed = ARCHETYPES.filter(function (b) {
@@ -101,13 +100,8 @@
     return alice.concat(customs, rest);
   }
 
-  // ---------- setup state ----------
   var mode = 'cash';
-  // Opponent selection: a Set of bot ids, the single source of truth.
-  // Invariants: 1 <= size <= maxOpp() (1 for heads-up, 7 otherwise).
-  // The stepper, mode cards, and roster cards all mutate this set; the count
-  // display derives from it, so the number and the highlighted cards can
-  // never disagree. Persisted across reloads (stale ids are dropped).
+
   function rosterKey() { return 'ps_roster_' + mode + '_v1'; }
   function loadRoster() {
     try {
@@ -119,12 +113,11 @@
   }
   function saveRoster() {
     try { localStorage.setItem(rosterKey(), JSON.stringify(Array.from(selectedBots))); }
-    catch {}
+    catch (e) { quiet(e); }
   }
   var selectedBots = new Set(loadRoster() || ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'shark']);
-  var preHuSelection = null; // full table remembered across a heads-up detour
-  // Prune the selection to bots available in the current game mode.
-  // Prevents stale tournament picks from blocking cash-game selection.
+  var preHuSelection = null;
+
   function pruneSelection() {
     var available = rosterBots().map(function (b) { return b.id; });
     selectedBots = new Set(Array.from(selectedBots).filter(function (id) {
@@ -132,22 +125,19 @@
     }));
     if (!selectedBots.size) selectedBots = new Set([available[0] || 'lag']);
   }
-  // Repair: cash/tourney default to a full table of 7. Stale saves could
-  // persist fewer (v1.8.97: Kevin's cash roster had 6). Top up from the
-  // mode defaults; never remove a deliberate pick.
+
   function topUpRoster() {
     if (mode === 'hu') return;
     var defaults = mode === 'tourney'
       ? ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'pro']
       : ['alice', 'donald', 'lag', 'rohan', 'amogh', 'nathan', 'shark'];
     var before = selectedBots.size;
-    // v1.8.97: ensure ALL defaults are present, not just fill to 7.
-    // If a stale save has station but not lag, swap them (Kevin).
+
     var missing = defaults.filter(function (id) {
       return !selectedBots.has(id) && botById(id);
     });
     missing.forEach(function (id) {
-      // Make room by removing a non-default pick first.
+
       if (selectedBots.size >= 7) {
         var nonDefault = Array.from(selectedBots).filter(function (x) {
           return defaults.indexOf(x) === -1;
@@ -158,7 +148,7 @@
     });
     if (selectedBots.size !== before) saveRoster();
   }
-  // Switch the selection when the mode changes — each mode remembers its own roster.
+
   function loadModeRoster() {
     var ids = loadRoster();
     if (ids) selectedBots = new Set(ids);
@@ -168,11 +158,11 @@
     pruneSelection();
     topUpRoster();
   }
-  pruneSelection(); // clean any stale picks from a previous mode
-  topUpRoster(); // repair short rosters to a full table
+  pruneSelection();
+  topUpRoster();
   function maxOpp() { return mode === 'hu' ? 1 : 7; }
   function rosterOrderIds() { return rosterBots().map(function (b) { return b.id; }); }
-  // Transient hint under the bot roster ("Only 1 opponent for heads-up", …).
+
   var rosterHintTimer = null;
   function rosterHint(msg) {
     var el = $('roster-hint');
@@ -183,14 +173,10 @@
     rosterHintTimer = setTimeout(function () { el.classList.remove('show'); }, 2400);
   }
 
-  // ---------- game state ----------
   var table = null;
   var evtQueue = [];
   var pumping = false;
-  // Away-freeze (v1.8.97, Kevin): leaving the table tab mid-hand used to lose
-  // the hand — the pump kept running with nobody watching. Now the game
-  // freezes exactly where it is and resumes in the same spot on return.
-  // The table lives in memory, so no re-deal and no state is rebuilt.
+
   var awayFromTable = false;
   var pendingNextHand = false;
 
@@ -198,12 +184,12 @@
     if (!table) away = false;
     if (away === awayFromTable) return;
     awayFromTable = away;
-    try { UI.setHandEndAway(away); } catch {}
+    try { UI.setHandEndAway(away); } catch (e) { quiet(e); }
     if (away) return;
-    // Back at the table: repaint the exact state and pick up where we left.
+
     try {
       UI.renderTable(table, { lastActions: lastActions, button: table.button });
-    } catch {}
+    } catch (e) { quiet(e); }
     if (pendingNextHand) {
       pendingNextHand = false;
       prepareNextHand();
@@ -215,43 +201,33 @@
     }
     pump();
   }
-  var fastForward = false; // skip: collapse all hand-animation delays to ~instant
+  var fastForward = false;
   var waitingForHero = false;
   var lastActions = {};
-  var botThinkTimer = null; // pending bot-action timeout, cancellable by Skip
-  var pendingBot = null; // { player, idx } for the bot currently thinking
+  var botThinkTimer = null;
+  var pendingBot = null;
   var handCtx = null;
-  var handRec = null; // in-progress hand record for the replayer (js/replay.js)
-  var coachDecisions = []; // hero decisions vs coach advice this hand (for the recap)
-  var pendingAdvice = null; // coach verdict awaiting the hero's action
-  var replay = null;  // { rec, idx } while the replay viewer is open
+  var handRec = null;
+  var coachDecisions = [];
+  var pendingAdvice = null;
+  var replay = null;
   var sessionStartChips = 0;
-  // Exact hero stack at the end of the previous hand. The engine posts
-  // antes/blinds BEFORE emitting handStart, so snapshotting hero.stack in
-  // onHandStart would exclude blind postings from per-hand P/L (daily QA
-  // 2026-10-08: folding the BB showed 0 instead of -10). The previous hand's
-  // end stack IS the next hand's pre-blind stack; sessionStartChips covers
-  // hand 1 of a session and post-rebuy hands.
+
   var lastHeroEndStack;
-  // Bankroll chip shows LIFETIME profit from persistent stats, so it survives
-  // refreshes. (Session-only profit reset to 0 on every page load.)
+
   function refreshBankroll() {
     try {
       var st = (typeof loadStats === 'function') ? loadStats() : null;
       UI.setBankroll(st ? (st.profitChips || 0) : 0);
     } catch { UI.setBankroll(0); }
   }
-  var tourney = null; // { levelIdx }
+  var tourney = null;
   var gameMode = 'cash';
   var cfg = { stack: 10000, sb: 50, bb: 100 };
 
-  // Tournament blind structure: Level 1 uses the user's configured SB/BB,
-  // later levels scale up (roughly doubling). Antes kick in from level 4.
   function tourLevels() {
     var sb0 = Math.max(1, cfg.sb || 5), bb0 = Math.max(2, cfg.bb || 10);
-    // Pure doubling each level — simple, predictable, and creates good
-    // practice pressure with 8-hand levels. Antes kick in from level 4
-    // (standard in real tournaments).
+
     var levels = [];
     for (var i = 0; i < 10; i++) {
       var mult = Math.pow(2, i);
@@ -261,9 +237,8 @@
     }
     return levels;
   }
-  var TOUR_LEVELS = null; // built per tournament from cfg
+  var TOUR_LEVELS = null;
 
-  // ================= event pump =================
   function onTableEvent(e) {
     evtQueue.push(e);
     pump();
@@ -284,7 +259,6 @@
   function pauseForHero() { waitingForHero = true; }
   function resumeFromHero() { waitingForHero = false; pump(); }
 
-  // Explicit turn status so it's never ambiguous why the buttons are dead.
   function setTurnStatus(text, yours) {
     var el = $('turn-status');
     if (!el) return;
@@ -304,16 +278,16 @@
     }
   }
 
-  // ================= event handlers =================
   function onHandStart(e) {
     lastActions = {};
-    fastForward = false; // a new hand always starts at full speed
+    fastForward = false;
     setTurnStatus('', false);
-    UI.resetTableFx(); // drop per-hand fx state (card diff cache, stray chips)
+    UI.resetTableFx();
     var skipBtn = $('btn-skip');
     if (skipBtn) skipBtn.hidden = false;
     UI.winnerBanner(null);
     UI.coachTip(null);
+    maybeCoachIntro();
     UI.clearLog();
     var hero = table.players[0];
     handCtx = {
@@ -340,23 +314,23 @@
       enableHeroControls();
       setTurnStatus('Your turn — action is on you.', true);
       var vd = coachVerdict();
+      markCoachIntroSeen();
       UI.coachTip(vd.html);
-      // Remember the advice so the hero's actual action can be graded for
-      // the post-hand recap.
+
       pendingAdvice = vd.advice ? {
         advice: vd.advice, strength: vd.strength, lesson: vd.lesson, street: table.street
       } : null;
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
     } else {
-      // Bot thinks, then acts.
-      pumping = true; // hold the pump until the bot moves
+
+      pumping = true;
       setTurnStatus('Waiting for ' + p.name + '…', false);
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
       if (botThinkTimer) clearTimeout(botThinkTimer);
       pendingBot = { player: p, idx: e.player };
       var botActNow = function () {
         botThinkTimer = null;
-        // Away-freeze: hold the bot's move until the user is back (v1.8.97).
+
         if (awayFromTable) { botThinkTimer = setTimeout(botActNow, 400); return; }
         var pb = pendingBot; pendingBot = null;
         if (!pb || !table) { pumping = false; pump(); return; }
@@ -391,13 +365,9 @@
           street: pendingAdvice.street, advice: pendingAdvice.advice,
           strength: pendingAdvice.strength, lesson: pendingAdvice.lesson,
           action: e.action, followed: adviceFollowed(pendingAdvice.advice, e.action),
-          // Pot at decision time: the recap grades the hand-DEFINING
-          // decision (biggest pot), not the first trivial one (v1.8.97 —
-          // a 10-chip limp was reported instead of the all-in that decided
-          // Kevin's hand, and described as a "call").
+
           pot: (function () { try { return table.potTotal(); } catch { return 0; } })(),
-          // Hand strength at decision time — lets the recap recognize
-          // semi-bluffs (big bet with a draw) vs pure bluffs.
+
           hc: (typeof handClass === 'function')
             ? handClass(table.players[0].hole, table.community) : null
         });
@@ -405,7 +375,7 @@
       }
     }
     if (handRec) recordHandAction(handRec, table, e);
-    // Chip-commit actions fly a chip from the bettor's seat to the pot.
+
     if (e.action === 'bet' || e.action === 'raise' || e.action === 'call') UI.chipFly(e.player);
     UI.log(UI.escapeHtml(describeAction(e, p)), p.isHero ? 'hl-hero' : '');
     UI.renderTable(table, { lastActions: lastActions, acting: table.acting, button: table.button });
@@ -434,12 +404,10 @@
   }
 
   function heroWon(e) {
-    // e.winners: winByFold -> [{idx...}]; showdown -> [{winners:[idx]}]
-    // v1.8.97: uncalled refunds don't count as "winning" — hero must win a
-    // contested pot, not just get their own uncalled bet back.
+
     var ids = [];
     e.winners.forEach(function (w) {
-      if (w.uncalled) return; // refund, not a win
+      if (w.uncalled) return;
       if (w.idx !== undefined) ids.push(w.idx);
       else (w.winners || []).forEach(function (i) { ids.push(i); });
     });
@@ -448,8 +416,7 @@
 
   function onHandEnd(e) {
     UI.disableControls();
-    // Post-hand coach recap (lives in the coach tab until the next hand).
-    // Win info comes first so the recap can celebrate bluffs that worked.
+
     var won = heroWon(e);
     var wonByFold = e.winners.some(function (w) {
       if (!w.byFold) return false;
@@ -457,9 +424,9 @@
       return ids.indexOf(0) !== -1;
     });
     var recap = null;
-    try { recap = coachRecap(e.handNo, won, wonByFold); } catch {}
+    try { recap = coachRecap(e.handNo, won, wonByFold); } catch (e) { quiet(e); }
     UI.coachTip(recap ? recap.html : null);
-    setTurnStatus('', false); // drop any stale "Waiting for X…" during the results pause
+    setTurnStatus('', false);
     var hero = table.players[0];
     var revealed = {};
     (e.revealed || []).forEach(function (r) { revealed[r.idx] = true; });
@@ -468,7 +435,6 @@
       (w.winners || [w.idx]).forEach(function (i) { if (winnerIdx.indexOf(i) === -1) winnerIdx.push(i); });
     });
 
-    // Banner
     var bits = [];
     e.winners.forEach(function (w) {
       var names = (w.winners || [w.idx]).map(function (i) {
@@ -476,7 +442,7 @@
       }).join(' & ');
       var potLabel = (w.potIndex == null || w.potIndex === 0) ? 'Main pot' : 'Side pot ' + w.potIndex;
       var verb = names === 'You' ? 'win' : (names.indexOf('You') === 0 ? 'win' : 'wins');
-      var takeVerb = names.indexOf('You') === 0 ? 'take' : 'takes'; // "You take", not "You takes"
+      var takeVerb = names.indexOf('You') === 0 ? 'take' : 'takes';
       if (w.uncalled) bits.push(names + ' ' + takeVerb + ' ' + UI.fmt(w.amount) + ' back (uncalled bet)');
       else if (w.byFold) bits.push(names + ' ' + verb + ' ' + UI.fmt(w.amount));
       else bits.push(potLabel + ': ' + names + ' ' + verb + ' ' + UI.fmt(w.each || w.amount) +
@@ -484,19 +450,14 @@
     });
     var title;
     if (won) {
-      // Title shows what the hero actually won (not the total pot when side
-      // pots went elsewhere, and never the hero's stack).
+
       title = '🏆 You win ' + UI.fmt(UI.handWinAmount(e)) + '!';
     } else {
       title = '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
     }
     UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
     UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
-    // Persistent winner line by the hero cards (Kevin) — what won and what
-    // beat you, visible during the results pause. Computed here but APPLIED
-    // inside renderEndTable: renderTable rewrites the label with the hero's
-    // own hand strength, so setting it earlier was overwritten instantly
-    // (bug found by the winner-highlight test, v1.8.97).
+
     var winnerLine = null;
     var mainWin = e.winners.filter(function (w) { return !w.uncalled; })[0];
     if (mainWin) {
@@ -506,8 +467,7 @@
       if (mainWin.hand) winnerLine = '🏆 ' + mwNames + ' won with ' + mainWin.hand;
       else if (mainWin.byFold) winnerLine = '🏆 ' + mwNames + ' won — everyone else folded';
     }
-    // Compact persistent result in the topbar — the banner flashes by, but this
-    // stays glanceable until the next hand ends.
+
     try {
       var lr = $('last-result');
       if (lr && e.winners.length) {
@@ -519,11 +479,8 @@
           ? 'Last: ' + wn + ' ' + (wn.indexOf('You') === 0 ? 'take' : 'takes') + ' back ' + UI.fmt(w0.amount)
           : 'Last: ' + wn + ' +' + UI.fmt(UI.firstWinnersTotal(e)) + (w0.hand ? ' · ' + w0.hand : '');
       }
-    } catch {}
+    } catch (e) { quiet(e); }
 
-    // Results beat: every bot's hole cards are revealed face-up (practice
-    // mode — study how they played), and a folded hero sees card backs with a
-    // "Show my hand" choice. renderEndTable re-runs when hero taps Show.
     var heroShow = false;
     function renderEndTable() {
       if (!table) return;
@@ -531,17 +488,14 @@
         lastActions: {}, winners: winnerIdx, revealed: revealed,
         acting: -1, button: table.button, handEnd: true, heroShow: heroShow
       });
-      // Lift the winning best-5 cards, dim the rest (v1.8.97, Kevin).
-      try { UI.highlightWin(table, e.winners); } catch {}
-      // Winner line AFTER the render (renderTable rewrites the label).
+
+      try { UI.highlightWin(table, e.winners); } catch (e) { quiet(e); }
+
       var hdEl = document.getElementById('hero-hand-desc');
       if (hdEl && winnerLine) hdEl.textContent = winnerLine;
     }
     renderEndTable();
 
-    // ---- tilt: bad beats steam players, wins cool them off ----
-    // Losers at showdown holding a strong hand just took a bad beat; big-pot
-    // losers and felted players steam too. Winners and time decay it.
     try {
       var wonSet = {};
       winnerIdx.forEach(function (i) { wonSet[i] = true; });
@@ -551,41 +505,36 @@
         var arch = p.archetype || {};
         var prone = (typeof arch.tiltProne === 'number') ? arch.tiltProne : 0.5;
         var t = p.tilt || 0;
-        t = Math.max(0, t - 0.12); // time heals
-        if (wonSet[i]) t = Math.max(0, t - 0.25); // winning cools off fast
+        t = Math.max(0, t - 0.12);
+        if (wonSet[i]) t = Math.max(0, t - 0.25);
         else {
           if (showdown && revealed[i] && p.hole.length === 2) {
-            // Lost at showdown — how strong was the beaten hand?
+
             var ms = madeStrength(p.hole, table.community);
-            if (ms >= 0.72) t += 0.38 * prone; // bad beat: two pair+ cracked
+            if (ms >= 0.72) t += 0.38 * prone;
             else if (ms >= 0.55) t += 0.15 * prone;
           }
-          if (e.pot >= table.bb * 30) t += 0.15 * prone; // big pot lost
-          if (p.stack <= 0) t += 0.30 * prone; // felted
+          if (e.pot >= table.bb * 30) t += 0.15 * prone;
+          if (p.stack <= 0) t += 0.30 * prone;
         }
         p.tilt = Math.max(0, Math.min(1, t));
       });
-    } catch {}
+    } catch (e) { quiet(e); }
 
-    // ---- bot thinking: post-hand learning notes ----
-    // Pick the 1-2 most teachable bot actions and explain the range logic
-    // behind them, so each hand trains reading real player types.
-    try { botThinkingNotes(e); } catch {}
+    try { botThinkingNotes(e); } catch (e) { quiet(e); }
 
-    // Stats
     var profit = hero.stack - handCtx.startStack;
-    lastHeroEndStack = hero.stack; // pre-blind baseline for the next hand
+    lastHeroEndStack = hero.stack;
     if (handRec) {
-      if (recap) handRec.coachNotes = recap.lines; // plain-text recap for history
+      if (recap) handRec.coachNotes = recap.lines;
       finishHandRecord(handRec, table, e, profit);
       saveHandRecord(handRec);
       handRec = null;
     }
-    // resultText is what Stats → Recent hands shows. Use what the hero
-    // actually won, not the total pot (side-pot wins overstated it).
+
     var resultText = won ? ('Won ' + UI.fmt(UI.handWinAmount(e))) : 'Lost';
     if (!won && e.winners.length && e.winners[0].hand) resultText = e.winners[0].hand;
-    // Capture everyone's cards for the hand history: hero always, opponents only if revealed
+
     var allHands = table.players.map(function (p, idx) {
       var show = idx === 0 || revealed[idx];
       return {
@@ -605,17 +554,14 @@
         .filter(function (p) { return !p.sittingOut && p.hole.length === 2; })
         .map(function (p) {
           var a = p.archetype || { id: 'unknown', name: p.name, emoji: '🤖' };
-          return { id: a.id, name: p.name, emoji: a.emoji }; // p.name is the display name (custom rename or default)
+          return { id: a.id, name: p.name, emoji: a.emoji };
         }),
       heroStackBB: hero.stack / table.bb, potBB: e.pot / table.bb, resultText: resultText
     });
     refreshBankroll();
-    // Persist the session so leaving the page doesn't lose the stacks.
+
     saveSession();
 
-    // Give the result room to breathe: a Next-hand button, a pause button,
-    // and a 13s auto-deal countdown, so the splash, board, and revealed hands
-    // can actually be read. Skipped (fast-forward) hands stay instant.
     if (fastForward) {
       setTimeout(function () {
         if (!table) return;
@@ -623,8 +569,7 @@
         prepareNextHand();
       }, 600);
     } else {
-      // Next-hand + pause buttons plus a 13s auto-deal countdown (v1.8.97:
-      // was 10s; Kevin wanted longer + a pause for hand review).
+
       UI.showHandEndControls({
         autoMs: 13000,
         onNext: function () { if (table) prepareNextHand(); },
@@ -633,22 +578,20 @@
     }
   }
 
-  // ⏩ Skip: fold the hero's live hand (if it's their turn), then collapse all
-  // remaining hand-animation delays so bot-vs-bot streets resolve ~instantly.
   function skipHand() {
     if (!table) return;
     var hero = table.players[0];
     if (waitingForHero && hero && !hero.folded && hero.hole.length === 2) {
-      try { table.act(0, 'fold'); } catch { /* already unplayable; just fast-forward */ }
+      try { table.act(0, 'fold'); } catch {  }
       waitingForHero = false;
       UI.disableControls();
       UI.coachTip(null);
     }
-    // Results pause showing? Skip it immediately via the Next-hand button.
+
     var nx = document.getElementById('btn-next-hand');
     if (nx) { nx.click(); return; }
     fastForward = true;
-    // If a bot is mid-think, cancel its delay and make it act immediately.
+
     if (botThinkTimer && pendingBot) {
       clearTimeout(botThinkTimer);
       botThinkTimer = null;
@@ -674,10 +617,9 @@
     });
   }
 
-  // ================= between hands =================
   function prepareNextHand() {
     if (gameMode === 'tourney') {
-      // Eliminations (or rebuys, if enabled)
+
       table.players.forEach(function (p, i) {
         if (i !== 0 && !p.isHero && p.stack === 0 && !p.sittingOut) {
           if (cfg.tourneyRebuys) {
@@ -709,7 +651,7 @@
               prepareNextHand();
             }
           });
-          // New tournament is no longer the primary action when rebuy is available
+
           buttons[2].primary = false;
         }
         UI.modal({
@@ -732,7 +674,7 @@
         });
         return;
       }
-      // Blind escalation every N hands (configurable, default 8)
+
       var blindEvery = Math.max(2, cfg.blindInterval || 8);
       if (table.handNo % blindEvery === 0) {
         tourney.levelIdx = Math.min(tourney.levelIdx + 1, TOUR_LEVELS.length - 1);
@@ -741,8 +683,7 @@
         UI.log('⏫ Blinds up! Now ' + UI.fmt(lv.sb) + '/' + UI.fmt(lv.bb) + (lv.ante ? ' ante ' + lv.ante : ''), 'hl-pot');
       }
     } else {
-      // Cash: bot rebuys (with counters, like PokerNow), then hero rebuy if felted.
-      // A rebuying bot comes back steaming — fresh tilt, looser play.
+
       table.players.forEach(function (p, i) {
         if (i === 0 || p.sittingOut) return;
         if (p.stack <= 0) {
@@ -761,8 +702,7 @@
             UI.log(UI.escapeHtml(p.name) + ' busts out and leaves the table');
           }
         } else if (p.stack < cfg.stack * 0.5) {
-          // Felted bots (0 chips) top up too — otherwise they sit out every future
-          // hand as cardless zombies and distort live-player counts.
+
           p.stack = cfg.stack;
           UI.log(UI.escapeHtml(p.name) + ' tops up to ' + UI.fmt(cfg.stack));
         }
@@ -774,10 +714,7 @@
           body: 'Rebuy to ' + UI.fmt(cfg.stack) + ' and keep training?',
           buttons: [
             { label: 'Leave', cb: leaveToLobby },
-            // Bankroll chip = lifetime profit from stats: refresh it, do
-            // NOT zero it (v1.8.97, Kevin — after a rebuy the top-right
-            // counter sat at 0 for the whole next hand). The rebuy itself
-            // is not profit: sessionStartChips re-baselines the next hand.
+
             { label: 'Rebuy', primary: true, cb: function () { h.stack = cfg.stack; h.rebuys = (h.rebuys || 0) + 1; sessionStartChips = cfg.stack; lastHeroEndStack = cfg.stack; refreshBankroll(); dealNext(); } }
           ]
         });
@@ -797,13 +734,11 @@
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 
-  // Tournament payout: top 3 split the prize pool (50/30/20).
-  // placements[] = eliminated names in order; winner is the last one standing.
   function tourneyPayoutHtml() {
     if (!tourney || !tourney.placements) return '';
     var total = table.players.length;
     var pool = total * (cfg.stack || 1000);
-    // Build final standings: winner first, then placements reversed (last out = 2nd)
+
     var standings = [];
     var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; });
     if (alive.length === 1) standings.push(alive[0].name);
@@ -828,7 +763,6 @@
     $('blinds-info').textContent = t;
   }
 
-  // ================= hero controls =================
   function enableHeroControls() {
     var legal = table.legalActions(0);
     var toCall = legal.toCall;
@@ -842,7 +776,7 @@
         : { label: 'Bet', enabled: false },
       allin: { enabled: table.players[0].stack > 0 }
     };
-    // Facing an all-in for less than a full call handled by engine via callAmount
+
     UI.setControls(cfgCtl);
 
     $('btn-fold').onclick = function () { heroAct('fold'); };
@@ -857,7 +791,7 @@
     $('btn-allin').onclick = function () {
       var p = table.players[0];
       var to = p.bet + p.stack;
-      if (to <= table.currentBet) heroAct('call'); // short all-in is just a call
+      if (to <= table.currentBet) heroAct('call');
       else heroAct(table.currentBet === 0 ? 'bet' : 'raise', to);
     };
   }
@@ -872,8 +806,7 @@
     UI.disableControls();
     UI.coachTip(null);
     resumeFromHero();
-    // v1.8.97: if the engine rejects the amount, don't leave the game stuck
-    // with disabled controls — re-enable so the player can act again (Kevin).
+
     try {
       table.act(0, a, amount);
     } catch (err) {
@@ -883,13 +816,9 @@
     }
   }
 
-  // Spot common hero mistakes and explain them with the underlying math.
-  // Runs before the action is applied; uses the pre-action table state.
   function detectLeak(a) {
     try {
-      // Unified decision tracking: if the coach advised this action, it's not
-      // a leak — even if the tier heuristics would flag it. The coach, leak
-      // tracker, and recap must agree.
+
       if (pendingAdvice && adviceFollowed(pendingAdvice.advice, a)) {
         return null;
       }
@@ -902,9 +831,7 @@
         return { hand: table.handNo, hole: hole, street: street, type: type, title: title, spot: spot, why: why };
       }
       if (street === 'preflop') {
-        // Flag genuinely loose calls, not defensible marginals: tier-6 trash
-        // vs any raise, or tier-5 marginals facing real heat (4bb+). A tier-5
-        // like TQo vs a standard 2.5-3bb open is a reasonable defend, not a leak.
+
         var tier = holeTier(hero.hole);
         if (a === 'call' && table.currentBet > table.bb &&
             (tier >= 6 || (tier >= 5 && table.currentBet >= 4 * table.bb))) {
@@ -933,20 +860,12 @@
           'Folded to a small bet of ' + UI.fmt(legal.toCall),
           'That was a tiny bet — you don\'t need a great hand to call it. If you always fold to small bets, other players will keep bluffing you.');
       }
-    } catch { /* leak detection never breaks the game */ }
+    } catch {  }
     return null;
   }
 
-  // ================= coach =================
-  // ================= coach: TAG fundamentals + fold-equity math =================
-  // The coach teaches tight-aggressive poker: play fewer hands, play them
-  // aggressively. Every tip carries the math — pot odds when calling, bluff
-  // break-even when betting — and adjusts to the villain in the hand.
-  // (bluffBE, villainFoldy/villainBluffy, exploitLine live in equity.js.)
   function pct(x) { return Math.round(x * 100) + '%'; }
 
-  // All live opponents with their archetypes — the coach considers everyone,
-  // not just one villain (Kevin 2026-10-08).
   function liveOpponents() {
     var live = [];
     for (var i = 1; i < table.players.length; i++) {
@@ -956,7 +875,6 @@
     return live;
   }
 
-  // Position name for the hero: BTN, CO, MP, UTG, BB, SB
   function heroPositionName() {
     var n = table.players.length, order = [], s = table.button;
     for (var k = 0; k < n; k++) {
@@ -974,13 +892,8 @@
     return 'middle position';
   }
 
-  // One-line read on each opponent: name + style + what it means for you.
   function opponentReads() {
-    // Compact scouting report, shown once per hand (first verdict). Short
-    // taglines — the full exploit advice lives in the vs-line for the
-    // villain that matters (v1.8.97: full sentences per opponent bloated
-    // every first message to 600+ chars; v1.8.103: taglines, ~55 chars
-    // per bullet).
+
     var live = liveOpponents();
     if (!live.length) return '';
     var reads = live.map(function (p) {
@@ -988,12 +901,10 @@
       var tag = (A && A.tagline) ? String(A.tagline) : 'unknown style';
       return '<b>' + name + '</b> — ' + UI.escapeHtml(tag);
     });
-    // v1.8.97: Kevin wants bullet points (one per line), not inline.
+
     return '<div class="coach-opps">🎯 Table:<br>• ' + reads.join('<br>• ') + '</div>';
   }
 
-  // Suitedness and multi-way are woven into the advice naturally, not as
-  // separate badges (Kevin 2026-10-08). These helpers feed the reasoning.
   function isSuited(hole) {
     return hole.length === 2 && hole[0].s === hole[1].s;
   }
@@ -1001,8 +912,6 @@
     return liveOpponents().length >= 3;
   }
 
-  // The most relevant live opponent: the street's aggressor, else the lone
-  // villain, else the first live seat. (Kept for single-villain math.)
   function pickVillain() {
     var live = [];
     for (var i = 1; i < table.players.length; i++) {
@@ -1022,7 +931,6 @@
       UI.escapeHtml(exploitLine(V.archetype)) + '.</span>';
   }
 
-  // A high overcard on the latest street — the classic bluff card.
   function scareCardRank() {
     var c = table.community;
     if (!c.length) return null;
@@ -1031,9 +939,6 @@
     return (last.r >= 11 && last.r > prevMax) ? rankName(last.r) : null;
   }
 
-  // ---------------- post-hand bot thinking ----------------
-  // After each hand, explain the range logic behind the 1-2 most teachable
-  // bot actions, so every hand trains reading real player types.
   function botThinkingNotes(e) {
     if (!handRec || !handRec.timeline) return;
     var cands = [];
@@ -1047,7 +952,7 @@
       cands.push({ t: t, p: p, ratio: size / t.pot });
     });
     if (!cands.length) return;
-    // Biggest bets relative to pot first; preflop 3-bets get a bonus.
+
     cands.sort(function (a, b) {
       var sa = a.ratio + (a.t.street === 'preflop' && a.t.action === 'raise' ? 0.5 : 0);
       var sb = b.ratio + (b.t.street === 'preflop' && b.t.action === 'raise' ? 0.5 : 0);
@@ -1086,13 +991,6 @@
     }
   }
 
-  // ---------------- coach: range reading + situation classifiers ----------------
-  // All DOM-free; they read table + handRec.timeline only. handRec may be
-  // null in tests — every helper degrades to the archetype prior.
-
-  // Preflop situation: 'open' | 'facing-open' | 'facing-3bet' | 'facing-4bet+'.
-  // Counts re-raises from the timeline (blinds are recorded as sb/bb, so an
-  // open is raise #1 and a re-raise is #2).
   function preflopSpot() {
     var legal = table.legalActions(0);
     if (legal.toCall === 0) return 'open';
@@ -1106,15 +1004,12 @@
     return 'facing-4bet+';
   }
 
-  // How tight a villain is, from their opening range (1=rock .. 6=any two).
   function villainTighty(A) {
     A = A || {};
     var t = A.openTier || 3;
     return 1 - (t - 1) / 5;
   }
 
-  // Effective stack in chips between hero and a villain (or the shortest live
-  // opponent when villainIdx is null). SPR math uses this, not hero's stack.
   function effStackChips(villainIdx) {
     var eff = table.players[0].stack;
     table.players.forEach(function (p, i) {
@@ -1127,9 +1022,6 @@
     return table.bb > 0 ? effStackChips(villainIdx) / table.bb : 99;
   }
 
-  // Read a villain's range from this hand's actions + their archetype.
-  // Returns {label, strength, words}. Labels are honest buckets, never fake
-  // percentages: wide | capped | strong | polarized | unknown.
   function estimateVillainRange(idx) {
     var p = table.players[idx];
     var A = (p && p.archetype) || {};
@@ -1139,16 +1031,13 @@
       if (t.t !== 'action' || t.player !== idx) return;
       actions++;
       var size = t.bet || t.amount || 0, pot = t.pot || 1;
-      // t.pot includes the bet just made (engine emits post-action), so the
-      // true sizing is bet vs the pot BEFORE it — same reconstruction as
-      // villainSizingTell. Without this, a 1.5x overbet reads as 0.6 and
-      // lands in the 'wide' gap (v1.8.97: Amogh's flop overbet advised a call).
+
       var ratio = size / Math.max(1, pot - size);
       if (t.street === 'preflop') {
         if (t.action === 'raise' || t.action === 'bet') {
           label = 'strong'; strength = Math.max(strength, 0.75);
         } else if (t.action === 'call') {
-          // Callers are capped: premiums would have re-raised.
+
           if (label !== 'strong') { label = 'capped'; strength = Math.min(strength, 0.45); }
         }
       } else if (t.action === 'bet' || t.action === 'raise') {
@@ -1159,19 +1048,13 @@
           if (label !== 'strong' && label !== 'polarized') { label = 'capped'; strength = Math.min(strength, 0.4); }
         } else if (label === 'unknown') label = 'wide';
       } else if (t.action === 'check' && label === 'strong') {
-        label = 'capped'; strength = 0.45; // gave up the betting lead: weakness
+        label = 'capped'; strength = 0.45;
       }
     });
-    // (The plain-words rendering of the label lives in concreteRangeRead.)
+
     return { label: label, strength: strength, actions: actions };
   }
 
-  // Concrete range read (v1.8.97, Kevin): translate the abstract range
-  // label into likely holdings + what it means, adjusted for THIS player's
-  // personality and the board texture. Hand-reading in plain words:
-  // callers are capped (premiums re-raise), big bets from tight players are
-  // the nuts, big bets from bluffers are polarized, and on draw-heavy
-  // boards a caller is usually a pair or a draw (monsters raise to protect).
   function concreteRangeRead(V, range) {
     if (!V || !range || range.label === 'unknown') return '';
     var name = V.isHero ? 'You' : V.name;
@@ -1200,9 +1083,6 @@
     return '';
   }
 
-  // The villain's last aggressive sizing this street. Preflop it's measured
-  // in big blinds (a 3x open is standard); postflop as a true fraction of
-  // the pot before the bet (reconstructed from the timeline).
   function villainSizingTell(idx) {
     var entries = [];
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
@@ -1235,7 +1115,6 @@
     };
   }
 
-  // Blind-steal spot: folded to the hero preflop in a steal seat, blinds live.
   function isStealSpot() {
     if (table.street !== 'preflop') return null;
     var posName = heroPositionName();
@@ -1255,34 +1134,23 @@
     return { canSteal: true, pos: posName, targets: targets };
   }
 
-  // Made-hand class for SPR commitment decisions, from the evaluator directly:
-  // nut (straight+) | board (straight+ but hero's cards don't play — nobody can
-  // hold worse) | overpair (trips+, two pair, or a pair above the board) |
-  // toppair | secondpair | weakpair | draw-strong (combo) | draw | draw-weak | air.
-  // v1.8.97: A made straight+ with a draw (e.g. straight + flush redraw) must
-  // classify as 'nut' (value bet), not 'draw-strong' (semi-bluff). Kevin's
-  // 7cJc on 9c3d8dTc: J-high straight + 4-flush — coach said "semi-bluff",
-  // completely wrong. Check made hands before draws.
   function handClass(hole, community) {
     var d = detectDraws(hole, community);
     var ev = (hole.length + community.length >= 5) ? evaluate7(hole.concat(community)) : null;
     if (ev && ev.cat >= 4) {
-      // v1.8.101 (Kevin's QQQ77 river): if none of the hero's hole cards are
-      // in the best 5, the hero "plays the board" — nobody can hold a worse
-      // hand, so this is NOT a value hand despite the category.
+
       var boardOnly = (ev.best5 || []).every(function (c) {
         return !hole.some(function (h) { return h.r === c.r && h.s === c.s; });
       });
       if (boardOnly) return 'board';
-      return 'nut'; // straight+ beats any draw label
+      return 'nut';
     }
     if (d.flushDraw && d.oesd) return 'draw-strong';
     if (ev) {
       if (ev.cat === 3 || ev.cat === 2) return 'overpair';
       if (ev.cat === 1) {
         var pr = ev.kickers[0];
-        // Only counts as hero's pair if hero holds one of the paired cards.
-        // If the pair is on the board, hero has no pair (just high card).
+
         var heroHasPair = hole.some(function (c) { return c.r === pr; });
         if (!heroHasPair) return 'air';
         var boardRanks = community.map(function (c) { return c.r; }).sort(function (a, b) { return b - a; });
@@ -1290,7 +1158,7 @@
         if (pr > bmax) return 'overpair';
         if (pr === bmax) return 'toppair';
         if (pr === bsecond) return 'secondpair';
-        return 'weakpair'; // third pair or worse — not a value hand
+        return 'weakpair';
       }
     }
     if (d.flushDraw || d.oesd) return 'draw';
@@ -1298,7 +1166,6 @@
     return 'air';
   }
 
-  // Plain-language name for a hand class (SPR/commitment messages).
   function handClassName(hc) {
     return { nut: 'the nuts', overpair: 'an overpair', toppair: 'top pair',
       secondpair: 'second pair', weakpair: 'a weak pair', 'draw-strong': 'a monster draw', draw: 'a draw',
@@ -1306,7 +1173,6 @@
       board: 'the board (your cards don\'t improve it)' }[hc] || 'your hand';
   }
 
-  // Bet AND a call ahead of the hero this street — a reliable strength tell.
   function betCallAhead() {
     var sawAggro = false, sawCall = false;
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
@@ -1317,19 +1183,17 @@
     return sawAggro && sawCall;
   }
 
-  // Limpers ahead of the hero preflop (calls, no raises yet).
   function countLimpers() {
     var n = 0, raised = false;
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
       if (t.t !== 'action' || t.street !== 'preflop') return;
       if (t.action === 'raise' || t.action === 'bet') raised = true;
-      // Only count calls made before any raise — a call of a raise is not a limp.
+
       if (t.action === 'call' && !raised) n++;
     });
     return n;
   }
 
-  // True if the hero's flush draw is to the nuts (holds the ace of the suit).
   function isNutFlushDraw(hole, community) {
     var suits = [0, 0, 0, 0];
     hole.concat(community).forEach(function (c) { suits[c.s]++; });
@@ -1342,18 +1206,14 @@
     return hole.length === 2 && hole[0].r === hole[1].r && hole[0].r <= 9;
   }
 
-  // Board texture for value-bet sizing: wet boards need bigger, protective bets.
   function boardTexture(community) {
     if (community.length < 3) return 'dry';
     var suits = [0, 0, 0, 0];
     community.forEach(function (c) { suits[c.s]++; });
-    // 4+ of a suit: flush completed, not a draw to charge. Treat as dry for
-    // "make them pay" purposes — the draw already got there.
+
     if (suits.some(function (n) { return n >= 4; })) return 'completed';
     if (suits.some(function (n) { return n === 3; })) return 'wet';
-    // Straight draws need 3 distinct ranks within a 5-span. v1.8.103: the old
-    // max-min <= 4 check called paired boards like 6-6-2 "wet" — but no
-    // straight draw can exist there (Kevin's screenshot: "not many draws").
+
     var seen = {};
     community.forEach(function (c) { seen[c.r] = true; });
     var rs = Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
@@ -1363,20 +1223,14 @@
     return 'dry';
   }
 
-  // Equity vs the villain's likely range (not random hands) — preflop only,
-  // since estimateEquityVsRange deals fresh boards. maxTier bounds the range.
   function rangeAwareEquityPreflop(hole, maxTier) {
     return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 150);
   }
 
-  // One verdict per hero decision: machine-readable advice (for post-hand
-  // feedback) plus the HTML tip. advice in fold|check|call|bet|raise|null.
   function mkVerdict(advice, strength, msg, lesson) {
     return { advice: advice, strength: strength, msg: msg, lesson: lesson || '', html: null };
   }
 
-  // Entry point: builds the verdict, then composes the full tip HTML in the
-  // long-standing shape (message + villain read + position + opponent reads).
   function coachVerdict() {
     var hero = table.players[0];
     var legal = table.legalActions(0);
@@ -1395,33 +1249,24 @@
         nmHtml: '<b>' + esc(nm) + '</b>', esc: esc, fmt: UI.fmt
       };
       var v = (table.street === 'preflop') ? coachPreflop(ctx) : coachPostflop(ctx);
-      // In multiway limped pots, don't focus on a single villain — the
-      // multiwayNote covers the situation. Single-villain reads are for
-      // heads-up or 3-way pots.
+
       var isMultiLimp = table.street === 'preflop' && countLimpers() >= 3;
-      // Limped multiway pots: a single-villain read ("vs X") is noise when 4+
-      // players are still in and nobody has raised — the spot is about the
-      // dead money, not one opponent. Raised pots keep the aggressor read.
+
       var limpedMulti = table.street === 'preflop' && table.currentBet <= table.bb && isMultiway();
-      // v1.8.97: same rule postflop — multiway with no aggressor means no
-      // single-villain read (Kevin: "unless that player did the specific raise").
+
       var multiwayNoAggro = isMultiway() && table.street !== 'preflop' &&
         !(V && (V.bet || 0) > 0);
       var tail = (isMultiLimp || limpedMulti || multiwayNoAggro) ? '' : villainLine(V);
-      // Opponent reads are static reference: show once per hand (first verdict),
-      // not on every decision. Repeating them bloated every message to 600+
-      // chars (v1.8.97, found by the 10-hand audit loop).
+
       var posNote = ' <span class="coach-pos">📍 You\'re in ' + esc(posName) + '.</span>';
       var stageNote = tourneyStageTip();
       var multiNote = multiwayNote();
-      // v1.8.103: reads once per HAND, not per street — the 10-hand loop
-      // flagged 900-char messages on every street's first verdict.
+
       var reads = coachDecisions.length === 0 ? opponentReads() : '';
       v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + reads : null;
       return v;
     } catch (err) {
-      // Surface coach errors in debug mode; silent in production to avoid
-      // breaking the game UI. Enable via ?coachdebug=1 or window.__coachDebug.
+
       if (window.__coachDebug || /[?&]coachdebug=1/.test(location.search)) {
         console.error('[coach] verdict failed:', err);
         if (typeof UI !== 'undefined' && UI.log) {
@@ -1432,7 +1277,6 @@
     }
   }
 
-  // Test/eval hooks (not used by the UI).
   try {
     window.coachVerdict = coachVerdict;
     window.coachState = function () {
@@ -1449,11 +1293,7 @@
       boardTexture: boardTexture,
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot,
-      // Scenario testing: verify coach advice for specific spots without
-      // playing full hands. Returns the verdict object (or error).
-      // Scenarios: 'limpers3' (3+ limpers preflop), 'paired-board' (board pair,
-      // hero lacks it), 'multiway-draw' (4+ players, flush draw), 'weakpair'
-      // (hero has 3rd pair+), 'trash-facing-open' (52o vs raise).
+
       testScenario: function (name) {
         try {
           var v = coachVerdict();
@@ -1463,12 +1303,11 @@
           return { scenario: name, error: String(err && err.message), rendered: false };
         }
       },
-      // Enable coach debug logging: window.__coachDebug = true
+
       enableDebug: function () { window.__coachDebug = true; return 'coach debug on'; }
     };
-  } catch {}
+  } catch (e) { quiet(e); }
 
-  // Did the hero's action match the coach's advice? bet/raise are interchangeable.
   function adviceFollowed(advice, action) {
     switch (advice) {
       case 'fold': return action === 'fold';
@@ -1480,31 +1319,22 @@
     }
   }
 
-  // Post-hand recap: celebrates wins first (even if you ignored the coach —
-  // winning is winning), then one leak to fix. Drawn from this hand's strong
-  // (non-marginal) decisions vs the coach's advice. Shown in the coach tab
-  // after the hand; plain-text lines are also stored on the hand record.
   function coachRecap(handNo, won, wonByFold) {
     var good = null, bad = null;
     coachDecisions.forEach(function (d) {
       if (d.strength !== 'strong' || !d.lesson) return;
-      // Grade the hand-defining decision: biggest pot wins, ties go to the
-      // later decision (v1.8.97).
+
       if (d.followed && (!good || (d.pot || 0) >= (good.pot || 0))) good = d;
       else if (!d.followed && (!bad || (d.pot || 0) >= (bad.pot || 0))) bad = d;
     });
-    // v1.8.97: never return null — a loss with no recorded decision still
-    // gets a message (was empty recap — Kevin).
+
     if (!good && !bad && !won) {
       var h0 = '<div class="coach-recap-title">Hand #' + UI.escapeHtml(String(handNo)) + ' recap</div>';
       h0 += '<div class="coach-recap-good">Tough loss — sometimes the cards don\'t cooperate. Review the hand history to spot where it slipped away.</div>';
       return { html: h0, lines: ['- tough loss, no specific leak recorded'] };
     }
     var lines = [];
-    // Win first: if you ignored the coach but took the pot, say so.
-    // Distinguish semi-bluffs (draw + aggression) from pure bluffs and iso-raises.
-    // v1.8.97: won by fold always gets a message, even with no recorded
-    // strong decision (was empty recap — Kevin).
+
     if (won && wonByFold) {
       var isSemi = bad && (bad.hc === 'draw-strong' || bad.hc === 'draw');
       var isIso = bad && bad.action === 'raise' && bad.advice === 'fold' && bad.street === 'preflop';
@@ -1515,26 +1345,21 @@
       else winMsg = 'Nice aggression! 🎉 Everyone folded — you took it down.';
       lines.push({ kind: 'good', text: winMsg });
     } else if (won && !good && bad) {
-      // Won at showdown but didn't follow coach: celebrate the win, then
-      // the "tighten up" lecture is added below.
+
       lines.push({ kind: 'good', text: 'You won the hand! 🎉 Your play got through.' });
     } else if (good && won) {
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
     } else if (good && !won && !bad) {
-      // Followed the plan but lost with no leak to name: never say
-      // "well played" for a losing hand (v1.8.97) — neutral process note.
+
       lines.push({ kind: 'good', text: 'Tough loss — you stuck to the plan on the key decision. Sometimes the cards don\'t cooperate.' });
     }
-    // Don't second-guess a winning bluff: if you took it down by fold,
-    // the aggression worked — no "tighten up" lecture.
+
     if (bad && !(won && wonByFold)) {
       var prefix = (won && !good) ? 'One thing to tighten up: ' : 'To improve: ';
       lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
         ', you went ' + bad.action + (bad.street ? ' (' + bad.street + ')' : '') + '. ' + bad.lesson });
     }
-    // v1.8.97: bulletproof — never return an empty recap. If no branch fired
-    // (e.g. won at showdown with no recorded strong decision), add a generic
-    // message so the coach always says something (Kevin).
+
     if (!lines.length) {
       lines.push({
         kind: 'good',
@@ -1551,9 +1376,6 @@
     return { html: h, lines: lines.map(function (l) { return (l.kind === 'good' ? '+ ' : '- ') + l.text; }) };
   }
 
-  // ---- solver-grade additions (2026-10-08 research round) ----
-  // Tournament stage: early (deep), middle, bubble (4-5 left, 3 paid), final (3 left).
-  // Used to tailor coach advice — each stage plays differently.
   function tourneyStage() {
     if (gameMode !== 'tourney') return null;
     var alive = table.players.filter(function (p) { return !p.sittingOut && p.stack > 0; }).length;
@@ -1571,9 +1393,7 @@
     if (st === 'bubble') return ' <span class="coach-stage">🫧 Bubble: 3 get paid! Tighten up as a medium stack; bully as the big stack.</span>';
     return ' <span class="coach-stage">🏁 Final 3: every elimination is a pay jump. Survival is everything.</span>';
   }
-  // Multiway pot awareness: when 3+ players are in, bluffs work less often
-  // but the pot is bigger. Coach should acknowledge the crowd, not just
-  // focus on a single villain.
+
   function multiwayNote() {
     if (table.street !== 'preflop') {
       var n = table.livePlayers().length;
@@ -1581,16 +1401,12 @@
       return '';
     }
     var limps = countLimpers();
-    // v1.8.97: only a "great spot to raise" if no one has raised yet (Kevin:
-    // Shark raised to 55 after 3 limps — not dead money, and coach said Fold
-    // while the note said "raise", a direct contradiction).
+
     if (limps >= 3 && table.currentBet <= table.bb)
       return ' <span class="coach-multi">👥 ' + limps + ' limpers in the pot (' + UI.fmt(table.potTotal()) + ' dead money) — great spot to raise and take it down.</span>';
     return '';
   }
-  // Tournament risk premium: near pay jumps, chips are worth more than face
-  // value, so the pot-odds bar rises. Approximated from effective stack depth
-  // (short stacks face the most ICM pressure). Cash games: no tax.
+
   function tourneyRiskPremium(effBB) {
     if (gameMode !== 'tourney') return 0;
     if (effBB <= 12) return 0.12;
@@ -1601,7 +1417,7 @@
   function riskPremiumNote(rp) {
     return rp > 0 ? ' <span class="coach-icm">Tournament note: be a bit tighter here — chips are worth more than their face value near pay jumps.</span>' : '';
   }
-  // Push/fold chart positions (pushfold.js) from the coach's position names.
+
   var PF_POS_MAP = { 'button': 'BTN', 'small blind': 'SB', 'big blind': 'BB',
     'cutoff': 'CO', 'middle position': 'MP', 'early position': 'UTG' };
   function heroIsBigStack() {
@@ -1611,9 +1427,7 @@
     });
     return table.players[0].stack >= top * 0.9 && top > 0;
   }
-  // Nut-flush blocker: hero holds the ace of a 3+ flush suit on board.
-  // Bluffing with it is better (villain can't have the nuts); calling with
-  // it is better too (blocks their value).
+
   function heroFlushBlocker() {
     var hero = table.players[0];
     var suits = {};
@@ -1622,9 +1436,7 @@
       return suits[s] >= 3 && hero.hole.some(function (c) { return c.s === +s && c.r === 14; });
     });
   }
-  // Short-stack tourney preflop (<=12bb effective): shove-or-fold. Postflop
-  // play is gone, so flat-calling is burning money — use the push/fold chart.
-  // Returns a verdict, or null when not a short-stack spot.
+
   function coachShortStack(c) {
     if (gameMode !== 'tourney' || table.street !== 'preflop') return null;
     var effBB = effStackBB(c.vIdx);
@@ -1651,7 +1463,7 @@
         '. <b>' + (spot === 'open' ? 'Check' : 'Fold') + '</b> and wait for a real hand.',
         'Short-stacked discipline: shove real hands, fold the rest — no limping, no min-raising.');
     }
-    // Facing aggression short: reshove premiums and strong chart hands, never flat.
+
     if (tier === 1)
       return shoveVerdict(c.nmHtml + ' is always a shove here.',
         'Your best hands never fold when short — go all-in. You might win right away if they fold, or win at showdown.');
@@ -1671,12 +1483,9 @@
     var spot = preflopSpot();
     var inPos = positionScore(table, 0) > 0.6;
 
-    // Short-stack tournament: push/fold takes over everything preflop.
     var ss = coachShortStack(c);
     if (ss) return ss;
 
-    // ---- first to act (usually the big blind option): raise premiums,
-    // otherwise take the free card.
     if (spot === 'open') {
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
@@ -1688,7 +1497,6 @@
         '');
     }
 
-    // ---- folded to the hero in a steal seat
     var steal = isStealSpot();
     if (steal) {
       var folders = steal.targets.filter(function (p) { return villainFoldy(p.archetype) > 0.5; });
@@ -1701,9 +1509,7 @@
           'Folded to you on the ' + steal.pos + '. <b>Raise 2.5×</b> — a clean steal spot' +
           (folders.length ? '; ' + esc(folders[0].name) + ' folds too much' : '') + '.',
           'Steal blinds when it folds to you late: uncontested pots are pure profit.');
-      // Big stack in a tournament: attack with anything playable — medium
-      // stacks must over-fold to protect their tournament life (ICM pressure
-      // is asymmetric; the big stack holds the leverage).
+
       if (tier === 5 && gameMode === 'tourney' && heroIsBigStack())
         return mkVerdict('raise', 'marginal',
           'You\'re the big stack — <b>raise 2.5×</b> with ' + c.nmHtml +
@@ -1718,15 +1524,14 @@
         'Folding trash on the button feels wrong, but bad hands lose money from every seat.');
     }
 
-    // ---- facing a 3-bet: 4-bet premiums, fold the marginal middle
     if (spot === 'facing-3bet') {
       var effBB3 = effStackBB(vIdx);
       if (tier === 1) {
         if (legal.canRaise) {
           var fourTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 2.3)));
           return mkVerdict('raise', 'strong',
-            'That\'s a <b>3-bet</b> in front of you. With ' + c.nmHtml + ', <b>4-bet</b> to ~<b>' + fmt(fourTo) + '</b> — build the pot while you\'re likely ahead.',
-            'Facing a 3-bet with a premium: 4-bet for value, about 2.3× their raise.');
+            'They <b>re-raised</b> in front of you. With ' + c.nmHtml + ', <b>raise again</b> to ~<b>' + fmt(fourTo) + '</b> — build the pot while you\'re likely ahead.',
+            'Facing a re-raise with a premium: raise again for value, about 2.3× their raise.');
         }
         return mkVerdict('call', 'strong',
           'They went all-in. With ' + c.nmHtml + ', <b>call</b> — your hand is usually ahead here.',
@@ -1741,35 +1546,33 @@
       if (isSmallPair(hero.hole)) {
         if (toCall * 15 <= effStackChips(vIdx))
           return mkVerdict('call', 'marginal',
-            '<b>Call</b> to set-mine — stacks are deep enough that one set pays for all the misses.',
-            'You can call 3-bets with small pairs only when ~15× the call sits behind.');
+            '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.',
+            'You can call re-raises with small pairs only when ~15× the call sits behind.');
         return mkVerdict('fold', 'strong',
-          '<b>Fold</b> — too shallow to set-mine a 3-bet. The implied odds aren\'t there.',
-          'Folding small pairs to 3-bets when shallow is disciplined, not weak.');
+          '<b>Fold</b> — too shallow to chase a set against a re-raise. The implied odds aren\'t there.',
+          'Folding small pairs to re-raises when shallow is disciplined, not weak.');
       }
       if (tier <= 4 && inPos && effBB3 >= 30)
         return mkVerdict('call', 'marginal',
           '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.',
-          'Calling 3-bets in position with playable hands is fine when deep.');
+          'Calling re-raises in position with playable hands is fine when deep.');
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.',
         'Fold hands like AJo and KQo to re-raises: when called, you\'re usually dominated.');
     }
 
-    // ---- facing a 4-bet or worse: only the nuts continue
     if (spot === 'facing-4bet+') {
       if (tier === 1)
         return mkVerdict(legal.canRaise ? 'raise' : 'call', 'strong',
           legal.canRaise
-            ? 'They 4-bet. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> or call it off.'
+            ? 'They re-raised again. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> or call it off.'
             : 'They shoved. With ' + c.nmHtml + ', <b>call</b> — folding a premium to one shove burns money.',
-          'Against a 4-bet only the very best hands continue — everything else folds.');
+          'Against a second re-raise only the very best hands continue — everything else folds.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — 4-bets at these stakes are almost always the nuts.',
-        'Respect 4-bets: players don\'t bluff them often enough to call light.');
+        '<b>Fold</b> — a second re-raise at these stakes is almost always the nuts.',
+        'Respect second re-raises: players don\'t bluff them often enough to call light.');
     }
 
-    // ---- limpers ahead, no raise yet (0 raises, but calls exist)
     var nRaises = 0;
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
       if (t.t === 'action' && t.street === 'preflop' &&
@@ -1784,18 +1587,13 @@
         return mkVerdict('raise', 'marginal',
           '<b>Raise 4×</b> to isolate — limpers rarely have much, and you have position.',
           'Attack limpers from late position; they fold or play bloated pots out of position.');
-      // Iso-raise option: 3+ limpers = lots of dead money. On the button/cutoff
-      // with any playable hand, raising is a profitable option — limpers fold
-      // a lot, and you have position when called. But calling is fine too;
-      // mix in the raise, don't auto-bluff every time.
+
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',
           'You can <b>raise 4×</b> to punish the limpers — ' + countLimpers() + ' limpers means ' +
           UI.fmt(table.potTotal()) + ' of dead money. Or call behind; both are fine. Mix in the raise sometimes.',
           'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
-      // 2+ limpers in late/middle position: dead money is worth attacking even
-      // without a third limper. Ace-high and playable hands can take it down
-      // preflop or isolate one player — but folding is fine too, don't force it.
+
       if (countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position') && tier <= 5)
         return mkVerdict('raise', 'marginal',
           'You can <b>raise 4×</b> to attack the dead money — ' + countLimpers() + ' limpers means ' +
@@ -1810,21 +1608,17 @@
         'Limping behind with weak hands is a slow leak — fold and stay disciplined.');
     }
 
-    // ---- facing a single open: re-raise premiums, otherwise the call/fold math
     var open = table.currentBet;
     var need = toCall / (pot + toCall);
     var multiway = isMultiway();
     var suited = isSuited(hero.hole);
 
-    // Trash hands: fold immediately, don't even do the math. 52o and similar
-    // have no playability — raw equity lies.
     if (tier >= 6) {
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + c.nmHtml + ' is trash. Don\'t pay to see a flop with it.',
         'The worst hands lose money even when the math looks close — they\'re hard to play and often dominated.');
     }
 
-    // Value re-raise with position-aware sizing: 3x in position, 4x out of position.
     if (tier <= 2 && legal.canRaise) {
       var mult = inPos ? 3 : 4;
       var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * mult)));
@@ -1835,18 +1629,16 @@
         'Re-raise premiums for value: 3× in position, 4× out of position.');
     }
 
-    // Small pairs: set-mine only with ~15:1 implied odds behind.
     if (isSmallPair(hero.hole)) {
       if (toCall * 15 <= effStackChips(vIdx) && effStackBB(vIdx) >= 12)
         return mkVerdict('call', 'marginal',
-          'Call <b>' + fmt(toCall) + '</b> to set-mine — ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
+          'Call <b>' + fmt(toCall) + '</b> — hunting three of a kind: ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
           'Set-mining needs about 15× the call behind: you miss the set most flops.');
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> the small pair — only ' + Math.round(effStackBB(vIdx)) + 'bb deep, not enough behind to get paid on the rare set.',
-        'Don\'t set-mine short-stacked: the math only works with deep money behind.');
+        'Don\'t chase sets short-stacked: the math only works with deep money behind.');
     }
 
-    // Bluff 3-bet: suited-ace blocker vs a folder, heads-up only.
     var hasAce = hero.hole.some(function (x) { return x.r === 14; });
     if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
         villainFoldy(V.archetype) > 0.5 && !multiway)
@@ -1854,8 +1646,6 @@
         'Mix in a <b>bluff re-raise</b> sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
         'Only bluff re-raise when they fold a lot — never into multiple players.');
 
-    // Equity vs the opener's actual range (not random hands), then adjust
-    // for implied odds, reverse implied odds, and player type.
     var vOpenTier = (V && V.archetype && V.archetype.openTier) || 3;
     var eq = rangeAwareEquityPreflop(hero.hole, vOpenTier);
     var effBB = effStackBB(vIdx);
@@ -1865,7 +1655,7 @@
       villainStubborn: stubborn, inPosition: inPos
     });
     var tight = V ? villainTighty(V.archetype) : 0.4;
-    var debit = (tier === 3 && !suited && tight > 0.6) ? 0.05 : 0; // dominated broadways
+    var debit = (tier === 3 && !suited && tight > 0.6) ? 0.05 : 0;
     var adjEq = eq + credit - debit;
     var rp = tourneyRiskPremium(effBB);
     var threshold = need + (multiway ? 0.04 : 0) + rp -
@@ -1902,49 +1692,38 @@
     var canBet = legal.canBet || legal.canRaise;
     var range = V ? estimateVillainRange(vIdx)
       : { label: 'unknown', strength: 0.5, actions: 0 };
-    // v1.8.97: don't single out one player's range in a multiway pot unless
-    // they did something specific (bet/raised). pickVillain falls back to an
-    // arbitrary opponent when no one's bet — naming them is noise (Kevin).
+
     var noAggro = isMultiway() && !(V && (V.bet || 0) > 0);
     var rangeNote = (V && range.label !== 'unknown' && !noAggro)
       ? ' ' + concreteRangeRead(V, range) : '';
     var anyDraw = (hc === 'draw-strong' || hc === 'draw' || hc === 'draw-weak');
 
-    // ---------------- no bet to face ----------------
     if (toCall === 0) {
-      // v1.8.101 (Kevin's QQQ77 river): hero plays the board — no worse hand
-      // exists in the deck, so there's nothing to value-bet, and a bluff
-      // can't fold out a hand that already ties the board. Just check.
+
       if (hc === 'board')
         return mkVerdict('check', 'strong',
           '<b>Check</b> — your cards don\'t improve the board at all, so everyone already has at least a split. ' +
           'Betting can\'t get called by a worse hand (none exists), and a bluff can\'t fold out a chop.' + rangeNote,
           'When you play the board, just check: there\'s no value to extract and no fold to win.');
-      // v1.8.97: "bluffs constantly" needs HIGH AGGRESSION too, not just bluff
-      // param. Rohan has bluff 0.68 but aggression 0.05 — he's a station who
-      // occasionally bluffs, not a maniac (Kevin's screenshot).
+
       var vManiac = V && villainBluffy(V.archetype) > 0.6 &&
         (V.archetype.aggression || 0) > 0.5;
-      // Strong made hands: bet for value — but trap maniacs.
+
       if ((hc === 'nut' || hc === 'overpair' || hc === 'toppair') && canBet) {
         if (vManiac)
           return mkVerdict('check', 'marginal',
             '<b>Check</b> your monster — ' + vName + ' bluffs constantly. Let them bet into you, then raise.' + rangeNote,
             'Against maniacs, trap strong hands: they build the pot for you.');
         var tex = boardTexture(table.community);
-        // v1.8.103 (Kevin): default to 1/4 pot on dry boards — big bets on
-        // dry textures fold out everything you beat. Wet boards still want
-        // 2/3 to charge draws; stations who never fold get the big sizing.
+
         var frac = tex === 'wet' ? 0.67 : 0.25;
         if (foldy < 0.25) frac = 0.75;
         var betSize = Math.max(1, Math.round(pot * frac));
-        // v1.8.97: if committed (SPR low), don't suggest a pot fraction that's
-        // much smaller than the stack — just go all-in (Kevin: "½ pot is not
-        // same as all-in at all").
+
         var heroStack = hero.stack;
         var sprLine;
         if (commit === 'commit' && betSize < heroStack * 0.7) {
-          betSize = heroStack; // shove
+          betSize = heroStack;
           sprLine = ' You\'re committed — just get it all in.';
           return mkVerdict('bet', 'strong',
             '<b>All-in</b> (' + fmt(betSize) + ').' + sprLine + rangeNote,
@@ -1962,8 +1741,7 @@
           whyBet + '.' + sprLine + rangeNote,
           'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
-      // Draws: semi-bluff the strong ones, check weak ones and vs stations.
-      // But never semi-bluff multiway — too many players to fold.
+
       if (anyDraw && canBet) {
         if (foldy < 0.25)
           return mkVerdict('check', 'strong',
@@ -1983,8 +1761,7 @@
           pct(bluffBE(halfBet, pot)) + '</b> folds to break even.' + rangeNote,
           'Betting a strong draw is smart: you win if they fold now, or if you hit your hand.');
       }
-      // Second pair: thin value/protection — not a bluff, it has real
-      // showdown value. Bet heads-up with a reason; otherwise pot control.
+
       if (hc === 'secondpair' && canBet) {
         var scare2 = scareCardRank();
         if (!multiway && (inPos || scare2 || foldy > 0.5)) {
@@ -1999,19 +1776,16 @@
           (multiway ? ', especially multiway.' : '.') + rangeNote,
           'Second pair often wins unimproved — no need to inflate the pot to find out.');
       }
-      // Weak pair (third pair or worse): give up. It's rarely best, especially
-      // vs players who don't fold. Check and hope to win a showdown, but don't
-      // put more money in.
+
       if (hc === 'weakpair') {
         return mkVerdict('check', 'strong',
           '<b>Check</b> — ' + handClassName(hc) + ' is rarely best here. Don\'t throw good money after bad.' + rangeNote,
           'Third pair or worse has little value — check and give up if there\'s action. Sometimes you have to let go.');
       }
-      // Air: bluff only with a real story behind it.
+
       if (canBet) {
         var scare = scareCardRank();
-        // Checked around to hero in late position? That's a green light to
-        // steal — everyone showing weakness. Lower the bar even multiway.
+
         var checkedAround = table.currentBet === 0 && (posName === 'button' || posName === 'cutoff');
         var spot = (inPos ? 1 : 0) + (scare ? 1 : 0) + (foldy > 0.55 ? 1 : 0) +
           (checkedAround ? 1 : 0) - (foldy < 0.3 ? 2 : 0) - (multiway && !checkedAround ? 2 : 0);
@@ -2036,31 +1810,19 @@
       return mkVerdict(null, 'marginal', '', '');
     }
 
-    // ---------------- facing a bet ----------------
     var need2 = toCall / (pot + toCall);
     var tell = V ? villainSizingTell(vIdx) : null;
 
-    // Range-based threshold shifts: wide or bluffy ranges demand less equity.
-    // (v1.8.99: a strong read no longer bumps the bar — the equity below is
-    // now simulated vs the villain's actual range, so the range is priced in.
-    // Bumping the bar on top was double-counting, and the x0.75 fudge it
-    // replaced was the number Kevin disputed in the J4-vs-Amogh spot.)
     var tight = V ? villainTighty(V.archetype) : 0.4;
     var bluffy = V ? villainBluffy(V.archetype) : 0.3;
     var rangeAdjust = 0;
-    // Polarized from a non-bluffer is effectively strong (v1.8.97: Amogh's
-    // overbet shove read as 'wide'/bluffy and advised a call with ace-high).
+
     var polarStrong = range.label === 'polarized' && (tight > 0.6 || bluffy < 0.25);
     if (range.label === 'polarized' && !polarStrong) rangeAdjust -= 0.02;
     if (range.label === 'wide' || bluffy > 0.55) rangeAdjust -= 0.06;
     if (range.label === 'capped') rangeAdjust -= 0.03;
     if (multiway && betCallAhead()) rangeAdjust += 0.05;
 
-    // Honest equity (v1.8.99): with a strong read, simulate vs the villain's
-    // tier-bounded range on this board instead of vs random hands — the old
-    // "vs random, then x0.75" number is what Kevin disputed (52% shown for
-    // J4 vs Amogh's bomb). Tier 2 = premium/strong for polarized-strong
-    // (nuts-or-air from a non-bluffer); tier 3 = strong pair+ for 'strong'.
     var rangeEqTier = polarStrong ? 2 : (range.label === 'strong' ? 3 : 0);
     var eq2 = rangeEqTier
       ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 150)
@@ -2074,22 +1836,19 @@
       villainTight: tight, multiway: multiway });
     var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
 
-    // SPR commitment: big pot, small stacks, strong hand — no folding.
     if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)
       return mkVerdict('call', 'strong',
         'The pot\'s huge compared to what\'s left. With ' + handClassName(hc) +
         ' you\'re <b>committed: call</b>.' + rangeNote,
         'When the pot is big and your hand is strong, don\'t fold — you\'re already in too deep.');
 
-    // Sizing tells: tiny bets invite raises, overbets from nits mean the nuts.
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway &&
           (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || anyDraw))
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');
-      // v1.8.97: Donald overbets draws/vulnerable hands, not just the nuts
-      // (wideOverbet) — don't auto-fold.
+
       if (tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
           !(V && V.archetype && V.archetype.wideOverbet))
         return mkVerdict('fold', 'strong',
@@ -2097,10 +1856,6 @@
           'Respect overbets from tight players: it\'s the nuts far more often than a bluff.');
     }
 
-    // v1.8.101 (Kevin's QQQ77 river): hero plays the board. Nobody can hold a
-    // worse hand, so raising for value is impossible — and a bet here is
-    // never a bluff, because you can't bluff someone off a hand they already
-    // tie. Anyone betting has you beat (a Queen or a Seven) or is punting.
     if (hc === 'board')
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — your cards don\'t improve the board at all: the best five are already out there, ' +
@@ -2110,7 +1865,6 @@
         ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
-    // Raise monsters for value; semi-bluff-raise strong draws.
     if (hc === 'nut' && legal.canRaise)
       return mkVerdict('raise', 'strong',
         '<b>Raise for value</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.' + rangeNote,
@@ -2121,36 +1875,22 @@
         fmt(toCall) + '.' + rangeNote,
         '');
 
-    // The call/fold math, adjusted for range, implied odds, player type, and
-    // tournament ICM. (The range read is already named in the parenthetical,
-    // so rangeNote is skipped here to avoid repeating it.)
     var rp2 = tourneyRiskPremium(effBB);
     var threshold = need2 + rangeAdjust + rp2;
-    // Population prior (low stakes): rivers are under-bluffed, so over-fold
-    // slightly to river aggression unless villain is a known bluffer.
+
     var riverPrior = (table.street === 'river' && bluffy <= 0.55) ? 0.03 : 0;
     threshold += riverPrior;
-    // Pot odds in plain English: the price vs the prize, not just a percentage
-    // (v1.8.97: beginners couldn't follow the raw "win X% of the time").
-    // When the range is strong, show the ADJUSTED bar explicitly — showing raw
-    // 41% then saying "fold" vs 52% equity was contradictory and confusing
-    // (v1.8.97: Kevin's J4 vs Amogh's big bet).
+
     var strongAdj = rangeAdjust > 0.005;
-    // Equity source, stated honestly (v1.8.99): vs a strong read the number
-    // is simulated against their actual range, never vs random hands — that
-    // was the disputed figure in Kevin's J4-vs-Amogh spot.
+
     var eqSource = rangeEqTier
       ? (strongAdj
-        // v1.8.103: the threshold clause just named their strong range —
-        // don't repeat it here (10-hand loop flagged 525-char messages).
+
         ? '150 Monte Carlo simulations'
         : 'simulated 150× vs ' + vName + '\'s strong range')
       : 'simulated 150× vs random hands' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
-    // Concise math line (v1.8.97): pot odds + adjusted bar + equity source in
-    // one breath. The three explainers Kevin asked for (break-even meaning,
-    // adjusted threshold vs strong ranges, how win% is simulated) are here
-    // but tight — the 10-hand loop flags anything over 400 chars.
+
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' + (strongAdj ? '' : ' (pays for itself)') +
       (strongAdj ? ', <b>' + pct(threshold) + '</b> vs ' + vName + '\'s strong range' : '') +
@@ -2159,8 +1899,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2);
-    // Bluff-catching concept for beginners: when your hand only beats a bluff,
-    // name it explicitly (v1.8.97).
+
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing. Works vs bluffers, not vs big bets for value."
       : '';
@@ -2180,7 +1919,6 @@
       'Folding when the price is wrong is a skill — most money is saved, not won.');
   }
 
-  // ================= game setup =================
   function startGame() {
     cfg.stack = Math.max(200, parseInt($('cfg-stack').value, 10) || 1000);
     cfg.sb = Math.max(1, parseInt($('cfg-sb').value, 10) || 5);
@@ -2193,8 +1931,8 @@
     if (mode === 'pushfold') { startPushFold(); return; }
 
     var bots = rosterBots().filter(function (b) { return selectedBots.has(b.id); }).slice(0, maxOpp());
-    if (!bots.length) bots = [botById('lag')]; // safety net; the UI enforces >= 1
-    // Tournaments need a full table (8 players) for realistic ICM/bubble dynamics.
+    if (!bots.length) bots = [botById('lag')];
+
     if (mode === 'tourney' && bots.length < 7) {
       UI.modal({
         title: 'Need 8 players',
@@ -2216,7 +1954,7 @@
     });
     if (gameMode === 'tourney') {
       TOUR_LEVELS = tourLevels();
-      tourney = { levelIdx: 0, placements: [] }; // placements: eliminated player names in order
+      tourney = { levelIdx: 0, placements: [] };
       table.setBlinds(TOUR_LEVELS[0].sb, TOUR_LEVELS[0].bb, 0);
     } else tourney = null;
 
@@ -2230,12 +1968,6 @@
     showSetup();
   }
 
-  // ================= offline session resume =================
-  // If Kevin leaves the page mid-session, the completed hands' stacks are
-  // kept: a "Resume last session" button appears on the setup screen and
-  // restores every stack (his and the bots') exactly. Saves happen at each
-  // hand end (exact stacks) and on pagehide (best effort — uncollected
-  // street bets are credited back, the dead hand itself is not resumed).
   var SESSION_KEY = 'poker-sparring-session-v1';
 
   function sessionSaveable() {
@@ -2266,7 +1998,7 @@
         levelIdx: tourney ? tourney.levelIdx : 0,
         players: players
       }));
-    } catch { /* storage blocked/full: resume just won't be offered */ }
+    } catch {  }
   }
 
   function loadSession() {
@@ -2280,11 +2012,9 @@
   }
 
   function clearSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) { quiet(e); }
   }
 
-  // Reflect a restored session in the setup screen, so going back there
-  // after a resume shows the right mode, blinds, and roster.
   function syncSetupInputs() {
     try {
       document.querySelectorAll('.mode-card').forEach(function (c) {
@@ -2302,7 +2032,7 @@
         saveRoster();
       });
       saveRoster();
-    } catch { /* setup DOM not ready — resume still works */ }
+    } catch {  }
   }
 
   function resumeSession() {
@@ -2310,8 +2040,7 @@
     if (!s) return;
     mode = s.mode; gameMode = s.mode;
     Object.keys(s.cfg || {}).forEach(function (k) { cfg[k] = s.cfg[k]; });
-    // Rebuild the roster from saved archetype ids (custom bots resolve via
-    // loadCustomBots, exactly like startGame).
+
     var ids = (s.players || []).slice(1).map(function (sp) { return sp.archetypeId; })
       .filter(function (id) { return !!botById(id); }).slice(0, maxOpp());
     selectedBots = new Set(ids.length ? ids : ['lag']);
@@ -2332,14 +2061,14 @@
       players: players, sb: cfg.sb, bb: cfg.bb,
       startingStack: cfg.stack, button: s.button, ante: 0, onEvent: onTableEvent
     });
-    // The constructor assigns startingStack to everyone — restore saved stacks.
+
     table.players[0].stack = Math.max(0, heroStack);
     bots.forEach(function (b, i) {
       var tp = table.players[i + 1];
       tp.stack = Math.max(0, players[i + 1]._resumeStack);
       if (s.players[i + 1] && s.players[i + 1].sittingOut) tp.sittingOut = true;
     });
-    table.handNo = s.handNo || 0; // next deal continues the count (blinds stay on schedule)
+    table.handNo = s.handNo || 0;
     if (gameMode === 'tourney') {
       TOUR_LEVELS = tourLevels();
       tourney = { levelIdx: Math.min(s.levelIdx || 0, TOUR_LEVELS.length - 1) };
@@ -2350,29 +2079,23 @@
     UI.log('↻ Resumed session — hand #' + (table.handNo + 1) + ' continues with saved stacks.');
   }
 
-  // Shared tail of startGame/resumeSession: reset pump state, show the table,
-  // deal the next hand.
   function beginTableSession() {
     sessionStartChips = table.players[0].stack;
     lastHeroEndStack = undefined;
     refreshBankroll();
     evtQueue = []; pumping = false; waitingForHero = false;
-    UI.buildSeats(); // fixed 8-seat layout; renderTable marks empties
+    UI.buildSeats();
     UI.showScreen('table');
-    // Clear the previous session's "Last:" result — it would otherwise linger
-    // in the topbar until the first new hand ends (daily QA 2026-10-07).
-    try { var lr = document.getElementById('last-result'); if (lr) lr.textContent = ''; } catch {}
+
+    try { var lr = document.getElementById('last-result'); if (lr) lr.textContent = ''; } catch (e) { quiet(e); }
     setTimeout(dealNext, 400);
   }
 
-  // Setup screen entry point: refresh the Resume button every time.
   function showSetup() {
     UI.showScreen('setup');
     refreshResumeButton();
   }
 
-  // Setup screen: when a game is live (user stepped away mid-hand), offer a
-  // one-tap return to the exact same spot (v1.8.97).
   function refreshBackToGameButton() {
     var btn = $('btn-back-to-game');
     if (!btn) return;
@@ -2380,7 +2103,7 @@
       btn.hidden = false;
       btn.textContent = '▶ Back to your game — Hand #' + (table.handNo || 1) + ' in progress';
       btn.onclick = function () { UI.showScreen('table'); };
-      // A live game supersedes the saved-session resume offer.
+
       var rb = $('btn-resume'); if (rb) rb.hidden = true;
       var rh = $('resume-hint'); if (rh) rh.hidden = true;
     } else {
@@ -2403,7 +2126,7 @@
         when = mins < 1 ? 'just now' : mins < 60 ? mins + 'm ago'
           : Math.round(mins / 60) < 24 ? Math.round(mins / 60) + 'h ago'
           : Math.round(mins / 1440) + 'd ago';
-      } catch {}
+      } catch (e) { quiet(e); }
       var modeName = { cash: 'cash game', hu: 'heads-up', tourney: 'tournament' }[s.mode] || s.mode;
       hint.textContent = 'Hand #' + (s.handNo + 1) + ' · ' + modeName + ' · you had ' +
         UI.fmt(s.players[0].stack) + ' chips · saved ' + when;
@@ -2411,16 +2134,14 @@
     btn.onclick = resumeSession;
   }
 
-  // Exposed for tests (tests/session.test.js); the IIFE keeps the rest private.
   try {
     window.__sessionIO = {
       save: saveSession, load: loadSession, clear: clearSession,
       saveable: sessionSaveable, resume: resumeSession, refresh: refreshResumeButton,
       key: SESSION_KEY
     };
-  } catch {}
+  } catch (e) { quiet(e); }
 
-  // ================= hand replayer =================
   function openHandList() {
     replay = null;
     UI.renderHandList(loadHandRecords(), openReplay);
@@ -2466,7 +2187,6 @@
     $('rp-steps').onclick = showReplaySteps;
   }
 
-  // ================= push/fold trainer =================
   var pf = { scn: null, score: 0, total: 0 };
 
   function startPushFold() {
@@ -2475,9 +2195,7 @@
     nextPFScenario();
   }
   function nextPFScenario() {
-    // Train against the user's actual roster selection, with their renames.
-    // Falls back to the full roster inside newPushFoldScenario when the
-    // selection is smaller than the scenario needs.
+
     var pool = allBots().filter(function (b) { return selectedBots.has(b.id); })
       .map(function (b) {
         return { id: b.id, name: NamePrefs.displayName(b), emoji: b.emoji, pushTier: b.pushTier };
@@ -2494,13 +2212,12 @@
     $('pf-score').textContent = 'Score: ' + pf.score + ' / ' + pf.total;
   }
 
-  // ================= wiring =================
   function wire() {
-    // Theme: remembered light/dark preference, default dark. Visual only.
+
     var THEME_KEY = 'ps_theme';
     function applyTheme(t) {
       document.documentElement.dataset.theme = t;
-      try { localStorage.setItem(THEME_KEY, t); } catch {}
+      try { localStorage.setItem(THEME_KEY, t); } catch (e) { quiet(e); }
     }
     try {
       var savedTheme = localStorage.getItem(THEME_KEY);
@@ -2511,8 +2228,7 @@
     if (themeBtn) themeBtn.onclick = function () {
       applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
     };
-    // Away-freeze wiring (v1.8.97): any non-table screen freezes the live
-    // game; showing the table again resumes it in the exact same spot.
+
     if (UI.setScreenListener) {
       UI.setScreenListener(function (name) {
         setAwayFromTable(name !== 'table' && name !== 'online');
@@ -2524,7 +2240,7 @@
     document.querySelectorAll('.nav-btn').forEach(function (b) {
       b.onclick = function () {
         var dest = b.dataset.nav;
-        // Play with a live game = back to your table, exactly as you left it.
+
         if (dest === 'setup') {
           if (table) UI.showScreen('table');
           else showSetup();
@@ -2536,7 +2252,7 @@
         else if (dest === 'online') { setAwayFromTable(true); Online.show(); }
       };
     });
-    // Feedback opens a modal, not a screen.
+
     var nfb = $('nav-feedback');
     if (nfb) nfb.onclick = function () { UI.openFeedbackModal(); };
     var fmc = $('feedback-modal-close');
@@ -2549,13 +2265,13 @@
         if (m && !m.hidden) UI.closeFeedbackModal();
       }
     });
-    // Feature flags: hide custom bot builder by default.
+
     var cbs = document.getElementById('custom-bot-section');
     if (cbs && !PS_FLAGS.customBots) cbs.style.display = 'none';
 
     var fsb = $('fb-submit');
     if (fsb) fsb.onclick = UI.submitFeedback;
-    // Feature flags: hide advanced mode cards by default.
+
     var flagForMode = { hu: 'headsUpMode', pushfold: 'pushFoldTrainer' };
     document.querySelectorAll('.mode-card').forEach(function (c) {
       var flag = flagForMode[c.dataset.mode];
@@ -2566,33 +2282,28 @@
         var prev = mode;
         mode = c.dataset.mode;
         if (mode === 'hu' && prev !== 'hu') {
-          // Heads-up is exactly one bot: remember the full table, keep the
-          // first pick (swimkev when the set is somehow empty).
+
           preHuSelection = Array.from(selectedBots);
           var first = rosterOrderIds().filter(function (id) { return selectedBots.has(id); })[0] || 'lag';
           selectedBots = new Set([first]);
         } else if (prev === 'hu' && mode !== 'hu' && preHuSelection) {
-          // Restore the pre-heads-up table.
+
           selectedBots = new Set(preHuSelection.filter(function (id) { return botById(id); }).slice(0, 7));
           if (!selectedBots.size) loadModeRoster();
           preHuSelection = null;
         } else if (prev !== 'hu' && mode !== 'hu' && prev !== mode) {
-          // Cash <-> tournament: each mode remembers its own roster.
-          // Save the old mode's picks, then load the new mode's.
+
           try { localStorage.setItem('ps_roster_' + prev + '_v1', JSON.stringify(Array.from(selectedBots))); }
-          catch {}
+          catch (e) { quiet(e); }
           loadModeRoster();
         }
-        // Prune bots that don't play this game type (e.g. cash classics when
-        // switching to tournament). Keep the remaining picks as-is.
+
         pruneSelection();
         syncOppUI();
       };
     });
     $('btn-start').onclick = startGame;
-    // One-tap start: a live mirror of the configuration below — no forcing,
-    // no hardcoded "3 bots". The hint always describes exactly what one tap
-    // does, so the stepper and the hero button can never contradict.
+
     function syncQuickHint() {
       var q = $('quick-hint');
       if (!q) return;
@@ -2618,12 +2329,11 @@
     if (hmo) hmo.addEventListener('click', function (e) { if (e.target === hmo) UI.closeHandsModal(); });
     $('btn-pf-leave').onclick = leaveToLobby;
 
-    // username + emoji: persisted, applied to the hero seat at game start
     var EMOJI_CHOICES = ['🧑','👩','👨','🧔','👵','👴','🐶','🐱','🦊','🐼','🦁','🐯','🦄','🐸','👻','🤖','👽','🎃','😎','🤠','🥷','🧙','🦸','👑','💀','🔥','⚡','🌊','🍀','🎲'];
     var emojiSel = $('cfg-emoji');
     if (emojiSel) {
       var curEm = '🧑';
-      try { curEm = localStorage.getItem('ps_player_emoji') || '🧑'; } catch {}
+      try { curEm = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) { quiet(e); }
       EMOJI_CHOICES.forEach(function (em) {
         var o = document.createElement('option');
         o.value = em; o.textContent = em;
@@ -2631,7 +2341,7 @@
         emojiSel.appendChild(o);
       });
       emojiSel.addEventListener('change', function () {
-        try { localStorage.setItem('ps_player_emoji', emojiSel.value); } catch {}
+        try { localStorage.setItem('ps_player_emoji', emojiSel.value); } catch (e) { quiet(e); }
       });
     }
     var unameInput = $('cfg-username');
@@ -2639,12 +2349,10 @@
       unameInput.value = NamePrefs.getUsername();
       unameInput.addEventListener('change', function () {
         NamePrefs.setUsername(unameInput.value);
-        unameInput.value = NamePrefs.getUsername(); // trimmed to max length
+        unameInput.value = NamePrefs.getUsername();
       });
     }
 
-    // Opponent count display always derives from the selection — the number
-    // and the highlighted cards can never disagree.
     function syncOppUI() {
       $('opp-count').textContent = selectedBots.size;
       UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint, onRosterChange);
@@ -2652,7 +2360,7 @@
       syncTourneyHint();
       saveRoster();
     }
-    // Tournament mode: show the blind structure under the settings.
+
     function syncTourneyHint() {
       var el = $('tourney-blind-hint');
       if (!el) return;
@@ -2664,15 +2372,13 @@
       el.textContent = '🏆 Tournament: starts at ' + sb + '/' + bb +
         ', blinds go up every ' + every + ' hands.';
     }
-    // Roster card clicks mutate the set inside UI; this keeps the count,
-    // hint, and persisted selection in sync.
+
     function onRosterChange() {
       $('opp-count').textContent = selectedBots.size;
       syncQuickHint();
       saveRoster();
     }
-    // Select a bot, enforcing the cap by swapping out the last-picked bot.
-    // Used when a newly created custom bot should join the table immediately.
+
     function selectBot(id) {
       if (selectedBots.has(id)) return;
       if (selectedBots.size >= maxOpp()) {
@@ -2684,7 +2390,7 @@
     $('opp-minus').onclick = function () {
       if (mode === 'hu') return;
       if (selectedBots.size <= 1) { rosterHint('Pick at least 1 opponent'); return; }
-      // Drop the last-picked bot (last in roster order).
+
       var ids = rosterOrderIds().filter(function (id) { return selectedBots.has(id); });
       selectedBots.delete(ids[ids.length - 1]);
       syncOppUI();
@@ -2692,17 +2398,16 @@
     $('opp-plus').onclick = function () {
       if (mode === 'hu') return;
       if (selectedBots.size >= maxOpp()) { rosterHint('Only ' + maxOpp() + ' opponents for this mode'); return; }
-      // Add the first unpicked bot in roster order.
+
       var id = rosterOrderIds().filter(function (x) { return !selectedBots.has(x); })[0];
       if (id) selectedBots.add(id);
       syncOppUI();
     };
-    // push/fold buttons
+
     $('pf-shove').onclick = function () { pfAnswer(pf.scn.facingShove ? 'call' : 'shove'); };
     $('pf-fold').onclick = function () { pfAnswer('fold'); };
     $('pf-next').onclick = nextPFScenario;
 
-    // custom bot builder
     [['cust-loose', 'v-loose'], ['cust-aggr', 'v-aggr'], ['cust-bluff', 'v-bluff'], ['cust-stub', 'v-stub'],
      ['cust-tilt', 'v-tilt'], ['cust-rebuy', 'v-rebuy']]
       .forEach(function (pair) {
@@ -2710,7 +2415,7 @@
       });
     $('btn-add-custom').onclick = function () {
       var name = $('cust-name').value.trim() || 'My Bot';
-      // Reject duplicate display names — two "Doyle"s at one table is confusing.
+
       var low = name.toLowerCase();
       var taken = allBots().some(function (b) {
         var dn = (typeof UI !== 'undefined' && UI.dispName ? UI.dispName(b) : b.name) || '';
@@ -2742,7 +2447,6 @@
       syncOppUI();
     };
 
-    // stats
     $('btn-export').onclick = function () {
       var blob = new Blob([exportStatsJSON()], { type: 'application/json' });
       var a = document.createElement('a');
@@ -2754,19 +2458,17 @@
       if (confirm('Reset all training stats?')) {
         clearStats();
         UI.renderStats();
-        // The top-right session pill is a live session figure, not stored
-        // stats: re-baseline it so it reads 0 immediately instead of going
-        // stale until the next refresh.
+
         sessionStartChips = (table && table.players && table.players[0]) ? table.players[0].stack : 0;
         UI.setBankroll(0);
       }
     };
 
     UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint);
-    // Sync the counter on initial load — selectedBots may be restored from storage.
+
     var oc0 = document.getElementById('opp-count');
     if (oc0) oc0.textContent = selectedBots.size;
-    // Stack/blind tweaks update the quick-start hint live.
+
     ['cfg-stack', 'cfg-sb', 'cfg-bb', 'cfg-blindint'].forEach(function (id) {
       var el = $(id);
       if (el) el.addEventListener('input', function () { syncQuickHint(); syncTourneyHint(); });
@@ -2775,7 +2477,7 @@
     refreshBankroll();
     var vv = $('app-version');
     if (vv) vv.textContent = 'v' + APP_VERSION + ' · offline · stats stay in this browser';
-    // Manual update check for live testing — fetches version.txt, reloads if newer.
+
     var cu = $('btn-check-update');
     if (cu) cu.onclick = function () {
       cu.textContent = 'Checking…';
@@ -2783,10 +2485,7 @@
         var v = (t || '').trim();
         if (v && v !== APP_VERSION) {
           if (confirm('New version ' + v + ' available (you have ' + APP_VERSION + '). Reload now?')) {
-            // Bust the HTTP cache for index.html, then land on the clean URL
-            // (no ?v= — see updateReloadURL). fetch with cache:'reload'
-            // bypasses cache and stores the fresh copy, so the navigation
-            // picks it up.
+
             fetch(window.location.pathname, { cache: 'reload' }).catch(function () {}).then(function () {
               window.location.href = updateReloadURL(window.location.pathname, v, window.location.hash);
             });
@@ -2805,7 +2504,7 @@
   function deleteCustom(id) {
     saveCustomBots(loadCustomBots().filter(function (a) { return a.id !== id; }));
     selectedBots.delete(id);
-    if (!selectedBots.size) selectedBots.add('lag'); // never drop to zero
+    if (!selectedBots.size) selectedBots.add('lag');
     UI.renderArchetypes(loadCustomBots(), deleteCustom);
     UI.renderRoster(rosterBots(), selectedBots, maxOpp(), rosterHint, function () {
       var oc = document.getElementById('opp-count');
@@ -2813,15 +2512,13 @@
       saveRoster();
     });
     saveRoster();
-    // A deleted bot can't be resumed — drop stale sessions referencing it.
+
     var s = loadSession();
     if (s && s.players.some(function (sp) {
       return !sp.isHero && !botById(sp.archetypeId);
     })) clearSession();
   }
 
-  // Session resume: offer the button on load, and persist best-effort when
-  // the page is hidden/closed (the per-hand save in onHandEnd is the exact one).
   refreshResumeButton();
   document.addEventListener('pagehide', saveSession);
 

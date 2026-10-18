@@ -1,27 +1,9 @@
-// bots.js — Offline AI opponents: archetype personalities + heuristic decision engine.
-// DOM-free. Each archetype tunes preflop tiers, aggression, bluffing and call-down
-// stubbornness, so practice vs "Rock" feels nothing like practice vs "Maniac".
-
-// Node: pull cross-file globals when running as modules (browser uses script tags).
 if (typeof module !== 'undefined' && module.exports) {
   var __eq = require('./equity.js');
   var holeTier = __eq.holeTier, estimateEquity = __eq.estimateEquity, madeStrength = __eq.madeStrength,
       detectDraws = __eq.detectDraws;
 }
 
-// Archetype params:
-//   openTier / openTierLate: worst hole-tier opened first-in (1=tight .. 6=any two)
-//   callTier: worst tier to flat an open with
-//   threeBetTier: worst tier to 3-bet for value with
-//   aggression 0..1, bluff 0..1, stubborn 0..1 (call-down frequency)
-//   pushTier / callPushTier: short-stack (<13bb) shove / call-shove tiers
-//   neverRaise: strictly passive — botDecide converts every bet/raise into a
-//     check (when free) or a call, so 3-bet/4-bet/bluff lines can never fire
-//   riverTrap: with neverRaise, still allow bets on the river (the trap springs)
-// Profiles follow the classic live-game taxonomy (rock / calling station /
-// maniac / TAG / LAG) described by Sklansky, Harrington and modern training
-// sites: each has a `beat` line teaching the standard exploit, so practice
-// transfers to real tables.
 var ARCHETYPES = [
   {
     id: 'alice', name: 'Alice', emoji: '👩',
@@ -46,7 +28,7 @@ var ARCHETYPES = [
   {
     id: 'lag', name: 'swimkev', emoji: '🏊',
     tagline: 'Wild and unpredictable — wins big or rebuys instantly.',
-    desc: 'Loose-aggressive skilled: ~35% of hands with constant pressure, well-timed 3-bets, big raises, and tricky lines — but disciplined enough to fold when clearly beat. His signature: the BIG iso-raise (~1.5x pot) over limpers with any good hand — it pressures folds, and anyone who calls it has shown a monster or premium high cards, so he knows their range and attacks boards that miss it. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
+    desc: 'Loose-aggressive skilled: ~35% of hands with constant pressure, well-timed re-raises, big raises, and tricky lines — but disciplined enough to fold when clearly beat. His signature: the BIG iso-raise (~1.5x pot) over limpers with any good hand — it pressures folds, and anyone who calls it has shown a monster or premium high cards, so he knows their range and attacks boards that miss it. swimkev will either win a lot or rebuy back in instantly. There is no in-between. The most fun seat at any friendly home game.',
     beat: 'Play solid and straightforward; don\'t try to out-bluff him. Value bet confidently — he calls wider than he should, and he will respect it when you push back.',
     openTier: 4, openTierLate: 6, callTier: 5, threeBetTier: 3,
     aggression: 0.80, bluff: 0.35, stubborn: 0.60, pushTier: 5, callPushTier: 3, limp: 0.15,
@@ -56,7 +38,7 @@ var ARCHETYPES = [
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
     tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
-    desc: 'Loose-passive: plays lots of hands, rarely raises and never 3-bets. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.97).',
+    desc: 'Loose-passive: plays lots of hands, rarely raises and never re-raises. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.97).',
     beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 1,
     aggression: 0.05, bluff: 0.68, stubborn: 0.65, pushTier: 4, callPushTier: 3, limp: 0.9,
@@ -104,7 +86,7 @@ var ARCHETYPES = [
   {
     id: 'maniac', name: 'Maniac', modes: ['cash', 'hu', 'pushfold'], emoji: '🤪',
     tagline: 'Raises everything. No fold button found.',
-    desc: 'Loose-aggressive chaos: plays ~65% of hands, 3-bets light, bluffs every street. A total rollercoaster — scary until you realize their range is literally everything, and then it is just plain fun.',
+    desc: 'Loose-aggressive chaos: plays ~65% of hands, re-raises light, bluffs every street. A total rollercoaster — scary until you realize their range is literally everything, and then it is just plain fun.',
     beat: 'Tighten up, trap with strong hands, and call down a little lighter than usual. Patience pays off big in this matchup.',
     openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 5,
     aggression: 0.95, bluff: 0.55, stubborn: 0.65, pushTier: 6, callPushTier: 4, limp: 0.05,
@@ -122,7 +104,7 @@ var ARCHETYPES = [
   {
     id: 'pro', name: 'Pro', modes: ['tourney'], emoji: '⏱️',
     tagline: 'Tournament TAG. Tight early, lethal with 20 big blinds.',
-    desc: 'Tournament tight-aggressive (Harrington-style): folds ~85% of hands, but 3-bets relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
+    desc: 'Tournament tight-aggressive (Harrington-style): folds ~85% of hands, but re-raises relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
     beat: 'Steal his blinds early when stacks are deep. Never pay off a shove without a real hand — his all-in range is brutally strong.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 2,
     aggression: 0.65, bluff: 0.12, stubborn: 0.40, pushTier: 5, callPushTier: 2, limp: 0.05,
@@ -141,7 +123,7 @@ var ARCHETYPES = [
   {
     id: 'bully', name: 'Bully', modes: ['tourney'], emoji: '💪',
     tagline: 'Big stack bully. Your tournament life is his poker chip.',
-    desc: 'Chip-leader pressure: when Bully has the big stack, he opens ~35% of hands and 3-bets light — medium stacks can\'t call without risking their tournament. Backs down against other big stacks, but feasts on anyone protecting a cash. The ICM nightmare from every final table.',
+    desc: 'Chip-leader pressure: when Bully has the big stack, he opens ~35% of hands and re-raises light — medium stacks can\'t call without risking their tournament. Backs down against other big stacks, but feasts on anyone protecting a cash. The ICM nightmare from every final table.',
     beat: 'Wait for a real hand and trap — he bets into everything. Don\'t bluff into the chip leader; let him hang himself.',
     openTier: 4, openTierLate: 5, callTier: 3, threeBetTier: 3,
     aggression: 0.85, bluff: 0.30, stubborn: 0.60, pushTier: 4, callPushTier: 3, limp: 0.10,
@@ -151,7 +133,7 @@ var ARCHETYPES = [
   {
     id: 'gambler', name: 'Gambler', modes: ['tourney'], emoji: '🎲',
     tagline: 'Super-aggressive. Doubles up or busts by level 4.',
-    desc: 'Harrington\'s "super aggressive" tournament style: plays ~40% of hands, 4-bets light, bluffs every street. Either builds a monster stack early or rebuys — no middle ground. The cowboy from every tournament field.',
+    desc: 'Harrington\'s "super aggressive" tournament style: plays ~40% of hands, re-raises light, bluffs every street. Either builds a monster stack early or rebuys — no middle ground. The cowboy from every tournament field.',
     beat: 'Tighten up and let him bluff into your strong hands. Never try to out-aggress him; patience is the counter.',
     openTier: 5, openTierLate: 6, callTier: 4, threeBetTier: 4,
     aggression: 0.90, bluff: 0.45, stubborn: 0.70, pushTier: 5, callPushTier: 4, limp: 0.15,
@@ -161,7 +143,6 @@ var ARCHETYPES = [
 
 ];
 
-// Fallback is by id, not array position, so the display order above can change freely.
 function getArchetype(id, customs) {
   var all = ARCHETYPES.concat(customs || []);
   var fb = all[0];
@@ -172,7 +153,6 @@ function getArchetype(id, customs) {
   return fb;
 }
 
-// Build an archetype from user sliders (0..100 each).
 function customArchetype(opts) {
   var lz = opts.looseness / 100, ag = opts.aggression / 100,
       bl = opts.bluff / 100, st = opts.stubborn / 100;
@@ -192,7 +172,6 @@ function customArchetype(opts) {
   };
 }
 
-// 0 (early) .. 1 (button). Used for positional adjustments.
 function positionScore(table, idx) {
   var n = table.players.length, order = [], s = table.button;
   for (var k = 0; k < n; k++) {
@@ -202,13 +181,13 @@ function positionScore(table, idx) {
   }
   var pos = order.indexOf(idx);
   var m = order.length;
-  if (m <= 2) return pos === m - 1 ? 1 : 0.15; // heads-up: button=1
-  // order: SB, BB, UTG, ..., CO, BTN
-  if (pos === m - 1) return 1;      // BTN
-  if (pos === m - 2) return 0.8;    // CO
-  if (pos === 0) return 0.1;        // SB
-  if (pos === 1) return 0.2;        // BB
-  return 0.35 + 0.45 * (pos / m);   // early -> middle
+  if (m <= 2) return pos === m - 1 ? 1 : 0.15;
+
+  if (pos === m - 1) return 1;
+  if (pos === m - 2) return 0.8;
+  if (pos === 0) return 0.1;
+  if (pos === 1) return 0.2;
+  return 0.35 + 0.45 * (pos / m);
 }
 
 function clampRaise(table, p, legal, to) {
@@ -220,9 +199,6 @@ function clampRaise(table, p, legal, to) {
   return to;
 }
 
-// Tilt morphs a bot's style: tilted players play more hands, blast more, and
-// call down lighter trying to win it back — the classic real-money tell.
-// Returns a shallow copy with shifted params; the base archetype is never mutated.
 function effectiveArchetype(A, tilt) {
   if (!A || !(tilt > 0.02)) return A;
   var t = Math.min(1, tilt);
@@ -237,12 +213,6 @@ function effectiveArchetype(A, tilt) {
   });
 }
 
-// Friendly-game looseness: when the price to call is small relative to the
-// bot's stack (e.g. 75 from a 1000 stack), even tight bots play looser —
-// just like a real home game. Returns 0..1, higher = call wider.
-// Friend-named bots (friendly: true) get roughly double the discount.
-// v1.8.97 (Kevin): bands widened — Alice folded ATs to a 75 bet with 1000
-// behind because 7.5% of stack got ZERO discount under the old bands.
 function stackDiscount(p, toCall, A) {
   var total = p.stack + p.bet;
   if (total <= 0 || toCall <= 0) return 0;
@@ -257,12 +227,7 @@ function botDecide(table, p) {
   if (!table.canAct(p)) return null;
   var A = effectiveArchetype(p.archetype || getArchetype('shark'), p.tilt || 0);
   var mv = table.street === 'preflop' ? botPreflop(table, p, A) : botPostflop(table, p, A);
-  // Strictly passive archetypes never take an aggressive action: convert every
-  // bet/raise into a check (when free) or a call. This single gate covers
-  // 3-bets, 4-bets, bluffs and shoves, so no raise path can leak through.
-  // Nathan is exempt on the river, where his trap springs (see botPostflop).
-  // v1.8.97: bluffThrough lets occasional bluffs leak (Rohan sometimes
-  // randomly bluffs — Kevin).
+
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
       !(A.riverTrap && table.street === 'river') &&
       !(mv.bluff && A.bluffThrough && Math.random() < A.bluffThrough) &&
@@ -270,9 +235,7 @@ function botDecide(table, p) {
     var legal = table.legalActions(p.idx);
     mv = legal.canCheck ? { a: 'check' } : { a: 'call' };
   }
-  // Alice: unpredictable preflop value sizing — when she bets/raises (always
-  // for value; she never bluffs), randomly go small (min-raise) or big
-  // (~1.5x pot, sometimes a bomb). Shoves are left alone.
+
   if (mv && A.id === 'alice' && table.street === 'preflop' &&
       (mv.a === 'bet' || mv.a === 'raise')) {
     var al = table.legalActions(p.idx);
@@ -280,9 +243,9 @@ function botDecide(table, p) {
       var apot = table.potTotal();
       var tgt;
       if (Math.random() < 0.5) {
-        tgt = al.canRaise ? al.minRaiseTo : al.minBetTo; // small
+        tgt = al.canRaise ? al.minRaiseTo : al.minBetTo;
       } else {
-        tgt = Math.random() < 0.25 ? al.maxRaiseTo : Math.round(apot * 1.5); // big / bomb
+        tgt = Math.random() < 0.25 ? al.maxRaiseTo : Math.round(apot * 1.5);
       }
       var alo = al.canRaise ? al.minRaiseTo : al.minBetTo;
       tgt = Math.max(alo, Math.min(al.maxRaiseTo, Math.round(tgt)));
@@ -295,12 +258,8 @@ function botDecide(table, p) {
 function botPreflop(table, p, A) {
   var tier = holeTier(p.hole);
   var isPair = p.hole[0].r === p.hole[1].r;
-  // Pocket pairs never fold preflop to normal bets — any pair is playable.
-  // Only vs all-ins do they sometimes fold (small pairs fold more often).
-  // Humanize: occasionally play a tier looser/tighter — but tiers 1-2 stay
-  // protected. Shifting JJ into a "tier 3" that folds to a 3-bet is not
-  // humanizing, it is just a leak (B9). Marginal hands (tier 3+) still shift.
-  var rawTier = tier; // pre-humanize: price-based defending never covers trash
+
+  var rawTier = tier;
   var r0 = Math.random();
   if (r0 < 0.08 && tier > 2 && !isPair) tier = Math.min(6, tier + 1);
   else if (r0 < 0.14) tier = Math.max(1, tier - 1);
@@ -309,46 +268,34 @@ function botPreflop(table, p, A) {
   var toCall = legal.toCall;
   var effBB = (p.stack + p.bet) / table.bb;
 
-  // --- short stack: push/fold ---
   if (effBB < 13) return shortStackPreflop(table, p, A, legal, tier);
 
   var pos = positionScore(table, p.idx);
   var openTier = pos >= 0.75 ? A.openTierLate : A.openTier;
-  var raised = table.currentBet > table.bb; // someone actually raised (limps don't move currentBet)
-  // Voluntary limpers (only meaningful when nobody raised yet).
+  var raised = table.currentBet > table.bb;
+
   var limpers = table.players.filter(function (q) {
     return q !== p && !q.folded && !q.sittingOut && q.idx !== table.bbIdx && q.totalBet >= table.bb;
   }).length;
 
-  // Amogh: bombs with tier-1 monsters (QQ+/AK) — usually when there is a
-  // raise to punish, occasionally as a first-in open-shove. (Character sizing;
-  // the normal 3-bet path below handles the rest.)
   if (A.id === 'amogh' && tier <= 1 && legal.canRaise && (raised ? Math.random() < 0.7 : true)) {
     return { a: 'raise', amount: legal.maxRaiseTo };
   }
 
-  // swimkev (v1.8.97, Kevin): with a pretty good hand he IS the iso-raiser,
-  // never the limper who folds to one. His iso is BIG (~1.5x pot on top) —
-  // pressure for folds, and information: anyone who calls it has a monster
-  // or a premium high-card hand, so their range narrows to high cards.
-  // Facing someone else's iso with a good hand, he doesn't fold cheap either.
   if (A.id === 'lag' && tier <= 4) {
     if (!raised && limpers > 0 && legal.canRaise && Math.random() < 0.85) {
       var isoTo = clampRaise(table, p, legal, table.currentBet + Math.round(table.potTotal() * 1.5));
       if (isoTo != null) { p._isoHand = table.handNo; return { a: 'raise', amount: isoTo }; }
     }
-    // Good-but-not-premium hands (A9, KJs) don't fold to an iso; premiums
-    // (tier 1-2) fall through to the standard 3-bet path — flatting those
-    // killed his QQ 3-bet rate (test regression).
+
     if (raised && tier >= 3 && toCall > 0 && toCall < (p.stack + p.bet) * 0.4 && Math.random() < 0.8) {
       return { a: 'call' };
     }
   }
 
-  // --- first in / vs limps only ---
   if (!raised) {
     if (toCall === 0) {
-      // Big blind option.
+
       if (tier <= A.threeBetTier && Math.random() < 0.4 + A.aggression * 0.3 && legal.canRaise) {
         var toBB = clampRaise(table, p, legal, table.bb * (3.5 + limpers));
         if (toBB != null) return { a: 'raise', amount: toBB };
@@ -356,14 +303,13 @@ function botPreflop(table, p, A) {
       return { a: 'check' };
     }
     if (tier <= openTier && legal.canRaise) {
-      if (Math.random() < (A.limp || 0)) return { a: 'call' }; // limpy types mix limps
+      if (Math.random() < (A.limp || 0)) return { a: 'call' };
       var toOpen = clampRaise(table, p, legal, table.bb * (2.5 + limpers));
       if (toOpen != null) return { a: 'raise', amount: toOpen };
     }
-    // Over-limp behind existing limpers, or first-in limp for limpy archetypes.
+
     if (tier <= A.callTier + 1 && (limpers > 0 || (A.limp || 0) > 0.5)) return { a: 'call' };
-    // SB completion: facing only the blinds is 3:1+ — maniacs complete nearly
-    // everything, tighter bots stick closer to their calling range.
+
     if (toCall > 0 && toCall <= table.bb) {
       var wide = (A.aggression || 0) >= 0.8 ? 6 : A.callTier + 1;
       if (tier <= wide) return { a: 'call' };
@@ -371,16 +317,12 @@ function botPreflop(table, p, A) {
     return { a: 'fold' };
   }
 
-  // --- facing a raise ---
-  var facingBig = table.currentBet >= table.bb * 7; // 3-bet or bigger
+  var facingBig = table.currentBet >= table.bb * 7;
   var pot = table.potTotal();
   var need = toCall / (pot + toCall);
 
   if (facingBig) {
-    // Tiers 1-2 (QQ+, AKs, plus JJ-TT/AKo/AQs/AJs/KQs) never fold to a single
-    // 3-bet at 100bb: 4-bet or flat, always continue. Folding KK here was the
-    // reported bug; folding JJ/AKo is the same leak (old code folded them
-    // ~77% of the time for TAGs).
+
     if (tier <= 2) {
       var fourP = (tier <= 1 ? 0.45 : 0.25) + A.aggression * 0.4;
       if (legal.canRaise && Math.random() < fourP) {
@@ -390,47 +332,39 @@ function botPreflop(table, p, A) {
       return toCall > 0 ? { a: 'call' } : { a: 'check' };
     }
     if (tier <= Math.max(1, A.threeBetTier - 1) && Math.random() < 0.3 + A.aggression * 0.4 && legal.canRaise) {
-      // Standard 4-bet sizing (~2.3x the 3-bet), not an automatic shove.
+
       var to4b = clampRaise(table, p, legal, table.currentBet * 2.3);
       if (to4b != null) return { a: 'raise', amount: to4b };
     }
     if (tier <= A.callTier && (need < 0.30 || Math.random() < A.stubborn * 0.5)) return { a: 'call' };
-    // Pocket pairs call 3-bets too (set-mining is profitable) — only fold vs all-ins.
+
     if (isPair && toCall < p.stack) return { a: 'call' };
-    // Cheap relative to the stack: playable hands still defend (v1.8.97,
-    // Kevin). A 75 open at 5/10 with 1000 behind trips this "big bet" branch
-    // on size alone, but at ~7% of the stack it's a cheap call — Alice was
-    // folding ATs here, which no normal player does.
+
     var sdBig = stackDiscount(p, toCall, A);
     if (tier <= A.callTier + 1 && sdBig > 0.3 && need < 0.45) return { a: 'call' };
     return { a: 'fold' };
   }
 
-  // Facing a single open. Premiums 3-bet at a high frequency and never fold.
   if (tier <= A.threeBetTier && Math.random() < 0.15 + A.aggression * 0.35 + (tier <= 1 ? 0.35 : 0) && legal.canRaise) {
     var to3 = clampRaise(table, p, legal, table.currentBet * 3 + (pos >= 0.75 ? 0 : table.bb));
     if (to3 != null) return { a: 'raise', amount: to3 };
   }
-  // Premiums always continue vs a single open (explicit; the tier<=2 shortcut
-  // below already guarantees it, but this is the invariant — see B9).
+
   if (tier <= 1) return toCall > 0 ? { a: 'call' } : { a: 'check' };
-  // Early position plays a tier tighter facing a raise; late position a tier
-  // looser. Blinds keep their own pot-odds defense, so the EP cut starts at 0.3.
+
   var callLine = A.callTier + (pos >= 0.75 ? 1 : 0) - (pos >= 0.3 && pos < 0.55 ? 1 : 0);
   callLine = Math.max(1, callLine);
-  // Stack-relative looseness: trivial prices get called much wider.
+
   var sd = stackDiscount(p, toCall, A);
   if (sd > 0 && rawTier <= 5 && tier <= callLine + Math.round(sd * 3) && need < 0.45) return { a: 'call' };
   if (tier <= callLine && (need < 0.33 || tier <= 2 || Math.random() < (A.callTier / 12)))
     return { a: 'call' };
-  // Min-raise defense: a 2bb open lays ~2.5:1, too good a price to fold
-  // speculative hands. Without this every bot over-folds to min-raises.
+
   if (table.currentBet <= table.bb * 2.5 && tier <= callLine + 1 && need < 0.42)
     return { a: 'call' };
-  // SB completing vs a limp-ish price
+
   if (need < 0.12 && tier <= 5) return { a: 'call' };
-  // Pocket pairs never fold to normal bets — any pair is playable preflop.
-  // Only vs all-ins (toCall >= stack) do small pairs sometimes fold.
+
   if (isPair && toCall < p.stack) return { a: 'call' };
   return { a: 'fold' };
 }
@@ -444,7 +378,7 @@ function shortStackPreflop(table, p, A, legal, tier) {
   }
   var need = toCall / (table.potTotal() + toCall);
   if (tier <= (A.callPushTier || 3)) {
-    // Shove; if the all-in doesn't exceed the current bet it's an all-in call.
+
     return maxTo > table.currentBet ? { a: 'raise', amount: maxTo } : { a: 'call' };
   }
   if (need < 0.16 && tier <= 5) return { a: 'call' };
@@ -461,33 +395,24 @@ function botPostflop(table, p, A) {
   var pot = table.potTotal();
   var street = table.street;
 
-  // Amogh: huge sizing can't be expressed with the aggression/bluff params,
-  // so it lives in amoghPostflop (null = fall through to standard logic).
   if (A.id === 'amogh') {
     var amv = amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp);
     if (amv) return amv;
   }
-  // Nathan: the trap springs on the river; earlier streets stay passive
-  // via the neverRaise gate in botDecide.
+
   if (A.id === 'nathan' && street === 'river') {
     return nathanRiver(table, p, A, legal, toCall, pot, ms, eq);
   }
-  // Alice: the vault — never bluffs, folds marginal hands, random small/big
-  // value sizing, near-always calls two pair or better.
+
   if (A.id === 'alice') {
     return alicePostflop(table, p, A, legal, toCall, pot, eq, ms);
   }
-  // Donald: semi-bluffs draws often; bombs big when ahead but vulnerable
-  // (like Amogh) instead of small value bets (v1.8.97, Kevin).
+
   if (A.id === 'donald') {
     var dmv = donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street);
     if (dmv) return dmv;
   }
-  // swimkev (v1.8.97, Kevin): he iso-raised big preflop and got called, so
-  // the caller's range is high cards / monsters. On a LOW flop that range
-  // whiffed — attack big, repping the raiser's high range himself. On a
-  // high flop their range connects, so he only fires with a real hand
-  // (standard logic below decides).
+
   if (A.id === 'lag' && p._isoHand === table.handNo && street === 'flop' && toCall === 0) {
     var callerStrong = table.livePlayers().some(function (q) {
       return q !== p && q.totalBet >= table.bb * 4;
@@ -504,7 +429,7 @@ function botPostflop(table, p, A) {
   }
 
   function betSized(frac) {
-    // Friendly bots lean into slightly bigger sizing (home-game feel).
+
     if (A.friendly) frac = Math.min(1.2, frac * 1.25);
     var to = clampRaise(table, p, legal, pot * frac);
     if (to == null) return { a: 'check' };
@@ -514,7 +439,7 @@ function botPostflop(table, p, A) {
 
   if (toCall === 0) {
     var betLine = 0.62 - A.aggression * 0.22 + (street === 'river' ? 0.04 : 0);
-    // Standard c-bet/value sizing: half-pot to three-quarter-pot.
+
     if (eq > betLine || ms > 0.74) return betSized(0.5 + A.aggression * 0.25);
     var bluffP = A.bluff * (liveOpp === 1 ? 0.22 : 0.10) * (street === 'river' ? 1 : 0.55);
     if (Math.random() < bluffP && ms < 0.55) { var bmv = betSized(0.65); bmv.bluff = true; return bmv; }
@@ -522,20 +447,7 @@ function botPostflop(table, p, A) {
   }
 
   var need = toCall / (pot + toCall);
-  // Fold-realism rule (v1.8.104, Kevin): nobody pays big prices with
-  // nothing. Monte Carlo equity vs RANDOM hands overrates overcards here —
-  // a big bet usually comes from a strong range, so players fold air
-  // regardless of the equity estimate. (v1.8.97 had this only for
-  // disciplined bots; Kevin observed everyone else never folding postflop.)
-  // Draws are exempt: real players continue with a flush draw or open-ender
-  // (this also fixes shark/pro over-folding nut flush draws, v1.8.103).
-  // - Everyone but Station: no-pair, no-draw folds at need >= 0.25
-  //   (1/2-pot+, a real medium+ bet) — heads-up or multiway. (need here is
-  //   toCall/(potTotal+toCall) and potTotal includes the bet, so 0.25 is
-  //   exactly a half-pot bet; v1.8.104 probe: the first cut at 0.30 only
-  //   caught 3/4-pot+ and HU 1/2-pot with air was still 0/60 folds.)
-  // - Station: only folds "absolutely nothing" (ms < 0.15, no draw), and
-  //   only at need >= 0.30 (3/4-pot+) — it keeps its loose character.
+
   var draws = detectDraws(p.hole, table.community);
   var noDraw = !draws.flushDraw && !draws.oesd;
   var bigBet = need >= 0.25;
@@ -545,14 +457,12 @@ function botPostflop(table, p, A) {
     return { a: 'fold' };
   }
   var spr = pot > 0 ? p.stack / pot : 99;
-  // Short SPR + big equity = commit now. No point playing turns and rivers
-  // when the pot already justifies stacking off.
+
   if (spr < 2.5 && eq > 0.70 && legal.canRaise && Math.random() < 0.35 + A.aggression * 0.45) {
     return { a: 'raise', amount: legal.maxRaiseTo };
   }
   var margin = (0.5 - A.stubborn) * 0.12 + (street === 'river' ? 0.03 : 0);
-  // Stack-relative looseness: cheap calls need less equity (friendly game).
-  // v1.8.97: factor 0.18 -> 0.25 alongside the widened stackDiscount bands.
+
   margin -= stackDiscount(p, toCall, A) * 0.25;
   if (eq > need + margin) {
     if (eq > 0.74 && Math.random() < A.aggression * 0.55 && legal.canRaise) {
@@ -561,7 +471,7 @@ function botPostflop(table, p, A) {
     }
     return { a: 'call' };
   }
-  // Occasional bluff-raise with some equity behind it.
+
   if (Math.random() < A.bluff * 0.16 && legal.canRaise && ms > 0.22 && eq > 0.25) {
     var to2 = clampRaise(table, p, legal, (pot + toCall) * 0.9);
     if (to2 != null) return { a: 'raise', amount: to2 };
@@ -569,40 +479,34 @@ function botPostflop(table, p, A) {
   return { a: 'fold' };
 }
 
-// Amogh's sizing: overbets of 1.5x-2.5x pot the moment he thinks he's ahead,
-// all-in bombs with monsters (madeStrength >= 0.78 is flush-or-better).
-// Returns a move, or null to fall through to the standard postflop logic
-// (used when facing a bet without a monster).
 function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp) {
   function shove() {
     return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
   }
   if (toCall === 0) {
-    // v1.8.97 (Kevin): more normal Amogh. Pairs check down to see the river;
-    // bluffs only with a draw (semi-bluff), never pure air all-ins.
+
     var betLine = 0.62 - A.aggression * 0.12 + (street === 'river' ? 0.04 : 0);
     var wantsBet = eq > betLine || ms > 0.74;
     var d = detectDraws(p.hole, table.community);
     var hasDraw = d.flushDraw || d.oesd;
-    // Pair-range pot control: one pair / weak two pair usually checks down
-    // to see the next card instead of bombing (Kevin). River: value bet ok.
+
     if (ms >= 0.3 && ms <= 0.6 && street !== 'river' && !hasDraw &&
         Math.random() < 0.7) {
       return { a: 'check' };
     }
     if (!wantsBet) {
-      // Medium hands (pair+) pot-control: check and see the next card.
+
       if (ms >= 0.3) return { a: 'check' };
-      // Semi-bluff only: needs a real draw to fire.
+
       var bluffP = A.bluff * (liveOpp === 1 ? 0.30 : 0.12) * (street === 'river' ? 1 : 0.55);
       if (!(hasDraw && Math.random() < bluffP && ms < 0.55)) return { a: 'check' };
     }
     if (!legal.canBet && !legal.canRaise) return { a: 'check' };
-    if (ms > 0.78 && Math.random() < 0.45) return shove(); // monster bomb
+    if (ms > 0.78 && Math.random() < 0.45) return shove();
     var over = clampRaise(table, p, legal, pot * (1.5 + Math.random()));
     if (over == null) return { a: 'check' };
     if (over >= legal.maxRaiseTo * 0.97) {
-      // All-in only for value or a draw semi-bluff — never pure air (Kevin).
+
       if (!wantsBet && !hasDraw) {
         var capped = clampRaise(table, p, legal, pot * 1.2);
         if (capped == null) return { a: 'check' };
@@ -616,33 +520,26 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
     if (!wantsBet) omv.bluff = true;
     return omv;
   }
-  // Facing a bet: shove over the top with a monster, else standard logic.
+
   if (ms > 0.78 && Math.random() < 0.6 && legal.canRaise) return shove();
   return null;
 }
 
-// Donald's postflop (v1.8.97, Kevin): semi-bluffs draws often; when ahead
-// but vulnerable (top pair good kicker+ on a wet board), bombs big like
-// Amogh to take it down now instead of small value betting. Returns a move
-// or null to fall through to standard logic.
 function donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street) {
   function shove() {
     return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
   }
-  if (toCall > 0) return null; // facing bet: use standard logic (sticky calls)
+  if (toCall > 0) return null;
   if (!legal.canBet && !legal.canRaise) return null;
   var hole = p.hole, comm = table.community;
   var d = detectDraws(hole, comm);
   var hasDraw = d.flushDraw || d.oesd;
-  // Semi-bluff: Donald "usually finds times to semi-bluff" — bet draws often.
+
   if (hasDraw && ms < 0.55 && Math.random() < 0.65) {
     var sb = clampRaise(table, p, legal, pot * 0.7);
     if (sb != null) { var smv = { a: 'bet', amount: sb }; smv.bluff = true; return smv; }
   }
-  // Ahead but vulnerable: top pair+ (ms >= 0.4) on a wet board — bomb it
-  // like Amogh instead of value betting small. Wet = 3 to a suit or 3
-  // distinct connected ranks (v1.8.102: paired boards like 6-6-2 have no
-  // straight draws — the old max-min check misfired there).
+
   if (ms >= 0.4 && ms < 0.78) {
     var suits = [0, 0, 0, 0];
     comm.forEach(function (c) { suits[c.s]++; });
@@ -665,30 +562,25 @@ function donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street) {
   }
   return null;
 }
-// Alice's postflop: the vault. She never bluffs and never stabs — without a
-// real hand she checks and folds to any meaningful bet. With two pair or
-// better (madeStrength >= 0.52) she almost always calls, and her own bets
-// are deliberately unpredictable: sometimes a small feeler, sometimes a
-// huge overbet. Always returns a move (never null).
+
 function alicePostflop(table, p, A, legal, toCall, pot, eq, ms) {
-  var monster = ms > 0.78; // flush or better
-  var hasIt = ms >= 0.52;  // two pair or better
+  var monster = ms > 0.78;
+  var hasIt = ms >= 0.52;
   function shove() {
     return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
   }
   if (toCall === 0) {
     if (!hasIt && eq < 0.62) return { a: 'check' };
     if (!legal.canBet && !legal.canRaise) return { a: 'check' };
-    if (monster && Math.random() < 0.30) return shove(); // occasional bomb
-    // Random value sizing: small (0.3-0.5 pot) or big (1.2-2x pot).
+    if (monster && Math.random() < 0.30) return shove();
+
     var frac = Math.random() < 0.5 ? 0.3 + Math.random() * 0.2 : 1.2 + Math.random() * 0.8;
     var to = clampRaise(table, p, legal, pot * frac);
     if (to == null) return { a: 'check' };
     if (to >= legal.maxRaiseTo * 0.97) return shove();
     return { a: 'bet', amount: to };
   }
-  // Facing a bet: two pair or better almost always continues; otherwise she
-  // is disciplined — only continues with a clear price.
+
   if (hasIt) {
     if (monster && Math.random() < 0.40 && legal.canRaise) return shove();
     return { a: 'call' };
@@ -698,14 +590,11 @@ function alicePostflop(table, p, A, legal, toCall, pot, eq, ms) {
   return { a: 'fold' };
 }
 
-// Nathan springs the trap on the river: a small value bet (or a rare bomb)
-// with near-nut hands; otherwise he checks down. Facing a bet he only
-// calls — never raises.
 function nathanRiver(table, p, A, legal, toCall, pot, ms, eq) {
   var act = table.currentBet === 0 ? 'bet' : 'raise';
   if (toCall === 0) {
     if (ms > 0.78 && Math.random() < 0.75 && (legal.canBet || legal.canRaise)) {
-      if (Math.random() < 0.22) return { a: act, amount: legal.maxRaiseTo }; // rare bomb
+      if (Math.random() < 0.22) return { a: act, amount: legal.maxRaiseTo };
       var v = clampRaise(table, p, legal, pot * 0.3);
       if (v != null) return { a: act, amount: v };
     }

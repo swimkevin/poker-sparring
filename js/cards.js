@@ -1,6 +1,3 @@
-// cards.js — Card primitives. DOM-free (reused by web UI now, React Native later).
-// Card = { r: 2..14, s: 0..3 }  (suits: 0=spades, 1=hearts, 2=diamonds, 3=clubs)
-
 var SUITS = ['\u2660', '\u2665', '\u2666', '\u2663'];
 var SUIT_NAMES = ['spades', 'hearts', 'diamonds', 'clubs'];
 var RANK_CHARS = { 14: 'A', 13: 'K', 12: 'Q', 11: 'J', 10: 'T' };
@@ -23,11 +20,6 @@ function makeDeck() {
   return d;
 }
 
-// 32 random bits from the strongest source available:
-// Web Crypto CSPRNG (browser), Node crypto (tests/CLI), else Math.random.
-// Regulated sites seed shuffles from hardware entropy (PokerStars uses a
-// quantum RNG + client input); a CSPRNG is the browser-side equivalent —
-// Math.random is a predictable PRNG and must never drive a real shuffle.
 var _getU32 = null;
 function getU32() {
   if (_getU32) return _getU32();
@@ -40,14 +32,14 @@ function getU32() {
       if (nodeCrypto && nodeCrypto.randomInt) {
         _getU32 = function () { return nodeCrypto.randomInt(0, 4294967296); };
       }
-    } catch { /* fall through to Math.random */ }
+    } catch {  }
   }
   if (!_getU32) _getU32 = function () { return Math.floor(Math.random() * 4294967296); };
   return _getU32();
 }
 
 function randInt(n) {
-  // Uniform integer in [0, n) via rejection sampling — no modulo bias.
+
   var limit = Math.floor(4294967296 / n) * n;
   var x;
   do { x = getU32(); } while (x >= limit);
@@ -56,16 +48,14 @@ function randInt(n) {
 
 function shuffle(a, rng) {
   if (typeof rng === 'function') {
-    // Legacy path: caller-supplied [0,1) float rng (kept for deterministic tests).
+
     for (var i = a.length - 1; i > 0; i--) {
       var j = Math.floor(rng() * (i + 1));
       var t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
   }
-  // Default: Fisher-Yates with CSPRNG + unbiased indices. The whole deck is
-  // shuffled once before the hand (like PokerStars: "once the deck is
-  // shuffled, it is set, and the order cannot be changed") — no per-card draws.
+
   for (var k = a.length - 1; k > 0; k--) {
     var m = randInt(k + 1);
     var u = a[k]; a[k] = a[m]; a[m] = u;
@@ -73,7 +63,6 @@ function shuffle(a, rng) {
   return a;
 }
 
-// Sort cards descending by rank (then suit) — handy for display.
 function sortCardsDesc(cs) {
   return cs.slice().sort(function (a, b) { return (b.r - a.r) || (b.s - a.s); });
 }

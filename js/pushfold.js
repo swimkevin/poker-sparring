@@ -1,9 +1,3 @@
-// pushfold.js — Short-stack push/fold drill scenarios + feedback. DOM-free.
-//
-// Each scenario: hero has 5-15bb, random position, 1-3 opponents. Either hero
-// acts first (SHOVE/FOLD) or faces an open-shove (CALL/FOLD). Feedback compares
-// the player's choice against a simplified push/fold chart plus pot-odds math.
-
 if (typeof module !== 'undefined' && module.exports) {
   var __eq = require('./equity.js');
   var holeTier = __eq.holeTier, estimateEquity = __eq.estimateEquity,
@@ -19,13 +13,11 @@ var PF_POSITIONS = ['BTN', 'SB', 'BB', 'CO', 'MP', 'UTG'];
 function newPushFoldScenario(pool) {
   var deck = shuffle(makeDeck());
   var heroHole = [deck.pop(), deck.pop()];
-  var stackBB = 5 + Math.floor(Math.random() * 11); // 5..15
-  var nPlayers = 2 + Math.floor(Math.random() * 3); // 2..4 handed
+  var stackBB = 5 + Math.floor(Math.random() * 11);
+  var nPlayers = 2 + Math.floor(Math.random() * 3);
   var pos = PF_POSITIONS[Math.floor(Math.random() * Math.min(nPlayers + 1, PF_POSITIONS.length))];
   var nOpp = nPlayers - 1;
-  // Opponent pool: the caller's archetypes (roster selection, display names)
-  // when big enough, else the full set. Sampled WITHOUT replacement — the
-  // same bot showing up twice in one scenario was a shipped bug.
+
   var src = (pool && pool.length >= nOpp) ? pool : ARCHETYPES;
   var order = shuffle(src.map(function (_, i) { return i; }));
   var opps = [];
@@ -42,11 +34,10 @@ function newPushFoldScenario(pool) {
   return {
     heroHole: heroHole, stackBB: stackBB, pos: pos, nPlayers: nPlayers,
     opponents: opps, facingShove: facingShove, shover: shover,
-    potBB: 1.5 // blinds
+    potBB: 1.5
   };
 }
 
-// Simplified chart: max hole-tier that should shove, by position & stack.
 function chartShoveTier(pos, stackBB) {
   var late = (pos === 'BTN' || pos === 'SB' || pos === 'CO');
   if (stackBB <= 8) return late ? 5 : 3;
@@ -55,7 +46,7 @@ function chartShoveTier(pos, stackBB) {
 }
 
 function evaluatePushFold(scn, action) {
-  // action: 'shove' | 'fold' | 'call'
+
   var tier = holeTier(scn.heroHole);
   var eq = estimateEquity(scn.heroHole, [], scn.opponents.length, 400);
   var out = { tier: tier, tierName: tierName(tier), equity: eq };
@@ -75,13 +66,11 @@ function evaluatePushFold(scn, action) {
         ? (action === 'shove' ? 'Correct shove — fold equity + hand strength makes this +EV.' : 'Correct fold — too weak to shove here; wait for a better spot.')
         : (action === 'shove' ? 'Too loose — this hand should be folded at this stack/position.' : 'Too tight — this is a standard shove; you are passing up +EV chips.'));
   } else {
-    // Facing a shove: pot-odds math against the shover's RANGE, not random hands.
-    // A shover's range is much stronger than "any two cards", so comparing our
-    // equity-vs-random against the required equity would recommend far too many calls.
+
     var toCall = Math.min(scn.stackBB, scn.shover.stackBB);
     var potAfter = scn.potBB + scn.shover.stackBB + toCall;
     var need = toCall / potAfter;
-    var shoverTier = scn.shover.pushTier || 4; // worst tier this archetype shoves
+    var shoverTier = scn.shover.pushTier || 4;
     var rangeEq = estimateEquityVsRange(scn.heroHole, shoverTier, 400);
     out.need = need;
     out.rangeEquity = rangeEq;

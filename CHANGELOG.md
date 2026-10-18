@@ -1,3 +1,16 @@
+## [1.8.105] — Zero-comment source, jargon-free coach, debug-everywhere catches
+
+Kevin's directive: debloat the code, zero comments (matching the Lens project), FANG-level README with a real "why", and keep the loop improving itself. An independent adversarial audit (fresh-eyes review as FANG hiring manager + beginner) filed 10 findings; the high-impact ones are fixed here.
+
+- **Zero-comment shipped source.** Stripped ~1,200 comment lines from js/, css/, and index.html. Version-history comments now live only in CHANGELOG.md, where they belong. New `tests/no-comments-test.js` fails the build if a comment ever ships again — the same test-enforced rule as Lens. (The strip caught 4 tests that were asserting on comment text instead of code — rewritten to assert on the actual logic.)
+- **Coach is jargon-free for real.** The README claimed "No 3-bet" but the coach said "3-bet"/"4-bet" in 6 spots and "set-mine" in 3. All rewritten in plain words ("re-raised", "raise again", "hunting three of a kind"). New static checks in `tests/coach-scenarios.js` fail if jargon returns.
+- **Silent-failure lesson applied repo-wide.** 42 bare `catch {}` now route through a `quiet(e)` helper that logs under `?psdebug=1`. The README's #1 lesson ("error handling should never make bugs invisible") is now true everywhere, not just the coach.
+- **First-run coach intro.** One dismissible tip on the first hand ("New here? This is your coach…"), persisted to localStorage. New `tests/coach-intro-test.js`.
+- **iOS viewport.** `100vh` → `100dvh` with `100vh` fallback (Safari toolbar overlap).
+- **Docs honesty pass.** ROADMAP rewritten (the old one planned v1.3–v2.0; we're past 1.8.105), README gained a "Why I built this" section, Features list marks heads-up/push-fold as experimental flags, stale demo-video placeholder removed, suite count corrected. Deleted 2 stale docs (TABLE_REWRITE_PLAN.md, coach-improvement-loop.md).
+
+Deferred: extracting the coach from app.js into js/coach.js (audit suggestion) — the coach shares closure state with game flow, so the refactor's regression risk outweighs today's value. Logged as a future improvement.
+
 ## [1.8.104] — Bots fold air to big bets (fold-realism tuning)
 
 Kevin's observation from live play: bots called too loose and never folded

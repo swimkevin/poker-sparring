@@ -1,8 +1,3 @@
-// engine.js — Texas Hold'em table engine: blinds, betting rounds, side pots, showdown.
-// DOM-free. The UI (or a headless test) drives it: startHand() then act() per player.
-// Events are emitted via onEvent AND queued in table.eventQueue for animated draining.
-
-// Node: pull cross-file globals when running as modules (browser uses script tags).
 if (typeof module !== 'undefined' && module.exports) {
   var __cards = require('./cards.js');
   var makeDeck = __cards.makeDeck, shuffle = __cards.shuffle;
@@ -19,8 +14,8 @@ class PokerTable {
         stack: opts.startingStack != null ? opts.startingStack : 10000,
         hole: [], folded: false, allIn: false, bet: 0, totalBet: 0,
         acted: false, sittingOut: false,
-        rebuys: 0,   // times this player has bought back in after busting
-        tilt: 0      // 0..1 — rises on bad beats, decays per hand; loosens play
+        rebuys: 0,
+        tilt: 0
       };
     });
     this.sb = opts.sb || 50;
@@ -40,24 +35,18 @@ class PokerTable {
   emit(evt) {
     evt.handNo = this.handNo;
     this.eventQueue.push(evt);
-    try { this.onEvent(evt); } catch { /* UI errors must not break the engine */ }
+    try { this.onEvent(evt); } catch {  }
   }
 
   drainEvents() { var q = this.eventQueue; this.eventQueue = []; return q; }
 
   livePlayers() {
-    // "Live" = still in the hand AND able to contest chips. A broke player with
-    // nothing invested holds no cards (startHand only deals to funded seats), so
-    // they are not live. Counting them as live let hands run to a showdown with
-    // no eligible winner (TypeError in _showdown) or awarded pots to a cardless
-    // player by fold. Note: all-in players always have totalBet > 0, so they
-    // stay live.
+
     return this.players.filter(function (p) { return !p.folded && !p.sittingOut && (p.stack > 0 || p.totalBet > 0); });
   }
   canAct(p) { return !p.folded && !p.allIn && !p.sittingOut && p.stack > 0; }
   activeCount() { return this.players.filter(function (p) { return p.stack > 0 && !p.sittingOut; }).length; }
 
-  // Next seat (exclusive of fromIdx) whose player satisfies filter, wrapping around.
   _nextSeat(fromIdx, filter) {
     var n = this.players.length;
     for (var i = 1; i <= n; i++) {
@@ -87,13 +76,11 @@ class PokerTable {
       p.bet = 0; p.totalBet = 0; p.acted = false;
     });
 
-    // Rotate button to next active seat.
     this.button = this._nextSeat(this.button, function (p) { return p.stack > 0 && !p.sittingOut; });
 
     var live = this.players.filter(function (p) { return p.stack > 0 && !p.sittingOut; });
     var headsUp = live.length === 2;
 
-    // Antes first.
     if (this.ante > 0) live.forEach(function (p) { self._moveChips(p, Math.min(self.ante, p.stack)); });
 
     var sbIdx, bbIdx;
@@ -103,7 +90,6 @@ class PokerTable {
     this._moveChips(this.players[sbIdx], Math.min(this.sb, this.players[sbIdx].stack));
     this._moveChips(this.players[bbIdx], Math.min(this.bb, this.players[bbIdx].stack));
 
-    // Deal two cards each, starting left of the button.
     var order = [];
     (function () {
       var s = self.button;
@@ -113,7 +99,7 @@ class PokerTable {
 
     this.currentBet = this.bb;
     this.lastRaiseSize = this.bb;
-    this.acting = bbIdx; // step() advances to first real actor
+    this.acting = bbIdx;
     this.emit({
       t: 'handStart', button: this.button, sbIdx: sbIdx, bbIdx: bbIdx,
       sb: this.sb, bb: this.bb, ante: this.ante,
@@ -137,21 +123,21 @@ class PokerTable {
   legalActions(idx) {
     var p = this.players[idx];
     var toCall = this.currentBet - p.bet;
-    var maxTo = p.bet + p.stack; // total-bet target if shoving
+    var maxTo = p.bet + p.stack;
     var out = { toCall: toCall, canCheck: toCall === 0, callAmount: Math.min(toCall, p.stack) };
     if (toCall > 0) {
-      // Facing a bet: fold / call / raise.
+
       out.canRaise = p.stack > toCall;
       if (out.canRaise) {
         out.minRaiseTo = Math.min(this.currentBet + this.lastRaiseSize, maxTo);
         out.maxRaiseTo = maxTo;
       }
     } else if (this.currentBet === 0) {
-      // No bets yet this street: check or open-bet.
+
       out.canBet = p.stack > 0;
       if (out.canBet) { out.minBetTo = Math.min(this.bb, maxTo); out.maxRaiseTo = maxTo; }
     } else {
-      // Already matched the bet (e.g. big blind option): check or raise.
+
       out.canRaise = p.stack > 0;
       if (out.canRaise) {
         out.minRaiseTo = Math.min(this.currentBet + this.lastRaiseSize, maxTo);
@@ -161,7 +147,6 @@ class PokerTable {
     return out;
   }
 
-  // action: 'fold' | 'check' | 'call' | 'bet' | 'raise'. For bet/raise, amount = TOTAL bet target this street.
   act(idx, action, amount) {
     if (this.handOver) throw new Error('hand is over');
     if (idx !== this.acting) throw new Error('not player ' + idx + ' turn (acting=' + this.acting + ')');
@@ -190,10 +175,10 @@ class PokerTable {
         if (fullRaise) {
           this.lastRaiseSize = to - this.currentBet;
           this.currentBet = to;
-          // Reopen action for everyone who can still act.
+
           others.forEach(function (q) { if (q !== p && self_canAct(q)) q.acted = false; });
         } else {
-          // Short all-in: raises the current bet but does not reopen action.
+
           this.currentBet = to;
         }
       }
@@ -215,10 +200,7 @@ class PokerTable {
     var self = this;
     var actors = this.players.filter(function (p) { return self.canAct(p); });
     if (actors.length === 0) return true;
-    // One player left able to act: a real decision exists only if they have a
-    // bet to match (call/fold vs a shove). Otherwise nobody can be bet into —
-    // deal the streets out and go to showdown (v1.8.71: hand stuck asking hero
-    // to act on the river with Amogh already all-in).
+
     if (actors.length === 1 && actors[0].bet >= self.currentBet) return true;
     return actors.every(function (p) { return p.acted && p.bet === self.currentBet; });
   }
@@ -277,10 +259,7 @@ class PokerTable {
       if (amount > 0) pots.push({ amount: amount, eligible: eligible, level: L, prev: prev });
       prev = L;
     });
-    // Merge adjacent layers with IDENTICAL eligible sets (v1.8.96, Kevin):
-    // they are one pot in every real sense. Heads-up vs a short all-in, the
-    // folded players' small bets created a fake "side pot" split — Rohan
-    // just wins the main pot, and the hero's excess is the uncalled refund.
+
     var merged = [];
     pots.forEach(function (pot) {
       var last = merged[merged.length - 1];
@@ -297,7 +276,7 @@ class PokerTable {
     var self = this;
     this.players.forEach(function (p) { self.pot += p.bet; p.bet = 0; });
     var pots = this._buildPots();
-    var results = []; // {pot, winners:[idx], hand, amount each}
+    var results = [];
     pots.forEach(function (pot, pi) {
       if (pot.eligible.length === 1) {
         var w = pot.eligible[0];
@@ -306,12 +285,7 @@ class PokerTable {
         return;
       }
       if (pot.eligible.length === 0) {
-        // Degenerate: no live player can win this level. Unreachable via _step
-        // (the hand ends when a single contender remains), but _showdown is also
-        // invoked directly — never crash the app. Refund each contributor their
-        // slice at this level so chips are exactly conserved. Itemized per
-        // player (v1.8.99): the old winners:[] entry rendered as "Side pot N:
-        // wins X" with no name in the banner/history — a refund reads as one.
+
         self.players.forEach(function (p, pi) {
           var slice = Math.min(p.totalBet, pot.level) - Math.min(p.totalBet, pot.prev);
           if (slice > 0) {
@@ -326,7 +300,7 @@ class PokerTable {
       });
       var best = scored.reduce(function (m, s) { return s.ev.score > m.ev.score ? s : m; });
       var winners = scored.filter(function (s) { return s.ev.score === best.ev.score; }).map(function (s) { return s.idx; });
-      // Order winners from left of button for odd-chip distribution.
+
       winners.sort(function (a, b) {
         return ((a - self.button + self.players.length) % self.players.length) -
                ((b - self.button + self.players.length) % self.players.length);

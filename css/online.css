@@ -1,7 +1,3 @@
-/* Online multiplayer (prototype) — additive styles.
-   The table itself reuses .felt/.seat/.card/.pot/.community/.controls/.ctl
-   from style.css for visual consistency with the offline game. */
-
 .online-wrap { max-width: 860px; margin: 0 auto; }
 .beta-tag {
   display: inline-block; font-size: 0.62rem; font-weight: 800; letter-spacing: 1px;
@@ -33,7 +29,6 @@
 .code-input { text-transform: uppercase; letter-spacing: 3px; font-weight: 800; text-align: center; }
 .on-error { color: var(--red); font-weight: 700; margin-top: 0.6rem; font-size: 0.9rem; }
 
-/* lobby */
 .lobby-code-row { display: flex; align-items: center; gap: 1rem; margin: 1rem 0 0.4rem; flex-wrap: wrap; }
 .lobby-code {
   font-size: 2.2rem; font-weight: 800; letter-spacing: 6px; color: var(--gold);
@@ -55,7 +50,6 @@
 .player-row .seat-tag { margin-left: auto; font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .host-crown { color: var(--gold); }
 
-/* online table */
 .online-table-top { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
 .online-table-top .conn-pill { margin: 0; }
 .online-felt { margin-top: 0.4rem; }
@@ -69,9 +63,7 @@
 .timer-fill.low { background: var(--red); }
 .timer-secs { font-size: 0.7rem; color: var(--gold); font-variant-numeric: tabular-nums; }
 .seat .disconnected { opacity: 0.55; }
-/* The `hidden` attribute loses to any author `display` rule (e.g. .online-paused
-   sets display:flex), so enforce it explicitly — without this the Paused badge
-   renders on every table even while play continues. */
+
 [hidden] { display: none !important; }
 .online-paused {
   position: absolute; inset: 0; z-index: 15; display: flex; align-items: center; justify-content: center;

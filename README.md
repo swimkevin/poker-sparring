@@ -12,23 +12,18 @@
 <!-- ![Mobile — table view](docs/screenshots/mobile.png) -->
 <!-- Mobile screenshot: Kevin to capture on iPhone (390px) — table + bottom tab bar -->
 
-## Demo video
+## Why I built this
 
-<!--
-  VIDEO INSTRUCTIONS (for Tuesday):
-  Option A (simplest): record 30–60s on your phone or with a screen recorder —
-    open the app → "Deal me in" → show a coach tip → play one hand → open the
-    hand replayer. Upload to YouTube (unlisted is fine), then replace the line
-    below with: [![Demo](thumbnail-url)](your-youtube-url)
-  Option B: save a GIF as docs/screenshots/demo.gif and uncomment the line below.
-    (GitHub renders GIFs inline; MP4s do not play inline in READMEs.)
--->
-<!-- ![Demo — one hand with coach](docs/screenshots/demo.gif) -->
+I play low-stakes poker with my friends — Rohan, Amogh, and Nathan. The bots at this table are named after them, and they play like them: Rohan calls everything and never 3-bets, Amogh bombs the pot the second he likes his hand, Nathan traps you and then leaves right after winning a few big ones. I was advised to give them "professional" archetype names; I declined. This is a personal project first, and the table feeling like our actual game is the whole point.
+
+I built it because I wanted realistic practice. Textbook poker AI plays like a textbook — my friends don't. Every bot here is tuned from watching real hands: when the coach tells you how to exploit a player type, it's the same adjustment that works at the home game. And when my friends try it and something feels wrong, that's a bug report — several bot behaviors in this repo came straight from them.
+
+It's also my first serious software project, and I hold it to that standard: 100+ tested releases, every bug gets a regression test that fails without its fix, and the whole thing is vanilla JS with zero dependencies — because a poker trainer should work on a plane, and because the engineering should be readable enough to learn from.
 
 ## By the numbers
 
-- **100+ versions shipped** (v1.8.103) — iterative, tested releases, not one big bang
-- **2,000+ test assertions** across 23 suites: unit, component, smoke, netplay, worker, and live coach audits
+- **100+ versions shipped** (v1.8.104) — iterative, tested releases, not one big bang
+- **2,000+ test assertions** across 27 suites: unit, component, smoke, netplay, worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
 - **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff
@@ -47,7 +42,7 @@ An offline-first poker practice app. Play cash games, heads-up, and tournaments 
 
 ## What I learned (and what I'd do differently)
 
-**Silent failures are the worst bugs.** Twice (v1.8.65, v1.8.68) the coach panel went blank because an undeclared variable threw a `ReferenceError` that the coach's `try/catch` swallowed. The logic was correct; the error handling hid the evidence. Fix: a `?coachdebug=1` mode that surfaces coach errors to the console instead of swallowing them, plus static checks that fail without each fix. Lesson: error handling should never make bugs invisible.
+**Silent failures are the worst bugs.** Twice (v1.8.65, v1.8.68) the coach panel went blank because an undeclared variable threw a `ReferenceError` that the coach's `try/catch` swallowed. The logic was correct; the error handling hid the evidence. Fix: a `?coachdebug=1` mode that surfaces coach errors to the console instead of swallowing them, plus static checks that fail without each fix. Lesson: error handling should never make bugs invisible. Applied repo-wide in v1.8.105: every `catch` routes through a `quiet(e)` helper that logs under `?psdebug=1` — no more bare `catch {}` anywhere.
 
 **Test the composition, not just the units.** Unit tests passed while the coach rendered nothing — the bug was in how pieces were wired together, not in any single function. The `tests/coach-scenarios.js` suite now checks end-to-end wiring (branch conditions, destructured context, HTML structure), not just isolated logic.
 
@@ -100,12 +95,12 @@ Shuffled like the pros. Each hand starts with a full 52-card Fisher-Yates shuffl
 ## Features
 
 **Play**
-- Cash games, heads-up, and tournaments vs 14 AI archetypes — including Alice, the ultra-safe vault who never bluffs, and Donald, the sticky semi-bluffer
+- Cash games and tournaments vs 14 AI archetypes — including Alice, the ultra-safe vault who never bluffs, and Donald, the sticky semi-bluffer
+- Heads-up mode and push/fold trainer are experimental — enable via `?flags=headsUpMode,pushFoldTrainer`
 - Custom opponents: tune looseness, aggression, bluff frequency; name them after your friends
 - Session resume: leave mid-session, pick up with the exact same stacks
 - Leave mid-hand, come back to the exact same spot — switching tabs freezes the game (bots, timers, auto-deal countdown) and resumes it untouched
 - Live hand-strength label under your cards ("Two Pair, Eights and Sixes") and a winner line after showdown ("Rohan won with Full House, Aces over Eights")
-- Push/fold trainer with range-based feedback
 - Hand replayer with street-by-street review, training stats (VPIP/PFR/bb/100), leak tracker
 
 **Coach**

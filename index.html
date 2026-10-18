@@ -12,8 +12,8 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Poker Sparring — Practice vs AI Opponents">
 <meta name="twitter:description" content="Free, no-signup Texas Hold'em practice app: spar against offline AI opponents modeled on real player types, or host a private online table with friends.">
-<link rel="stylesheet" href="css/style.css?v=1.8.104">
-<link rel="stylesheet" href="css/online.css?v=1.8.104">
+<link rel="stylesheet" href="css/style.css?v=1.8.105">
+<link rel="stylesheet" href="css/online.css?v=1.8.105">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -34,7 +34,7 @@
 </header>
 
 <main>
-  <!-- ============ SETUP ============ -->
+
   <section id="screen-setup" class="screen">
     <div class="setup-wrap">
       <h1>Train against poker AI, <span class="accent">offline</span>.</h1>
@@ -110,7 +110,6 @@
     </div>
   </section>
 
-  <!-- ============ TABLE ============ -->
   <section id="screen-table" class="screen" hidden>
     <div class="table-topbar">
       <button id="btn-leave" class="ghost">← Lobby</button>
@@ -173,8 +172,6 @@
     </div>
   </section>
 
-  <!-- ============ MOBILE TAB BAR ============ -->
-  <!-- Bottom navigation for phones: Table, Coach, History, Menu -->
   <nav id="mobile-tabs" class="mobile-tabs" aria-label="Game navigation">
     <button class="mtab active" data-tab="table" aria-label="Table">
       <span class="mtab-icon">🃏</span><span class="mtab-label">Table</span>
@@ -192,7 +189,7 @@
       <span class="mtab-icon">☰</span><span class="mtab-label">Menu</span>
     </button>
   </nav>
-  <!-- Mobile slide-up panels for Coach and History -->
+
   <div id="mobile-panel" class="mobile-panel" hidden>
     <div class="mp-header">
       <span id="mp-title" class="mp-title">Coach</span>
@@ -201,7 +198,6 @@
     <div id="mp-body" class="mp-body"></div>
   </div>
 
-  <!-- ============ PUSH/FOLD TRAINER ============ -->
   <section id="screen-pf" class="screen" hidden>
     <div class="pf-wrap">
       <div class="table-topbar">
@@ -223,7 +219,6 @@
     </div>
   </section>
 
-  <!-- ============ ARCHETYPES ============ -->
   <section id="screen-archetypes" class="screen" hidden>
     <div class="setup-wrap">
       <h1>Bot archetypes</h1>
@@ -249,13 +244,12 @@
         </div>
         <button id="btn-add-custom" class="primary">Add custom bot</button>
       </div>
-      </div><!-- /custom-bot-section -->
+      </div>
       <h2>Your custom bots</h2>
       <div id="custom-list" class="arch-list"></div>
     </div>
   </section>
 
-  <!-- ============ STATS ============ -->
   <section id="screen-stats" class="screen" hidden>
     <div class="setup-wrap">
       <h1>Your training stats</h1>
@@ -278,7 +272,6 @@
     </div>
   </section>
 
-  <!-- ============ HAND HISTORY / REPLAYER ============ -->
   <section id="screen-hands" class="screen" hidden>
     <div class="setup-wrap">
       <h1>Hand history</h1>
@@ -288,7 +281,6 @@
     </div>
   </section>
 
-  <!-- ============ ONLINE MULTIPLAYER (prototype) ============ -->
   <section id="screen-online" class="screen" hidden>
     <div id="online-root"></div>
   </section>
@@ -335,21 +327,21 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.104"></script>
-<script src="js/evaluator.js?v=1.8.104"></script>
-<script src="js/equity.js?v=1.8.104"></script>
-<script src="js/engine.js?v=1.8.104"></script>
-<script src="js/bots.js?v=1.8.104"></script>
-<script src="js/names.js?v=1.8.104"></script>
-<script src="js/pushfold.js?v=1.8.104"></script>
-<script src="js/stats.js?v=1.8.104"></script>
-<script src="js/replay.js?v=1.8.104"></script>
-<script src="js/room-server.js?v=1.8.104"></script>
-<script src="js/netplay.js?v=1.8.104"></script>
-<script src="js/ui.js?v=1.8.104"></script>
-<script src="js/online.js?v=1.8.104"></script>
-<script src="js/app.js?v=1.8.104"></script>
-<!-- In-game hand history modal -->
+<script src="js/cards.js?v=1.8.105"></script>
+<script src="js/evaluator.js?v=1.8.105"></script>
+<script src="js/equity.js?v=1.8.105"></script>
+<script src="js/engine.js?v=1.8.105"></script>
+<script src="js/bots.js?v=1.8.105"></script>
+<script src="js/names.js?v=1.8.105"></script>
+<script src="js/pushfold.js?v=1.8.105"></script>
+<script src="js/stats.js?v=1.8.105"></script>
+<script src="js/replay.js?v=1.8.105"></script>
+<script src="js/room-server.js?v=1.8.105"></script>
+<script src="js/netplay.js?v=1.8.105"></script>
+<script src="js/ui.js?v=1.8.105"></script>
+<script src="js/online.js?v=1.8.105"></script>
+<script src="js/app.js?v=1.8.105"></script>
+
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="Hand history">
     <div class="modal-head">
@@ -359,7 +351,7 @@
     <div id="hands-modal-list" class="modal-list"></div>
   </div>
 </div>
-<!-- Feedback modal: pre-fills a GitHub issue, zero backend -->
+
 <div id="feedback-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="Send feedback">
     <div class="modal-head">

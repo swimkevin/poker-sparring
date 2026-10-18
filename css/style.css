@@ -1,4 +1,3 @@
-/* Poker Sparring — dark casino theme */
 :root {
   --bg: #0b0f14;
   --panel: #121822;
@@ -22,6 +21,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 17px; line-height: 1.55;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 h1 { font-size: 2.4rem; margin: 0.5em 0 0.3em; letter-spacing: -0.5px; }
 h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing: -0.2px; }
@@ -30,7 +30,6 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 .hint { color: var(--muted); font-size: 0.8em; font-weight: normal; }
 .fineprint { color: var(--muted); font-size: 0.85rem; }
 
-/* top bar */
 .topbar {
   display: flex; align-items: center; gap: 1rem;
   padding: 0.6rem 1.2rem; background: var(--panel);
@@ -54,7 +53,6 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 @keyframes view-in { from { opacity: 0; transform: translateY(8px); } }
 .setup-wrap { max-width: 820px; margin: 0 auto; }
 
-/* mode cards */
 .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.8rem; }
 .mode-card {
   background: var(--panel); border: 2px solid #232c3d; border-radius: 12px;
@@ -66,7 +64,6 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 .mode-name { font-weight: 700; margin: 0.4rem 0 0.2rem; }
 .mode-desc { font-size: 0.82rem; color: var(--muted); }
 
-/* roster */
 .roster { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.7rem; }
 .roster-card {
   display: flex; gap: 0.7rem; align-items: center;
@@ -118,7 +115,6 @@ button.ghost {
 button.ghost:hover { color: var(--text); border-color: var(--muted); }
 button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 
-/* ===== table ===== */
 #screen-table { max-width: 1280px; }
 .table-topbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
 @media (max-width: 640px) {
@@ -138,19 +134,14 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   overflow: hidden;
 }
 #board-area { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%); text-align: center; z-index: 5; }
-/* Board at 55% (was 46%): top seat at 18% with ~160px height extends to ~35%,
-   so 55% gives clear separation. Fixes pot-under-seat overlap (2026-10-08). */
-/* Seats must paint below the board: #board-area's transform creates a stacking
-   context, so z-index on .pot alone is trapped inside it (bug found 2026-10-08).
-   The z-index must be on #board-area itself. */
+
 .seat { z-index: 1; }
 .pot {
   display: inline-block; font-weight: 800; color: var(--gold); font-size: 1.05rem;
   margin-bottom: 0.5rem; font-variant-numeric: tabular-nums;
   background: rgba(0,0,0,0.45); border: 1px solid #2f6a58;
   border-radius: 20px; padding: 0.15rem 0.9rem;
-  /* Seats are absolutely positioned and can overlap the board area on full
-     tables — the pot pill must paint above them (daily QA 2026-10-07). */
+
   position: relative; z-index: 5;
 }
 .community { display: flex; gap: 6px; justify-content: center; min-height: 74px; }
@@ -171,7 +162,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .seat.to-act { border-color: var(--gold); box-shadow: 0 0 14px rgba(212, 175, 55, 0.55); }
 .seat.folded { opacity: 0.45; }
-/* bot "thinking" indicator: pulsing gold dots while a bot is to act */
+
 .seat.thinking .pact::after {
   content: '●●●'; letter-spacing: 3px; color: var(--gold);
   display: inline-block; margin-left: 6px; font-style: normal;
@@ -180,7 +171,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 @keyframes think-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 .seat.winner { border-color: var(--gold); box-shadow: 0 0 16px rgba(230, 190, 60, 0.8); }
 .seat.winner .pname { color: var(--gold); }
-/* Winning cards lift (v1.8.97): best-5 rises with a gold ring, rest dims. */
+
 .card { transition: transform 0.45s ease, box-shadow 0.45s ease, opacity 0.45s ease; }
 .card.card-win { transform: translateY(-9px) scale(1.07); box-shadow: 0 0 0 2px var(--gold), 0 12px 20px rgba(0,0,0,0.5); z-index: 3; }
 .card.card-dim { opacity: 0.35; }
@@ -191,7 +182,6 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
 }
 
-/* position badges (online): D / SB / BB next to the name */
 .pos-badge {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px;
@@ -201,14 +191,12 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .pos-badge.sb { background: #3b82f6; color: #fff; }
 .pos-badge.bb { background: #ef4444; color: #fff; }
 
-/* emoji picker */
 .emoji-pick {
   font-size: 1.2rem; padding: 4px 8px; border-radius: 8px;
   background: var(--card); color: var(--text); border: 1px solid var(--line);
   cursor: pointer; max-width: 80px;
 }
 
-/* cards */
 .card {
   width: 52px; height: 72px; background: #f7f9fc; border-radius: 7px; color: #111;
   position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.45); flex: none;
@@ -216,7 +204,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   animation: deal 0.32s cubic-bezier(.2,.9,.3,1.2) backwards;
 }
 @keyframes deal { from { opacity: 0; transform: translateY(-14px) rotate(-4deg) scale(.9); } }
-/* staggered deal: cards land one after another */
+
 .community .card:nth-child(1), #hero-cards .card:nth-child(1), .seat .pcards .card:nth-child(1) { animation-delay: 0ms; }
 .community .card:nth-child(2), #hero-cards .card:nth-child(2), .seat .pcards .card:nth-child(2) { animation-delay: 70ms; }
 .community .card:nth-child(3) { animation-delay: 140ms; }
@@ -238,10 +226,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .hero-cards.large .card { width: 76px; height: 106px; }
 
 .winner-banner {
-  /* Anchor for the win splash (v1.8.40): a single celebratory line that
-     fades on its own, PokerStars/GGPoker-style. pointer-events:none so it
-     never blocks the board; no close button. The full breakdown lives in
-     the hand log + the topbar "Last:" chip. */
+
   position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
   z-index: 30; max-width: 86%; pointer-events: none;
 }
@@ -273,7 +258,6 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 #handend-row .fineprint { font-size: 0.8rem; }
 .winner-banner .wsub .wsub { margin-left: 0.35em; font-style: italic; }
 
-/* side panel */
 .side-panel { display: flex; flex-direction: column; gap: 0.6rem; max-height: 460px; }
 .coach {
   background: #141b2c; border: 1px solid var(--blue); border-radius: 10px;
@@ -290,17 +274,15 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .hand-log .hl-win { color: var(--green); font-weight: 700; }
 .hand-log .hl-hero { color: var(--blue); }
 
-/* hero bar */
 .hero-bar {
   display: flex; gap: 1.2rem; align-items: center; justify-content: center;
   margin-top: 1rem; background: var(--panel); border: 1px solid #232c3d;
   border-radius: 14px; padding: 0.9rem 1.2rem; flex-wrap: wrap;
 }
-/* Hero strip info line (v1.8.21): name · stack · position badges under the cards. */
+
 .hero-info { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; }
 .hero-info .pos-badge { margin-left: 0.3rem; }
-/* Hero hand strength (v1.8.92, PokerNow-style): what you currently hold,
-   shown right under the cards. */
+
 .hero-hand-desc { text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--gold, #f5c542); margin-top: 0.15rem; min-height: 1.2rem; }
 .hero-hand-desc:empty { display: none; }
 .controls { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; position: relative; }
@@ -316,7 +298,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .ctl.danger:hover:not(:disabled) { background: #3a1d1e; border-color: var(--red); }
 .ctl.warn { border-color: #5a4a1f; color: var(--gold); }
 .ctl.big { font-size: 1.25rem; padding: 1rem 2.4rem; }
-/* semantic action colors: set by setControls() from the button label */
+
 .ctl.is-check { border-color: #2f81f7; color: #7fb3ff; }
 .ctl.is-call { border-color: #2b9348; color: #6fe08a; }
 .ctl.is-raise { background: linear-gradient(180deg, #e7c65a, #c39a2b); color: #1a1405; border: none; }
@@ -329,7 +311,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 .bet-row:last-child { margin-bottom: 0; }
 #bet-slider { flex: 1; accent-color: var(--gold); }
 .bet-amount { font-weight: 800; color: var(--gold); min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
-input.bet-amount { width: 78px; background: transparent; border: 1px solid rgba(212,175,55,0.28); border-radius: 8px; padding: 0.15rem 0.35rem; font-size: 1rem; color: #f2cd5e; /* panel is always dark: fixed light gold, readable in both themes */ }
+input.bet-amount { width: 78px; background: transparent; border: 1px solid rgba(212,175,55,0.28); border-radius: 8px; padding: 0.15rem 0.35rem; font-size: 1rem; color: #f2cd5e;  }
 input.bet-amount:focus { border-color: var(--gold); outline: none; background: rgba(0,0,0,0.25); }
 .chip-btn {
   flex: 1; background: var(--panel); border: 1px solid #2b3547; color: var(--text);
@@ -337,7 +319,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 }
 .chip-btn:hover { border-color: var(--gold); }
 
-/* push/fold */
 .pf-wrap { max-width: 720px; margin: 0 auto; }
 .pf-table {
   background: var(--panel); border: 1px solid #232c3d; border-radius: 16px;
@@ -362,7 +343,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .pf-feedback.wrong .verdict { color: var(--red); }
 #pf-next { margin-top: 0.6rem; }
 
-/* archetypes */
 .arch-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.8rem; }
 .arch-card { background: var(--panel); border: 1px solid #232c3d; border-radius: 12px; padding: 1rem; }
 .arch-card .ah { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
@@ -384,7 +364,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 }
 .slider-grid .val { color: var(--gold); font-weight: 700; }
 
-/* stats */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.8rem; }
 .stat-card { background: var(--panel); border: 1px solid #232c3d; border-radius: 12px; padding: 0.9rem;
   text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 96px; }
@@ -421,7 +400,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .hist-row .pos { color: var(--green); margin-left: auto; font-weight: 700; }
 .hist-row .neg { color: var(--red); margin-left: auto; font-weight: 700; }
 
-/* modal */
 .modal-back {
   position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100;
   display: flex; align-items: center; justify-content: center;
@@ -434,7 +412,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .modal p { color: var(--muted); }
 .modal .mrow { display: flex; gap: 0.7rem; justify-content: center; margin-top: 1.2rem; }
 
-/* settings disclosure + footer */
 .settings-details { margin: 0.5rem 0; }
 .settings-details summary { cursor: pointer; color: var(--text); font-weight: 600; list-style: none; }
 .settings-details summary::-webkit-details-marker { display: none; }
@@ -445,7 +422,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .app-footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid #1c2432;
   color: var(--muted); font-size: 0.8rem; text-align: center; }
 
-/* accessible focus + reduced motion */
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -455,18 +431,17 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .table-layout { grid-template-columns: 1fr; }
   .side-panel { max-height: 220px; }
   .felt { height: 380px; border-radius: 40px; }
-  /* Keep action buttons reachable: pin the hero bar to the viewport bottom on phones */
+
   .hero-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
     margin: 0; border-radius: 16px 16px 0 0;
     box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
-  /* Make room for the fixed bar so it doesn't cover content */
+
   #screen-table, #screen-table { padding-bottom: 140px; }
 }
 
-/* Opponent count stepper */
 .count-row { display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0; }
 .stepper {
   width: 52px; height: 52px; border-radius: 50%;
@@ -479,7 +454,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .count-display .count-label { display: block; font-size: 0.8rem; color: var(--muted); }
 .hint { font-size: 0.85rem; color: var(--muted); margin: 0.2rem 0 0.6rem; }
 
-/* Exploit tip on archetype cards */
 .abeat {
   margin-top: 0.5rem; padding: 0.5rem 0.6rem; border-radius: 8px;
   background: #101a14; border-left: 3px solid var(--green);
@@ -487,9 +461,8 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 }
 .abeat b { color: var(--green); }
 
-/* Learn screen */
 .book-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
-/* Hand rankings table + beginner rules (v1.8.92) */
+
 .rankings-table { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
 .rank-row { display: flex; align-items: baseline; gap: 0.7rem; padding: 0.55rem 0.8rem; background: var(--panel, #1c2330); border-radius: 8px; }
 .rank-num { font-weight: 800; color: var(--gold, #f5c542); min-width: 1.2rem; text-align: center; }
@@ -515,7 +488,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .gloss-card[open] .gloss-term::before { transform: rotate(90deg); }
 .gloss-def { font-size: 0.92rem; color: var(--text); margin-top: 0.4rem; line-height: 1.55; }
 
-/* Leak tracker */
 .leak-summary { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem; }
 .leak-chip {
   padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.8rem;
@@ -539,7 +511,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .hl-leak { color: #f0b0b0; }
 .hl-leak-more { color: var(--muted); font-size: 0.8em; }
 
-/* Hand history / replayer (v1.4) */
 .hand-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .hrow {
   display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap;
@@ -581,7 +552,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .rp-controls .ghost:disabled { opacity: 0.35; cursor: default; }
 .rp-progress { margin-bottom: 1rem; }
 
-/* ===== hand story: clean phone-readable hand history ===== */
 .rp-story { display: flex; flex-direction: column; gap: 0.9rem; }
 .rp-story-sec { background: #0d1219; border: 1px solid #232d40; border-radius: 10px; padding: 0.7rem 1rem; }
 .rp-story-street { font-weight: 800; color: var(--gold); margin-bottom: 0.35rem; font-size: 0.95rem; }
@@ -590,7 +560,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   background: var(--panel2); border: 1px solid var(--gold-dim);
   border-radius: 10px; padding: 0.8rem 1rem; font-size: 1rem; color: var(--text);
 }
-/* everyone's hands at the top of hand history */
+
 .rp-hands-grid {
   display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1rem;
   padding: 0.7rem; background: var(--panel2); border-radius: 10px;
@@ -613,17 +583,15 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 .mini-card.red { color: #c0392b; }
 .rp-story-net { font-size: 1.15rem; font-weight: 800; text-align: center; }
 .rp-story-net.pos { color: var(--green); } .rp-story-net.neg { color: var(--red); }
-/* Coach recap inside the hand story: calm, scannable, visually quiet */
+
 .rp-coach { margin-top: 0.9rem; padding: 0.7rem 0.8rem; background: rgba(0,0,0,0.22);
   border-radius: 10px; }
 .rp-coach-title { font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem;
   text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
 [data-theme="light"] .rp-story-sec { background: #fbfaf4; border-color: #d8d2bd; }
 
-/* ===== phone: keep hand rows tidy ===== */
-/* ===== mobile table: keep the board visible ===== */
 @media (max-width: 640px) {
-  /* Compact seats so 8-up doesn't swallow the board */
+
   .seat {
     min-width: 84px; padding: 0.3rem 0.4rem; border-radius: 10px;
   }
@@ -631,20 +599,19 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .seat .pname { font-size: 0.72rem; max-width: 64px; overflow: hidden; text-overflow: ellipsis; }
   .seat .pstack { font-size: 0.7rem; }
   .seat .pbet { font-size: 0.65rem; }
-  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
-     at the end of this file (v1.8.21). */
+
   .pos-badge { min-width: 16px; height: 16px; font-size: 0.55rem; }
-  /* Taller felt gives the board breathing room */
+
   .felt { height: 520px; border-radius: 200px; }
-  /* Smaller community cards on mobile so all 5 fit with clearance */
+
   .community { gap: 4px; }
   .community .card {
     width: 44px; height: 62px;
   }
   .pot { font-size: 0.9rem; padding: 0.1rem 0.7rem; }
-  /* Mobile: board at 58% for extra clearance from top seat. */
+
   #board-area { top: 58%; }
-  /* (retired in v1.8.40 — the win splash is centered, not bottom-anchored) */
+
 }
 
 @media (max-width: 560px) {
@@ -655,7 +622,6 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .rp-story-line { font-size: 0.95rem; }
 }
 
-/* ===== light theme: warm paper (dark felt stays green) ===== */
 [data-theme="light"] {
   --bg: #f0ede3;
   --panel: #fbfaf4;
@@ -670,7 +636,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   --green: #2e7d3a;
   --blue: #2f6fd0;
 }
-/* hardcoded dark borders -> paper line */
+
 [data-theme="light"] .topbar { border-bottom-color: #d8d2bd; }
 [data-theme="light"] .app-footer { border-top-color: #d8d2bd; }
 [data-theme="light"] .mode-card, [data-theme="light"] .roster-card,
@@ -684,7 +650,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 [data-theme="light"] .chip-btn, [data-theme="light"] .stepper,
 [data-theme="light"] button.ghost { border-color: #d8d2bd; }
 [data-theme="light"] input[type=number], [data-theme="light"] input[type=text] { border-color: #d8d2bd; }
-/* hardcoded dark surfaces -> paper tints */
+
 [data-theme="light"] .nav-btn.active, [data-theme="light"] .rp-result { background: #ece2c2; }
 [data-theme="light"] .mode-card.selected { background: #f3ecd4; }
 [data-theme="light"] .roster-card.selected, [data-theme="light"] .abeat { background: #e6f0e2; }
@@ -694,7 +660,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 [data-theme="light"] .rp-actions { background: #e9e1cb; }
 [data-theme="light"] .stepper { background: var(--panel2); }
 [data-theme="light"] .felt { border-color: #6b5636; }
-/* red leak accents stay readable on paper */
+
 [data-theme="light"] .leak-chip { background: #f6e3e3; border-color: #c66; color: #a03030; }
 [data-theme="light"] .leak-card { border-left-color: #c0392b; }
 [data-theme="light"] .hl-leak { color: #a03030; }
@@ -702,10 +668,10 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 [data-theme="light"] .ctl.danger { border-color: #d9a8a8; }
 [data-theme="light"] .ctl.danger:hover:not(:disabled) { background: #f2d8d8; }
 [data-theme="light"] .ctl.warn { border-color: #d8c98a; }
-/* semantic action text needs darker hues on paper */
+
 [data-theme="light"] .ctl.is-check { color: #1f6fd6; }
 [data-theme="light"] .ctl.is-call { color: #237a37; }
-/* seats stay dark chips on the green felt: keep their text light */
+
 [data-theme="light"] .seat { border-color: #d8d2bd; color: #e8edf3; }
 [data-theme="light"] .seat.to-act { border-color: var(--gold); }
 [data-theme="light"] .seat.winner { border-color: var(--green); }
@@ -713,16 +679,15 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 [data-theme="light"] .winner-banner { color: #e8edf3; }
 [data-theme="light"] .winner-banner .wsub { color: #a8b0a0; }
 
-/* ---------- mobile: phones (most players are on phones) ---------- */
 @media (max-width: 640px) {
-  /* top bar: compact brand + horizontally scrollable tabs, nothing wraps */
+
   .topbar { padding: 0.5rem 0.6rem; gap: 0.5rem; }
   .brand { font-size: 0.95rem; white-space: nowrap; flex: 0 0 auto; }
   .nav {
     margin-left: 0; gap: 0.25rem; flex: 1 1 auto; min-width: 0;
     flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    /* fade hint that more tabs are off-screen to the right */
+
     -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%);
     mask-image: linear-gradient(to right, black 88%, transparent 100%);
   }
@@ -736,15 +701,13 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .screen { padding: 0.9rem 0.65rem; }
   h1 { font-size: 1.6rem; }
 
-  /* seats: compact so full tables don't clip or overlap on narrow felts */
   .seat { min-width: 84px; padding: 0.3rem 0.35rem; border-radius: 10px; }
   .seat .avatar { font-size: 1rem; }
   .seat .pname { font-size: 0.68rem; }
   .seat .pstack { font-size: 0.7rem; }
   .seat .pbet { font-size: 0.62rem; }
   .seat .pact { font-size: 0.6rem; }
-  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
-     at the end of this file (v1.8.21). */
+
   .felt { height: 440px; border-radius: 32px; border-width: 7px; }
   .pot { font-size: 0.9rem; margin-bottom: 0.35rem; }
   .community { gap: 4px; min-height: 60px; }
@@ -753,23 +716,18 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .community .card .csuit { font-size: 1.3rem; }
   .street-label { font-size: 0.7rem; }
 
-  /* action controls: even full-width rows, big tap targets */
   .controls { gap: 0.5rem; }
   .ctl { padding: 0.8rem 0.6rem; font-size: 1.02rem; min-width: 0; flex: 1 1 40%; }
   .bet-panel { width: min(300px, 86vw); }
-  /* Bet panel: open above the hero seat, not over the hero cards.
-     bottom:220% clears the ~160px tall hero seat (2026-10-08). */
+
   #screen-table .bet-panel { bottom: 220%; }
 
-  /* setup screens: 2-col modes, single-col roster */
   .mode-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
   .mode-card { padding: 0.8rem; }
   .mode-emoji { font-size: 1.5rem; }
   .roster { grid-template-columns: 1fr; }
 }
 
-/* ===== Design refresh: clean, minimal, professional ===== */
-/* Typography: system sans throughout (no display serif), tighter headings */
 .brand, h1, h2, .rp-title { font-family: inherit; }
 body { font-size: 16px; line-height: 1.6; }
 h1 { font-size: 2.1rem; letter-spacing: -0.025em; font-weight: 750; }
@@ -777,25 +735,21 @@ h2 { font-size: 1.15rem; color: var(--text); letter-spacing: -0.015em; font-weig
 .brand { font-weight: 750; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 0.4rem; }
 .brand-mark { width: 20px; height: 20px; color: var(--gold); flex: none; }
 
-/* Nav: icon + label, calmer active state */
 .nav-btn { display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600; }
 .nav-btn svg { width: 15px; height: 15px; flex: none; }
 .nav-btn.active { color: var(--gold); border-color: var(--gold-dim); background: rgba(212, 175, 55, 0.1); }
 
-/* Buttons: flat, consistent radius */
 button.primary { background: var(--gold); font-weight: 700; border-radius: 12px; }
 button.primary:hover { filter: brightness(1.07); }
 button.ghost { border-radius: 10px; font-weight: 600; }
 .ctl { border-radius: 12px; }
 .ctl.primary, .ctl.is-raise { background: var(--gold); }
 
-/* Cards & panels: one soft surface language */
 .mode-card, .book-card, .gloss-card, .online-card { border-radius: 14px; border-width: 1px; }
 .mode-card:hover { border-color: var(--gold-dim); }
 .mode-card.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
 .settings-details { border-radius: 12px; }
 
-/* Inputs: 16px kills iOS auto-zoom; visible focus ring */
 input[type=number], input[type=text], input:not([type]), select {
   font-size: 16px; border-radius: 10px;
 }
@@ -805,43 +759,34 @@ input:focus, select:focus, button:focus-visible {
 label { font-weight: 600; }
 .settings-row label, .hint, .fineprint { font-weight: 400; }
 
-/* Section rhythm: less gold shouting, more air */
 .setup-wrap h2 { margin-top: 2.2em; }
 .mode-desc { line-height: 1.5; }
 
-/* (update toast retired in v1.8.44 — the footer "Check for updates" button is the reliable path) */
-
-/* Quick start: the one-tap hero button above the setup wall */
 .quick-start-wrap { margin: 1.2rem 0 0.4rem; }
 .quick-start-wrap .hint-inline { margin-top: 0.5rem; }
 #btn-quick { font-size: 1.15rem; padding: 0.9rem 2.2rem; }
 
-/* Turn status: explicit "waiting for X" so dead buttons never confuse */
 .turn-status {
   width: 100%; text-align: center; font-size: 0.85rem; color: var(--muted);
   min-height: 1.3em; margin-top: 0.3rem; font-style: italic;
 }
 .turn-status.yours { color: var(--gold); font-style: normal; font-weight: 700; }
 
-/* Rename conflict: red border while the duplicate name is being edited */
 .rename-input.rename-dup { border-color: var(--red); }
 
-/* Last-result line: compact, persistent, glanceable */
 .last-result {
   font-size: 0.8rem; color: var(--muted); font-style: italic;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw;
 }
 
-/* ---------- smooth table motion ---------- */
-/* Value pulse: pot/stacks/bets shimmer instead of snapping */
 @keyframes bump { 0% { filter: brightness(1.7); } 100% { filter: none; } }
 .bump { animation: bump 0.3s ease; }
-/* Action badge: rises and fades in when a player acts */
+
 .seat .pact.pop { animation: pact-pop 0.45s ease backwards; }
 @keyframes pact-pop { from { opacity: 0; transform: translateY(7px); } }
-/* Acting glow eases between seats instead of snapping */
+
 .seat { transition: border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.3s ease; }
-/* Flying chip: bettor's seat -> pot */
+
 .chip-fly {
   position: fixed; z-index: 60; width: 22px; height: 22px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #ffe9a8, var(--gold) 60%, #8a6d1f);
@@ -850,7 +795,6 @@ label { font-weight: 600; }
   transition: transform 0.55s cubic-bezier(.3,.7,.3,1), opacity 0.55s ease;
 }
 
-/* Roster selection: pick-order badges + transient cap hints */
 .roster-card { position: relative; }
 .roster-card .sel-num {
   position: absolute; top: 6px; right: 6px;
@@ -865,10 +809,8 @@ label { font-weight: 600; }
 }
 .roster-hint.show { opacity: 1; }
 
-/* Coach villain read: the per-opponent exploit line. */
 .coach .coach-v { display: block; margin-top: 0.35rem; color: var(--gold); font-size: 0.85em; }
 
-/* Stat ⓘ popovers: inline definitions on the Stats page. */
 .stat-card { position: relative; }
 .stat-info {
   background: none; border: none; min-width: 36px; min-height: 36px; padding: 8px; cursor: pointer;
@@ -884,7 +826,6 @@ label { font-weight: 600; }
 }
 .stat-tip.show { display: block; }
 
-/* Seat badges: rebuy counter (PokerNow-style) + tilt meter. */
 .seat .who { position: relative; }
 .seat .badges { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: middle; }
 .seat-badge {
@@ -894,7 +835,6 @@ label { font-weight: 600; }
 .seat-badge.rb { background: #2c3a55; color: var(--gold); border: 1px solid #3d4f73; }
 .seat-badge.tilt { background: #5a2323; border: 1px solid #8a3535; }
 
-/* Online sit-out badge */
 #online-seats .seat.sitting-out { opacity: 0.75; }
 #online-seats .sitout-badge {
   display: inline-block; margin-top: 2px; padding: 1px 7px;
@@ -902,7 +842,6 @@ label { font-weight: 600; }
   background: rgba(0,0,0,0.45); color: #ffd76a; border: 1px solid rgba(255,215,106,0.5);
 }
 
-/* In-game hand history modal */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(4, 6, 10, 0.72);
@@ -926,7 +865,6 @@ label { font-weight: 600; }
 .modal-list .hrow { margin-bottom: 0.5rem; }
 .hm-story { margin-top: 0.5rem; border-top: 1px dashed var(--line); padding-top: 0.5rem; }
 
-/* Feedback form */
 .fb-form { display: flex; flex-direction: column; gap: 0.5rem; }
 .fb-types { display: flex; gap: 0.5rem; }
 .fb-type.sel { border-color: var(--gold); color: var(--gold); }
@@ -939,32 +877,26 @@ label { font-weight: 600; }
 .fb-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
 #fb-submit { margin-top: 0.25rem; }
 
-/* ---- online table chat ---- */
 .online-chat { margin-top: 0.75rem; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .chat-head { padding: 0.4rem 0.75rem; background: var(--panel2); font-weight: 700; font-size: 0.85rem; }
 .chat-msgs { max-height: 160px; overflow-y: auto; padding: 0.5rem 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .chat-msg { font-size: 0.9rem; word-break: break-word; }
 .chat-input-row { display: flex; gap: 0.5rem; padding: 0.5rem 0.75rem; border-top: 1px solid var(--line); }
 .chat-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: inherit; padding: 0.45rem 0.6rem; font: inherit; }
-/* ---- online ledger ---- */
+
 .online-ledger { margin-top: 0.5rem; border: 1px solid var(--line); border-radius: 10px; padding: 0.5rem 0.75rem; }
 .ledger-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 1rem; padding: 0.2rem 0; font-size: 0.9rem; }
 .ledger-head { font-weight: 700; color: var(--muted); border-bottom: 1px solid var(--line); margin-bottom: 0.25rem; }
 .ledger-row .pos { color: var(--green); }
 .ledger-row .neg { color: var(--red); }
 
-/* ---- online table header (v1.8.99): flex row so the host controls wrap
-   instead of stacking as full-width blocks (the old mobile rule set
-   flex-wrap without display:flex, which did nothing) ---- */
 .online-table-top { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-/* Voluntary-reveal button: anchored bottom-center of the felt (v1.8.99).
-   It used to sit in normal flow at the top of the felt, under the top seats. */
+
 #on-show-btn {
   position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
   z-index: 40; white-space: nowrap;
 }
-/* Paused overlay: centered on the felt like the winner splash (v1.8.99 —
-   previously unstyled, rendering in-flow over the top seats). */
+
 .online-paused {
   position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
   z-index: 35; background: rgba(8, 12, 18, 0.88); border: 1px solid var(--line);
@@ -972,13 +904,12 @@ label { font-weight: 600; }
 }
 .online-paused .hint { display: block; font-weight: 400; font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
 
-/* ============ MOBILE TAB BAR + PANELS (phones) ============ */
 .mobile-tabs, .mobile-panel { display: none; }
 
 @media (max-width: 900px) {
-  /* Compact game screen: no page scroll, everything fits the viewport */
+
   #screen-table {
-    height: 100vh; /* fallback for Safari < 15.4 */
+    height: 100vh;
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   }
   #screen-table .table-topbar { flex: 0 0 auto; padding: 0.4rem 0.5rem; }
@@ -990,23 +921,22 @@ label { font-weight: 600; }
     padding: 0 0.4rem;
   }
   #screen-table .felt-wrap { height: 100%; }
-  /* Smaller felt + cards on phones (PokerNow-style compactness) */
+
   #screen-table .felt { height: 100%; min-height: 0; border-radius: 24px; }
   #screen-table .card { width: 34px; height: 48px; font-size: 0.85rem; border-radius: 6px; }
   #screen-table .card .crank { font-size: 0.8rem; }
   #screen-table .community { gap: 4px; }
   #screen-table .pot { font-size: 0.95rem; padding: 0.2rem 0.7rem; }
   #screen-table .street-label { font-size: 0.7rem; }
-  /* Compact seats */
+
   #screen-table .seat { padding: 0.3rem 0.4rem; font-size: 0.8rem; border-radius: 10px; }
   #screen-table .seat .pname { font-size: 0.8rem; }
   #screen-table .seat .pstack { font-size: 0.75rem; }
-  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
-     at the end of this file (v1.8.21). */
+
   #screen-table .pos-badge { font-size: 0.6rem; padding: 0.05rem 0.3rem; }
-  /* Hide the desktop side panel on phones — Coach/History live in tab panels */
+
   #screen-table .side-panel { display: none; }
-  /* Hero bar sits above the tab bar */
+
   #screen-table .hero-bar {
     flex: 0 0 auto;
     position: fixed; bottom: var(--m-tabbar); left: 0; right: 0; z-index: 60;
@@ -1015,24 +945,18 @@ label { font-weight: 600; }
     box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
     background: var(--panel);
   }
-  /* Compact hero bar: smaller buttons, less padding — more room for cards */
+
   #screen-table .hero-bar .controls { gap: 0.4rem; }
   #screen-table .hero-bar .ctl { padding: 0.6rem 0.3rem; font-size: 0.9rem; min-height: 40px; }
   #screen-table .hero-bar .controls { gap: 0.6rem; }
   #screen-table .hero-bar .ctl { padding: 0.8rem 0.4rem; font-size: 0.95rem; min-height: 44px; }
-  /* Hero strip cards (#hero-cards): single source of truth is the TABLE
-     REWRITE block at the end of this file (v1.8.21). The old
-     "#screen-table .hero-cards" rules were dead (wrong element). */
-  /* Remove cut-off action text under seats (Kevin 2026-10-08):
-     "Amogh c..." is unreadable and redundant — actions show in history. */
+
   .seat .pact { display: none; }
-  /* Breathing room between hero cards and action buttons */
+
   #screen-table .hero-bar { gap: 0.8rem; }
-  /* Bar reaches ~190px up; keep felt clear of it */
+
   #screen-table { padding-bottom: 200px; }
 
-  /* Bottom tab bar — height shared with the hero-bar offset above so no
-     gap or overlap seam shows between them (dark-mode nitpick 2026-10-08) */
   :root { --m-tabbar: calc(58px + env(safe-area-inset-bottom, 0px)); }
   .mobile-tabs {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
@@ -1059,14 +983,13 @@ label { font-weight: 600; }
   .mtab-icon { transition: transform 0.15s ease, filter 0.15s ease; }
   .mtab:active { opacity: 0.7; }
 
-  /* Full-page tab views (not slide-ups) — like switching pages in an app */
   .mobile-panel {
     display: block; position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 200;
     background: var(--bg);
     transform: none; transition: none;
     border-radius: 0; border: none; box-shadow: none;
     max-height: none;
-    height: 100vh; /* fallback for Safari < 15.4 */
+    height: 100vh;
     height: 100dvh;
   }
   .mobile-panel[hidden] { display: none; }
@@ -1080,29 +1003,28 @@ label { font-weight: 600; }
   .mp-body {
     padding: 1rem 1rem calc(80px + env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
-    height: calc(100vh - 65px); /* fallback for Safari < 15.4 */
+    height: calc(100vh - 65px);
     height: calc(100dvh - 65px);
     -webkit-overflow-scrolling: touch;
   }
   .mp-body .coach { font-size: 1rem; line-height: 1.6; }
   .mp-body .hand-log { max-height: none; font-size: 0.95rem; line-height: 1.5; }
-  /* Tab bar stays visible above the full-page panel */
+
   .mobile-tabs { z-index: 300; }
-  /* Lock body scroll on game screens — PokerNow-style, no dragging */
+
   body:has(#screen-table:not([hidden])), body:has(#screen-online:not([hidden])) {
     overflow: hidden; position: fixed; width: 100%;
-    height: 100vh; /* fallback for Safari < 15.4 */
+    height: 100vh;
     height: 100dvh;
   }
   .mp-body .coach { font-size: 0.9rem; }
   .mp-body .hand-log { max-height: none; font-size: 0.85rem; }
 }
 
-/* ============ POKERNOW-STYLE FIXED VIEWPORT (phones) ============ */
 @media (max-width: 900px) {
-  /* Online screen: fixed viewport, no scroll */
+
   #screen-online {
-    height: 100vh; /* fallback for Safari < 15.4 */
+    height: 100vh;
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
   }
   #screen-online #online-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -1110,9 +1032,9 @@ label { font-weight: 600; }
   #screen-online .online-table-top { flex: 0 0 auto; padding: 0.4rem 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 0.3rem; }
   #screen-online .online-felt { flex: 1 1 auto; min-height: 0; border-radius: 20px; margin: 0 0.4rem; }
   #screen-online .online-felt .card { width: 32px; height: 46px; font-size: 0.8rem; }
-  /* Hide inline feed + chat on phones — they live in the History tab */
+
   #screen-online .online-feed, #screen-online .online-chat { display: none; }
-  /* Hero bar docked above tab bar */
+
   #screen-online .hero-bar {
     flex: 0 0 auto; position: fixed; bottom: 64px; left: 0; right: 0; z-index: 60;
     margin: 0; border-radius: 14px 14px 0 0;
@@ -1121,16 +1043,12 @@ label { font-weight: 600; }
   }
 }
 
-/* (old mobile banner position retired in v1.8.40 — win splash is centered) */
-
-/* Empty seats (PokerNow-style 8-seat table) */
 .seat.empty { opacity: 0.45; border-style: dashed; }
 .seat.empty .avatar { filter: grayscale(1); }
 @media (max-width: 900px) {
   .seat.empty .pname { font-size: 0.7rem; }
 }
 
-/* Compact 8-seat layout on phones — nothing overlaps or clips */
 @media (max-width: 900px) {
   #screen-table .seat, #screen-online .seat {
     min-width: 72px; max-width: 84px;
@@ -1140,34 +1058,31 @@ label { font-weight: 600; }
   #screen-table .seat .pname, #screen-online .seat .pname { font-size: 0.68rem; max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.65rem; }
   #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1rem; }
-  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
-     at the end of this file (v1.8.21). */
+
   #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.6rem; }
   #screen-table .seat .pact, #screen-online .seat .pact { font-size: 0.6rem; }
   #screen-table .seat .pos-badge, #screen-online .seat .pos-badge { font-size: 0.55rem; padding: 0.05rem 0.25rem; }
   #screen-table .seat .seat-badge, #screen-online .seat .seat-badge { font-size: 0.55rem; }
-  /* Smaller community cards to leave room for 8 seats */
+
   #screen-table .community .card, #screen-online .community .card { width: 30px; height: 42px; }
   #screen-table .pot, #screen-online .pot { font-size: 0.85rem; }
 }
 
-/* Minimalist phone seats: hide non-essential badges, keep SB/BB */
 @media (max-width: 900px) {
   #screen-table .seat .seat-badge.rb, #screen-online .seat .seat-badge.rb,
   #screen-table .seat .seat-badge.tilt, #screen-online .seat .seat-badge.tilt { display: none; }
-  /* Cleaner dealer button */
+
   #screen-table .dealer-btn, #screen-online .dealer-btn { width: 18px; height: 18px; font-size: 0.6rem; }
-  /* More breathing room in panels */
+
   .mp-body { line-height: 1.65; }
   .mp-body .hand-log { line-height: 1.6; }
 }
 
-/* Minimalist collapsed topbar on phones — info becomes a floating pill on the felt */
 @media (max-width: 900px) {
   #screen-table .table-topbar {
     position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
     z-index: 10; background: rgba(0,0,0,0.5);
-    -webkit-backdrop-filter: blur(8px); /* Safari < 18 */
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     border-radius: 20px; padding: 0.25rem 0.75rem;
     display: flex; gap: 0.5rem; align-items: center;
@@ -1179,13 +1094,12 @@ label { font-weight: 600; }
   #screen-table .table-topbar .hand-info { font-size: 0.75rem; font-weight: 600; }
   #screen-table .table-topbar .blinds-info { font-size: 0.7rem; opacity: 0.8; }
   #screen-table .table-topbar .last-result { display: none; }
-  /* Home screen: minimal header */
+
   #screen-setup .setup-wrap h1 { font-size: 1.3rem; margin-bottom: 0.25rem; }
   #screen-setup .setup-wrap .subtitle { display: none; }
   #screen-setup .setup-wrap { padding-top: 1rem; }
 }
 
-/* Muse-style compact controls — buttons match text size, more table room */
 @media (max-width: 900px) {
   #screen-table .hero-bar .ctl, #screen-online .hero-bar .ctl {
     padding: 0.45rem 0.5rem; font-size: 0.85rem; border-radius: 10px;
@@ -1195,43 +1109,38 @@ label { font-weight: 600; }
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     gap: 0.35rem;
   }
-  /* Hero cards moved to the dedicated #hero-cards strip (v1.8.21) —
-     seat-0 on the felt is cardless. See the TABLE REWRITE block. */
+
   #screen-table .hero-bar .controls, #screen-online .hero-bar .controls { gap: 0.35rem; }
-  /* Tighter tab bar */
+
   .mobile-tabs { padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px)); }
   .mtab { padding: 0.3rem 0; gap: 1px; }
   .mtab-icon { font-size: 1.15rem; }
   .mtab-label { font-size: 0.6rem; }
 }
 
-/* Phone seats: stack avatar above name so full names fit */
 @media (max-width: 900px) {
   #screen-table .seat .who, #screen-online .seat .who { flex-direction: column; gap: 1px; }
   #screen-table .seat .pname, #screen-online .seat .pname { max-width: 76px; text-align: center; }
   #screen-table .seat .avatar, #screen-online .seat .avatar { font-size: 1.1rem; }
 }
 
-/* Phone: taller felt, compact seats, no overlap */
 @media (max-width: 900px) {
   #screen-table .felt, #screen-online .online-felt {
-    min-height: 52vh; /* fallback for Safari < 15.4 */
+    min-height: 52vh;
     min-height: 52dvh;
   }
   #screen-table .seat, #screen-online .seat {
     min-width: 68px; max-width: 78px; padding: 0.2rem 0.25rem;
   }
-  /* Opponent seat cards: single source of truth is the TABLE REWRITE block
-     at the end of this file (v1.8.21). */
+
   #screen-table .seat .pstack, #screen-online .seat .pstack { font-size: 0.62rem; margin: 1px 0; }
   #screen-table .seat .pbet, #screen-online .seat .pbet { font-size: 0.58rem; min-height: 0.8em; }
 }
 
-/* Quick start: one clear CTA, top and bottom identical */
 .quick-start-wrap { text-align: center; margin: 1.2rem 0 0.4rem; }
 .quick-start-wrap .primary.big { font-size: 1.3rem; padding: 0.9rem 3.2rem; }
 .quick-start-wrap .hint-inline { margin-top: 0.6rem; display: block; }
-/* Resume: secondary CTA shown only when a saved offline session exists */
+
 .resume-btn {
   display: block; margin: 0.8rem auto 0; font-size: 1.05rem; font-weight: 700;
   padding: 0.7rem 2rem; border-radius: 10px; cursor: pointer;
@@ -1242,36 +1151,32 @@ label { font-weight: 600; }
 #resume-hint { color: var(--muted); font-size: 0.85rem; }
 .linklike { background: none; border: none; color: var(--green); cursor: pointer; text-decoration: underline; font: inherit; padding: 0; }
 .customize-details { margin-top: 1rem; border-top: 1px solid var(--panel2); padding-top: 0.8rem; }
-/* Bottom CTA matches the top one exactly */
+
 #customize-details #btn-start { display: block; margin: 1.2rem auto 0.4rem; font-size: 1.3rem; padding: 0.9rem 3.2rem; }
 .customize-details > summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; padding: 0.5rem 0; color: var(--muted); }
 .customize-details > summary:hover { color: var(--text); }
 
-/* Coach: position and multi-opponent reads */
 .coach-pos { color: var(--gold); font-weight: 600; }
 .coach-opps { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid var(--panel2); font-size: 0.88rem; line-height: 1.5; color: var(--muted); }
 .coach-opps b { color: var(--text); }
 
-/* Better coach formatting: clear sections, breathing room */
 .coach-tip { line-height: 1.7; }
 .coach-tip b { color: var(--gold); }
-/* Post-hand recap: one praise line, one leak line — calm and scannable */
+
 .coach-recap-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.25rem; }
 .coach-recap-good, .coach-recap-bad { margin: 0.35rem 0; font-size: 0.88rem; line-height: 1.5; }
 .coach-recap-good { color: var(--green); }
 .coach-recap-bad { color: var(--gold); }
 .coach-opps { margin-top: 0.8rem; padding: 0.7rem; background: rgba(0,0,0,0.25); border-radius: 8px; }
 
-/* ============ MODERN CLEAN REDESIGN (Muse-style) — 2026-10-08 ============ */
 @media (max-width: 900px) {
-  /* Felt: cleaner, softer — less busy pattern, more modern */
+
   #screen-table .felt {
     background: radial-gradient(100% 100% at 50% 30%, #147a56 0%, #0b4a34 70%);
     border: 6px solid rgba(255,255,255,0.08);
     box-shadow: inset 0 0 40px rgba(0,0,0,0.3);
   }
 
-  /* Seats: minimal, clean — no heavy boxes */
   #screen-table .seat {
     background: rgba(0,0,0,0.35);
     border: 1px solid rgba(255,255,255,0.12);
@@ -1286,7 +1191,6 @@ label { font-weight: 600; }
     box-shadow: 0 0 0 2px rgba(212,175,55,0.3), 0 2px 12px rgba(0,0,0,0.25);
   }
 
-  /* Action buttons: Muse-clean — flat, minimal, good spacing */
   #screen-table .hero-bar {
     background: rgba(18,24,34,0.95);
     backdrop-filter: blur(12px);
@@ -1302,7 +1206,6 @@ label { font-weight: 600; }
     border: 1px solid rgba(255,255,255,0.1);
   }
 
-  /* Pot: clean pill, subtle */
   #screen-table .pot {
     background: rgba(0,0,0,0.5);
     border: 1px solid rgba(212,175,55,0.3);
@@ -1311,18 +1214,15 @@ label { font-weight: 600; }
     letter-spacing: 0.3px;
   }
 
-  /* (retired in v1.8.40 — win splash styles live with the .win-splash rules) */
 }
 
-/* ============ MODERN REDESIGN v2 — Muse-clean poker (2026-10-08) ============ */
 @media (max-width: 900px) {
-  /* Page: deep calm background */
+
   #screen-table {
     background: #0a0e13;
     padding: 0.5rem;
   }
 
-  /* Felt: modern, minimal — soft radial, no busy pattern */
   #screen-table .felt {
     background: radial-gradient(120% 90% at 50% 20%, #1a7a5a 0%, #0d4a36 60%, #083325 100%);
     border: none;
@@ -1330,7 +1230,6 @@ label { font-weight: 600; }
     box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
   }
 
-  /* Seats: floating minimal pills — avatar, name, stack. No heavy boxes. */
   #screen-table .seat {
     background: rgba(10,14,19,0.72);
     border: 1px solid rgba(255,255,255,0.09);
@@ -1355,13 +1254,9 @@ label { font-weight: 600; }
     border-color: rgba(212,175,55,0.6);
     box-shadow: 0 0 0 1px rgba(212,175,55,0.4), 0 4px 16px rgba(0,0,0,0.3);
   }
-  /* Hide bet text under seats — cleaner (bets show on felt) */
+
   #screen-table .seat .pbet { display: none; }
 
-  /* Hero cards moved to the dedicated #hero-cards strip (v1.8.21) —
-     seat-0 on the felt is cardless. See the TABLE REWRITE block. */
-
-  /* Pot: minimal floating pill */
   #screen-table .pot {
     background: rgba(10,14,19,0.75);
     border: 1px solid rgba(255,255,255,0.1);
@@ -1374,7 +1269,6 @@ label { font-weight: 600; }
     box-shadow: 0 2px 12px rgba(0,0,0,0.3);
   }
 
-  /* Community cards: clean, well-spaced */
   #screen-table .community {
     gap: 8px;
   }
@@ -1384,7 +1278,6 @@ label { font-weight: 600; }
     box-shadow: 0 3px 10px rgba(0,0,0,0.3);
   }
 
-  /* Action bar: clean bottom sheet */
   #screen-table .hero-bar {
     background: rgba(13,18,25,0.98);
     border-top: 1px solid rgba(255,255,255,0.07);
@@ -1402,7 +1295,6 @@ label { font-weight: 600; }
     letter-spacing: 0.2px;
   }
 
-  /* Tab bar: minimal, clean */
   .mobile-tabs {
     background: rgba(13,18,25,0.98);
     border-top: 1px solid rgba(255,255,255,0.07);
@@ -1423,9 +1315,6 @@ label { font-weight: 600; }
   }
 }
 
-/* (toast-mode retired in v1.8.40 — the win splash replaced the banner) */
-
-/* High-contrast action buttons (Kevin 2026-10-08): clear, readable colors */
 @media (max-width: 900px) {
   #screen-table .hero-bar .ctl {
     color: #fff;
@@ -1456,14 +1345,8 @@ label { font-weight: 600; }
   }
 }
 
-/* ============ TABLE REWRITE (v1.8.21) — single source of truth ============
-   Fixed 8-seat layout. Opponent seats are cardless mid-hand (avatar + name +
-   stack only); their .pcards container is display:none until reveal.
-   Hero cards live in the dedicated #hero-cards strip (always visible).
-   This block REPLACES all earlier competing seat-card size rules. */
 @media (max-width: 900px) {
-  /* Hero bar becomes a column: hero card strip on top, action buttons below.
-     The strip is never covered — it sits inside the fixed bar, above controls. */
+
   #screen-table .hero-bar {
     flex-direction: column;
     align-items: stretch;
@@ -1475,7 +1358,7 @@ label { font-weight: 600; }
     align-items: center;
     gap: 0.25rem;
   }
-  /* Hero strip cards: always visible, larger than board cards, crisp. */
+
   #hero-cards {
     display: flex;
     gap: 8px;
@@ -1497,8 +1380,6 @@ label { font-weight: 600; }
     margin-top: 0;
   }
 
-  /* Opponent seats: cardless by default. The .pcards container only
-     renders on reveal (hand end / voluntary show) via .cards-up. */
   #screen-table .seat .pcards { display: none; }
   #screen-table .seat.cards-up .pcards {
     display: flex;
@@ -1507,16 +1388,14 @@ label { font-weight: 600; }
     margin-top: 4px;
     min-height: 0;
   }
-  /* THE one opponent-card size rule (reveal only): */
+
   #screen-table .seat .pcards .card { width: 30px; height: 42px; }
   #screen-table .seat .pcards .card .crank { font-size: 0.7rem; top: 2px; left: 4px; }
   #screen-table .seat .pcards .card .csuit { font-size: 1.1rem; }
 
-  /* Empty seats: dimmed dashed placeholders (pairs with .seat.empty base). */
   #screen-table .seat.empty .pname { color: var(--muted); font-style: italic; }
 }
 
-/* Compact turn status on mobile — subtle, doesn't push cards */
 @media (max-width: 900px) {
   .turn-status {
     font-size: 0.7rem;
@@ -1526,11 +1405,8 @@ label { font-weight: 600; }
   }
 }
 
-/* ============ ULTRA-MINIMALIST (Muse-clean) — 2026-10-08 ============ */
 @media (max-width: 900px) {
-  /* Seats: tiny, clean, generous spacing.
-     v1.8.39: slightly wider (72px) + smaller names (0.55rem) so full names
-     like "The Grinder" fit instead of truncating to "The Gri…". */
+
   #screen-table .seat {
     min-width: 56px;
     max-width: 72px;
@@ -1550,7 +1426,6 @@ label { font-weight: 600; }
   #screen-table .seat .pbet { display: none; }
   #screen-table .seat .pact { display: none; }
 
-  /* Hero cards: clean, not oversized */
   #screen-table #hero-cards {
     gap: 6px;
     padding: 0.4rem 0;
@@ -1571,7 +1446,6 @@ label { font-weight: 600; }
     margin-bottom: 0.2rem;
   }
 
-  /* Buttons: compact, clean */
   #screen-table .hero-bar {
     padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
   }
@@ -1582,28 +1456,24 @@ label { font-weight: 600; }
     min-height: 38px;
   }
 
-  /* Pot: tiny pill */
   #screen-table .pot {
     font-size: 0.72rem;
     padding: 0.25rem 0.7rem;
   }
 
-  /* Community cards: smaller */
   #screen-table .community .card {
     width: 38px;
     height: 54px;
   }
   #screen-table .community { gap: 5px; }
 
-  /* Board: more breathing room */
   #screen-table .felt {
     margin: 0.3rem;
   }
 }
 
-/* v1.8.24 fixes: smaller hero cards, visible pot + opponent bets */
 @media (max-width: 900px) {
-  /* Hero cards: compact */
+
   #screen-table #hero-cards .card {
     width: 44px;
     height: 62px;
@@ -1612,7 +1482,6 @@ label { font-weight: 600; }
   #screen-table #hero-cards .card .csuit { font-size: 1.2rem; }
   #screen-table #hero-cards { gap: 5px; padding: 0.3rem 0; }
 
-  /* Buttons: even more compact */
   #screen-table .hero-bar .ctl {
     padding: 0.45rem 0.25rem;
     font-size: 0.78rem;
@@ -1620,7 +1489,6 @@ label { font-weight: 600; }
   }
   #screen-table .hero-bar { gap: 0.3rem; }
 
-  /* Pot: always visible, centered */
   #screen-table #pot-display {
     display: inline-block !important;
     position: absolute;
@@ -1637,7 +1505,6 @@ label { font-weight: 600; }
     white-space: nowrap;
   }
 
-  /* Opponent bet badges: small, visible */
   #screen-table .seat .pbet {
     display: block !important;
     font-size: 0.62rem;
@@ -1647,11 +1514,9 @@ label { font-weight: 600; }
     margin-top: 1px;
   }
 
-  /* Hide the "Your turn" text on mobile — the gold button glow is enough */
   #screen-table .turn-status { display: none; }
 }
 
-/* Bet panel: dark, clean, readable — never covers hero cards */
 .bet-panel {
   background: #1a2230 !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
@@ -1670,10 +1535,7 @@ label { font-weight: 600; }
   font-weight: 700;
 }
 @media (max-width: 900px) {
-  /* Bet panel on phones: compact fixed dialog centered on the felt.
-     The old top:50%-of-controls placement slid under the tab bar
-     (z-index 100), hiding Confirm/Cancel with no way out — Kevin got
-     stuck on 2026-10-08. This floats fully visible above everything. */
+
   #screen-table .bet-panel {
     position: fixed !important;
     left: 50% !important; right: auto !important;
@@ -1689,7 +1551,6 @@ label { font-weight: 600; }
   #screen-table .bet-panel .ctl { min-height: 44px; padding: 0.6rem 0.4rem; font-size: 0.95rem; }
 }
 
-/* Fix empty seat crowding: make them tiny and subtle */
 @media (max-width: 900px) {
   #screen-table .seat.empty {
     min-width: 40px;
@@ -1702,16 +1563,13 @@ label { font-weight: 600; }
   #screen-table .seat.empty .pstack { display: none; }
 }
 
-/* Desktop: compact Muse-clean seats, bigger felt */
 @media (min-width: 901px) {
   #screen-table .felt {
     min-height: 520px;
   }
   #screen-table .seat {
     min-width: 88px;
-    /* Boxes expand to fit avatar + name + badge instead of clipping them:
-       overflow:hidden (v1.8.36) cut off the dealer button and SB/BB badges,
-       which intentionally overlap the seat edge (reported 2026-10-08). */
+
     width: max-content;
     max-width: 170px;
     padding: 0.35rem 0.45rem;
@@ -1722,8 +1580,7 @@ label { font-weight: 600; }
   #screen-table .seat .pname {
     font-size: 0.72rem;
     font-weight: 600;
-    /* Long names truncate with an ellipsis so boxes can't grow without
-       bound; avatar and badges are never clipped. */
+
     max-width: 130px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1733,9 +1590,9 @@ label { font-weight: 600; }
     font-size: 0.7rem;
     opacity: 0.85;
   }
-  /* Hide action text on seats — it's in the hand log */
+
   #screen-table .seat .pact { display: none; }
-  /* Bet as compact pill */
+
   #screen-table .seat .pbet {
     font-size: 0.65rem;
     min-height: 0.9em;
@@ -1744,15 +1601,11 @@ label { font-weight: 600; }
   #screen-table .seat .pcards { min-height: 0; margin-top: 2px; }
 }
 
-/* Seat content is never clipped: the dealer button and the SB/BB badges
-   intentionally overlap the seat edge, so overflow:hidden here (v1.8.36) cut
-   them off. Boxes size to content via width:max-content on desktop; only
-   over-long names truncate, via .pname ellipsis. */
 #screen-table .seat .avatar {
   flex-shrink: 0;
 }
 @media (max-width: 900px) {
-  /* Phone: seats stay compact; names truncate exactly at the seat edge. */
+
   #screen-table .seat .pname {
     max-width: 100%;
     overflow: hidden;
@@ -1760,13 +1613,12 @@ label { font-weight: 600; }
   }
 }
 
-/* Mobile: compact bottom bar — cards + buttons in minimal space */
 @media (max-width: 900px) {
   #screen-table .hero-bar {
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     gap: 0.25rem;
   }
-  /* Hero cards: small, side-by-side with buttons */
+
   #screen-table #hero-cards {
     padding: 0.2rem 0;
     gap: 4px;
@@ -1789,28 +1641,22 @@ label { font-weight: 600; }
     margin-top: 0;
     margin-bottom: 0.15rem;
   }
-  /* Buttons: single compact row */
+
   #screen-table .hero-bar .ctl {
     min-height: 32px;
     padding: 0.35rem 0.2rem;
     font-size: 0.75rem;
   }
-  /* Felt gets more room */
+
   #screen-table .felt {
     min-height: 48vh;
   }
 }
 
-/* v1.8.38: mobile felt layout — the hero bar is position:fixed and covers the
-   bottom ~30% of the felt, so the board and seat ring must live in the
-   visible upper region (Kevin's iPhone screenshot, 2026-10-08). Desktop is
-   untouched (laptop looks good). */
 @media (max-width: 900px) {
-  /* Board (pot + community cards) in the visual middle of the visible felt. */
+
   #screen-table #board-area { top: 32%; }
-  /* Let the pot pill flow at the top of the board area (as on desktop)
-     instead of absolute-positioning it 46% down inside the board area,
-     which buried it behind the fixed hero bar. */
+
   #screen-table #pot-display {
     position: static;
     transform: none;

@@ -1,10 +1,7 @@
-// ui.js — DOM rendering for Poker Sparring. No game decisions here; app.js conducts.
-
 var UI = (function () {
-  function $(id) { return document.getElementById(id); }
 
-  // Screen-change listener (app.js conducts): notified on every showScreen
-  // so the game can freeze while the user is on another tab (v1.8.97).
+  function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }  function $(id) { return document.getElementById(id); }
+
   var screenListener = null;
   function setScreenListener(fn) { screenListener = fn; }
 
@@ -16,10 +13,9 @@ var UI = (function () {
       b.classList.toggle('active', b.dataset.nav === name || (name === 'pf' && b.dataset.nav === 'setup'));
     });
     window.scrollTo(0, 0);
-    if (screenListener) { try { screenListener(name); } catch {} }
+    if (screenListener) { try { screenListener(name); } catch (e) { quiet(e); } }
   }
 
-  // ---------- learn screen ----------
   var LEARN_BOOKS = [
     { title: 'The Theory of Poker', author: 'David Sklansky',
       blurb: 'The math bible: expected value, the Fundamental Theorem of Poker, and why every decision is a math problem.',
@@ -102,7 +98,6 @@ var UI = (function () {
     });
   }
 
-  // ---------- leak tracker ----------
   function renderLeaks() {
     var box = $('leak-list');
     box.innerHTML = '';
@@ -133,12 +128,11 @@ var UI = (function () {
     });
   }
 
-  // ---------- cards ----------
   function cardEl(c, small) {
     var d = document.createElement('div');
     d.className = 'card' + (small ? ' small' : '') + (isRed(c) ? ' red' : '');
-    // Screen readers: announce "Ace of spades", not silence.
-    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', rankName(c.r) + ' of ' + SUIT_NAMES[c.s]); } catch {}
+
+    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', rankName(c.r) + ' of ' + SUIT_NAMES[c.s]); } catch (e) { quiet(e); }
     var crank = document.createElement('div');
     crank.className = 'crank'; crank.textContent = rankChar(c.r);
     var csuit = document.createElement('div');
@@ -149,23 +143,16 @@ var UI = (function () {
   function cardBackEl(small) {
     var d = document.createElement('div');
     d.className = 'card back' + (small ? ' small' : '');
-    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', 'Face-down card'); } catch {}
+    try { d.setAttribute('role', 'img'); d.setAttribute('aria-label', 'Face-down card'); } catch (e) { quiet(e); }
     return d;
   }
 
-  // ---------- setup screen ----------
-  // Bot display name: custom rename when set, otherwise the archetype default.
-  // NamePrefs is a browser global (js/names.js); tests that load ui.js without
-  // it fall back to default names.
   function dispName(a) {
     if (!a) return '';
     if (typeof NamePrefs !== 'undefined' && NamePrefs) return NamePrefs.displayName(a);
     return a.name || a.id || '';
   }
 
-  // Opponent roster. `selected` is a Set of bot ids; `max` caps how many can be
-  // picked for the current mode (1 for heads-up). `onHint` shows a transient
-  // message when a toggle is refused. Selected cards show their pick order.
   function renderRoster(allBots, selected, max, onHint, onChange) {
     max = max || 5;
     var box = $('bot-roster');
@@ -175,7 +162,7 @@ var UI = (function () {
     box._max = max;
     box._onHint = onHint;
     var overrides = (typeof NamePrefs !== 'undefined' && NamePrefs) ? NamePrefs.getBotOverrides() : {};
-    // Pick order follows roster order, so "first N" is unambiguous.
+
     var order = [];
     allBots.forEach(function (b) { if (selected.has(b.id)) order.push(b.id); });
     allBots.forEach(function (b) {
@@ -215,9 +202,6 @@ var UI = (function () {
     });
   }
 
-  // Inline rename: swaps the name row for an input. Enter/blur saves (empty
-  // resets to the default name), Escape cancels. Duplicate names are rejected
-  // inline — two "Doyle"s at one table is confusing. Re-renders the roster after.
   function openRename(cardBtn, b) {
     var nmRow = cardBtn.querySelector('.nm-row');
     if (!nmRow || nmRow.querySelector('input')) return;
@@ -245,7 +229,7 @@ var UI = (function () {
       if (done) return; done = true;
       if (save && typeof NamePrefs !== 'undefined' && NamePrefs) {
         if (nameTaken(input.value)) {
-          done = false; // keep editing; flag the conflict
+          done = false;
           input.classList.add('rename-dup');
           input.setAttribute('aria-invalid', 'true');
           input.title = 'That name is already taken at this table';
@@ -269,50 +253,40 @@ var UI = (function () {
     input.select();
   }
 
-  // ---------- table ----------
-  // Fixed 8-seat layout: the felt always shows 8 seats in a ring; seats
-  // beyond the player count render as dimmed "Open" placeholders.
   var SEAT_COUNT = 8;
   function seatPos(i, n) {
-    // n is kept for signature compatibility; the ring is always 8 seats.
-    // Hero seat (i=0) at bottom-center; others on an ellipse in action order.
+
     var narrow = (typeof window !== 'undefined' && window.innerWidth < 640);
     if (narrow) {
-      // Explicit mobile positions: evenly spread, no overlap.
-      // Seat boxes are ~56px wide; positions keep 15%+ horizontal separation.
-      // The hero bar is position:fixed and covers the bottom ~30% of the
-      // felt, so the ring lives in the visible upper region (v1.8.38):
-      // pot/board sit in the visual middle, hero seat clears the bar.
+
       var mobilePos = [
-        { x: 50, y: 54 },  // 0: hero (bottom-center, clear of the bar)
-        { x: 22, y: 45 },  // 1: lower-left
-        { x: 12, y: 29 },  // 2: mid-left
-        { x: 28, y: 16 },  // 3: upper-left
-        { x: 50, y: 14 },  // 4: top-center
-        { x: 72, y: 16 },  // 5: upper-right
-        { x: 88, y: 29 },  // 6: mid-right
-        { x: 78, y: 45 },  // 7: lower-right
+        { x: 50, y: 54 },
+        { x: 22, y: 45 },
+        { x: 12, y: 29 },
+        { x: 28, y: 16 },
+        { x: 50, y: 14 },
+        { x: 72, y: 16 },
+        { x: 88, y: 29 },
+        { x: 78, y: 45 },
       ];
       return mobilePos[i] || { x: 50, y: 50 };
     }
-    // Desktop: explicit evenly-spaced positions, no ellipse overlap.
-    // Seats are larger on desktop; keep generous separation.
+
     var desktopPos = [
-      { x: 50, y: 82 },  // 0: hero (bottom-center)
-      { x: 18, y: 68 },  // 1: lower-left
-      { x: 8, y: 45 },   // 2: mid-left
-      { x: 22, y: 26 },  // 3: upper-left
-      { x: 50, y: 18 },  // 4: top-center
-      { x: 78, y: 26 },  // 5: upper-right
-      { x: 92, y: 45 },  // 6: mid-right
-      { x: 82, y: 68 },  // 7: lower-right
+      { x: 50, y: 82 },
+      { x: 18, y: 68 },
+      { x: 8, y: 45 },
+      { x: 22, y: 26 },
+      { x: 50, y: 18 },
+      { x: 78, y: 26 },
+      { x: 92, y: 45 },
+      { x: 82, y: 68 },
     ];
     return desktopPos[i] || { x: 50, y: 50 };
   }
 
   function buildSeats() {
-    // Always build 8 seats. renderTable marks seats beyond the player count
-    // as .empty placeholders.
+
     var box = $('seats');
     box.innerHTML = '';
     for (var i = 0; i < SEAT_COUNT; i++) {
@@ -327,17 +301,10 @@ var UI = (function () {
     }
   }
 
-  // ---------- smooth table fx ----------
-  // The table used to rebuild every card on every action, replaying the deal
-  // animation constantly (flashing/bouncing cards). Now cards are diff-synced:
-  // only newly dealt cards are created (and animated); everything else is
-  // patched in place. Value changes pulse subtly; action badges pop.
   var lastPact = {};
 
   function cardKey(c, faceUp) { return (faceUp ? 'U' : 'D') + c.r + '-' + c.s; }
 
-  // Diff-sync a card row: the common prefix is left untouched, extras are
-  // removed, new cards are appended (only appended cards play the deal anim).
   function syncCards(el, cards, faceUp, small) {
     var want = cards.map(function (c) { return cardKey(c, faceUp); });
     var p = 0;
@@ -350,17 +317,15 @@ var UI = (function () {
     }
   }
 
-  // Set text only when changed; pulse so the update reads as motion, not a snap.
   function setTextFx(el, txt) {
     var s = String(txt);
     if (!el || el.textContent === s) return;
     el.textContent = s;
     el.classList.remove('bump');
-    void el.offsetWidth; // restart the animation
+    void el.offsetWidth;
     el.classList.add('bump');
   }
 
-  // Action badge: pop when the action text changes.
   function setPact(el, seatIdx, txt) {
     var s = txt || '';
     if (lastPact[seatIdx] === s) { if (el.textContent !== s) el.textContent = s; return; }
@@ -371,7 +336,6 @@ var UI = (function () {
     if (s) el.classList.add('pop');
   }
 
-  // Chip fly: a chip arcs from the bettor's seat to the pot.
   function chipFly(seatIdx) {
     try {
       var seat = $('seat-' + seatIdx);
@@ -385,42 +349,32 @@ var UI = (function () {
       chip.style.left = (a.left + a.width / 2) + 'px';
       chip.style.top = (a.top + a.height / 2) + 'px';
       document.body.appendChild(chip);
-      void chip.offsetWidth; // force layout so the transition runs
+      void chip.offsetWidth;
       var dx = (b.left + b.width / 2) - (a.left + a.width / 2);
       var dy = (b.top + b.height / 2) - (a.top + a.height / 2);
       chip.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(0.55)';
       chip.style.opacity = '0.85';
       setTimeout(function () { if (chip.parentNode) chip.parentNode.removeChild(chip); }, 650);
-    } catch {}
+    } catch (e) { quiet(e); }
   }
 
-  // Call at hand start: drop per-hand fx state and stray fx elements.
   function resetTableFx() {
     lastPact = {};
     try {
       var dead = document.querySelectorAll('.chip-fly');
       for (var i = 0; i < dead.length; i++) dead[i].parentNode.removeChild(dead[i]);
-    } catch {}
+    } catch (e) { quiet(e); }
   }
 
-  // opts: { lastActions: {idx: str}, winners: [idx], revealed: {idx: true}, acting: idx,
-  //         button: idx, handEnd: bool, heroShow: bool }
-  // Fixed 8-seat layout: seats 0..7 always exist; seats beyond the player
-  // count render as dimmed "Open" placeholders. Hero cards live in the
-  // dedicated #hero-cards strip (always visible, always face-up to the
-  // player); seat-0 on the felt is cardless. Opponent seats show avatar +
-  // name + stack only mid-hand; their cards expand inline (face-up) at hand
-  // end or when voluntarily shown (opts.revealed).
   function renderTable(table, opts) {
     opts = opts || {};
     var handEnd = !!opts.handEnd;
     var n = table.players.length;
-    // pot + community (community is diff-synced: only new streets animate)
+
     setTextFx($('pot-display'), 'Pot: ' + fmt(table.potTotal()));
     syncCards($('community'), table.community, true, false);
     $('street-label').textContent = table.street === 'preflop' ? '' : table.street;
 
-    // dealer button: one persistent element, moved between seats (no rebuild)
     var db = $('dealer-btn');
     if (!db) {
       db = document.createElement('div');
@@ -434,10 +388,10 @@ var UI = (function () {
       if (!s) return;
       s.classList.remove('empty');
       var heroEmoji = '🧑';
-      try { heroEmoji = localStorage.getItem('ps_player_emoji') || '🧑'; } catch {}
+      try { heroEmoji = localStorage.getItem('ps_player_emoji') || '🧑'; } catch (e) { quiet(e); }
       s.querySelector('.avatar').textContent = p.isHero ? heroEmoji : (p.archetype ? p.archetype.emoji : '🤖');
-      s.querySelector('.pname').textContent = p.name; // hero name set at game start (username or 'You')
-      // Rebuy counter (PokerNow-style) + tilt meter on the seat.
+      s.querySelector('.pname').textContent = p.name;
+
       var badges = '';
       if ((p.rebuys || 0) > 0) badges += '<span class="seat-badge rb" title="' + p.rebuys + ' rebuys">×' + p.rebuys + '</span>';
       if ((p.tilt || 0) > 0.55) badges += '<span class="seat-badge tilt" title="On tilt — playing looser">🌡️</span>';
@@ -451,14 +405,12 @@ var UI = (function () {
       setTextFx(s.querySelector('.pbet'), p.bet > 0 ? 'bet ' + fmt(p.bet) : '');
       setPact(s.querySelector('.pact'), i, (opts.lastActions && opts.lastActions[i]) || '');
       if (p.isHero) {
-        // Hero seat on the felt is cardless — the hero's cards live in the
-        // dedicated #hero-cards strip below the felt (always visible).
+
         var hpc = s.querySelector('.pcards');
         if (hpc.children.length) hpc.innerHTML = '';
         s.classList.remove('cards-up');
       } else {
-        // Opponents: avatar + name + stack only mid-hand. Cards appear
-        // inline (expandable overlay) at hand end or when shown.
+
         var reveal = handEnd || (opts.revealed && opts.revealed[i]);
         if (reveal && !p.sittingOut && p.hole.length === 2) {
           syncCards(s.querySelector('.pcards'), p.hole, true, true);
@@ -476,7 +428,6 @@ var UI = (function () {
       s.classList.toggle('out', p.sittingOut || p.stack === 0);
     });
 
-    // Empty seats: dimmed placeholders beyond the player count.
     for (var e = n; e < SEAT_COUNT; e++) {
       var es = $('seat-' + e);
       if (!es) continue;
@@ -492,8 +443,6 @@ var UI = (function () {
       es.querySelector('.pcards').innerHTML = '';
     }
 
-    // Hero strip: dedicated always-visible hero cards + info line.
-    // (PokerNow pattern — hero cards are never inside a felt seat.)
     var hero = null;
     for (var h = 0; h < table.players.length; h++) {
       if (table.players[h].isHero) { hero = table.players[h]; break; }
@@ -514,9 +463,7 @@ var UI = (function () {
       if (table.bbIdx === 0) hb += ' <span class="pos-badge bb">BB</span>';
       hi.innerHTML = escapeHtml(hero.name) + ' · ' + fmt(hero.stack) + hb;
     }
-    // Hero hand strength (v1.8.97, PokerNow-style): what you currently hold.
-    // Postflop: full description ("Two Pair, Eights and Sixes"). Preflop:
-    // only a pocket pair is a made hand worth naming.
+
     var hd = $('hero-hand-desc');
     if (hd) {
       var desc = '';
@@ -532,8 +479,6 @@ var UI = (function () {
     }
   }
 
-  // ---------- controls ----------
-  // cfg: { fold, checkCall: {label, enabled}, betRaise: {label, enabled}, allin: {enabled} }
   function setControls(cfg) {
     $('btn-fold').disabled = !cfg.fold;
     var cc = $('btn-checkcall');
@@ -541,31 +486,22 @@ var UI = (function () {
     var br = $('btn-betraise');
     br.textContent = cfg.betRaise.label; br.disabled = !cfg.betRaise.enabled;
     $('btn-allin').disabled = !cfg.allin.enabled;
-    // Semantic color hooks: tint each action button by what it does.
+
     cc.classList.remove('is-check', 'is-call');
     if (cfg.checkCall.label.indexOf('Check') === 0) cc.classList.add('is-check');
     else if (cfg.checkCall.label.indexOf('Call') === 0) cc.classList.add('is-call');
     br.classList.remove('is-raise');
     if (cfg.betRaise.label === 'Bet' || cfg.betRaise.label === 'Raise') br.classList.add('is-raise');
-    if (cfg.fold === false && !cfg.checkCall.enabled && !cfg.betRaise.enabled) {
-      // nothing to do (shouldn't happen)
-    }
   }
   function disableControls() {
     ['btn-fold', 'btn-checkcall', 'btn-betraise', 'btn-allin'].forEach(function (id) { $(id).disabled = true; });
     $('bet-panel').hidden = true;
   }
 
-  // Bet panel: cb(amountChips). Range in chips [minTo, maxTo].
-  // opts.roundBets: when true, snap the slider to multiples of 5.
-  // The amount field is editable — typing syncs the slider, the slider syncs
-  // the field, and Confirm uses whichever was set last. Values clamp to the
-  // legal [minTo, maxTo] range.
   function openBetPanel(minTo, maxTo, pot, isRaise, cb, opts) {
     opts = opts || {};
     var roundBets = !!opts.roundBets;
-    // v1.8.97: for raises, need currentBet to compute pot-fraction raise-TO
-    // correctly (was minTo + pot*f, which overshot — Kevin).
+
     var currentBet = opts.currentBet || 0;
     function snap(v) { return roundBets ? Math.round(v / 5) * 5 : Math.round(v); }
     function clamp(v) { return Math.max(minTo, Math.min(maxTo, snap(v))); }
@@ -576,7 +512,7 @@ var UI = (function () {
       slider.value = maxTo === minTo ? 0 : Math.round(1000 * (v - minTo) / (maxTo - minTo));
     }
     function setFromFrac(f) {
-      // v1.8.97: raise-TO = currentBet + f*pot (was minTo + f*pot, overshot).
+
       var target = isRaise ? (currentBet + (pot * f)) : (pot * f);
       target = clamp(Math.round(target));
       syncSlider(target);
@@ -602,8 +538,7 @@ var UI = (function () {
     panel.querySelectorAll('.chip-btn').forEach(function (b) {
       b.onclick = function () { setFromFrac(parseFloat(b.dataset.frac)); };
     });
-    // v1.8.103 (Kevin): the panel opens pre-set to 1/4 pot — the standard
-    // small value bet — instead of the minimum. Slide up or type for more.
+
     var defTo = clamp(Math.round(isRaise ? (currentBet + pot * 0.25) : (pot * 0.25)));
     syncSlider(defTo); paint(defTo);
     $('btn-bet-confirm').onclick = function () {
@@ -614,7 +549,6 @@ var UI = (function () {
     $('btn-bet-cancel').onclick = function () { panel.hidden = true; };
   }
 
-  // ---------- log / coach / banner ----------
   function log(html, cls) {
     var box = $('hand-log');
     var div = document.createElement('div');
@@ -632,12 +566,6 @@ var UI = (function () {
     c.innerHTML = '<div class="coach-head">Coach</div>' + html;
   }
 
-  // Winner highlight (v1.8.97, Kevin): at showdown, lift the winning best-5
-  // cards — the winner's hole cards plus the board cards that make the hand
-  // — and dim everything else, casino-style, so the winning hand reads at a
-  // glance. Fold wins have no best5: the gold seat ring (renderTable) is the
-  // highlight there. Classes are re-derived on every call, so re-renders
-  // (e.g. "Show my hand") can simply call it again.
   function highlightWin(table, results) {
     var all = document.querySelectorAll('.card-win, .card-dim');
     for (var i = 0; i < all.length; i++) all[i].classList.remove('card-win', 'card-dim');
@@ -646,7 +574,7 @@ var UI = (function () {
     function key(c) { return 'U' + c.r + '-' + c.s; }
     var boardKeys = {};
     table.community.forEach(function (c) { boardKeys[key(c)] = true; });
-    var winBoard = {}, winHole = {}; // idx -> {key: true}
+    var winBoard = {}, winHole = {};
     showdown.forEach(function (w) {
       var inBoard = {}, inHole = {};
       w.best5.forEach(function (c) {
@@ -672,9 +600,6 @@ var UI = (function () {
     });
   }
 
-  // Amount the hero (player 0) actually won in a handEnd event: sums each pot
-  // they won, excluding uncalled returns ("takes back"). Falls back to the
-  // total pot when the breakdown is missing.
   function handWinAmount(e) {
     var total = 0;
     (e.winners || []).forEach(function (w) {
@@ -684,11 +609,6 @@ var UI = (function () {
     return total || e.pot;
   }
 
-  // Total chips won by the winners of the FIRST winner entry across all pots
-  // (side pots included). Used for the compact "Last:" topbar line so a
-  // multi-pot win isn't understated. Uncalled "takes back" entries are not
-  // winnings and don't affect the grouping. Falls back to the first entry
-  // when different winners split the pots.
   function firstWinnersTotal(e) {
     var winners = (e.winners || []).filter(function (w) { return !w.uncalled; });
     var w0 = winners[0] || (e.winners || [])[0];
@@ -703,11 +623,6 @@ var UI = (function () {
     return same ? total : (w0.each || w0.amount);
   }
 
-  // Win splash (v1.8.40, PokerStars/GGPoker-style): the hand result is a
-  // single celebratory line that fades on its own after ~3s.
-  // pointer-events:none — it never blocks the board and there is no close
-  // button to tap. The per-pot breakdown lives in the hand log and the
-  // topbar "Last:" chip, so nothing is lost.
   var splashTimer = null;
   function winnerBanner(html) {
     var w = $('winner-banner');
@@ -718,7 +633,7 @@ var UI = (function () {
       w.classList.remove('win-splash');
       return;
     }
-    // Keep just the one-line title ("You win 1,200!"); details stay in the log.
+
     var tmp = document.createElement('div');
     tmp.innerHTML = html;
     var titleEl = tmp.querySelector('.wtitle');
@@ -733,14 +648,10 @@ var UI = (function () {
     }, 3200);
   }
 
-  // Hand-end: PokerNow-style — no blocking modal. Show a small toast with the
-  // result, reveal all hands at showdown, and auto-deal after a pause.
-  // The "Next hand" button appears inline in the action area.
   var handEndTimer = null;
   function showHandEndControls(o) {
     hideHandEndControls();
-    // PokerNow-style: inline in the hero bar when available; fall back to
-    // the winner banner (desktop / tests) otherwise.
+
     var w = $('winner-banner');
     var bar = document.querySelector('#screen-table .hero-bar .controls');
     var host = bar || w;
@@ -765,8 +676,7 @@ var UI = (function () {
     hint.className = 'fineprint';
     row.appendChild(hint);
     host.appendChild(row);
-    // Pause button (v1.8.71): stops the auto-deal countdown so the hand can
-    // be reviewed as long as wanted. Resume continues from the remaining time.
+
     var pauseBtn = document.createElement('button');
     pauseBtn.className = 'ghost'; pauseBtn.id = 'btn-pause-auto';
     pauseBtn.textContent = '\u23F8 Pause';
@@ -774,14 +684,13 @@ var UI = (function () {
     row.appendChild(pauseBtn);
     var ms = o.autoMs || 8000;
     var remaining = ms, lastTick = Date.now(), paused = false;
-    // Away-pause (v1.8.97): user switched to another tab mid-review — the
-    // countdown freezes exactly where it was until they come back.
+
     var away = false;
     handEndAwayCtl = {
       setAway: function (b) {
         if (b === away) return;
         away = b;
-        if (!away) lastTick = Date.now(); // don't count away time
+        if (!away) lastTick = Date.now();
       }
     };
     function tick() {
@@ -818,7 +727,7 @@ var UI = (function () {
   function setHandEndAway(b) { if (handEndAwayCtl) handEndAwayCtl.setAway(b); }
 
   function modal(o) {
-    // o: { title, body, buttons: [{label, primary, cb}] }
+
     var root = $('modal-root');
     root.innerHTML = '';
     var back = document.createElement('div');
@@ -843,7 +752,6 @@ var UI = (function () {
     root.appendChild(back);
   }
 
-  // ---------- archetypes screen ----------
   function renderArchetypes(customs, onDelete) {
     var box = $('preset-list');
     box.innerHTML = '';
@@ -870,10 +778,6 @@ var UI = (function () {
     return d;
   }
 
-  // ---------- stats screen ----------
-  // Inline definitions: each stat card gets an ⓘ that pops a one-line
-  // "what it means + how it's calculated" note, so nobody has to scroll to
-  // the Learn glossary mid-session.
   var STAT_INFO = {
     'Hands': 'Total hands played. Everything else is built on this sample — bigger sample, more trustworthy.',
     'Win %': 'Hands won ÷ hands played. Short-term luck dominates this one; bb/100 measures skill better.',
@@ -889,7 +793,7 @@ var UI = (function () {
   }
   function renderStats() {
     var s = loadStats(), d = derivedStats(s);
-    // bb/100 is noise below ~20 hands — show a dash instead of an alarming number.
+
     var bb100 = d.hands >= 20 ? d.bbPer100.toFixed(1) : '—';
     var cards = [
       ['Hands', d.hands], ['Win %', d.winRate.toFixed(1)],
@@ -918,7 +822,7 @@ var UI = (function () {
       };
       box.appendChild(el);
     });
-    // One global closer for stat tips (registered once).
+
     if (!closeStatTips._wired) {
       closeStatTips._wired = true;
       document.addEventListener('click', function () { closeStatTips(); });
@@ -943,7 +847,7 @@ var UI = (function () {
     var hl = $('history-list');
     hl.innerHTML = '';
     if (!s.history.length) hl.innerHTML = '<p class="subtitle">No hands yet.</p>';
-    // Last 10 hands, each expandable for details + replay.
+
     s.history.slice(0, 10).forEach(function (h) {
       var row = document.createElement('div');
       row.className = 'hist-row expandable';
@@ -998,7 +902,7 @@ var UI = (function () {
     var range = (max - min) || 1;
     function X(i) { return 10 + (W - 20) * (i / Math.max(1, data.length - 1)); }
     function Y(v) { return H - 12 - (H - 24) * ((v - min) / range); }
-    // zero line
+
     ctx.strokeStyle = '#2b3547'; ctx.beginPath();
     ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.stroke();
     ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 2; ctx.beginPath();
@@ -1009,7 +913,6 @@ var UI = (function () {
     ctx.fillText(min.toFixed(0) + ' bb', 6, H - 6);
   }
 
-  // ---------- push/fold ----------
   function renderPFScenario(scn) {
     var sit = $('pf-situation');
     sit.innerHTML =
@@ -1050,7 +953,6 @@ var UI = (function () {
     $('pf-next').hidden = false;
   }
 
-  // ---------- hand history / replayer ----------
   function fmtReplayDate(iso) {
     try {
       var d = new Date(iso);
@@ -1059,9 +961,6 @@ var UI = (function () {
     } catch { return ''; }
   }
 
-  // records: newest first. onOpen(id) opens the replay viewer.
-  // In-game history modal: browse past hands without leaving the table.
-  // Each row expands the story narrative inline.
   function openHandsModal(records) {
     var ov = $('hands-modal'), list = $('hands-modal-list');
     list.innerHTML = '';
@@ -1100,8 +999,6 @@ var UI = (function () {
 
   function closeHandsModal() { $('hands-modal').hidden = true; }
 
-  // Feedback modal: collects type/title/details and opens a pre-filled
-  // GitHub issue in a new tab. Zero backend — nothing is sent automatically.
   var fbType = 'general';
   function openFeedbackModal() {
     var ov = $('feedback-modal');
@@ -1188,17 +1085,11 @@ var UI = (function () {
     }
   }
 
-  // ---------- hand story ----------
-  // A clean, phone-readable narrative of a finished hand (PokerStars-style
-  // hand history). No stepping, no board chrome — just scroll and read what
-  // happened. Built from the same timeline the stepper uses.
   function cardText(c) { return rankChar(c.r) + SUITS[c.s]; }
 
-  // Pure story HTML for a hand record; shared by the Hands-tab story view and
-  // the in-game history modal.
   function handStoryHtml(rec) {
     var html = '';
-    // Everyone's hands at the top — clean grid, not scattered
+
     var hands = rec.allHands || [];
     if (!hands.length && rec.heroHole && rec.heroHole.length === 2) {
       hands = [{ name: 'You', hole: rec.heroHole, isHero: true }];
@@ -1211,7 +1102,7 @@ var UI = (function () {
           '<div class="rp-hand-cards">';
         if (h.hole && h.hole.length === 2) {
           h.hole.forEach(function (c) {
-            // Cards stored as {r: 2-14, s: 0-3}; convert to display format.
+
             var rank = { 14: 'A', 13: 'K', 12: 'Q', 11: 'J' }[c.r] || String(c.r);
             var suit = ['♠', '♥', '♦', '♣'][c.s] || '';
             var red = (c.s === 1 || c.s === 2) ? ' red' : '';
@@ -1249,7 +1140,7 @@ var UI = (function () {
       });
       html += '</div>';
     });
-    // Result
+
     var end = (rec.timeline || []).filter(function (e) { return e.t === 'end'; })[0];
     if (end && end.winners && end.winners.length) {
       html += '<div class="rp-story-result">' + end.winners.map(function (w) {
@@ -1264,7 +1155,7 @@ var UI = (function () {
       html += '<div class="rp-story-net ' + (hn > 0 ? 'pos' : hn < 0 ? 'neg' : '') + '">You ' +
         chipDelta(hn, rec.heroNetBB) + '</div>';
     }
-    // Coach recap from when the hand was played (plain-text '+/-' lines).
+
     if (rec.coachNotes && rec.coachNotes.length) {
       html += '<div class="rp-coach"><div class="rp-coach-title">💡 Coach recap</div>';
       rec.coachNotes.forEach(function (ln) {
@@ -1303,9 +1194,6 @@ var UI = (function () {
     view.appendChild(story);
   }
 
-  // Render the replay viewer for record `rec` at frame `idx`
-  // (idx = number of timeline entries applied). Buttons carry stable ids;
-  // app.js wires them after each render.
   function renderReplay(rec, idx) {
     var list = $('hand-list'), view = $('replay-view');
     list.hidden = true; view.hidden = false; view.innerHTML = '';
@@ -1399,16 +1287,14 @@ var UI = (function () {
     view.appendChild(prog);
   }
 
-  // ---------- misc ----------
   function fmt(n) {
     n = Math.round(n);
     return n.toLocaleString('en-US');
   }
-  // Chip delta: "+1,250" / "-340". Falls back to BB text for records saved
-  // before chip amounts were stored (old localStorage entries).
+
   function chipDelta(chips, bb) {
     if (chips == null || isNaN(chips)) {
-      var b = Math.round((bb || 0) * 10) / 10; // no float garbage like -13.437999999999999
+      var b = Math.round((bb || 0) * 10) / 10;
       return (b >= 0 ? '+' : '') + b + ' bb';
     }
     var c = Math.round(chips);
@@ -1448,10 +1334,9 @@ var UI = (function () {
     fmt: fmt, escapeHtml: escapeHtml, setBankroll: setBankroll
   };
 })();
-// Guarded Node export for headless geometry tests (browser: `module` is undefined).
+
 if (typeof module !== 'undefined' && module.exports) module.exports = UI;
 
-// ---------- mobile tab bar (phones) ----------
 (function initMobileTabs() {
   if (typeof document === 'undefined') return;
   var tabs = document.getElementById('mobile-tabs');
@@ -1461,7 +1346,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
   var closeBtn = document.getElementById('mp-close');
   if (!tabs || !panel) return;
 
-  // Show the tab bar only on game screens (mobile CSS handles visibility).
   function syncTabBar() {
     var t = document.getElementById('screen-table');
     var o = document.getElementById('screen-online');
@@ -1469,13 +1353,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     tabs.style.display = onGame ? '' : 'none';
     if (!onGame) closePanel();
   }
-  // Lock body scroll on game screens via JS too (fallback for browsers
-  // without :has() support). PokerNow-style: no dragging the page.
+
   function lockScroll() {
     var t = document.getElementById('screen-table');
     var o = document.getElementById('screen-online');
     var onOfflineGame = t && !t.hidden;
-    // Online: only lock when actually at a table (not the lobby/setup).
+
     var onOnlineGame = o && !o.hidden && !!document.querySelector('#online-view .online-felt');
     var onGame = onOfflineGame || onOnlineGame;
     document.body.style.overflow = onGame ? 'hidden' : '';
@@ -1512,7 +1395,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     setActive(name);
   }
 
-  // Pull the latest coach tip HTML into the panel.
   function fillCoach(body) {
     var src = document.getElementById('coach-tip');
     if (src && !src.hidden) {
@@ -1522,9 +1404,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     }
   }
 
-  // Pull the hand log HTML into the panel (offline or online).
   function fillHistory(body) {
-    // Check which screen is visible — #hand-log exists in DOM even when hidden.
+
     var online = document.getElementById('screen-online') && !document.getElementById('screen-online').hidden;
     var src = online ? document.getElementById('on-feed') : document.getElementById('hand-log');
     body.innerHTML = '';
@@ -1540,8 +1421,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     body.appendChild(replay);
   }
 
-  // Table chat gets its own tab (online games). Moves the live node (not a
-  // clone) so send/input keep working; restored on panel close.
   var chatHome = null, chatNode = null;
   function fillChat(body) {
     body.innerHTML = '';
@@ -1561,7 +1440,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     }
   }
 
-  // Menu: quick actions (leave, skip, settings-ish). Works offline + online.
   function fillMenu(body) {
     var mk = function (label, fn) {
       var b = document.createElement('button');
@@ -1586,7 +1464,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     var btn = e.target.closest('.mtab');
     if (!btn) return;
     var tab = btn.dataset.tab;
-    // Tapping the active tab toggles its panel closed (like a details disclosure).
+
     var isActive = btn.classList.contains('active') && !panel.hidden && tab !== 'table';
     if (tab === 'table' || isActive) { closePanel(); return; }
     if (tab === 'coach') { openPanel('coach', '💡 Coach', fillCoach); return; }
@@ -1596,7 +1474,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
   });
   if (closeBtn) closeBtn.onclick = closePanel;
 
-  // Keep panel content fresh while open (coach tips update on your turn).
   setInterval(function () {
     if (panel.hidden) return;
     var active = tabs.querySelector('.mtab.active');
