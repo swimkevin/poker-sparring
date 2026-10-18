@@ -4,7 +4,7 @@ var path = require('path');
 var dir = path.join(__dirname, '..');
 var failures = 0;
 function check(cond, msg) {
-  if (!cond) { failures++; console.log('FAIL: ' + msg); }
+  if (!cond) { failures++; console.log('::error::NCCOMMENT::' + msg); console.log('FAIL: ' + msg); }
   else { console.log('ok: ' + msg); }
 }
 
