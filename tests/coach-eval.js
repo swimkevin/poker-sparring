@@ -117,14 +117,24 @@ function checkTone(dec) {
   });
 }
 
+function situationKey(dec) {
+  // Preflop, the spot (open / facing-open / facing-3bet / facing-4bet+) is the
+  // situation: raise->fold across facing-open->facing-3bet means someone
+  // re-raised, which is a genuine situation change, not a contradiction
+  // (v1.8.107: the old hand|street|facing bucket flagged exactly that).
+  var base = dec.hand + '|' + dec.street + '|';
+  if (dec.street === 'preflop' && dec.spot) return base + dec.spot;
+  return base + (dec.toCall > 0 ? 'facing' : 'open');
+}
+
 function checkContradictions() {
-  // Group by hand+street+facing-bet; flag fold<->bet/raise flips between
+  // Group by hand+street+situation; flag fold<->bet/raise flips between
   // consecutive hero decisions in the SAME situation. A bet->fold after
   // getting raised is correct coaching (situation changed), not a
   // contradiction (v1.8.71: chaotic hero found this false positive).
   var byKey = {};
   decisions.forEach(function (dec, i) {
-    var k = dec.hand + '|' + dec.street + '|' + (dec.toCall > 0 ? 'facing' : 'open');
+    var k = situationKey(dec);
     (byKey[k] = byKey[k] || []).push(i);
   });
   Object.keys(byKey).forEach(function (k) {
@@ -185,6 +195,44 @@ function heroAct(dec) {
   }
 }
 
+// ---- deterministic self-test for the contradiction detector ----
+// Usage: node tests/coach-eval.js --selftest (fast, no browser run).
+// The full eval is stochastic; this pins the bucketing logic directly.
+if (process.argv[2] === '--selftest') {
+  var selfFails = 0;
+  function selfCheck(cond, msg) {
+    if (!cond) { selfFails++; console.log('SELFTEST FAIL: ' + msg); }
+    else console.log('SELFTEST ok: ' + msg);
+  }
+  function synth(advice, street, toCall, spot) {
+    return { hand: 1, street: street, toCall: toCall, advice: advice, spot: spot };
+  }
+  decisions = [synth('raise', 'preflop', 20, 'facing-open'),
+               synth('fold', 'preflop', 80, 'facing-3bet')];
+  flags = [];
+  checkContradictions();
+  selfCheck(flags.length === 0,
+    'raise->fold across facing-open->facing-3bet is a changed situation, not a contradiction');
+  decisions = [synth('raise', 'preflop', 20, 'facing-open'),
+               synth('fold', 'preflop', 20, 'facing-open')];
+  flags = [];
+  checkContradictions();
+  selfCheck(flags.length === 1 && flags[0].kind === 'contradiction',
+    'raise->fold with nothing changed still flags');
+  decisions = [synth('bet', 'flop', 0, null), synth('fold', 'flop', 50, null)];
+  flags = [];
+  checkContradictions();
+  selfCheck(flags.length === 0,
+    'postflop bet->fold across open->facing is not a contradiction');
+  decisions = [synth('bet', 'flop', 50, null), synth('fold', 'flop', 60, null)];
+  flags = [];
+  checkContradictions();
+  selfCheck(flags.length === 1,
+    'postflop bet->fold while facing still flags');
+  console.log(selfFails ? 'COACH-EVAL SELFTEST FAILED' : 'COACH-EVAL SELFTEST PASSED');
+  process.exit(selfFails ? 1 : 0);
+}
+
 // ---- drive the game ----
 if (d.getElementById('btn-quick')) click('btn-quick'); else click('btn-start');
 var lastHand = 0, ticks = 0, confirmPending = false;
@@ -218,9 +266,11 @@ var iv = setInterval(function () {
     if (heroLive && !confirmPending) {
       var vd = w.coachVerdict();
       var st = w.coachState();
+      var hooks = w.__coachTestHooks;
       var dec = {
         hand: hn, street: st.street, toCall: st.toCall, pot: st.pot,
         canBet: st.canBet, canRaise: st.canRaise,
+        spot: st.street === 'preflop' && hooks ? hooks.preflopSpot() : null,
         advice: vd.advice, strength: vd.strength, lesson: vd.lesson,
         msgHtml: vd.html || '', msgText: strip(vd.html),
         state: st, stackBefore: st.stack

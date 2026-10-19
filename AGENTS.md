@@ -17,10 +17,12 @@ first; this file is the 30-second version.
 - **Zero comments in shipped source** (Kevin 2026-10-18): js/, css/, index.html ship with NO comments — `tests/no-comments-test.js` fails the build otherwise. Version-history notes go in CHANGELOG.md only. If a test asserts on comment text, rewrite it to assert on code.
 
 ## Release checklist (GitHub Pages)
-- Bump the version in three places: `APP_VERSION` in `js/app.js`, `"version"` in
-  `package.json`, and the bare number in `version.txt`. The update toast compares
-  `version.txt` against the page's `APP_VERSION`; if they drift, users get a
-  phantom "update available" (or none at all).
+- Bump the version in five places: `APP_VERSION` in `js/app.js`, `"version"` in
+  `package.json`, the bare number in `version.txt`, every `?v=` cache-buster in
+  `index.html`, and `PS_VERSION` in `sw.js`. `tests/sw-test.js` fails the build
+  if they drift. The update toast compares `version.txt` against the page's
+  `APP_VERSION`; if they drift, users get a phantom "update available" (or none
+  at all).
 - Add a CHANGELOG.md entry under the new version.
 - Push via the GitHub connector (`push_files`); keep each push payload well
   under ~150 KB or it silently fails. Verify the commit and the live file after.
@@ -38,3 +40,15 @@ first; this file is the 30-second version.
 - To identify a failing CI suite without log access, push a diagnostic branch with a
   `tests/chain.js` wrapper that prints `::error::`/`::notice::` annotations, open a PR to
   trigger CI, then read annotations via the check-runs API. Close the PR without merging.
+
+## Loop ops (daily improvement cron)
+- `push.py` pushes via the GitHub API and never updates local git refs, so the local
+  index is permanently stale: `git status` shows every API-pushed file as modified and
+  `git diff origin/main` misreports untracked-but-identical files as deleted. Do NOT use
+  local git to detect what changed — track changed files manually during the run and
+  verify the push via the API response and the live `version.txt`.
+- Service-worker rule (v1.8.107): the update check fetches `version.txt?v=<timestamp>`,
+  so a SW must NOT treat `?v=` as an immutability signal — `version.txt` is network-first,
+  versioned static assets are cache-first. `PS_VERSION` in `sw.js` joins the version-bump
+  list (enforced by `tests/sw-test.js`), and the SW file must change every release or
+  browsers will never pick up the new cache.

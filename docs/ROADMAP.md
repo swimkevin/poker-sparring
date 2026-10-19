@@ -1,6 +1,6 @@
 # Roadmap
 
-(Rewritten 2026-10-18 — the old version planned v1.3–v2.0; we're at v1.8.104 and most of it shipped.)
+(Rewritten 2026-10-18 — the old version planned v1.3–v2.0; we're at v1.8.107 and most of it shipped.)
 
 ## Where the app stands
 

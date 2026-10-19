@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.106';
+  var APP_VERSION = '1.8.107';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1416,7 +1416,7 @@
     return 0;
   }
   function riskPremiumNote(rp) {
-    return rp > 0 ? ' <span class="coach-icm">Tournament note: be a bit tighter here — chips are worth more than their face value near pay jumps.</span>' : '';
+    return rp > 0 ? ' <span class="coach-icm">Tournament: tighten up — chips are worth more than face value near pay jumps.</span>' : '';
   }
 
   var PF_POS_MAP = { 'button': 'BTN', 'small blind': 'SB', 'big blind': 'BB',
@@ -1893,7 +1893,7 @@
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
-      'need <b>' + pct(need2) + '</b> to break even' + (strongAdj ? '' : ' (pays for itself)') +
+      'need <b>' + pct(need2) + '</b> to break even' +
       (strongAdj ? ', <b>' + pct(threshold) + '</b> vs ' + vName + '\'s strong range' : '') +
       (rp2 > 0 ? ' (a bit more in tournaments)' : '') +
       (riverPrior > 0 ? ' (rivers are under-bluffed)' : '') +
@@ -2521,6 +2521,11 @@
   }
 
   refreshResumeButton();
+  try {
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(quiet);
+    }
+  } catch (e) { quiet(e); }
   document.addEventListener('pagehide', saveSession);
 
   document.addEventListener('DOMContentLoaded', wire);

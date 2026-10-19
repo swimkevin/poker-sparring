@@ -1,3 +1,44 @@
+## [1.8.107] — Service worker: the PWA is real now + two eval flags fixed
+
+The manifest has been linked since early on, but no service worker existed, so
+the app was never actually installable or offline-capable — dead weight on the
+"PWA" claim. Fixed with a minimal cache-first worker:
+
+- **New `sw.js`** (zero comments, like all shipped source). Precaches the full
+  app shell on install (every `?v=` asset `index.html` references, plus the
+  manifest and icon), serves versioned assets cache-first, and uses
+  network-first for navigations and `version.txt` so the update check
+  (`fetch('version.txt?v=' + Date.now())`) keeps working and the page never
+  goes stale while online. Cross-origin and non-GET requests pass through
+  untouched. The cache name carries the version and the SW file itself changes
+  every release, so updates propagate through the normal SW update flow.
+- **Registered on boot** in `js/app.js`, with failures routed through the
+  existing `quiet(e)` helper (visible under `?psdebug=1`) — a failed install
+  leaves the app exactly as before, never broken.
+- **New `tests/sw-test.js`** (19 checks, wired into `npm test`): runs the
+  worker in a stubbed SW environment and verifies install precaches the whole
+  shell, activate purges stale caches, the cache-first/network-first split,
+  offline navigation fallback, and request passthrough. It also enforces the
+  version-bump rule as a test: `version.txt`, `APP_VERSION`, `package.json`,
+  every `?v=` in `index.html`, and `PS_VERSION` must all agree — a forgotten
+  bump now fails the build instead of shipping a phantom update.
+- The version-bump checklist in AGENTS.md now lists all five places.
+
+The 10-hand coach eval flagged two issues this run, both fixed at the root:
+- **Tone (508-char message).** A pot-odds explanation ran 8 chars over the
+  500-char message budget. Cut the zero-information "(pays for itself)"
+  filler and tightened the tournament note — the message now ships with
+  ~50 chars of margin on its longest path.
+- **Contradiction false positive.** The eval flagged a preflop raise→fold
+  flip, but the coach was right: hero was advised to 3-bet a premium vs an
+  open, then correctly advised to fold it vs the re-raise — the situation
+  changed. The eval's same-situation bucket (`hand|street|facing`) was too
+  coarse to see that. It now keys on the coach's own spot classifier
+  (`open` / `facing-open` / `facing-3bet` / `facing-4bet+`), and a new
+  deterministic `node tests/coach-eval.js --selftest` (wired into `npm test`)
+  pins the bucketing: the old logic fails it, the new logic passes, and true
+  contradictions still flag.
+
 ## [1.8.106] — CI fix + coach grammar + deep live-test pass
 
 - **CI green again.** The v1.8.105 `no-comments-test.js` failed on CI (not locally) because a locally-deleted `js/update-check.js` still existed on the remote — `push.py` cannot delete files. Removed via the Contents API. Added the lesson to AGENTS.md: directory-scanning tests must account for orphaned remote files.

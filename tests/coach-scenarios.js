@@ -237,7 +237,7 @@ console.log('\n20. Honest equity vs strong ranges (v1.8.71, v1.8.99)');
   // villain's actual strong range on this board, so the number shown is the
   // number the advice is based on — no inflated figure, no fudge factor.
   ok(src.includes("s strong range'"), 'range named in the math line vs strong ranges');
-  ok(src.includes('(pays for itself)'), 'break-even explained');
+  ok(src.includes('to break even'), 'break-even explained in plain words');
   ok(src.includes("'simulated 150× vs ' + vName + '\\'s strong range'") ||
      src.includes("simulated 150× vs ' + vName + '"), 'equity source names the strong range');
 }
