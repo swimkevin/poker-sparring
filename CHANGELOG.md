@@ -1,3 +1,13 @@
+## [1.8.109] — Docs-freshness gate (the loop improves itself)
+
+The v1.8.108 audit found README/ROADMAP suite counts had drifted when
+`sw-test.js` joined the chain in v1.8.107 — and no test caught it. New
+`tests/docs-freshness-test.js` (wired into `npm test`, verified to fail on
+the stale state): counts the unique `node tests/` suites in the `npm test`
+chain and asserts README and ROADMAP print that number, plus that README's
+`(vX.Y.Z)` mention matches `package.json`. Stale hiring-manager numbers now
+fail the build instead of shipping.
+
 ## [1.8.108] — Maniac tagline honesty + docs suite counts
 
 - **Maniac's tagline was lying.** Since v1.8.104's fold-realism tuning,
