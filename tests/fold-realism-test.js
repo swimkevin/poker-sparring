@@ -72,6 +72,11 @@ ok(sNothing >= 35, 'station folds absolute nothing into a big raise (' + sNothin
   var c = N - foldRate(id, FD, BOARD_FD, 4, 130, 100, N);
   ok(c >= 35, id + ' continues with the nut flush draw (' + c + '/' + N + ')');
 });
+// D) Profile honesty (v1.8.108): maniac folds air to big bets by design
+// (section A above), so his tagline must not claim he never folds.
+var maniacTag = String(BOTS.getArchetype('maniac').tagline || '').toLowerCase();
+ok(maniacTag.indexOf('no fold') === -1 && maniacTag.indexOf('never folds') === -1,
+  'maniac tagline stays honest about folding air (' + BOTS.getArchetype('maniac').tagline + ')');
 
 console.log(fails === 0 ? 'FOLD REALISM TEST PASSED' : 'FOLD REALISM TEST FAILED (' + fails + ')');
 process.exit(fails ? 1 : 0);

@@ -85,7 +85,7 @@ var ARCHETYPES = [
   },
   {
     id: 'maniac', name: 'Maniac', modes: ['cash', 'hu', 'pushfold'], emoji: '🤪',
-    tagline: 'Raises everything. No fold button found.',
+    tagline: 'Raises everything. Even he folds air to a big bet.',
     desc: 'Loose-aggressive chaos: plays ~65% of hands, re-raises light, bluffs every street. A total rollercoaster — scary until you realize their range is literally everything, and then it is just plain fun.',
     beat: 'Tighten up, trap with strong hands, and call down a little lighter than usual. Patience pays off big in this matchup.',
     openTier: 6, openTierLate: 6, callTier: 5, threeBetTier: 5,
