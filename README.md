@@ -22,8 +22,8 @@ It's also my first serious software project, and I hold it to that standard: 100
 
 ## By the numbers
 
-- **100+ versions shipped** (v1.8.107) — iterative, tested releases, not one big bang
-- **2,000+ test assertions** across 28 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
+- **100+ versions shipped** (v1.8.108) — iterative, tested releases, not one big bang
+- **2,000+ test assertions** across 29 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
 - **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff

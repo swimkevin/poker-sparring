@@ -1,3 +1,23 @@
+## [1.8.108] — Maniac tagline honesty + docs suite counts
+
+- **Maniac's tagline was lying.** Since v1.8.104's fold-realism tuning,
+  Maniac folds air to big bets by design (regression-tested at 35+/40, and a
+  240-hand aggressive-hero probe this run showed 61% flop folds vs 3/4-pot
+  bets) — but his tagline still said "No fold button found." New tagline:
+  "Raises everything. Even he folds air to a big bet." Added a guard to
+  `tests/fold-realism-test.js` so the tagline can never again claim he never
+  folds while the fold behavior is tested. (Profile text must match params —
+  the v1.8.89 rule.)
+- **Docs suite counts corrected.** README said 28 suites, ROADMAP said 25 —
+  the `npm test` chain has 29 since v1.8.107's `sw-test.js`. Hiring-manager
+  numbers stay honest.
+- **Audit notes.** The 240-hand probe (aggressive hero betting 75% pot with
+  everything, 0 engine errors) confirmed every archetype behaves per its
+  profile: rock/alice fold most, donald/station/rohan stay sticky with pieces,
+  nathan calls down by trapper design. The transient Online-tab theme-toggle
+  blank remains unreproduced in the harness (toggle only flips `data-theme`;
+  no code path blanks the online screen) — still a known cosmetic item.
+
 ## [1.8.107] — Service worker: the PWA is real now + two eval flags fixed
 
 The manifest has been linked since early on, but no service worker existed, so
