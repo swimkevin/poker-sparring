@@ -52,3 +52,18 @@ first; this file is the 30-second version.
   versioned static assets are cache-first. `PS_VERSION` in `sw.js` joins the version-bump
   list (enforced by `tests/sw-test.js`), and the SW file must change every release or
   browsers will never pick up the new cache.
+- `push.py` hardcodes `sys.path` to a template dir for `dynamic_credentials` that may not
+  exist in the deployment; if it throws `ModuleNotFoundError`, retry with
+  `PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin`.
+- Service-restart resilience (v1.8.109): a backgrounded `npm test` can be killed by a
+  runtime service restart with no trace. Always redirect to a log file
+  (`npm test > /tmp/npm-test-<ver>.log 2>&1; echo "NPM_EXIT:$?" >> log`) so the exit
+  state survives; if the session disappears, re-run the full chain from scratch —
+  never assume the partial run was green.
+- Debloat-scan discipline (v1.8.109): naive dead-code scans lie. Verify each candidate
+  with word-boundary grep across js/ tests/ index.html, including assignment usages
+  (`onclick = fn`, `onEvent: fn`), string-concatenated class names
+  (`'coach-recap-' + kind`), and named IIFEs (the name is only a stack-trace label).
+- Docs-freshness gate (v1.8.109): `tests/docs-freshness-test.js` asserts README/ROADMAP
+  suite counts match the `npm test` chain and README's `(vX.Y.Z)` matches package.json.
+  Keep those numbers accurate — the test enforces it now.

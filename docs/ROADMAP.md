@@ -19,7 +19,7 @@ The app is feature-complete for its purpose (a personal poker trainer for Kevin 
 
 1. **Realism** — bots play like people with money at stake (v1.8.104: fold air to ½-pot+)
 2. **Coach clarity** — every message plain-English, never self-contradictory, verified by live hand audits
-3. **Bug-free** — full suite (29 suites) + live 10-hand loop + coach evals green before every release
+3. **Bug-free** — full suite (30 suites) + live 10-hand loop + coach evals green before every release
 4. **Debloat** — dead code removed, docs kept current
 
 ## Deliberate non-goals
