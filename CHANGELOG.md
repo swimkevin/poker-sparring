@@ -1,3 +1,15 @@
+## [1.8.112] — Fix flaky Rohan aggression assertion (CI caught it)
+
+CI failed the v1.8.111 tree on `tests/test.js`: `Rohan rarely bets or raises
+(45 aggressive of 718)` — the same tree passed CI three minutes earlier, the
+classic signature of a statistical flake. Root cause: Rohan's true aggression
+rate is ~3.9% (measured 271/6975 over 400 hands), so a 5% threshold on ~718
+decisions flakes ~7% of runs. Per the v1.8.100 Monte Carlo rule the threshold
+must sit several sigma above the true rate: now 7% over 60 hands (~1080
+decisions), which keeps the flake probability negligible while still catching
+a real regression (e.g. 15% aggression fails loudly). No bot behavior changed
+— test-only fix.
+
 ## [1.8.111] — Bot sanity sweep regression test + loop-ops learnings
 
 - **New `tests/bot-sanity-sweep.js`** (wired into `npm test`; suite count is

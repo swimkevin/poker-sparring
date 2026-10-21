@@ -533,8 +533,14 @@ function heroPolicy(table, idx) {
   }
 
   // (a) Rohan never takes an aggressive action on any street.
+  // v1.8.112: measured Rohan's true aggression at ~3.9% (271/6975 over 400
+  // hands), so a 5% threshold on ~718 decisions flaked ~7% of runs (CI hit it
+  // 2026-10-21: 45/718 = 6.3%). Per the v1.8.100 Monte Carlo rule the
+  // threshold must sit several sigma above the true rate: 7% on ~1080
+  // decisions keeps the flake probability negligible while still catching a
+  // real regression (e.g. 15% aggression fails loudly).
   var rAggro = 0, rTried = 0;
-  for (var k = 0; k < 40; k++) {
+  for (var k = 0; k < 60; k++) {
     var t = mkTable('rohan');
     var g = 0;
     while (!t.handOver && g++ < 40) {
@@ -547,7 +553,7 @@ function heroPolicy(table, idx) {
   }
   ok(rTried > 200, 'rohan decisions sampled (' + rTried + ')');
   // v1.8.76: Rohan sometimes bluffs (15%) — allow rare aggressive actions
-  ok(rAggro / rTried < 0.05, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
+  ok(rAggro / rTried < 0.07, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
 
   // (b1) Amogh bombs tier-1 monsters (QQ+/AKs) preflop: shoves relentlessly
   // when facing a raise, and always raises (shove or big open) first-in.
