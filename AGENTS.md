@@ -67,3 +67,17 @@ first; this file is the 30-second version.
 - Docs-freshness gate (v1.8.109): `tests/docs-freshness-test.js` asserts README/ROADMAP
   suite counts match the `npm test` chain and README's `(vX.Y.Z)` matches package.json.
   Keep those numbers accurate — the test enforces it now.
+- Real event dispatch in jsdom tests (v1.8.110): tests that depend on
+  document-level capture/bubble listeners (e.g. online's `wireNavAway`) MUST use
+  real `el.click()` dispatch — calling `el.onclick()` directly silently skips those
+  listeners and can false-pass (a navigate-away check passed for the wrong reason
+  until this was caught). Prefer `el.click()` everywhere in DOM tests.
+- Every jsdom test must end with an explicit `process.exit(...)` (v1.8.110):
+  jsdom leaves a `Socket` handle open even with zero clicks, so a test without an
+  explicit exit hangs the runner instead of finishing. All existing tests do this;
+  new ones must too.
+- Detached runs cannot real-browser-repro localhost issues (v1.8.110):
+  `browser.browse` rejects loopback addresses at the tool level, so a transient
+  UI report can't be reproduced in a real browser from a scheduled run. Encode
+  the reported symptom as a jsdom regression test instead — and verify the new
+  test FAILS with the bug injected before shipping it.
