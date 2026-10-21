@@ -193,7 +193,7 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
 
 .emoji-pick {
   font-size: 1.2rem; padding: 4px 8px; border-radius: 8px;
-  background: var(--card); color: var(--text); border: 1px solid var(--line);
+  background: var(--panel2); color: var(--text); border: 1px solid var(--line);
   cursor: pointer; max-width: 80px;
 }
 
