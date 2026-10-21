@@ -1,3 +1,31 @@
+## [1.8.110] — Theme-toggle/Online regression test + undefined CSS var fix
+
+Kevin's transient theme-toggle blank on the Online tab (first seen v1.8.106,
+never reproduced) is now a permanent regression test instead of a carried
+"known cosmetic" line:
+
+- **New `tests/theme-online-test.js`** (wired into `npm test`; suite count is
+  now 31 — README/ROADMAP updated, the docs-freshness gate stays green).
+  18 checks: Online nav shows the lobby, 4× theme toggles never hide
+  `screen-online` or empty its content, exactly one screen stays visible,
+  navigate-away-and-back survives another toggle, zero JS errors. Verified
+  the test FAILS when the symptom is injected (a toggle that hides
+  `screen-online` blanks the app exactly as reported) and passes on clean
+  code. The code audit was re-run to match: the toggle only flips
+  `data-theme`, every var `online.css` uses is defined in both themes, no JS
+  touches the online screen on toggle — the transient blank itself remains
+  unreproduced (likely a paint glitch; it self-healed on re-select), but no
+  future change can reintroduce the DOM-state version of it.
+- **Fixed undefined `--card`.** `.emoji-pick` (the emoji `<select>`s on setup
+  and the online host/join forms) used `background: var(--card)`, but `--card`
+  was never defined anywhere — the declaration silently dropped to a
+  transparent background. Now uses the existing `--panel2` surface token
+  (one line). It was the only undefined CSS variable in shipped styles.
+- **Debloat scan clean.** 0 dead functions, 0 dead CSS selectors. The naive
+  scan's candidates (`$`, `initMobileTabs`, `coach-recap-bad`) were all false
+  positives on verification — named IIFE, regex missing `$(` call sites,
+  string-concatenated class names — per the v1.8.109 discipline note.
+
 ## [1.8.109] — Docs-freshness gate (the loop improves itself)
 
 The v1.8.108 audit found README/ROADMAP suite counts had drifted when
