@@ -1,3 +1,37 @@
+## [1.8.111] — Bot sanity sweep regression test + loop-ops learnings
+
+- **New `tests/bot-sanity-sweep.js`** (wired into `npm test`; suite count is
+  now 32 — README/ROADMAP updated, the docs-freshness gate stays green).
+  Drives every archetype's `botDecide` through 500 random spots (all streets,
+  random stacks/pots/bets/live counts) with a stub that faithfully mirrors
+  `js/engine.js`'s `legalActions` contract, and asserts every returned action
+  is well-formed: a known action string, a finite non-negative amount, and
+  bet/raise amounts inside the legal [min, max] range. Verified it FAILS when
+  the bug is injected (a `clampRaise` returning NaN produced 49 failures) and
+  passes on clean code (500/500 sane this run).
+- **Loop-ops learning: probe stubs must mirror the engine contract.** An
+  early version of this sweep's stub omitted `minBetTo`/`players`/`button`
+  and reported phantom NaN bets and preflop exceptions that don't exist in
+  the real game — the stub manufactured the bugs. Rule going forward: verify
+  any probe stub against `js/engine.js legalActions` before trusting its
+  findings.
+- **Loop-ops learning: one `push.py` call per release.** `push.py` sends one
+  blob POST per file, so the ~150 KB size limit is per-file, not per-commit —
+  the v1.8.108–110 "1/3, 2/3, 3/3" split pattern was never required and is
+  what produced the red intermediate commits. Verified the pattern against
+  v1.8.107 (a single 12-file commit, incl. the 107 KB `js/app.js`, pushed
+  fine). Every release now ships as ONE atomic `push.py` call with every
+  changed file; version identity (version.txt, package.json, APP_VERSION,
+  all ?v= busters, sw.js PS_VERSION, README (vX)) changes in that same call.
+- **Every-commit-green gate verified (Kevin's manual rerun request).** CI
+  history confirms the gate works: the split intermediates `b0a8e68` /
+  `ecb6eb7` correctly FAILED (docs-freshness caught the version-identity
+  split), and the tip `d28a795` is green on both the test workflow and the
+  Pages deploy. Live `version.txt` matches the repo at 1.8.110 — no drift.
+- **Coach eval clean.** 11 hands completed, 0 flags, 0 JS errors; livetest
+  10/10 hands OK. Debloat scan clean (0 dead functions/CSS — same false
+  positives as v1.8.110, verified again).
+
 ## [1.8.110] — Theme-toggle/Online regression test + undefined CSS var fix
 
 Kevin's transient theme-toggle blank on the Online tab (first seen v1.8.106,
