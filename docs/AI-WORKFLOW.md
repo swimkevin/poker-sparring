@@ -26,8 +26,13 @@ code, write tests, run the suite, and report diffs.
 
 ## What agents may never do
 
-- **Push without human approval.** Every push to GitHub goes through an
-  explicit human approval step; agents prepare commits, the human ships.
+- **Push without authorization.** Two-tier model: (1) Ad-hoc agent work —
+  every push to GitHub goes through an explicit human approval step; agents
+  prepare commits, the human ships. (2) Daily improvement loop — operates
+  under standing authorization from Kevin (2026-10-18) to push within its
+  guardrails: full suite green, atomic version identity, every commit
+  verified green, CI confirmed green post-push. Kevin reviews the report
+  after each run; any push outside these guardrails needs explicit approval.
 - **Invent metrics, dates, or events.** Test counts, version numbers, and
   incident details come from tool output or the changelog — never from
   plausible-sounding generation. (The changelog once carried an inflated

@@ -42,6 +42,12 @@ first; this file is the 30-second version.
   trigger CI, then read annotations via the check-runs API. Close the PR without merging.
 
 ## Loop ops (daily improvement cron)
+- **Rollback procedure.** If a bad push reaches production: (1) Identify the
+  last good commit SHA via the GitHub API. (2) Use `push.py` to push the good
+  versions of the affected files (fetch them via the Contents API at the good
+  SHA). (3) Bump to a new version (never reuse a version number) so
+  cache-busters invalidate. (4) Verify live `version.txt` and CI green.
+  For a full revert, Kevin can use GitHub's "Revert" button on the bad commit.
 - `push.py` pushes via the GitHub API and never updates local git refs, so the local
   index is permanently stale: `git status` shows every API-pushed file as modified and
   `git diff origin/main` misreports untracked-but-identical files as deleted. Do NOT use
