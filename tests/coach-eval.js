@@ -118,12 +118,17 @@ function checkTone(dec) {
 }
 
 function situationKey(dec) {
-  // Preflop, the spot (open / facing-open / facing-3bet / facing-4bet+) is the
-  // situation: raise->fold across facing-open->facing-3bet means someone
-  // re-raised, which is a genuine situation change, not a contradiction
-  // (v1.8.107: the old hand|street|facing bucket flagged exactly that).
+  // Preflop, the spot (open / facing-open / facing-3bet / facing-4bet+) plus the
+  // raise count is the situation: 'facing-open' covers both "no raise yet"
+  // (facing limpers, or folded-to in the blinds) and "one raise", and the coach
+  // correctly flips raise->fold between them (isolate limpers, then fold when
+  // someone raises behind). Keying on the count keeps that from flagging as a
+  // contradiction while same-count flips still flag.
+  // (v1.8.107: the old hand|street|facing bucket flagged raise->fold across
+  // facing-open->facing-3bet; v1.8.113: the spot alone still conflated r0/r1.)
   var base = dec.hand + '|' + dec.street + '|';
-  if (dec.street === 'preflop' && dec.spot) return base + dec.spot;
+  if (dec.street === 'preflop' && dec.spot)
+    return base + dec.spot + '|r' + (dec.raises == null ? '?' : dec.raises);
   return base + (dec.toCall > 0 ? 'facing' : 'open');
 }
 
@@ -204,21 +209,27 @@ if (process.argv[2] === '--selftest') {
     if (!cond) { selfFails++; console.log('SELFTEST FAIL: ' + msg); }
     else console.log('SELFTEST ok: ' + msg);
   }
-  function synth(advice, street, toCall, spot) {
-    return { hand: 1, street: street, toCall: toCall, advice: advice, spot: spot };
+  function synth(advice, street, toCall, spot, raises) {
+    return { hand: 1, street: street, toCall: toCall, advice: advice, spot: spot, raises: raises };
   }
-  decisions = [synth('raise', 'preflop', 20, 'facing-open'),
-               synth('fold', 'preflop', 80, 'facing-3bet')];
+  decisions = [synth('raise', 'preflop', 20, 'facing-open', 1),
+               synth('fold', 'preflop', 80, 'facing-3bet', 2)];
   flags = [];
   checkContradictions();
   selfCheck(flags.length === 0,
     'raise->fold across facing-open->facing-3bet is a changed situation, not a contradiction');
-  decisions = [synth('raise', 'preflop', 20, 'facing-open'),
-               synth('fold', 'preflop', 20, 'facing-open')];
+  decisions = [synth('raise', 'preflop', 20, 'facing-open', 1),
+               synth('fold', 'preflop', 20, 'facing-open', 1)];
   flags = [];
   checkContradictions();
   selfCheck(flags.length === 1 && flags[0].kind === 'contradiction',
     'raise->fold with nothing changed still flags');
+  decisions = [synth('raise', 'preflop', 20, 'facing-open', 0),
+               synth('fold', 'preflop', 40, 'facing-open', 1)];
+  flags = [];
+  checkContradictions();
+  selfCheck(flags.length === 0,
+    'raise->fold across no-raise-yet->facing-raise is a changed situation, not a contradiction (v1.8.113)');
   decisions = [synth('bet', 'flop', 0, null), synth('fold', 'flop', 50, null)];
   flags = [];
   checkContradictions();
@@ -271,6 +282,7 @@ var iv = setInterval(function () {
         hand: hn, street: st.street, toCall: st.toCall, pot: st.pot,
         canBet: st.canBet, canRaise: st.canRaise,
         spot: st.street === 'preflop' && hooks ? hooks.preflopSpot() : null,
+        raises: st.street === 'preflop' && hooks ? hooks.preflopRaises() : null,
         advice: vd.advice, strength: vd.strength, lesson: vd.lesson,
         msgHtml: vd.html || '', msgText: strip(vd.html),
         state: st, stackBefore: st.stack

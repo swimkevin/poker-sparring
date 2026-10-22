@@ -66,6 +66,9 @@ first; this file is the 30-second version.
   (`npm test > /tmp/npm-test-<ver>.log 2>&1; echo "NPM_EXIT:$?" >> log`) so the exit
   state survives; if the session disappears, re-run the full chain from scratch —
   never assume the partial run was green.
+- Log persistence (v1.8.113): `/tmp` itself is wiped by a service restart, so a
+  redirected log there vanishes too. Keep run logs under the repo
+  (`hidden_files/*.log` — gitignored) instead of `/tmp`.
 - Debloat-scan discipline (v1.8.109): naive dead-code scans lie. Verify each candidate
   with word-boundary grep across js/ tests/ index.html, including assignment usages
   (`onclick = fn`, `onEvent: fn`), string-concatenated class names

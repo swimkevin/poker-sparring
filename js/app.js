@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.112';
+  var APP_VERSION = '1.8.113';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -991,14 +991,18 @@
     }
   }
 
-  function preflopSpot() {
-    var legal = table.legalActions(0);
-    if (legal.toCall === 0) return 'open';
+  function preflopRaiseCount() {
     var raises = 0;
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
       if (t.t === 'action' && t.street === 'preflop' &&
           (t.action === 'bet' || t.action === 'raise')) raises++;
     });
+    return raises;
+  }
+  function preflopSpot() {
+    var legal = table.legalActions(0);
+    if (legal.toCall === 0) return 'open';
+    var raises = preflopRaiseCount();
     if (raises <= 1) return 'facing-open';
     if (raises === 2) return 'facing-3bet';
     return 'facing-4bet+';
@@ -1231,6 +1235,10 @@
     return { advice: advice, strength: strength, msg: msg, lesson: lesson || '', html: null };
   }
 
+  function textLen(html) {
+    return String(html).replace(/<[^>]*>/g, '').length;
+  }
+
   function coachVerdict() {
     var hero = table.players[0];
     var legal = table.legalActions(0);
@@ -1264,7 +1272,16 @@
       var multiNote = multiwayNote();
 
       var reads = coachDecisions.length === 0 ? opponentReads() : '';
-      v.html = v.msg ? v.msg + tail + posNote + stageNote + multiNote + reads : null;
+      if (v.msg) {
+        var budget = reads ? 800 : 480;
+        var extras = '';
+        var baseLen = textLen(v.msg + tail + posNote + reads);
+        if (baseLen + textLen(stageNote) <= budget) extras += stageNote;
+        if (baseLen + textLen(extras + multiNote) <= budget) extras += multiNote;
+        v.html = v.msg + tail + posNote + extras + reads;
+      } else {
+        v.html = null;
+      }
       return v;
     } catch (err) {
 
@@ -1294,6 +1311,7 @@
       boardTexture: boardTexture,
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot,
+      preflopRaises: preflopRaiseCount,
 
       testScenario: function (name) {
         try {
@@ -1574,11 +1592,7 @@
         'Respect second re-raises: players don\'t bluff them often enough to call light.');
     }
 
-    var nRaises = 0;
-    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
-      if (t.t === 'action' && t.street === 'preflop' &&
-          (t.action === 'bet' || t.action === 'raise')) nRaises++;
-    });
+    var nRaises = preflopRaiseCount();
     if (nRaises === 0 && countLimpers() > 0) {
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
@@ -1902,7 +1916,7 @@
       riskPremiumNote(rp2);
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
-      ? " Bluff-catching = calling hoping they're bluffing. Works vs bluffers, not vs big bets for value."
+      ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."
       : '';
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',

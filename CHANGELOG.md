@@ -1,3 +1,49 @@
+## [1.8.113] — Coach tone budget + contradiction-detector fix + aggressive soak test
+
+The daily coach eval flagged two issues; both root-caused and fixed:
+
+- **Coach messages now respect a length budget (tone flag).** A 513-char
+  flop verdict exceeded the 500-char tone limit: independently-reasonable
+  components (pot-odds math line, bluff-catching note, villain exploit line,
+  position/multiway notes) stack without bound. Two changes: the
+  bluff-catching note is tightened (keeps the plain-English definition the
+  scenarios test asserts on), and `coachVerdict` now appends the optional
+  stage/multiway notes only while the message stays under budget (480 chars
+  for normal verdicts, 800 for the first-decision table-reads verdict whose
+  eval limit is 850). Core advice is never truncated.
+- **Eval contradiction false positive fixed.** The eval flagged "advice
+  flipped raise -> fold with no new cards" on a hand where the coach was
+  right both times: `preflopSpot()`'s `facing-open` bucket conflated "no
+  raise yet" (isolate limpers / steal — coach says raise) with "facing one
+  raise" (coach correctly says fold). The eval's situation key now includes
+  the preflop raise count (new `__coachTestHooks.preflopRaises`, backed by
+  an extracted `preflopRaiseCount()` that `preflopSpot` and `coachPreflop`
+  share instead of duplicating). The deterministic selftest gains a
+  regression case for exactly this scenario — verified it FAILS on the old
+  bucketing and passes on the new.
+- **New `tests/aggressive-soak.js`** (wired into `npm test`; suite count is
+  now 33 — README/ROADMAP updated, the docs-freshness gate stays green).
+  25 full hands with a maximum-pressure hero (wide opens, 3-bets, 2/3-pot
+  c-bets, barrels) against every bot archetype on the REAL engine table,
+  asserting no exceptions, every bot action legal per `engine.act`'s exact
+  validation, and chip conservation hand to hand. Verified it FAILS when the
+  bug is injected (+1 chip leak: 17/25 clean, AGGRESSIVE SOAK FAILED) and
+  passes 25/25 on clean code.
+- **Loop-ops learning: verify the probe's contract on both sides.** The
+  first version of the soak probe read `mv.amt` while `botDecide` returns
+  `{ a, amount }` — 48 phantom "illegal raise undefined" failures; then the
+  hero policy used the wrong field name (44 more); then the checker was
+  stricter than `engine.act` (which treats 'bet'/'raise' identically).
+  Rule: run any probe against ONE known-good hand first — a probe that
+  flags the control is broken, not the app. Extends the v1.8.111
+  stub-fidelity rule to return shapes.
+- **Loop-ops learning: verify tree-vs-remote-tip at run start.** This run
+  opened with local git HEAD at v1.8.1 while the working tree held the full
+  v1.8.112 content — push.py never updates local refs, so local git metadata
+  rots silently. Phase 0 now opens with `git fetch` + a `git archive`
+  vs working-tree diff to confirm the tree matches the remote tip before
+  any suite runs.
+
 ## [1.8.112] — Fix flaky Rohan aggression assertion (CI caught it)
 
 CI failed the v1.8.111 tree on `tests/test.js`: `Rohan rarely bets or raises
