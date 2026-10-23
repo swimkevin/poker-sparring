@@ -77,6 +77,20 @@ ok(sNothing >= 35, 'station folds absolute nothing into a big raise (' + sNothin
 var maniacTag = String(BOTS.getArchetype('maniac').tagline || '').toLowerCase();
 ok(maniacTag.indexOf('no fold') === -1 && maniacTag.indexOf('never folds') === -1,
   'maniac tagline stays honest about folding air (' + BOTS.getArchetype('maniac').tagline + ')');
+// D2) Profile honesty (v1.8.114): donald's tagline claimed he "almost never
+// folds postflop" while section A requires him to fold air 35/40 to big
+// bets on every street; rohan's claimed he "calls everything" while his own
+// desc and section A say he folds when he has nothing.
+var donaldTag = String(BOTS.getArchetype('donald').tagline || '').toLowerCase();
+ok(donaldTag.indexOf('almost never folds postflop') === -1,
+  'donald tagline no longer claims he never folds postflop (' + BOTS.getArchetype('donald').tagline + ')');
+ok(donaldTag.indexOf('air') !== -1,
+  'donald tagline admits folding air to big bets (' + BOTS.getArchetype('donald').tagline + ')');
+var rohanTag = String(BOTS.getArchetype('rohan').tagline || '').toLowerCase();
+ok(rohanTag.indexOf('calls everything') === -1,
+  'rohan tagline no longer claims he calls everything (' + BOTS.getArchetype('rohan').tagline + ')');
+ok(rohanTag.indexOf('folds') !== -1,
+  'rohan tagline admits folding (' + BOTS.getArchetype('rohan').tagline + ')');
 
 console.log(fails === 0 ? 'FOLD REALISM TEST PASSED' : 'FOLD REALISM TEST FAILED (' + fails + ')');
 process.exit(fails ? 1 : 0);

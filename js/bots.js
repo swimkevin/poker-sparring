@@ -17,7 +17,7 @@ var ARCHETYPES = [
   },
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
-    tagline: 'Tight but sticky. Folds a lot preflop, almost never folds postflop.',
+    tagline: 'Tight but sticky. Folds a lot preflop, and folds air to big bets — but never a pair.',
     desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.97).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
@@ -37,7 +37,7 @@ var ARCHETYPES = [
   },
   {
     id: 'rohan', name: 'Rohan', emoji: '🙂',
-    tagline: 'Straightforward and safe. Calls everything, occasionally bluffs.',
+    tagline: 'Loose and straightforward. Calls down light, but folds when he has nothing.',
     desc: 'Loose-passive: plays lots of hands, rarely raises and never re-raises. Calls down light with a pair — but folds when he has nothing, and sometimes throws in a random bluff to keep you honest (v1.8.97).',
     beat: 'Value bet thin — he will call with worse. He bluffs rarely, so give his bets respect, but don\'t fold everything.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 1,

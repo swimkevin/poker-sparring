@@ -1,3 +1,30 @@
+## [1.8.114] — Bot profile honesty: donald + rohan taglines match real behavior
+
+The daily bot audit measured postflop fold rates against a faithful probe
+(pure-air hands with no flush/straight draws, verified draw-free after two
+probe bugs: Qs on a Ks board is a flush draw, and a 4-flush on the turn
+board is a draw too). Findings: every bot correctly folds pure air to big
+bets (need >= 0.25) on all streets — the v1.8.104 flop fix generalizes —
+40/40 for donald, rock, shark, amogh, lag, nathan, rohan, maniac; station
+keeps its character (2/40 with overcard air, 40/40 with absolute nothing).
+Two taglines contradicted the measured behavior (the v1.8.89
+profile-text-must-match-params pattern, following the v1.8.108 maniac
+precedent):
+
+- **donald:** tagline claimed "almost never folds postflop" while he folds
+  air 40/40 to big bets on every street. Now: "Tight but sticky. Folds a
+  lot preflop, and folds air to big bets — but never a pair." (His desc
+  already said he calls down light — that part was honest.)
+- **rohan:** tagline claimed he "calls everything" while his own desc says
+  he "folds when he has nothing" and he folds air 40/40. Now: "Loose and
+  straightforward. Calls down light, but folds when he has nothing."
+
+`tests/fold-realism-test.js` section D gains four profile-honesty
+assertions (verified to FAIL 4/4 on the old taglines, PASS on the new).
+Checked but deliberately left alone: nathan's "Never raises" tagline is
+honest — measured 0/40 raises pre-river AND on the river (his river trap
+bets ~73% with near-nuts when checked to, but never raises), so no change.
+
 ## [1.8.113] — Coach tone budget + contradiction-detector fix + aggressive soak test
 
 The daily coach eval flagged two issues; both root-caused and fixed:
