@@ -41,6 +41,11 @@ check(css.indexOf('overflow-y: auto') !== -1,
 check(css.indexOf('-webkit-overflow-scrolling: touch') !== -1,
   'CSS enables momentum scrolling on iOS');
 
+check(css.indexOf('#screen-online[hidden]') !== -1,
+  'CSS respects hidden attribute on #screen-online (no bleed-through)');
+check(css.indexOf('#screen-table[hidden]') !== -1,
+  'CSS respects hidden attribute on #screen-table (no bleed-through)');
+
 var src = fs.readFileSync(path.join(dir, 'js', 'online.js'), 'utf8');
 check(src.indexOf("classList.add('online-scroll')") !== -1,
   'online.js adds online-scroll class (Home/Lobby)');

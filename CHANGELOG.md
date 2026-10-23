@@ -1,3 +1,9 @@
+## [1.8.116] — Fix Online scroll (for real) + hidden-screen bleed
+
+v1.8.115's scroll fix didn't work: setting `display: block` on the scrollable view broke its flex sizing, so it overflowed without scrolling. The view keeps `display: flex` now and just gets `overflow-y: auto` — flexbox constrains the height, the content scrolls inside it.
+
+Also fixed a screen-bleed bug Kevin caught: on mobile, `#screen-online` and `#screen-table` set `display: flex`, which overrides the `hidden` attribute — so the Online heading was visible at the bottom of the Play tab. Both now respect `[hidden]` explicitly. `tests/online-scroll-test.js` covers both fixes. All changes are inside mobile media queries; desktop is untouched.
+
 ## [1.8.115] — Online tab scrolls on mobile
 
 Kevin reported the "Play online" page couldn't scroll on iPhone — the Host/Join forms were clipped below the fold. Root cause: `#online-view` had `overflow: hidden` on mobile (meant for the in-game table), which also trapped the lobby views.
