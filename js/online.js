@@ -216,6 +216,7 @@ window.Online = (function () {
 
   function renderHome() {
     var v = $('online-view');
+    v.classList.add('online-scroll');
     v.innerHTML =
       '<div class="online-cards">' +
       '<div class="online-card"><h3>Host a table</h3>' +
@@ -383,6 +384,7 @@ window.Online = (function () {
 
   function renderLobby() {
     var v = $('online-view');
+    v.classList.add('online-scroll');
     var lob = lastLobby;
     if (!lob) { renderHome(); return; }
     var cfg = lob.config;
@@ -444,6 +446,7 @@ window.Online = (function () {
 
   function renderTableView() {
     var v = $('online-view');
+    v.classList.remove('online-scroll');
     var s = lastState;
     if (!s) { renderHome(); return; }
 

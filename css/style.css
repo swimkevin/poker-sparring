@@ -701,6 +701,13 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .screen { padding: 0.9rem 0.65rem; }
   h1 { font-size: 1.6rem; }
 
+@media (max-width: 420px) {
+  .brand { font-size: 0; padding: 6px 8px; }
+  .brand .brand-mark { width: 22px; height: 22px; }
+  .topbar { gap: 0.35rem; }
+  .nav-btn { padding: 0.42rem 0.5rem; font-size: 0.75rem; }
+}
+
   .seat { min-width: 84px; padding: 0.3rem 0.35rem; border-radius: 10px; }
   .seat .avatar { font-size: 1rem; }
   .seat .pname { font-size: 0.68rem; }
@@ -1029,6 +1036,25 @@ label { font-weight: 600; }
   }
   #screen-online #online-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   #screen-online #online-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  #screen-online #online-view.online-scroll {
+    display: block;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 1rem calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+  #screen-online #online-view.online-scroll .online-card {
+    margin-bottom: 1rem;
+  }
+  #screen-online #online-view.online-scroll input,
+  #screen-online #online-view.online-scroll select,
+  #screen-online #online-view.online-scroll button {
+    min-height: 44px;
+  }
+  #screen-online #online-view.online-scroll .online-card .primary {
+    min-height: 48px;
+    font-size: 1rem;
+    width: 100%;
+  }
   #screen-online .online-table-top { flex: 0 0 auto; padding: 0.4rem 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 0.3rem; }
   #screen-online .online-felt { flex: 1 1 auto; min-height: 0; border-radius: 20px; margin: 0 0.4rem; }
   #screen-online .online-felt .card { width: 32px; height: 46px; font-size: 0.8rem; }

@@ -1,3 +1,10 @@
+## [1.8.115] — Online tab scrolls on mobile
+
+Kevin reported the "Play online" page couldn't scroll on iPhone — the Host/Join forms were clipped below the fold. Root cause: `#online-view` had `overflow: hidden` on mobile (meant for the in-game table), which also trapped the lobby views.
+
+- **Scrollable lobby.** `renderHome()` and `renderLobby()` now add an `online-scroll` class to `#online-view`; `renderTableView()` removes it. On mobile the scrollable view gets `overflow-y: auto` with momentum scrolling and bottom padding clear of the tab bar. New `tests/online-scroll-test.js` locks it in (34th suite).
+- **FANG-level mobile polish.** 44px minimum touch targets on all form inputs/buttons (48px for the primary CTA, full-width), and the header brand collapses to just the spade icon below 420px so the Online tab + bankroll fit without clipping.
+
 ## [1.8.114] — Bot profile honesty: donald + rohan taglines match real behavior
 
 The daily bot audit measured postflop fold rates against a faithful probe
