@@ -701,7 +701,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
   .screen { padding: 0.9rem 0.65rem; }
   h1 { font-size: 1.6rem; }
 
-@media (max-width: 420px) {
+@media (max-width: 900px) {
   .brand { font-size: 0; padding: 6px 8px; }
   .brand .brand-mark { width: 22px; height: 22px; }
   .topbar { gap: 0.35rem; }
@@ -1042,6 +1042,20 @@ label { font-weight: 600; }
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 0 1rem calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+  #screen-online:has(#online-view.online-scroll) {
+    display: block;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #screen-online:has(#online-view.online-scroll) #online-root,
+  #screen-online:has(#online-view.online-scroll) .online-wrap,
+  #screen-online:has(#online-view.online-scroll) #online-view.online-scroll {
+    display: block;
+    overflow: visible;
+    height: auto;
+    min-height: 0;
+    flex: none;
   }
   #screen-online #online-view.online-scroll .online-card {
     margin-bottom: 1rem;

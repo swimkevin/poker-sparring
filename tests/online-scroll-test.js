@@ -41,8 +41,8 @@ check(css.indexOf('overflow-y: auto') !== -1,
 check(css.indexOf('-webkit-overflow-scrolling: touch') !== -1,
   'CSS enables momentum scrolling on iOS');
 
-check(css.indexOf('#screen-online[hidden]') !== -1,
-  'CSS respects hidden attribute on #screen-online (no bleed-through)');
+check(css.indexOf('#screen-online:has(#online-view.online-scroll)') !== -1,
+  'CSS uses :has() to make the lobby scroll without depending on flex chain');
 check(css.indexOf('#screen-table[hidden]') !== -1,
   'CSS respects hidden attribute on #screen-table (no bleed-through)');
 

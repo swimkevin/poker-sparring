@@ -1,3 +1,9 @@
+## [1.8.117] — Online scroll: bulletproof fix
+
+v1.8.116's fix didn't work on Kevin's phone. Root cause: a `.online-wrap` div sits between the flex parents (`#screen-online` → `#online-root`) and `#online-view`, breaking the flex sizing chain — `flex: 1` on `#online-view` did nothing because its parent isn't a flex container.
+
+New approach doesn't depend on flexbox at all: when the lobby is shown (`#online-view.online-scroll` present), a `:has()` rule turns `#screen-online` into a plain scrollable block container and neutralizes all the intermediate `overflow: hidden` / flex constraints. The in-game table (no `online-scroll` class) keeps the original fixed layout. Also raised the header brand-collapse breakpoint from 420px to 900px so the spade-icon-only header applies on all phones (Kevin's iPhone is wider than 420px). All changes remain in mobile media queries — desktop untouched.
+
 ## [1.8.116] — Fix Online scroll (for real) + hidden-screen bleed
 
 v1.8.115's scroll fix didn't work: setting `display: block` on the scrollable view broke its flex sizing, so it overflowed without scrolling. The view keeps `display: flex` now and just gets `overflow-y: auto` — flexbox constrains the height, the content scrolls inside it.
