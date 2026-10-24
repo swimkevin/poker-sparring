@@ -22,6 +22,17 @@ The app is feature-complete for its purpose (a personal poker trainer for Kevin 
 3. **Bug-free** — full suite (35 suites) + live 10-hand loop + coach evals green before every release
 4. **Debloat** — dead code removed, docs kept current
 
+## Architecture: the app.js question
+
+`js/app.js` is 2,546 lines — the one structural concern a hiring manager will
+flag first. The plan, stated publicly so it isn't just loop lore: extract the
+coach into `js/coach.js`. Deferred deliberately, not forgotten — the coach
+shares closure state (table, hero, coach decisions, ~15 helpers) with game
+flow, so the refactor's regression risk outweighs its value on any given day.
+It gets attempted only with the full suite green before AND after, and only
+when a release window can absorb a careful, well-tested split. Until then,
+app.js stays intact and the coach stays where the suite can see it.
+
 ## Deliberate non-goals
 
 - No real money, ever

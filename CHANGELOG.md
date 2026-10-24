@@ -1,3 +1,21 @@
+## [1.8.119] — Roadmap now states the app.js plan in public
+
+Closing a loop-instruction gap from the 2026-10-23 FANG director review:
+the review flagged `js/app.js` (2,546 lines) as the app's #1 architectural
+concern and the loop notes said to make the extraction plan public — but
+`docs/ROADMAP.md` never actually said it. It does now: a new "Architecture:
+the app.js question" section states the plan (extract the coach into
+`js/coach.js`), why it's deferred (the coach shares closure state with game
+flow, so refactor risk outweighs value on any given day), and the gate for
+attempting it (full suite green before AND after).
+
+Also verified this run: the daily audit is clean (livetest 10/10, coach
+eval 0 flags over 11 hands, full suite green), and a debloat scan found no
+dead CSS — its one candidate, `coach-recap-bad`, is alive via dynamic class
+construction (`'coach-recap-' + kind` in app.js, `'coach-recap-' + (good ?
+'good' : 'bad')` in ui.js), the exact string-concatenation trap the
+debloat-scan discipline warns about. Verified with grep, not deleted.
+
 ## [1.8.118] — Flagged-modes regression suite + scroll-saga CSS debloat
 
 Kevin's manual trigger: debloat round + feature testing + fresh-eyes pass.
