@@ -1015,7 +1015,7 @@ label { font-weight: 600; }
     height: calc(100dvh - 65px);
     -webkit-overflow-scrolling: touch;
   }
-  .mp-body .coach { font-size: 1rem; line-height: 1.6; }
+  .mp-body .coach { line-height: 1.6; }
   .mp-body .hand-log { max-height: none; font-size: 0.95rem; line-height: 1.5; }
 
   .mobile-tabs { z-index: 300; }
@@ -1039,8 +1039,6 @@ label { font-weight: 600; }
   #screen-online #online-root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   #screen-online #online-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
   #screen-online #online-view.online-scroll {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     padding: 0 1rem calc(90px + env(safe-area-inset-bottom, 0px));
   }
   #screen-online:has(#online-view.online-scroll) {

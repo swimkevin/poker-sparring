@@ -90,3 +90,30 @@ first; this file is the 30-second version.
   UI report can't be reproduced in a real browser from a scheduled run. Encode
   the reported symptom as a jsdom regression test instead — and verify the new
   test FAILS with the bug injected before shipping it.
+- Probe-board fidelity (v1.8.114): when a headless probe measures "air" fold
+  rates, verify the hero hand is truly air with NO draws before trusting the
+  numbers — print `madeStrength`/`detectDraws` on the probe setup. Two probe
+  bugs in one run: Qs on a Ks board is a flush draw, and a 4-card same-suit
+  turn board gives the "air" hand a draw; both measured 0/40 folds and looked
+  like a turn leak, but the bots were correctly continuing with draws. The
+  v1.8.111/113 probe-fidelity rules extend to the board/hole-card construction.
+- Verify-before-fixing cosmetic issues too (v1.8.114): nathan's "Never raises"
+  tagline looked stale but measurement proved it honest (0/40 raises on every
+  street, leading and facing). Don't "fix" profile text without measuring the
+  actual behavior first — extends the v1.8.104 verify-open-issues rule to
+  cosmetic changes.
+- Phantom-stall probes (v1.8.118): a headless DOM probe reported a "stuck" game
+  three times; all three were probe bugs. (1) `UI.clearLog()` wipes `#hand-log`
+  on every hand start, so counting `Hand #` in the log can never exceed 1 —
+  count completed hands via `#hand-info` instead. (2) The "You are felted!"
+  rebuy modal is correct behavior, not a stall — handle it (click Rebuy) like
+  the feature sweep does. (3) Bot think pacing (650-1400ms per action) plus
+  coach Monte Carlo makes headless play look frozen on short horizons — run
+  longer before concluding. Extends the v1.8.111/113/114 probe-fidelity rules:
+  verify the probe's measurement method before concluding the app is broken.
+- CSS debloat verification (v1.8.118): when removing a superseded declaration,
+  prove it dead by specificity — both rules must apply under identical
+  conditions and the surviving rule must win on every property being removed.
+  The v1.8.116 `overflow-y: auto` on `#online-view.online-scroll` died because
+  the v1.8.117 `:has()` rule sets `overflow: visible` at higher specificity
+  (3,2,0 vs 2,1,0) under the same `.online-scroll` condition.

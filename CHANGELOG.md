@@ -1,3 +1,32 @@
+## [1.8.118] — Flagged-modes regression suite + scroll-saga CSS debloat
+
+Kevin's manual trigger: debloat round + feature testing + fresh-eyes pass.
+
+- **New `tests/flagged-modes-test.js` (35th suite).** The feature-flagged modes
+  (heads-up, push/fold trainer, custom-bot builder) are hidden from the default
+  UI, so nothing exercised them day to day. The suite boots the real app in
+  jsdom with all flags on and plays each mode end to end: 5 push/fold rounds
+  with verdict feedback every round, a full heads-up hand to completion, and a
+  custom-bot add/delete round-trip — zero JS errors throughout. Wired into
+  `npm test`; README/ROADMAP suite counts updated (the docs-freshness gate
+  stays green). All three modes verified healthy — no app bugs found.
+- **CSS debloat from the v1.8.115–117 scroll saga.** Two superseded
+  declarations removed: `overflow-y: auto` + `-webkit-overflow-scrolling` on
+  `#online-view.online-scroll` (the v1.8.116 rule) are fully overridden by the
+  v1.8.117 `:has()` rule's `overflow: visible` under identical conditions —
+  only the padding survives. Also dropped a dead `font-size: 1rem` on
+  `.mp-body .coach`, overridden by the later `0.9rem` in the same query.
+  Verified win-by-specificity before deleting; no visual change.
+- **Loop-ops learning: phantom-stall probes.** This run's first heads-up probe
+  reported a "stuck" game three times — all three were probe bugs, not app
+  bugs: (1) `UI.clearLog()` wipes `#hand-log` every hand, so counting
+  `Hand #` in the log can never exceed 1 — count via `#hand-info` instead;
+  (2) the "You are felted!" rebuy modal is correct behavior, not a stall —
+  handle it like the sweep does; (3) bot think pacing (650–1400ms/action) plus
+  coach Monte Carlo makes headless play look frozen on short horizons. Extends
+  the v1.8.111/113/114 probe-fidelity rules: verify the probe's measurement
+  method before concluding the app is broken.
+
 ## [1.8.117] — Online scroll: bulletproof fix
 
 v1.8.116's fix didn't work on Kevin's phone. Root cause: a `.online-wrap` div sits between the flex parents (`#screen-online` → `#online-root`) and `#online-view`, breaking the flex sizing chain — `flex: 1` on `#online-view` did nothing because its parent isn't a flex container.
