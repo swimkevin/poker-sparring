@@ -1,3 +1,28 @@
+## [1.8.120] — Bot-identity regression suite (36th)
+
+New `tests/bot-identity-test.js`: the spot-check sweep proves bot actions are
+legal, but nothing proved they are in character. This suite plays every
+archetype first-in preflop facing only the big blind (1000 trials each, bot
+never in the blind seat so toCall is always the blind) and asserts the
+profile: tight bots (Alice, Donald, Rohan, Shark, Rock, Pro, Nit) fold 72o
+at least 80% of the time, loose bots (swimkev, Amogh, Nathan, Station,
+Maniac, Bully, Gambler) fold it at most 20%, everyone but the never-raisers
+(Rohan, Nathan) raises aces at least 50%, and nobody ever folds aces.
+Measured rates cluster at 0% or 95-100%, so the bands sit many sigma away
+from flaking. Station is exempt from the aces-raise bar (measured ~24% —
+the loose-passive calls aces down more than it raises them, which matches
+its profile).
+
+Also verified this run, not changed: a first-in VPIP probe initially looked
+like six bots "never fold anything" (100% VPIP), but a 72o control showed
+the loose bots genuinely call trash to a lone blind while Rock folds it
+300/300 — the taglines ("Sees every flop with a smile", "Almost never
+folds") are honest, and the desc percentages describe real-game rates with
+raises in front, not first-in rates. No dead code this run: the only
+dead-function candidate was the named IIFE `initMobileTabs`, and the only
+dead-CSS candidate was `coach-recap-bad`, alive via dynamic class
+construction — both verified alive, both left alone.
+
 ## [1.8.119] — Roadmap now states the app.js plan in public
 
 Closing a loop-instruction gap from the 2026-10-23 FANG director review:

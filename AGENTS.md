@@ -111,6 +111,19 @@ first; this file is the 30-second version.
   coach Monte Carlo makes headless play look frozen on short horizons — run
   longer before concluding. Extends the v1.8.111/113/114 probe-fidelity rules:
   verify the probe's measurement method before concluding the app is broken.
+- First-in rates are not game rates (v1.8.120): a probe measuring "VPIP"
+  first-in facing only the blind reported 100% for six loose bots — but that
+  does not contradict desc claims like "sees ~45% of flops", which describe
+  real games with raises in front. When a profile claim names a game-wide
+  rate, either simulate full games or assert on the narrower spot you actually
+  measured (the new bot-identity test asserts first-in trash/aces tendencies,
+  not overall VPIP). Do not "fix" a profile on a mismatched measurement.
+- Bot-identity bands (v1.8.120): when asserting bot tendencies, classify bots
+  into tendency groups first, measure each group's true rate over ~1000
+  trials, then set bands many sigma away (measured clusters were 0% vs
+  95-100%, bands at 20%/80%). Exempt genuine outliers explicitly (Station
+  raises aces only ~24% — loose-passive calls them down) rather than
+  widening the band for everyone.
 - CSS debloat verification (v1.8.118): when removing a superseded declaration,
   prove it dead by specificity — both rules must apply under identical
   conditions and the surviving rule must win on every property being removed.
