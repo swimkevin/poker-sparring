@@ -24,7 +24,7 @@ The app is feature-complete for its purpose (a personal poker trainer for Kevin 
 
 ## Architecture: the app.js question
 
-`js/app.js` is 2,546 lines — the one structural concern a hiring manager will
+`js/app.js` is over 2,500 lines — the one structural concern a hiring manager will
 flag first. The plan, stated publicly so it isn't just loop lore: extract the
 coach into `js/coach.js`. Deferred deliberately, not forgotten — the coach
 shares closure state (table, hero, coach decisions, ~15 helpers) with game

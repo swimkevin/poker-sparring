@@ -4,8 +4,10 @@ This file orients AI coding agents (Claude Code, etc.) working on this repo. Rea
 
 ## What this is
 
-Poker Sparring: an offline Texas Hold'em training app (web first, mobile later).
-Vanilla HTML/CSS/JS. **No build step, no dependencies, no backend.**
+Poker Sparring: a Texas Hold'em training app (mobile-first layout, PWA-installable).
+Vanilla HTML/CSS/JS. **No build step, no runtime dependencies.** The app itself is
+static (GitHub Pages); online tables run through a separate Cloudflare Worker
+relay — see `docs/ARCHITECTURE.md` for the real split.
 
 ## Commands
 
@@ -30,13 +32,19 @@ js/bots.js        ARCHETYPES + botDecide(table, player) -> { a, amount }.
 js/pushfold.js    Push/fold drill scenarios + range-based feedback (equity vs the
                 shover's archetype range, not vs random hands).
 js/stats.js       localStorage stats. Guarded so it loads in Node.
+js/replay.js      Hand-history capture + replay state machine (DOM-free).
 js/ui.js          DOM rendering only. Never makes game decisions.
 js/app.js         Conductor: event pump, hero controls, tournament, coach tips.
+js/names.js       Username and custom-bot name prefs (localStorage).
+js/online.js      Browser UI for the online lobby and table.
+js/netplay.js     WebSocket client for the relay; mock mode runs in-page.
+js/room-server.js Authoritative room state, shared by the app mock and the worker.
 ```
 
 **Critical layering rule:** `cards → evaluator → equity → engine → bots` are DOM-free
-and must stay that way — they run in Node tests and will be reused by the React
-Native port. `ui.js`/`app.js` are browser-only.
+and must stay that way — they run in Node tests and are kept reusable for a
+native port later (see `docs/MOBILE.md`, option D — much later, only if the app
+earns it). `ui.js`/`app.js` are browser-only.
 
 ## Conventions
 
@@ -63,8 +71,9 @@ Native port. `ui.js`/`app.js` are browser-only.
 - `npm test` must pass before any push: evaluator vectors, equity sanity ranges,
   deterministic side-pot/odd-chip/full-hand scenarios, push/fold verdict
   consistency, the bot move-legality sweep (every archetype, only legal moves),
-  the 300-hand soak (chip conservation every hand, no exceptions, no infinite
-  loops), and jsdom component tests (escaping, feedback rendering, UI states).
+  the 100-hand soak by default (`SOAK_HANDS=300` for deeper checks; chip
+  conservation every hand, no exceptions, no infinite loops), and jsdom
+  component tests (escaping, feedback rendering, UI states).
 - If you change engine rules, add a targeted deterministic test (side-pot split,
   short all-in, odd chip). The soak test catches regressions; deterministic tests
   pin behavior.
@@ -77,18 +86,16 @@ Native port. `ui.js`/`app.js` are browser-only.
 
 ## Style
 
-- Keep functions small and commented at the decision points (bet sizing, thresholds).
-- No emojis in code comments. Emojis are UI content only (bot avatars).
+- Keep functions small. No comments in shipped `js/`/`css/`/`index.html` at all
+  (test-enforced zero-comment rule) — decision history lives in `CHANGELOG.md`
+  only. Emojis are UI content only (bot avatars).
 - Prefer clarity over cleverness — this repo is also a portfolio piece.
 
-## Roadmap (biggest wins next)
+## Roadmap
 
-See `docs/ROADMAP.md` for the weekly plan. Headliners:
-
-1. Hand replayer (persist per-hand actions, street-by-street viewer).
-2. Drill packs: 3-bet pots, blind defense, ICM bubble spots.
-3. PWA: manifest + service worker for installable/offline phone play.
-4. GTO-ish preflop range charts per archetype (replace tier thresholds).
-5. LLM hand-review coach (needs a backend or BYO-key design — keep client static).
-6. React Native port reusing the DOM-free core.
-7. Online multiplayer (would need a server; out of scope for the static build).
+See `docs/ROADMAP.md` for the current plan. Do not copy headliners from memory:
+three items this section used to list as future work — the hand replayer, the
+PWA (manifest + service worker), and online multiplayer — have all shipped,
+and the current direction is polish, not features. The one structural item
+still open is the `js/app.js` coach extraction, stated publicly in
+`docs/ROADMAP.md` with its deferral reason and gate.

@@ -1,3 +1,36 @@
+## [1.8.126] — CLAUDE.md and the incident log stop contradicting the repo (recruiter loop 4 of 4)
+
+Docs-accuracy pass, final in the recruiter series — every claim below was
+checked against the code before changing it, and the freshness gate now pins
+each one so the drift can't silently return:
+
+- `CLAUDE.md` was the stalest agent-facing doc in the repo: it called the app
+  "offline" with "no backend" (online multiplayer via the Cloudflare Worker
+  relay shipped long ago), listed only the offline core (missing `replay.js`,
+  `names.js`, `online.js`, `netplay.js`, `room-server.js`), told agents to
+  keep functions "commented at the decision points" (directly contradicting
+  the test-enforced zero-comment rule fixed in `docs/AI-WORKFLOW.md` in
+  v1.8.125), cited the "300-hand soak" (default is 100 hands,
+  `SOAK_HANDS=300` is the deep check), and listed the hand replayer, the PWA,
+  and online multiplayer as future roadmap headliners when all three have
+  shipped. All corrected; the roadmap section now points at
+  `docs/ROADMAP.md` instead of restating headliners from memory.
+- `docs/INCIDENTS.md` said "Two real production bugs" while listing three
+  (v1.4.1, v1.4.2, v1.6). Header now says three.
+- `docs/ROADMAP.md` cited `js/app.js` as exactly 2,546 lines; the file is
+  2,548 lines and counting, so the section now says "over 2,500 lines" —
+  order-of-magnitude wording, per the volatile-counts lesson.
+- `tests/docs-freshness-test.js` gains six assertions pinning the above
+  (verified to fail all six on the v1.8.125 tree and pass on the new tree).
+
+Verified, not changed: the debloat scan is clean (no dead CSS selectors, no
+once-only top-level functions), and the README's "4 live coach-audit rounds"
+count was left alone — its counting rule is undefined (the changelog said 3
+as of v1.8.70), so guessing a new number would invent a metric.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags, full suite green.
+
 ## [1.8.125] — Coach tone budget now covers the base message, and the docs stop lying about the test suite
 
 Coach fix (found by this run's live eval, which first FAILED with 2 tone

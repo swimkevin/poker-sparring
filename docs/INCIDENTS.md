@@ -1,7 +1,7 @@
 # Incident log
 
-Two real production bugs, written up the way they'd be written on the job.
-Both were found by verification *around* the test suite, then pinned with
+Three real production bugs, written up the way they'd be written on the job.
+Each was found by verification *around* the test suite, then pinned with
 regression tests so they can never silently return.
 
 ## v1.4.1 — Engine crash on broke players ("zombie" bug)

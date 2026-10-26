@@ -53,6 +53,23 @@ var aiwf = fs.readFileSync(path.join(dir, 'docs', 'AI-WORKFLOW.md'), 'utf8');
 ok(aiwf.indexOf('1,058') === -1,
   'AI-WORKFLOW carries no stale exact test count (v1.8.125: 1,058 rotted)');
 
+var claude = fs.readFileSync(path.join(dir, 'CLAUDE.md'), 'utf8');
+ok(claude.indexOf('300-hand soak') === -1,
+  'CLAUDE does not repeat the old 300-hand soak wording (default is 100, SOAK_HANDS=300 is the deep check)');
+ok(claude.indexOf('commented at the decision points') === -1,
+  'CLAUDE does not tell agents to comment code (zero-comment rule, v1.8.126)');
+ok(claude.indexOf('online.js') !== -1 && claude.indexOf('room-server.js') !== -1,
+  'CLAUDE architecture list includes the online layer, not just the offline core');
+ok(claude.indexOf('Online multiplayer (would need a server') === -1,
+  'CLAUDE roadmap does not list shipped online multiplayer as future work');
+
+var incidents = fs.readFileSync(path.join(dir, 'docs', 'INCIDENTS.md'), 'utf8');
+ok(incidents.indexOf('Two real production bugs') === -1,
+  'INCIDENTS header count matches its three entries (was "Two", v1.8.126)');
+
+ok(roadmap.indexOf('2,546 lines') === -1,
+  'ROADMAP does not cite an exact app.js line count (rots on the next edit)');
+
 var readmeVisible = readme.replace(/<!--[\s\S]*?-->/g, '');
 var linked = {};
 (readmeVisible.match(/docs\/[A-Za-z0-9_.\/-]+/g) || []).forEach(function (r) {
