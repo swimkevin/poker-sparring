@@ -27,5 +27,14 @@ var roadmap = fs.readFileSync(path.join(dir, 'docs', 'ROADMAP.md'), 'utf8');
 ok(roadmap.indexOf('(' + suites + ' suites)') !== -1,
   'ROADMAP suite count matches the npm test chain (' + suites + ')');
 
+var readmeVisible = readme.replace(/<!--[\s\S]*?-->/g, '');
+var linked = {};
+(readmeVisible.match(/docs\/[A-Za-z0-9_.\/-]+/g) || []).forEach(function (r) {
+  if (r.charAt(r.length - 1) !== '/') { linked[r] = 1; }
+});
+Object.keys(linked).forEach(function (r) {
+  ok(fs.existsSync(path.join(dir, r)), 'README-linked file exists: ' + r);
+});
+
 console.log(fails === 0 ? 'DOCS FRESHNESS TEST PASSED' : 'DOCS FRESHNESS TEST FAILED (' + fails + ')');
 process.exit(fails ? 1 : 0);

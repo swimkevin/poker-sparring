@@ -124,6 +124,7 @@ first; this file is the 30-second version.
   95-100%, bands at 20%/80%). Exempt genuine outliers explicitly (Station
   raises aces only ~24% — loose-passive calls them down) rather than
   widening the band for everyone.
+- Unpushed-doc link rot (v1.8.123): README linked docs/competitive-analysis-2026-10-09.md while the file sat untracked locally for weeks — push.py only pushes listed files, so a linked doc is never shipped by merely existing. Guard: docs-freshness-test now asserts every README-linked docs/ file exists in the tree (fails in CI on a tree missing it). When adding a doc, list it in the push.
 - CSS debloat verification (v1.8.118): when removing a superseded declaration,
   prove it dead by specificity — both rules must apply under identical
   conditions and the surviving rule must win on every property being removed.

@@ -1,3 +1,7 @@
+## [1.8.123] — README's linked competitive analysis actually ships
+
+The README's coach-methodology section linked `docs/competitive-analysis-2026-10-09.md`, but that file was never pushed — anyone clicking through from the repo README hit a 404. The doc itself (a dated Oct 9 analysis of a rival trainer, and the source of the Blind-mode and session-report ideas) now ships in this release, and `tests/docs-freshness-test.js` now asserts every `docs/` file the README links exists in the tree — verified to fail on a tree without the file, so a future unpushed doc breaks CI instead of shipping silently. No app code changed. Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval CLEAN over 11 hands with 0 flags, debloat scan clean (no dead top-level functions). Loop-ops note added to `AGENTS.md`.
+
 ## [1.8.122] — README frames the project as AI engineering
 
 FANG director review (2026-10-25) found the README's substance strong but its AI connection implicit. Two changes: (1) the Why section now states explicitly that this project is an autonomous agent with guardrails — it improves its own codebase daily, verifies every change against 36 test suites, and learns from its mistakes; (2) version-count selling points reframed from "100+ versions" to "daily tested releases" — the process is the signal, not the number.
