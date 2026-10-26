@@ -18,11 +18,13 @@ I play low-stakes poker with my friends — Rohan, Amogh, and Nathan. The bots a
 
 I built it because I wanted realistic practice. Textbook poker AI plays like a textbook — my friends don't. Every bot here is tuned from watching real hands: when the coach tells you how to exploit a player type, it's the same adjustment that works at the home game. And when my friends try it and something feels wrong, that's a bug report — several bot behaviors in this repo came straight from them.
 
-It's also my first serious software project, and I hold it to that standard: 100+ tested releases, every bug gets a regression test that fails without its fix, and the whole thing is vanilla JS with zero dependencies — because a poker trainer should work on a plane, and because the engineering should be readable enough to learn from.
+It's also my first serious software project, and I hold it to that standard: daily tested releases, every bug gets a regression test that fails without its fix, and the whole thing is vanilla JS with zero dependencies — because a poker trainer should work on a plane, and because the engineering should be readable enough to learn from.
+
+The deeper reason I built it this way: this project is an autonomous agent with guardrails. It improves its own codebase daily, verifies every change against 36 test suites, and learns from its mistakes — the loop's instructions grow smarter with each run. That's the AI engineering I want to do professionally: not just writing code, but building systems that write better code over time, within constraints you can verify.
 
 ## By the numbers
 
-- **100+ versions shipped** (v1.8.121) — iterative, tested releases, not one big bang
+- **Daily tested releases** (v1.8.122) — iterative, tested releases, not one big bang
 - **2,000+ test assertions** across 36 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step

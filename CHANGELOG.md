@@ -1,3 +1,7 @@
+## [1.8.122] — README frames the project as AI engineering
+
+FANG director review (2026-10-25) found the README's substance strong but its AI connection implicit. Two changes: (1) the Why section now states explicitly that this project is an autonomous agent with guardrails — it improves its own codebase daily, verifies every change against 36 test suites, and learns from its mistakes; (2) version-count selling points reframed from "100+ versions" to "daily tested releases" — the process is the signal, not the number.
+
 ## [1.8.121] — Architecture doc now tells the truth about online play
 
 Fresh-eyes director review of `docs/ARCHITECTURE.md` found it stale in three
