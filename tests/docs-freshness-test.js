@@ -27,6 +27,22 @@ var roadmap = fs.readFileSync(path.join(dir, 'docs', 'ROADMAP.md'), 'utf8');
 ok(roadmap.indexOf('(' + suites + ' suites)') !== -1,
   'ROADMAP suite count matches the npm test chain (' + suites + ')');
 
+var structureStart = readme.indexOf('## Project structure');
+var structureEnd = readme.indexOf('## ', structureStart + 1);
+var structure = structureStart === -1 ? '' : readme.slice(structureStart, structureEnd === -1 ? readme.length : structureEnd);
+fs.readdirSync(path.join(dir, 'js')).filter(function (f) { return f.slice(-3) === '.js'; }).forEach(function (f) {
+  ok(structure.indexOf(f) !== -1, 'README project structure lists js/' + f);
+});
+
+var arch = fs.readFileSync(path.join(dir, 'docs', 'ARCHITECTURE.md'), 'utf8');
+var mermaidStart = arch.indexOf('```mermaid');
+var mermaidEnd = arch.indexOf('```', mermaidStart + 1);
+var diagram = mermaidStart === -1 ? '' : arch.slice(mermaidStart, mermaidEnd === -1 ? arch.length : mermaidEnd);
+ok(diagram.indexOf('netplay') !== -1, 'ARCHITECTURE diagram includes the online layer (netplay)');
+ok(diagram.indexOf('room-server') !== -1, 'ARCHITECTURE diagram includes the online layer (room-server)');
+
+ok(roadmap.indexOf("we're at v") === -1, 'ROADMAP carries no version-dated standfirst that rots every release');
+
 var readmeVisible = readme.replace(/<!--[\s\S]*?-->/g, '');
 var linked = {};
 (readmeVisible.match(/docs\/[A-Za-z0-9_.\/-]+/g) || []).forEach(function (r) {

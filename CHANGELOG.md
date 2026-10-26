@@ -1,3 +1,34 @@
+## [1.8.124] — README structure, architecture diagram, and roadmap now match the app
+
+Recruiter-loop docs-accuracy pass (no app behavior changed except one dead CSS rule):
+
+- README's Project structure listed only 8 of the 14 `js/` files — the
+  `cards/evaluator/equity/engine.js` shorthand hid three files outright and
+  `names.js`, `stats.js`, `pushfold.js`, `replay.js` were missing entirely.
+  The tree now lists all 14 files with the same one-line roles as
+  `docs/ARCHITECTURE.md`'s module map, and `tests/docs-freshness-test.js`
+  asserts every `js/*.js` file appears in the structure section — verified
+  to fail 7 checks on the old README, so the drift can't silently return.
+- The architecture diagram showed the offline core only, even though the
+  module map lists the whole online layer. It now includes
+  `online.js` → `netplay.js` → `room-server.js` → `worker/` relay, with a
+  matching docs-freshness assertion on the diagram.
+- ROADMAP overstated two things: its standfirst still said "we're at
+  v1.8.107" (rotted 16 releases ago — the version clause is dropped, the
+  date stays, per the volatile-counts lesson), and its "everything below
+  is live" list presented heads-up and the push/fold trainer as core modes
+  when both are flag-gated experiments (`docs/FEATURE_FLAGS.md`, README
+  Features). Both bullets now say so, and the README's "What it is" line
+  carries the same heads-up qualifier.
+- Debloat: the `.bet-panel .bet-confirm` rule matched zero elements — the
+  Confirm button carries classes `ctl primary`, never `bet-confirm`, and
+  no script assigns that class — so the gold styling it declared never
+  rendered. Deleted; no visual change. No dead functions found; the scan's
+  only other candidates were verified alive.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags, full suite green.
+
 ## [1.8.123] — README's linked competitive analysis actually ships
 
 The README's coach-methodology section linked `docs/competitive-analysis-2026-10-09.md`, but that file was never pushed — anyone clicking through from the repo README hit a 404. The doc itself (a dated Oct 9 analysis of a rival trainer, and the source of the Blind-mode and session-report ideas) now ships in this release, and `tests/docs-freshness-test.js` now asserts every `docs/` file the README links exists in the tree — verified to fail on a tree without the file, so a future unpushed doc breaks CI instead of shipping silently. No app code changed. Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval CLEAN over 11 hands with 0 flags, debloat scan clean (no dead top-level functions). Loop-ops note added to `AGENTS.md`.

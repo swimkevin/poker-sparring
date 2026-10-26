@@ -24,7 +24,7 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.123) — iterative, tested releases, not one big bang
+- **Daily tested releases** (v1.8.124) — iterative, tested releases, not one big bang
 - **2,000+ test assertions** across 36 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
@@ -33,7 +33,7 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## What it is
 
-An offline-first poker practice app. Play cash games, heads-up, and tournaments against 14 AI opponents — each modeled on a real player archetype (the rock, the calling station, the maniac, Alice the ultra-tight vault) with distinct, exploitable tendencies. A solver-informed coach explains the math behind every decision in plain English. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
+An offline-first poker practice app. Play cash games and tournaments against 14 AI opponents (heads-up is a flag-gated experiment — see Features) — each modeled on a real player archetype (the rock, the calling station, the maniac, Alice the ultra-tight vault) with distinct, exploitable tendencies. A solver-informed coach explains the math behind every decision in plain English. Or host a private online table and play real hands with friends from a link. No accounts, no signup, no real money.
 
 ## Why this stack
 
@@ -128,12 +128,20 @@ Shuffled like the pros. Each hand starts with a full 52-card Fisher-Yates shuffl
 poker-sparring/
 ├── index.html / css / js      # the app — no build, no bundler
 │   └── js/
-│       ├── cards/evaluator/equity/engine.js  # DOM-free poker core
+│       ├── cards.js           # card primitives
+│       ├── evaluator.js       # 7-card evaluator
+│       ├── equity.js          # Monte Carlo equity, draws, hand tiers
+│       ├── engine.js          # game rules: betting, side pots, showdown
 │       ├── bots.js            # archetypes + heuristic decision engine
-│       ├── room-server.js     # authoritative room (worker + mock)
-│       ├── netplay.js         # WebSocket client w/ auto-reconnect
+│       ├── pushfold.js        # push/fold drill scenarios + feedback
+│       ├── stats.js           # localStorage training stats
+│       ├── replay.js          # hand-history capture + replay
+│       ├── names.js           # username / custom-bot name prefs
+│       ├── ui.js              # DOM rendering only
+│       ├── app.js             # conductor: game flow, coach, tournaments
 │       ├── online.js          # online lobby + table UI
-│       └── ui.js / app.js     # rendering / game flow
+│       ├── netplay.js         # WebSocket client w/ auto-reconnect
+│       └── room-server.js     # authoritative room (worker + mock)
 ├── worker/                    # Cloudflare relay (Durable Object rooms)
 ├── tests/                     # unit, component, smoke, netplay, worker
 ├── docs/                      # ADRs, architecture, testing, roadmap

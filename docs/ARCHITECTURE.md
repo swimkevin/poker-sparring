@@ -55,6 +55,10 @@ flowchart LR
     app <--> stats[(stats.js\nlocalStorage)]
     app --> ui[ui.js\nrender only]
     ui --> browser[(DOM)]
+    app --> online[online.js\nlobby + table UI]
+    online <--> netplay[netplay.js\nWebSocket client]
+    netplay <--> roomserver[room-server.js\nauthoritative room]
+    roomserver <--> worker[worker/\nDurable Object relay]
 ```
 
 ## Data flow (one hand)

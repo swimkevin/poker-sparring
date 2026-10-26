@@ -1,14 +1,14 @@
 # Roadmap
 
-(Rewritten 2026-10-18 — the old version planned v1.3–v2.0; we're at v1.8.107 and most of it shipped.)
+(Rewritten 2026-10-18 — the old version planned v1.3–v2.0; most of it shipped.)
 
 ## Where the app stands
 
 Everything below is live at https://swimkevin.github.io/poker-sparring/:
 
-- Cash games, heads-up, and tournaments vs 14 AI archetypes (friend-named bots included)
+- Cash games and tournaments vs 14 AI archetypes (friend-named bots included); heads-up is a flag-gated experiment
 - Solver-informed coach with plain-English advice, leak tracker, post-hand recaps
-- Hand replayer, training stats, push/fold trainer, Learn tab
+- Hand replayer, training stats, Learn tab; push/fold trainer is a flag-gated experiment
 - Real online multiplayer (Cloudflare Workers relay): room codes, chat, rebuys, host migration
 - Mobile-first layout, light/dark themes, PWA-installable
 - GitHub Actions CI runs the full suite on every push
