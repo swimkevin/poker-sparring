@@ -348,7 +348,7 @@ console.log('\n29. v1.8.101: hero plays the board (Kevin\'s QQQ77 river)');
   // exists) and a bet is never a bluff on a self-playing board.
   ok(/if \(hc === 'board'\)\s*\n?\s*return mkVerdict\('fold'/.test(appSrc),
      'board-play facing a bet advises fold');
-  ok(appSrc.includes("a bet on this board is never a bluff"),
+  ok(appSrc.includes("a bet here is never a bluff"),
      'fold message explains why bets are never bluffs');
   // Checked to hero: check — nothing to value-bet, no fold to win.
   ok(/if \(hc === 'board'\)\s*\n?\s*return mkVerdict\('check'/.test(appSrc),
@@ -370,6 +370,19 @@ console.log('\n30. Coach and bot copy is jargon-free');
     ok(botsSrc.indexOf(term) === -1, 'bot profiles (bots.js) never say "' + term + '"');
   });
   ok(src.indexOf('set-mine') === -1, 'coach never says "set-mine" (plain words instead)');
+}
+
+console.log('\n31. v1.8.125: coach tone budget covers the base message, not just extras');
+{
+  var foldMsg = src.match(/if \(hc === 'board'\)\s*return mkVerdict\('fold'[\s\S]*?;\n/) || [''];
+  ok(foldMsg[0].indexOf('guaranteed') === -1,
+     'board-play fold message never says "guaranteed" (eval flags it as overclaim language)');
+  ok(src.indexOf("if (baseLen > budget) { tail = '';") !== -1,
+     'coachVerdict drops the optional villain line when the base message is over budget');
+  ok(src.indexOf("if (baseLen > budget) { posNote = '';") !== -1,
+     'coachVerdict drops the optional position note next when still over budget');
+  ok(src.indexOf('v.html = v.msg + tail + posNote + extras + reads;') !== -1,
+     'core advice itself is never truncated — only optional notes are dropped');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

@@ -24,7 +24,7 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.124) — iterative, tested releases, not one big bang
+- **Daily tested releases** (v1.8.125) — iterative, tested releases, not one big bang
 - **2,000+ test assertions** across 36 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
@@ -58,7 +58,7 @@ An offline-first poker practice app. Play cash games and tournaments against 14 
 
 **Zero-dependency vanilla JS.** No framework, no bundler, no build step. The poker core (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser.
 
-**2,000+ test assertions, 6 layers.** Unit, component, smoke (300 randomized hands), netplay, worker, and live coach-audit tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
+**2,000+ test assertions, 6 layers.** Unit, component, smoke (full hands auto-played in jsdom), netplay, worker, and live coach-audit tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
 
 **Real-time multiplayer on Cloudflare Workers.** One Durable Object per room, authoritative game state, per-seat snapshots so hole cards never leak. Auto-reconnect with backoff, host migration if the host drops.
 

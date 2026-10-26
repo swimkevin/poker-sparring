@@ -5,8 +5,11 @@
 The app already works on phones: open the GitHub Pages URL in mobile Safari or
 Chrome and it plays. The layout has a responsive breakpoint (table stacks above
 the log under 900px), touch targets are buttons/sliders, and there's no
-hover-dependent UI. "Add to Home Screen" works right now with zero code changes —
-it just opens in the browser without an install prompt or offline support.
+hover-dependent UI. Option B below has shipped: `index.html` links
+`manifest.json`, `app.js` registers `sw.js`, and the service worker precaches
+versioned assets with a network-first `version.txt` and an offline fallback for
+navigation — so the app is installable and plays offline, not just in the
+browser.
 
 ## The options
 
@@ -16,13 +19,13 @@ it just opens in the browser without an install prompt or offline support.
 - Trade-off: no home-screen icon polish, no offline mode, no push notifications,
   and it looks like a website — because it is one.
 
-### B. PWA — installable web app (recommended next)
-- **Cost:** $0. **Effort:** ~1 day.
-- Add a web manifest + icons + service worker: install prompt on Android,
+### B. PWA — installable web app (done)
+- **Cost:** $0. **Effort:** ~1 day (spent).
+- Web manifest + icons + service worker are live: install prompt on Android,
   "Add to Home Screen" on iOS, full offline play, splash screen, no browser chrome.
 - Trade-off: iOS PWAs can't send push notifications and can't reach the App Store
   charts — but for a training app, that barely matters.
-- **This is the best value step.** It makes the phone experience feel like an app
+- **This was the best value step.** It makes the phone experience feel like an app
   without leaving the free static hosting.
 
 ### C. Capacitor wrapper — real App Store listing, same codebase
@@ -44,9 +47,9 @@ it just opens in the browser without an install prompt or offline support.
 
 ## Recommendation
 
-**B now, C if it earns it, D much later.** Ship the PWA (v1.6 on the roadmap) —
-it's a day of work and makes the phone story genuinely good. Consider the App
-Store wrapper only after real usage justifies the $99/yr and review overhead.
+**B done, C if it earns it, D much later.** The PWA is live and makes the
+phone story genuinely good. Consider the App Store wrapper only after real
+usage justifies the $99/yr and review overhead.
 A store listing with no users impresses no one; a polished PWA people actually
 open does.
 

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.124';
+  var APP_VERSION = '1.8.125';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1276,6 +1276,8 @@
         var budget = reads ? 800 : 480;
         var extras = '';
         var baseLen = textLen(v.msg + tail + posNote + reads);
+        if (baseLen > budget) { tail = ''; baseLen = textLen(v.msg + tail + posNote + reads); }
+        if (baseLen > budget) { posNote = ''; baseLen = textLen(v.msg + tail + posNote + reads); }
         if (baseLen + textLen(stageNote) <= budget) extras += stageNote;
         if (baseLen + textLen(extras + multiNote) <= budget) extras += multiNote;
         v.html = v.msg + tail + posNote + extras + reads;
@@ -1874,8 +1876,8 @@
     if (hc === 'board')
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — your cards don\'t improve the board at all: the best five are already out there, ' +
-        'so everyone is guaranteed at least a split. Nobody can hold a worse hand than you, which means raising ' +
-        'can never get called by worse — and a bet on this board is never a bluff, since a bluff can\'t fold out ' +
+        'so everyone already has at least a split. Nobody can hold a worse hand, so raising can\'t get called ' +
+        'by worse — and a bet here is never a bluff, since a bluff can\'t fold out ' +
         'a chop.' + (tight > 0.6 ? ' From a tight player this is a Queen or a Seven far more often than a split.' : '') +
         ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');

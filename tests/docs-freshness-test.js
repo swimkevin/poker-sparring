@@ -43,6 +43,16 @@ ok(diagram.indexOf('room-server') !== -1, 'ARCHITECTURE diagram includes the onl
 
 ok(roadmap.indexOf("we're at v") === -1, 'ROADMAP carries no version-dated standfirst that rots every release');
 
+var testing = fs.readFileSync(path.join(dir, 'docs', 'TESTING.md'), 'utf8');
+ok(testing.indexOf(suites + ' suites') !== -1,
+  'TESTING suite count matches the npm test chain (' + suites + ')');
+ok(testing.indexOf('300-hand') === -1,
+  'TESTING does not repeat the old 300-hand soak wording (CI default is 100, SOAK_HANDS=300 is the deep check)');
+
+var aiwf = fs.readFileSync(path.join(dir, 'docs', 'AI-WORKFLOW.md'), 'utf8');
+ok(aiwf.indexOf('1,058') === -1,
+  'AI-WORKFLOW carries no stale exact test count (v1.8.125: 1,058 rotted)');
+
 var readmeVisible = readme.replace(/<!--[\s\S]*?-->/g, '');
 var linked = {};
 (readmeVisible.match(/docs\/[A-Za-z0-9_.\/-]+/g) || []).forEach(function (r) {

@@ -1,3 +1,52 @@
+## [1.8.125] — Coach tone budget now covers the base message, and the docs stop lying about the test suite
+
+Coach fix (found by this run's live eval, which first FAILED with 2 tone
+flags on one hand-3 river message, then went CLEAN after the fix):
+
+- The board-play fold message said "everyone is guaranteed at least a
+  split" — the eval flags "guaranteed" as overclaim language, and the
+  check-branch already says the same thing as "already has at least a
+  split". Reworded to match, and tightened the sentence around it.
+- Root cause behind the 579-char message: `coachVerdict` budgeted only the
+  optional extras (stage/multiway notes, v1.8.113) while the base message
+  plus the villain line plus the position note sailed past the 500-char
+  tone limit unchecked. The budget now applies to the base too: when it
+  overflows, the optional villain line drops first, then the position
+  note. Core advice is never truncated. Regression tests in
+  `tests/coach-scenarios.js` section 31 fail 4 checks on the old code and
+  pass on the new code (91 passed total, was 87).
+
+Docs-accuracy pass (recruiter loop 3 of 3-4 — every claim below was
+checked against the code before changing it):
+
+- `docs/TESTING.md` was the stalest doc in the repo: it claimed 144 cases /
+  1,133 assertions, a 300-hand default soak, four layers, and that the
+  worker "is not executed by npm test" — while the chain runs 36 suites,
+  the soak defaults to 100 hands (`SOAK_HANDS=300` is the deep check), and
+  `tests/worker.test.js` boots the real Durable Object in the chain.
+  Rewritten around order-of-magnitude figures (exact counts rot) with the
+  full layer table, and `tests/docs-freshness-test.js` now enforces the
+  suite count in TESTING.md plus the absence of the old soak wording.
+- `docs/AI-WORKFLOW.md` claimed the suite was "1,058 tests" and told
+  agents to "comment the decision points" — contradicting the
+  test-enforced zero-comment rule. Both fixed (36 suites / 2,000+
+  assertions; history lives in CHANGELOG.md), with a freshness assertion
+  against the stale count. The dated ADR that mentions 1,058 is a
+  historical record and is intentionally left alone.
+- `docs/MOBILE.md` presented the PWA as the "recommended next" step and
+  told readers to "ship the PWA" — but `manifest.json` is linked and
+  `sw.js` is registered and precaching, so the PWA is already live.
+  The doc now says so; the App Store wrapper stays the "if it earns it"
+  step.
+- README's engineering highlights called the smoke test "300 randomized
+  hands" — the smoke test auto-plays full hands in jsdom until 3 are seen
+  (300 is the replay-step cap, not a hand count). Corrected.
+- Debloat scan clean: no dead CSS selectors, no dead top-level functions,
+  no TODOs.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags, full suite green.
+
 ## [1.8.124] — README structure, architecture diagram, and roadmap now match the app
 
 Recruiter-loop docs-accuracy pass (no app behavior changed except one dead CSS rule):

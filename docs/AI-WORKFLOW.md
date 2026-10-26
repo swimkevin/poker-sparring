@@ -12,11 +12,15 @@ The repo ships executable guardrails, not vibes:
   agent behavior: the layering rule (`cards → evaluator → equity → engine →
   bots` stay DOM-free), engine contracts (`table.legalActions()`,
   bet/raise `amount` is the total street target), and conventions (guarded
-  `require` blocks, no emojis in code comments).
+  `require` blocks, no emojis in code comments, and no comments at all in
+  shipped `js/`/`css/`/`index.html` — test-enforced, with version history
+  kept in `CHANGELOG.md` only).
 - **Standing rules agents must follow:** `npm test` must pass before any
   push; every engine/bot/equity change ships with a targeted test; never
   `innerHTML` user-controlled strings without `UI.escapeHtml`; keep
-  functions small and comment the decision points.
+  functions small, and ship no comments in `js/`/`css/`/`index.html`
+  (test-enforced zero-comment rule — decision history lives in
+  `CHANGELOG.md`).
 
 ## What agents may do
 
@@ -45,7 +49,7 @@ code, write tests, run the suite, and report diffs.
 ## Verification
 
 Every agent change goes through the same gate: the full `npm test` suite
-(1,058 tests) **plus human diff review** before commit. Agents have been
+(36 suites, 2,000+ assertions) **plus human diff review** before commit. Agents have been
 observed catching real bugs this way — e.g. a smoke-test ordering flake the
 agent introduced was caught by the suite, diagnosed, and fixed with a
 regression guard in the same session.
