@@ -27,6 +27,14 @@ js/replay.js      Hand-history capture + replay state machine (DOM-free).
 js/ui.js          DOM rendering ONLY. Never makes game decisions.
 js/app.js         Conductor: event pump, hero controls, tournament flow,
                   coach tips, leak detection, stats recording.
+js/names.js       Username and custom-bot name prefs (localStorage).
+js/online.js      Browser UI for the online lobby and table.
+js/netplay.js     WebSocket client (NetClient) for the relay; mock mode
+                  runs in-page with no network.
+js/room-server.js Authoritative room state (room codes, seating, turns);
+                  shared by the app mock and the worker relay.
+worker/           Cloudflare Worker relay (Durable Object rooms). Deploys
+                  separately with wrangler, not via GitHub Pages.
 ```
 
 **Layering rule:** `cards → evaluator → equity → engine → bots` are DOM-free and
@@ -85,12 +93,14 @@ When adding a cross-file call, add it to the guard block too.
 
 ## Testing strategy
 
-Three layers, all runnable with `npm test`:
+`npm test` runs 36 suites in total (unit, component, smoke, netplay, worker,
+service worker, coach audits, and more). The three layers below are the shape
+of it:
 
 | Layer | Where | What |
 |---|---|---|
-| Unit + integration | `tests/test.js` (Node) | 954 tests: evaluator vectors, equity sanity, deterministic side-pot / odd-chip / full-hand scenarios, push/fold verdict consistency, bot move-legality sweep (999 decisions across all archetypes), stats recording, 300-hand engine soak with per-hand chip conservation |
-| Component | `tests/component.test.js` (jsdom) | 25 tests: real `ui.js` rendering — HTML escaping of user input, single-render feedback, glossary accordions, bb/100 guard, leak tracker states |
+| Unit + integration | `tests/test.js` (Node) | 1000+ tests: evaluator vectors, equity sanity, deterministic side-pot / odd-chip / full-hand scenarios, push/fold verdict consistency, bot move-legality sweep (thousands of decisions across all archetypes), stats recording, 100-hand engine soak with per-hand chip conservation |
+| Component | `tests/component.test.js` (jsdom) | 216 tests: real `ui.js` rendering — HTML escaping of user input, single-render feedback, glossary accordions, bb/100 guard, leak tracker states |
 | Live / E2E | `tests/smoke.js` + browser playtest | Boots the real app in jsdom and auto-plays full hands (bot autonomy, hero controls, push/fold screen) with zero JS errors; the human browser playtest covers feel and visual QA |
 
 There are no runtime dependencies to integration-test against — the "live
@@ -109,8 +119,11 @@ dependency" layer is the browser itself, covered by the playtest checklist in
 ## Deployment
 
 GitHub Pages, "Deploy from branch" (`main`, `/root`). Every push redeploys in
-~1–2 minutes. Consequences of the static architecture: no server-side state, no
-auth, no multiplayer — all documented as limitations in the README.
+~1–2 minutes. The static app itself holds no server-side state and no auth.
+Online tables are the exception: they run through a separate Cloudflare
+Worker relay (`worker/`, Durable Object rooms), deployed by hand with
+`wrangler` — the app and the worker deploy independently, so a worker-only
+fix needs no app push and vice versa.
 
 ## Security notes
 

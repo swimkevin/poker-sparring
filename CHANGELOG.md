@@ -1,3 +1,39 @@
+## [1.8.121] — Architecture doc now tells the truth about online play
+
+Fresh-eyes director review of `docs/ARCHITECTURE.md` found it stale in three
+places a hiring manager would trip over:
+
+- The module map listed only the offline core and omitted the entire online
+  layer (`names.js`, `online.js`, `netplay.js`, `room-server.js`) plus the
+  `worker/` relay — even though online multiplayer is a headline feature
+  with its own nav tab. All four files plus the worker are now mapped.
+- The Deployment section claimed "no multiplayer" as a consequence of the
+  static architecture. Online tables shipped long ago via a separate
+  Cloudflare Worker relay (Durable Object rooms, `wrangler` deploys); the
+  section now states the real split — static app on Pages, relay apart,
+  independent deploys — instead of the old limitation.
+- The testing table's counts had rotted: `tests/test.js` is 1000+ tests, not
+  954 (bot-legality sweep now thousands of decisions, not 999; engine soak
+  100 hands, not 300), and `component.test.js` is 216 tests, not 25. Exact
+  unit counts vary slightly run to run (1024 vs 1027 across this run's two
+  `test.js` runs, from randomized soak hands), so the table now says 1000+
+  instead of a brittle exact number — the previous exact numbers were the
+  thing that rotted. The intro now notes the full 36-suite chain.
+
+Deliberately untouched: `docs/adr/0004-static-deploy-github-pages.md` still
+says "no multiplayer" — an ADR records the decision at the time it was made,
+not the current state; the living architecture doc is where the correction
+belongs. No app code changed, so no behavior change: audit clean (livetest
+10/10, coach eval 0 flags over 11 hands), debloat scan clean (both
+candidates verified alive: `$` helper, `initMobileTabs` IIFE), full suite
+green.
+
+Loop-ops learning: two background sessions vanished mid-run with no trace
+(the first coach-eval run froze at hand 6, a `test.js` probe session
+disappeared) — the service-restart hazard the repo notes already warn
+about. The eval was re-run from scratch and verified CLEAN; never trust a
+partial run's silence.
+
 ## [1.8.120] — Bot-identity regression suite (36th)
 
 New `tests/bot-identity-test.js`: the spot-check sweep proves bot actions are
