@@ -1,8 +1,9 @@
 # Architecture
 
 Poker Sparring is a static web app: vanilla HTML/CSS/JS, **zero runtime
-dependencies**, no build step, no backend. The live site is GitHub Pages serving
-the `main` branch.
+dependencies**, no build step. Solo play needs no backend; the live site is
+GitHub Pages serving the `main` branch, and online tables run through a
+separate Cloudflare Worker relay (see Deployment below).
 
 ## Module map
 
@@ -38,8 +39,9 @@ worker/           Cloudflare Worker relay (Durable Object rooms). Deploys
 ```
 
 **Layering rule:** `cards → evaluator → equity → engine → bots` are DOM-free and
-must stay that way. They run in Node tests today and are written to be reused by
-a React Native port later. `ui.js`/`app.js` are browser-only.
+must stay that way. They run in Node tests today, and staying DOM-free keeps a
+native port possible without a rewrite — but no native app is planned (see the
+non-goals in `docs/ROADMAP.md`). `ui.js`/`app.js` are browser-only.
 
 ```mermaid
 flowchart LR
@@ -133,5 +135,6 @@ fix needs no app push and vice versa.
 
 - All user-controlled strings (custom bot name/emoji/desc) go through
   `UI.escapeHtml` before `innerHTML` — covered by component tests.
-- No secrets, no API keys, no backend to attack. The threat model is basically
+- No secrets, no API keys, no accounts. The only server surface is the relay,
+  which has no auth and no stored user data. The threat model is basically
   "don't XSS yourself," and that's tested.

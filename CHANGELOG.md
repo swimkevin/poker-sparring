@@ -1,3 +1,33 @@
+## [1.8.127] — ARCHITECTURE.md stops claiming "no backend" (recruiter-loop docs-accuracy follow-up)
+
+Docs-accuracy pass on the one doc the v1.8.124–126 series had not audited —
+every claim below was checked against the code before changing it:
+
+- `docs/ARCHITECTURE.md` opened with "no backend" while the same doc's
+  Deployment section documents the Cloudflare Worker relay that online
+  tables run through — the same stale-claim class fixed in `CLAUDE.md` in
+  v1.8.126. The intro now says solo play needs no backend and online
+  tables use the separate relay. The Security note's "no backend to
+  attack" is likewise corrected: no secrets, no API keys, no accounts,
+  and the relay itself has no auth (verified: no auth code in
+  `worker/` or `js/room-server.js`).
+- The Layering rule said the DOM-free core was "written to be reused by a
+  React Native port later", implying a planned port — while
+  `docs/ROADMAP.md` lists no native app as a deliberate non-goal and
+  `docs/MOBILE.md` treats React Native as a much-later option only. The
+  rule now says DOM-free keeps a port possible without a rewrite, and
+  that none is planned.
+- Verified, not changed: the evaluator score formula (category * 16^5 +
+  kickers), the equity helpers, the 50-hand replay cap, botDecide's
+  `{ a, amount } | null` contract, and the engine event queue all match
+  the doc; the debloat scan is clean (no dead CSS selectors, no
+  once-only top-level functions).
+- `tests/docs-freshness-test.js` gains two assertions pinning the above
+  (verified to fail both on the v1.8.126 tree and pass on the new tree).
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags, full suite green.
+
 ## [1.8.126] — CLAUDE.md and the incident log stop contradicting the repo (recruiter loop 4 of 4)
 
 Docs-accuracy pass, final in the recruiter series — every claim below was

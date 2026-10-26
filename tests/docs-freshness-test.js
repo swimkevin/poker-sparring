@@ -40,6 +40,11 @@ var mermaidEnd = arch.indexOf('```', mermaidStart + 1);
 var diagram = mermaidStart === -1 ? '' : arch.slice(mermaidStart, mermaidEnd === -1 ? arch.length : mermaidEnd);
 ok(diagram.indexOf('netplay') !== -1, 'ARCHITECTURE diagram includes the online layer (netplay)');
 ok(diagram.indexOf('room-server') !== -1, 'ARCHITECTURE diagram includes the online layer (room-server)');
+ok(arch.indexOf('no build step, no backend') === -1 &&
+  arch.indexOf('no backend to attack') === -1,
+  'ARCHITECTURE carries no unqualified "no backend" claim (solo play needs none; the online relay is a backend, v1.8.127)');
+ok(arch.indexOf('port later') === -1,
+  'ARCHITECTURE does not present a React Native port as planned (ROADMAP lists no native app as a non-goal, v1.8.127)');
 
 ok(roadmap.indexOf("we're at v") === -1, 'ROADMAP carries no version-dated standfirst that rots every release');
 
