@@ -75,6 +75,34 @@ ok(incidents.indexOf('Two real production bugs') === -1,
 ok(roadmap.indexOf('2,546 lines') === -1,
   'ROADMAP does not cite an exact app.js line count (rots on the next edit)');
 
+var flagsDoc = fs.readFileSync(path.join(dir, 'docs', 'FEATURE_FLAGS.md'), 'utf8');
+var appJs = fs.readFileSync(path.join(dir, 'js', 'app.js'), 'utf8');
+var defaultsStart = appJs.indexOf('var DEFAULT_FLAGS = {');
+var defaultsEnd = appJs.indexOf('};', defaultsStart);
+var defaultsBlock = defaultsStart === -1 ? '' : appJs.slice(defaultsStart, defaultsEnd);
+var codeFlags = [];
+(defaultsBlock.match(/^\s*[A-Za-z_][A-Za-z0-9_]*:/gm) || []).forEach(function (m) {
+  codeFlags.push(m.replace(/[:\s]/g, ''));
+});
+ok(codeFlags.length > 0, 'app.js DEFAULT_FLAGS parses to a flag list (' + codeFlags.join(',') + ')');
+codeFlags.forEach(function (f) {
+  ok(flagsDoc.indexOf(f) !== -1, 'FEATURE_FLAGS documents the ' + f + ' flag defined in app.js');
+});
+var docFlags = (flagsDoc.match(/^\|\s*`([A-Za-z_][A-Za-z0-9_]*)`/gm) || []).map(function (m) {
+  return m.replace(/[^A-Za-z0-9_]/g, '');
+});
+docFlags.forEach(function (f) {
+  ok(codeFlags.indexOf(f) !== -1, 'FEATURE_FLAGS table flag ' + f + ' still exists in app.js DEFAULT_FLAGS');
+});
+
+var mobile = fs.readFileSync(path.join(dir, 'docs', 'MOBILE.md'), 'utf8');
+var styleCss = fs.readFileSync(path.join(dir, 'css', 'style.css'), 'utf8');
+var indexHtml = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
+ok(mobile.indexOf('900px') !== -1 && styleCss.indexOf('@media (max-width: 900px)') !== -1,
+  'MOBILE 900px breakpoint claim matches a real breakpoint in css/style.css');
+ok(indexHtml.indexOf('manifest.json') !== -1 && appJs.indexOf("register('sw.js')") !== -1,
+  'MOBILE PWA-shipped claim matches the index.html manifest link and app.js service-worker registration');
+
 var readmeVisible = readme.replace(/<!--[\s\S]*?-->/g, '');
 var linked = {};
 (readmeVisible.match(/docs\/[A-Za-z0-9_.\/-]+/g) || []).forEach(function (r) {

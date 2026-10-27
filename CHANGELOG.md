@@ -1,3 +1,31 @@
+## [1.8.128] — FEATURE_FLAGS and MOBILE claims pinned in the docs-freshness gate
+
+Docs-accuracy pass on the two docs the v1.8.124–127 series had verified but
+not pinned — every claim below was checked against the code before pinning
+it, so the drift the series fixed elsewhere cannot silently return here:
+
+- `docs/FEATURE_FLAGS.md` names exactly the three flags in `js/app.js`
+  `DEFAULT_FLAGS` (`headsUpMode`, `pushFoldTrainer`, `customBots`, all
+  default off), and its console/URL enabling routes match the code
+  (`enableFlag` persisting to `ps_feature_flags` in localStorage, `?flags=`
+  parsed from the URL). The gate now derives the flag list from
+  `DEFAULT_FLAGS` and asserts it both ways: every code flag is documented,
+  and every doc table flag still exists in code.
+- `docs/MOBILE.md` says the layout stacks under 900px, the PWA is shipped
+  with a manifest link and a service-worker registration. Verified:
+  `css/style.css` carries `@media (max-width: 900px)` breakpoints,
+  `index.html` links `manifest.json`, and `js/app.js` registers `sw.js`.
+  The gate pins both claims.
+- Verified, not changed: `docs/TESTING.md` cites 36 suites (the chain has
+  exactly 36 commands), the README's 14-opponent count matches the 14 bot
+  profiles in `js/bots.js`, and the debloat scan is clean (no dead CSS
+  selectors — the one candidate, `coach-recap-bad`, is built dynamically
+  as `'coach-recap-' + kind` — and no never-called top-level functions
+  across js/ and index.html).
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags, full suite green.
+
 ## [1.8.127] — ARCHITECTURE.md stops claiming "no backend" (recruiter-loop docs-accuracy follow-up)
 
 Docs-accuracy pass on the one doc the v1.8.124–126 series had not audited —
