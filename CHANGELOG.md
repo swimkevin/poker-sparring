@@ -1,3 +1,30 @@
+## [1.8.129] — ARCHITECTURE / AI-WORKFLOW suite counts and CLAUDE native-port wording pinned in the docs-freshness gate
+
+Docs-accuracy pass on the last unpinned claims the v1.8.124–128 series
+left behind — every claim below was checked against the code before
+pinning it, so a future chain change breaks CI instead of rotting a doc:
+
+- `docs/ARCHITECTURE.md` and `docs/AI-WORKFLOW.md` both cite 36 suites,
+  but the gate only enforced the count in README, ROADMAP, and TESTING.
+  The gate now derives the count from the `npm test` chain and asserts it
+  in ARCHITECTURE and AI-WORKFLOW too. Sensitivity checked: neither doc
+  contains a "37 suites" string, so the new assertions fail on any
+  changed chain count, not just on a missing doc.
+- `CLAUDE.md` said the DOM-free core is "kept reusable for a native port
+  later" — the same planned-port phrasing the v1.8.127 gate already bans
+  in ARCHITECTURE, and it contradicts the ROADMAP non-goal ("No native
+  app"). Reworded to match ARCHITECTURE/ROADMAP: no native app is
+  planned; the PWA covers the phone story. The gate now bans "native
+  port later" in CLAUDE, verified to fail on the old wording before the
+  fix and pass after it. `docs/MOBILE.md` option D is untouched: listing
+  an option in an options analysis is not planning it.
+- Verified, not changed: debloat scan clean (no dead CSS selectors, no
+  never-called top-level functions), README project structure lists all
+  14 js/ files, chain parses to exactly 36 suites.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags, full suite green.
+
 ## [1.8.128] — FEATURE_FLAGS and MOBILE claims pinned in the docs-freshness gate
 
 Docs-accuracy pass on the two docs the v1.8.124–127 series had verified but

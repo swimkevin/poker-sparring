@@ -45,6 +45,8 @@ ok(arch.indexOf('no build step, no backend') === -1 &&
   'ARCHITECTURE carries no unqualified "no backend" claim (solo play needs none; the online relay is a backend, v1.8.127)');
 ok(arch.indexOf('port later') === -1,
   'ARCHITECTURE does not present a React Native port as planned (ROADMAP lists no native app as a non-goal, v1.8.127)');
+ok(arch.indexOf(suites + ' suites') !== -1,
+  'ARCHITECTURE suite count matches the npm test chain (' + suites + ')');
 
 ok(roadmap.indexOf("we're at v") === -1, 'ROADMAP carries no version-dated standfirst that rots every release');
 
@@ -57,6 +59,8 @@ ok(testing.indexOf('300-hand') === -1,
 var aiwf = fs.readFileSync(path.join(dir, 'docs', 'AI-WORKFLOW.md'), 'utf8');
 ok(aiwf.indexOf('1,058') === -1,
   'AI-WORKFLOW carries no stale exact test count (v1.8.125: 1,058 rotted)');
+ok(aiwf.indexOf(suites + ' suites') !== -1,
+  'AI-WORKFLOW suite count matches the npm test chain (' + suites + ')');
 
 var claude = fs.readFileSync(path.join(dir, 'CLAUDE.md'), 'utf8');
 ok(claude.indexOf('300-hand soak') === -1,
@@ -67,6 +71,8 @@ ok(claude.indexOf('online.js') !== -1 && claude.indexOf('room-server.js') !== -1
   'CLAUDE architecture list includes the online layer, not just the offline core');
 ok(claude.indexOf('Online multiplayer (would need a server') === -1,
   'CLAUDE roadmap does not list shipped online multiplayer as future work');
+ok(claude.indexOf('native port later') === -1,
+  'CLAUDE does not present a native port as planned (ROADMAP lists no native app as a non-goal, v1.8.129)');
 
 var incidents = fs.readFileSync(path.join(dir, 'docs', 'INCIDENTS.md'), 'utf8');
 ok(incidents.indexOf('Two real production bugs') === -1,

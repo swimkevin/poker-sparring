@@ -42,9 +42,9 @@ js/room-server.js Authoritative room state, shared by the app mock and the worke
 ```
 
 **Critical layering rule:** `cards → evaluator → equity → engine → bots` are DOM-free
-and must stay that way — they run in Node tests and are kept reusable for a
-native port later (see `docs/MOBILE.md`, option D — much later, only if the app
-earns it). `ui.js`/`app.js` are browser-only.
+and must stay that way — they run in Node tests. No native app is planned
+(see the non-goals in `docs/ROADMAP.md`); the PWA covers the phone story.
+`ui.js`/`app.js` are browser-only.
 
 ## Conventions
 
