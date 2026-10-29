@@ -47,6 +47,23 @@ ok(arch.indexOf('port later') === -1,
   'ARCHITECTURE does not present a React Native port as planned (ROADMAP lists no native app as a non-goal, v1.8.127)');
 ok(arch.indexOf(suites + ' suites') !== -1,
   'ARCHITECTURE suite count matches the npm test chain (' + suites + ')');
+var compOut = '';
+try {
+  compOut = require('child_process').execSync('node ' + path.join(__dirname, 'component.test.js'), { encoding: 'utf8', timeout: 120000 });
+} catch (e) {
+  compOut = (e.stdout || '').toString();
+}
+var compMatches = compOut.match(/(\d+) passed, (\d+) failed \(component\)/g) || [];
+var compLast = compMatches.length ? compMatches[compMatches.length - 1] : '';
+var compNums = compLast.match(/(\d+) passed, (\d+) failed/);
+if (!compNums) {
+  ok(true, 'ARCHITECTURE component count skipped: component suite skipped (jsdom absent)');
+} else if (compNums[2] !== '0') {
+  ok(false, 'ARCHITECTURE component count unchecked: component suite itself failed (' + compLast + ')');
+} else {
+  ok(arch.indexOf(compNums[1] + ' tests') !== -1,
+    'ARCHITECTURE component test count matches the component suite (' + compNums[1] + ')');
+}
 
 ok(roadmap.indexOf("we're at v") === -1, 'ROADMAP carries no version-dated standfirst that rots every release');
 

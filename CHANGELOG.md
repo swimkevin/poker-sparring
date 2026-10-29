@@ -1,3 +1,24 @@
+## [1.8.130] — ARCHITECTURE component-test count pinned in the docs-freshness gate
+
+Last exact per-suite number the gate did not derive: `docs/ARCHITECTURE.md`
+cited the component suite as "216 tests" with nothing enforcing it, so the
+next component-test addition would have rotted the doc silently — the same
+drift class the v1.8.124–129 series pinned everywhere else. The gate now
+runs `tests/component.test.js`, takes its final cumulative total, and
+asserts ARCHITECTURE names that count. Verified both ways: passes on the
+true 216, fails on a scratch tree with the doc mutated to 215. The gate
+skips the pin (rather than failing) when the component suite itself skips
+(jsdom absent), and fails loudly if the component suite itself is red, so
+a broken suite can never masquerade as a doc mismatch.
+
+Verified, not changed: debloat scan clean (no dead CSS selectors, no
+never-called top-level functions), README structure lists all 14 js/ files,
+chain parses to exactly 36 suites, replay cap still 50, bot roster still
+14 profiles, full assertion sum still order-of-magnitude 2,000+.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags (43 hero decisions), full suite green.
+
 ## [1.8.129] — ARCHITECTURE / AI-WORKFLOW suite counts and CLAUDE native-port wording pinned in the docs-freshness gate
 
 Docs-accuracy pass on the last unpinned claims the v1.8.124–128 series
