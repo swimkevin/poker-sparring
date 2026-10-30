@@ -22,6 +22,8 @@ ok(readme.indexOf(suites + ' suites') !== -1,
   'README suite count matches the npm test chain (' + suites + ')');
 ok(readme.indexOf('(v' + pkg.version + ')') !== -1,
   'README version mention matches package.json (' + pkg.version + ')');
+ok(readme.indexOf('live coach-audit rounds') === -1,
+  'README carries no counted "live coach-audit rounds" claim (no defined counting rule: 3 rounds at v1.8.70, 4 at v1.8.103, daily automated evals since; v1.8.131)');
 
 var roadmap = fs.readFileSync(path.join(dir, 'docs', 'ROADMAP.md'), 'utf8');
 ok(roadmap.indexOf('(' + suites + ' suites)') !== -1,

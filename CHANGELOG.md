@@ -1,3 +1,29 @@
+## [1.8.131] — README drops the uncountable "4 live coach-audit rounds" claim
+
+The "By the numbers" bullet claimed "4 live coach-audit rounds", but the
+count never had a defined rule — and yesterday's run flagged it as such
+rather than guessing. The history shows why it cannot be defined: the
+bullet read "3 rounds" at v1.8.70, then "4 rounds" at v1.8.103, whose
+changelog describes a four-round live-testing series of its own (felted
+modal stall, 900-char message bloat, clean round 4) — so "4" is either an
+undercount of the two series combined or a count of only the second one —
+and the daily automated coach evals since Oct 18 would add dozens more
+rounds under any automated reading. A hiring manager cannot verify the
+number from the repo, so the bullet now reads "Live coach audits" with no
+count, keeping the true substance (real hands played, every finding turned
+into a regression test). The docs-freshness gate now bans a counted
+"live coach-audit rounds" claim in README, verified to fail on the old
+wording and pass on the new.
+
+Verified, not changed: debloat scan clean (no dead top-level functions
+across js/, no dead CSS selectors — the one candidate, `coach-recap-bad`,
+is built dynamically as `'coach-recap-' + kind`), README structure lists
+all 14 js/ files, chain parses to exactly 36 suites, replay cap still 50,
+bot roster still 14 profiles.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags (35 hero decisions), full suite green.
+
 ## [1.8.130] — ARCHITECTURE component-test count pinned in the docs-freshness gate
 
 Last exact per-suite number the gate did not derive: `docs/ARCHITECTURE.md`
