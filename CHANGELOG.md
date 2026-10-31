@@ -1,3 +1,26 @@
+## [1.8.132] — Bot archetype count pinned in the docs-freshness gate
+
+The last exact roster number the gate did not derive: README and ROADMAP
+both cite "14 AI archetypes / opponents", but nothing enforced the count,
+so adding or removing a bot would have rotted three README claims and the
+ROADMAP claim silently — the same drift class the v1.8.124–131 series
+pinned everywhere else. The gate now requires js/bots.js, takes
+ARCHETYPES.length, and asserts README names that count in all three
+wordings ("14 AI opponent archetypes", "against 14 AI opponents",
+"14 AI archetypes") and ROADMAP names it too. Deriving from the array
+instead of counting `id:` lines matters: a naive line count returns 15,
+because customArchetype builds a `custom-` id that is not a roster bot.
+Sensitivity checked: passes on the true 14, fails on a scratch tree with
+README mutated to 13, fails twice with ROADMAP mutated too.
+
+Verified, not changed: debloat scan clean (no dead top-level functions —
+initMobileTabs is a named IIFE, not an uncalled function; no dead CSS
+selectors), README structure lists all 14 js/ files, chain parses to
+exactly 36 suites, replay cap still 50, bot roster still 14 profiles.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags (41 hero decisions), full suite green.
+
 ## [1.8.131] — README drops the uncountable "4 live coach-audit rounds" claim
 
 The "By the numbers" bullet claimed "4 live coach-audit rounds", but the

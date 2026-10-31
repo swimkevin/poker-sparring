@@ -120,6 +120,18 @@ docFlags.forEach(function (f) {
   ok(codeFlags.indexOf(f) !== -1, 'FEATURE_FLAGS table flag ' + f + ' still exists in app.js DEFAULT_FLAGS');
 });
 
+var bots = require(path.join(dir, 'js', 'bots.js'));
+var archetypeCount = bots.ARCHETYPES.length;
+ok(archetypeCount >= 10, 'bot roster parses to a sane archetype count (' + archetypeCount + ')');
+ok(readme.indexOf(archetypeCount + ' AI opponent archetypes') !== -1,
+  'README archetype count matches js/bots.js ARCHETYPES (' + archetypeCount + ')');
+ok(readme.indexOf('against ' + archetypeCount + ' AI opponents') !== -1,
+  'README opponent count matches js/bots.js ARCHETYPES (' + archetypeCount + ')');
+ok(readme.indexOf(archetypeCount + ' AI archetypes') !== -1,
+  'README archetype claim matches js/bots.js ARCHETYPES (' + archetypeCount + ')');
+ok(roadmap.indexOf(archetypeCount + ' AI archetypes') !== -1,
+  'ROADMAP archetype count matches js/bots.js ARCHETYPES (' + archetypeCount + ')');
+
 var mobile = fs.readFileSync(path.join(dir, 'docs', 'MOBILE.md'), 'utf8');
 var styleCss = fs.readFileSync(path.join(dir, 'css', 'style.css'), 'utf8');
 var indexHtml = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
