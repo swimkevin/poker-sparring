@@ -17,6 +17,12 @@ or an action is validated is exercised across thousands of randomized hands.
 
 ## The layers
 
+Counting rule: README's "6 layers" counts the six rows below that test the
+app itself — unit + integration, component, netplay, gameplay smoke,
+worker, and coach + live audits. The Gates row is repo-level meta-testing
+(docs freshness, the comment ban, service-worker versioning), listed for
+completeness but not counted as a test layer.
+
 | Layer | Where | What it covers |
 |---|---|---|
 | Unit + integration | `tests/test.js` (plain Node) | Evaluator vectors, engine scenarios (side pots, odd chips, all-ins, split pots), equity sanity ranges, bot behavior (incl. Rohan/Amogh/Nathan), stats recording, push/fold verdict consistency, replay capture + storage (cap 50, newest first), username/bot-rename prefs |

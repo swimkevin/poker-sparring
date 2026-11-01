@@ -1,3 +1,27 @@
+## [1.8.133] — Layer-count ambiguity resolved: README "6 layers" now has a stated counting rule
+
+Yesterday's run flagged it, this run fixed it without guessing: README
+said "6 layers" while docs/TESTING.md's table listed 7 rows. Both were
+right under different counts — README counts the six rows that test the
+app itself (unit + integration, component, netplay, gameplay smoke,
+worker, coach + live audits); TESTING's seventh row, Gates, is repo-level
+meta-testing (docs freshness, the comment ban, service-worker
+versioning), not an app-test layer. TESTING.md now states that counting
+rule explicitly, and the docs-freshness gate pins all three facts: the
+table lists exactly 7 rows, README says "6 layers", and TESTING states
+the rule. Sensitivity checked: the gate fails on a scratch tree with the
+rule sentence weakened, fails with README mutated to "7 layers", and
+fails with the Gates row deleted — each failing exactly its own
+assertion.
+
+Verified, not changed: debloat scan clean (the one CSS candidate,
+coach-recap-bad, is built dynamically as 'coach-recap-' + kind), chain
+parses to exactly 36 suites, replay cap still 50, bot roster still 14
+profiles, 14 js/ files.
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags (37 hero decisions), full suite green.
+
 ## [1.8.132] — Bot archetype count pinned in the docs-freshness gate
 
 The last exact roster number the gate did not derive: README and ROADMAP

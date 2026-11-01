@@ -72,6 +72,15 @@ ok(roadmap.indexOf("we're at v") === -1, 'ROADMAP carries no version-dated stand
 var testing = fs.readFileSync(path.join(dir, 'docs', 'TESTING.md'), 'utf8');
 ok(testing.indexOf(suites + ' suites') !== -1,
   'TESTING suite count matches the npm test chain (' + suites + ')');
+var layersStart = testing.indexOf('## The layers');
+var layersEnd = testing.indexOf('## ', layersStart + 1);
+var layersSection = layersStart === -1 ? '' : testing.slice(layersStart, layersEnd === -1 ? testing.length : layersEnd);
+var layersRows = (layersSection.match(/^\| [^|]+\| `/gm) || []).length;
+ok(layersRows === 7, 'TESTING layer table lists 7 rows (6 app-testing layers + Gates, v1.8.133)');
+ok(readme.indexOf('6 layers') !== -1,
+  'README layer count is 6 (Gates is meta-testing, not counted, v1.8.133)');
+ok(testing.indexOf('not counted as a test layer') !== -1,
+  'TESTING states the layer counting rule (v1.8.133)');
 ok(testing.indexOf('300-hand') === -1,
   'TESTING does not repeat the old 300-hand soak wording (CI default is 100, SOAK_HANDS=300 is the deep check)');
 
