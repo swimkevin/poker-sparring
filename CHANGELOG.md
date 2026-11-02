@@ -1,3 +1,18 @@
+## [1.8.155] — Release repair: 1.8.154 shipped with a stale version identity
+
+1.8.154's push listed every file that release changed except
+one the version bump itself touched: bump.sh updates
+APP_VERSION in js/app.js, but app.js was not in the push
+list because the release had no coach-logic change to it.
+Remote therefore kept APP_VERSION 1.8.153 while version.txt
+said 1.8.154, and CI's version check failed on the 1.8.154
+tip. This release changes nothing about the coach or the
+lab — it ships the corrected version identity (app.js
+included) so the tip is green again. Lesson recorded for
+the daily loop: the push list must include every file the
+bump touches, even when the iteration itself did not change
+that file. Not counted toward the 20 coach iterations.
+
 ## [1.8.154] — Solver-lab leak round: the lab now guards every fix, and its stale spot is fixed
 
 Running the lab against the current coach found the lab itself
