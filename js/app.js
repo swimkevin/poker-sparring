@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.147';
+  var APP_VERSION = '1.8.148';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1978,7 +1978,9 @@
     var diluted = false;
     if (multiway && singleRange) {
       var nOpp = Math.min(3, table.livePlayers().length - 1);
-      adjEq = Math.pow(adjEq, nOpp);
+      var tiers = [rangeEqTier || vTier];
+      for (var o = 1; o < nOpp; o++) tiers.push(0);
+      adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 300) + credit - debit));
       diluted = true;
     }
     var bCredit = (hc === 'air' || hc === 'secondpair' || hc === 'weakpair')
@@ -2069,7 +2071,7 @@
       ? 'simulated 150× vs the kinds of hands ' + vName + ' plays'
       : 'simulated 150× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
-    if (diluted) eqSource += ', beating everyone still in';
+    if (diluted) eqSource = eqSource.replace('150×', '300×') + ', beating everyone still in';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' +

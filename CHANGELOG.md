@@ -1,3 +1,44 @@
+## [1.8.148] — Multiway dilution, deepened: a shared-runout sim replaces the power rule
+
+Version 1.8.141 diluted single-range equity multiway with a
+power rule: raise heads-up equity to the power of the
+opponent count. A 2,000-iteration probe now proves that rule
+systematically understates multiway equity, worst for drawing
+hands: a pair plus flush draw at 50% heads-up is 13% by the
+power rule with three opponents but 35% in a true
+shared-runout simulation — because when the draw hits, the
+hero beats everyone at once, so the events are not
+independent and must not be multiplied. The same gap holds
+for made hands (top pair: 23% power vs 46% true) and pure
+draws (29% heads-up, 2% power, 25% true). New: a pure equity
+helper simulates the hero against the bettor's narrowed
+range plus random ranges for the other live players on the
+same runouts, at 300 iterations, and the facing math uses it
+whenever a single range applies multiway. The random-hands
+branch already simulated this way and is untouched.
+
+Deep-analysis note: the power rule's error is a correlation
+error. Multiplying per-opponent equities assumes beating each
+opponent is an independent event, but both events run through
+the same hero hand on the same board: a made flush beats the
+bettor's range and the random players together, and a missed
+draw loses to both together. Only the sliver where the hero
+beats one range but not another is truly multiplicative, and
+that sliver is small. The old rule therefore over-folded
+multiway — the most expensive direction, since it surrenders
+pots the hero would win a third of the time. The 1.8.141
+multiway fold of this exact pair-plus-draw hand is
+deliberately reversed: under the true model it is a call at
+a 22% price (about 35% equity), and the 1.8.141 test now
+asserts the call, with a weak-pair multiway fold (about 15%
+vs a 31% price) as the new fold control. Both spots ran
+stable across five repeats.
+
+Verified: probe numbers above (2,000 iterations each);
+statistical unit tests pin the helper (single-opponent sim
+matches the heads-up sim within noise; multi-opponent equity
+sits below heads-up but far above the power rule).
+
 ## [1.8.147] — Blockers: the nut-flush blocker earns a bluff-catch credit
 
 Blockers remove combos from the villain's value range, and the

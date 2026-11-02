@@ -125,6 +125,72 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   return score / iters;
 }
 
+function estimateEquityVsRanges(hole, community, tiers, iters) {
+  iters = iters || 300;
+  var known = {};
+  hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var pools = tiers.map(function (tier) {
+    if (!tier) return null;
+    var p = [];
+    for (var i = 0; i < rest.length; i++)
+      for (var j = i + 1; j < rest.length; j++) {
+        var h = [rest[i], rest[j]];
+        if (holeTier(h) <= Math.min(6, Math.max(1, tier))) p.push(h);
+      }
+    return p;
+  });
+  var boardNeed = 5 - community.length;
+  var score = 0, used = 0;
+  for (var k = 0; k < iters; k++) {
+    var picked = {}, hands = [], okHand = true;
+    for (var o = 0; o < tiers.length; o++) {
+      var h = null;
+      for (var t = 0; t < 60; t++) {
+        var cand;
+        if (pools[o]) cand = pools[o][Math.floor(Math.random() * pools[o].length)];
+        else {
+          var a = Math.floor(Math.random() * rest.length);
+          var b = Math.floor(Math.random() * rest.length);
+          if (a === b) continue;
+          cand = [rest[a], rest[b]];
+        }
+        if (!picked[_key(cand[0])] && !picked[_key(cand[1])]) { h = cand; break; }
+      }
+      if (!h) { okHand = false; break; }
+      picked[_key(h[0])] = 1; picked[_key(h[1])] = 1;
+      hands.push(h);
+    }
+    if (!okHand) continue;
+    var vknown = {};
+    Object.keys(picked).forEach(function (kk) { vknown[kk] = 1; });
+    hole.concat(community).forEach(function (c) { vknown[_key(c)] = 1; });
+    var deck = [];
+    for (var s2 = 0; s2 < 4; s2++)
+      for (var r2 = 2; r2 <= 14; r2++)
+        if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
+    for (var d = 0; d < boardNeed; d++) {
+      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
+    }
+    var board = community.concat(deck.slice(0, boardNeed));
+    var myScore = evaluate7(hole.concat(board)).score;
+    var best = true, strict = true;
+    hands.forEach(function (hh) {
+      var os = evaluate7(hh.concat(board)).score;
+      if (os > myScore) { best = false; strict = false; }
+      else if (os === myScore) strict = false;
+    });
+    if (strict) score += 1;
+    else if (best) score += 0.5;
+    used++;
+  }
+  return used ? score / used : 0;
+}
+
 function estimateEquityVsMadePool(hole, community, minCat) {
   if (!hole || !community || community.length < 5) return null;
   minCat = minCat || 3;
@@ -353,6 +419,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
+    estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
     madeStrength: madeStrength,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,

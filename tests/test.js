@@ -142,6 +142,18 @@ function hand(str) {
     ok(EQ.blockerCredit(heroFlush, fourFlush) === 0,
       'no blocker credit when hero already has the flush (v1.8.147)');
   }
+  ok(typeof EQ.estimateEquityVsRanges === 'function', 'multi-opponent sim helper exists (v1.8.148)');
+  if (typeof EQ.estimateEquityVsRanges === 'function') {
+    var pf = [{ r: 2, s: 2 }, { r: 13, s: 2 }];
+    var fb = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+    var huEq = EQ.estimateEquityVsRangePostflop(pf, fb, 3, 2000);
+    var singleEq = EQ.estimateEquityVsRanges(pf, fb, [3], 2000);
+    var multiEq = EQ.estimateEquityVsRanges(pf, fb, [3, 0, 0], 2000);
+    ok(Math.abs(singleEq - huEq) <= 0.08,
+      'single-opponent multi sim matches the heads-up sim (v1.8.148)');
+    ok(multiEq <= huEq + 0.08 && multiEq >= 0.20,
+      'multi-opponent equity sits below heads-up but far above the power rule (v1.8.148)');
+  }
 })();
 
 // ---------- engine: 300-hand soak test ----------

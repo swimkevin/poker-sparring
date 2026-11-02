@@ -449,8 +449,8 @@ console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call'
     'facing math falls back to the villain archetype openTier range');
   ok(src.indexOf('simulated 150× vs the kinds of hands ') !== -1,
     'archetype-range source wording names the kinds of hands he plays');
-  ok(src.indexOf('Math.pow(adjEq, nOpp)') !== -1,
-    'multiway facing equity is diluted across all live opponents');
+  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 300)') !== -1,
+    'multiway facing equity is a shared-runout sim across all live opponents');
   ok(src.indexOf('beating everyone still in') !== -1,
     'diluted message says everyone still in must lose');
   ok(src.indexOf('nonNutDraw:') !== -1 && src.indexOf('vulnerableMade:') !== -1,
@@ -493,6 +493,16 @@ console.log('\n42. v1.8.147: blockers — nut-flush blocker credit for bluff-cat
     'equity layer exposes a pure blocker-credit helper');
   ok(src.indexOf('bCredit') !== -1,
     'facing math applies blocker credit for bluff-catch hands');
+}
+
+console.log('\n43. v1.8.148: multiway dilution — shared-runout sim replaces the power rule');
+{
+  ok(equitySrc.indexOf('function estimateEquityVsRanges(hole, community, tiers, iters)') !== -1,
+    'equity layer exposes a shared-runout multi-opponent sim');
+  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 300)') !== -1,
+    'facing math uses the multi sim for multiway single-range spots');
+  ok(src.indexOf('adjEq = Math.pow(adjEq, nOpp)') === -1,
+    'power-rule dilution is gone from the facing math');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

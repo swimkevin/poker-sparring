@@ -138,11 +138,19 @@ setTimeout(function () {
   var fdHu = setupFacing('lag', pairFlush, flushBoard, 2, 500, 400);
   console.log('  dilution heads-up says: ' + strip(fdHu.html).slice(0, 160));
   ok(fdHu.advice === 'call', 'dilution heads-up control calls (got ' + fdHu.advice + ', v1.8.141)');
-  var fdMw = setupFacing('lag', pairFlush, flushBoard, 4, 500, 400);
+  var fdMw = setupFacing('lag', pairFlush, flushBoard, 4, 500, 200);
   console.log('  dilution multiway says: ' + strip(fdMw.html).slice(0, 200));
-  ok(fdMw.advice === 'fold', 'dilution multiway folds: must beat all three ranges (got ' + fdMw.advice + ', v1.8.141)');
+  ok(fdMw.advice === 'call', 'dilution multiway calls under the true shared-runout sim (got ' + fdMw.advice + ', v1.8.148)');
   ok(strip(fdMw.html).indexOf('beating everyone still in') !== -1,
     'dilution multiway message says everyone still in must lose (v1.8.141)');
+  ok(strip(fdMw.html).indexOf('300×') !== -1,
+    'dilution multiway message names the 300-sample multi sim (v1.8.148)');
+  var weakPair = [{ r: 2, s: 1 }, { r: 13, s: 0 }];
+  var fdMwFold = setupFacing('lag', weakPair, [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 4, 500, 400);
+  console.log('  dilution multiway weak-pair says: ' + strip(fdMwFold.html).slice(0, 200));
+  ok(fdMwFold.advice === 'fold', 'dilution multiway weak pair still folds (got ' + fdMwFold.advice + ', v1.8.148)');
+  ok(strip(fdMwFold.html).indexOf('beating everyone still in') !== -1,
+    'dilution multiway weak-pair message says everyone still in must lose (v1.8.148)');
   var dryBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
   var secondPair = [{ r: 7, s: 0 }, { r: 13, s: 1 }];
   var ar = setupFacing('lag', secondPair, dryBoard, 2, 500, 200);
