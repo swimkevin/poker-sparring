@@ -175,7 +175,7 @@ setTimeout(function () {
   ok(vAir.advice === 'check', 'multiway air advice is check, never a bluff (got ' + vAir.advice + ', v1.8.139)');
   ok(txtAir.indexOf('too many players to bluff through') !== -1,
     'multiway air message names the multiway bluff ban (v1.8.139)');
-  function buildValueSpot(heroHole, board, potAmt, heroStack, nLive) {
+  function buildValueSpot(heroHole, board, potAmt, heroStack, nLive, street) {
     var s = d.createElement('script');
     s.textContent = [
       'window.__vsTable = new PokerTable({ players: [',
@@ -184,7 +184,7 @@ setTimeout(function () {
       '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
       '], sb: 5, bb: 10, startingStack: 2000 });',
       'var t = window.__vsTable;',
-      't.button = 0; t.street = "turn"; t.currentBet = 0; t.pot = ' + potAmt + ';',
+      't.button = 0; t.street = "' + (street || 'turn') + '"; t.currentBet = 0; t.pot = ' + potAmt + ';',
       't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
       't.players[0].stack = ' + heroStack + ';',
       't.community = ' + JSON.stringify(board) + ';',
@@ -193,8 +193,8 @@ setTimeout(function () {
     d.head.appendChild(s);
     return w.__vsTable;
   }
-  function valueVerdict(heroHole, board, potAmt, heroStack, nLive) {
-    H.setTable(buildValueSpot(heroHole, board, potAmt, heroStack, nLive));
+  function valueVerdict(heroHole, board, potAmt, heroStack, nLive, street) {
+    H.setTable(buildValueSpot(heroHole, board, potAmt, heroStack, nLive, street));
     H.setHandRec(null);
     H.setDecisions([]);
     var v = w.coachVerdict();
@@ -218,6 +218,17 @@ setTimeout(function () {
     'twopair paired message names the full-house danger (v1.8.142)');
   ok(twoPair.txt.indexOf('slow down') !== -1,
     'twopair paired message gives the fold-to-a-raise plan (v1.8.142)');
+  var dryRiver = [{ r: 2, s: 0 }, { r: 5, s: 1 }, { r: 8, s: 2 }, { r: 11, s: 3 }, { r: 13, s: 0 }];
+  var riverDry = valueVerdict([{ r: 14, s: 2 }, { r: 14, s: 3 }], dryRiver, 400, 2000, 2, 'river');
+  console.log('  river dry value says: ' + riverDry.txt.slice(0, 220));
+  ok(riverDry.v.advice === 'bet', 'river dry value advice is bet (got ' + riverDry.v.advice + ')');
+  ok(riverDry.size === 200, 'river dry value bets 1/2 pot, not 1/4 — no draws left to price (got ' + riverDry.size + ', v1.8.153)');
+  ok(riverDry.txt.indexOf('last street') !== -1,
+    'river dry value message names the last street (v1.8.153)');
+  var wetRiver = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
+  var riverWet = valueVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], wetRiver, 400, 2000, 2, 'river');
+  console.log('  river wet value says: ' + riverWet.txt.slice(0, 200));
+  ok(riverWet.size === 268, 'river wet value keeps 2/3 pot (got ' + riverWet.size + ', v1.8.153)');
   var flushBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 3 }];
   var overFlush = valueVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], flushBoard, 400, 2000, 2);
   console.log('  overpair flush-board coach says: ' + overFlush.txt.slice(0, 220));

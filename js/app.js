@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.152';
+  var APP_VERSION = '1.8.153';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1823,6 +1823,8 @@
           vulnWhy = ' — four cards to a straight out there: charge the draws';
         }
         if (vulnFloor && frac < 0.67) frac = 0.67;
+        var riverFloor = false;
+        if (table.street === 'river' && frac < 0.5) { frac = 0.5; riverFloor = true; }
         var betSize = Math.max(1, Math.round(pot * frac));
 
         var heroStack = hero.stack;
@@ -1846,6 +1848,8 @@
             (tex === 'wet' ? ', and draws pay to chase' : '')
           : vulnFloor && vulnWhy
           ? vulnWhy
+          : riverFloor
+          ? ' — last street: no draws left to charge, so size for the worse hands that call'
           : tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
           : (frac === 0.75 ? ' — they never fold, so size up for value'
           : ' — dry board, few draws: bet small to keep worse hands calling');
@@ -1863,7 +1867,9 @@
             '. If raised big, slow down — a big raise here usually means the straight';
         var valueMath = '. Pot ' + fmt(pot) + ', bet ' + fmt(betSize) + '. ' +
           (frac >= 0.5
-          ? 'Big enough to charge draws and build the pot, small enough that worse hands still call — a shove would fold those hands out.'
+          ? (table.street === 'river'
+            ? 'Big enough to build the pot, small enough that worse hands still call — a shove would fold those hands out.'
+            : 'Big enough to charge draws and build the pot, small enough that worse hands still call — a shove would fold those hands out.')
           : 'Small enough that worse hands still call — a bigger bet would fold them out.');
         return mkVerdict('bet', 'strong',
           '<b>Bet for value</b> ~' + fracLabel + ' pot (' + fmt(betSize) + ')' +

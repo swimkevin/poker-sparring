@@ -1,3 +1,35 @@
+## [1.8.153] — Geometric sizing part 2: river value bets floor at half pot
+
+Pre-river value sizing is driven by board texture: a dry
+board bets small (a quarter pot) because there are few
+draws to charge. On the river that logic expires — there
+are no draws left, no future cards, and no later street to
+win the rest on. Yet the old coach still bet a quarter pot
+for value on a dry river board, leaving value on the table
+against worse made hands that would call a bigger bet. New:
+strong-hand value bets on the river floor at half pot
+(wet boards and protection floors already bet more, and
+low-stack shoves are unchanged). The message says why —
+last street, no draws left to charge — and the sizing line
+no longer claims to "charge draws" on a street where none
+exist.
+
+Deep-analysis note: river value sizing answers a different
+question than flop or turn sizing. Earlier streets balance
+charging draws against keeping worse hands in; the river
+has only the second half, because every hand left is a made
+hand deciding "am I beat?" — and that decision is far less
+price-sensitive between a quarter and a half pot than the
+old sizing assumed. A worse made hand that calls a quarter
+pot almost always calls a half pot too, so the half-pot bet
+nearly doubles the value won. The quarter-pot river bet was
+texture logic applied one street past its expiry.
+
+Verified: overpair on a dry river board now bets 200 into
+400 (half pot) where the old coach bet 100; the same hand
+on the turn still bets 100, and a wet river board still
+bets two-thirds.
+
 ## [1.8.152] — Draw/implied/reverse-implied odds: paired-board draws are draws, with full-house risk
 
 Two stacked bugs, both about draws on paired boards. First,

@@ -538,5 +538,11 @@ console.log('\n47. v1.8.152: draw/implied/reverse-implied odds — paired-board 
     'vulnerable-made flag covers draws on paired boards, not just made hands');
 }
 
+console.log('\n48. v1.8.153: geometric sizing part 2 — river value floor (no draws left to price)');
+{
+  ok(src.indexOf('riverFloor') !== -1,
+    'value branch floors river value bets at half pot');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
