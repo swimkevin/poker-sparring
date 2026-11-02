@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.137';
+  var APP_VERSION = '1.8.138';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1315,6 +1315,7 @@
       adviceFollowed: adviceFollowed,
       handClass: handClass,
       boardTexture: boardTexture,
+      geometricFrac: geometricFrac,
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot,
       preflopRaises: preflopRaiseCount,
@@ -1737,6 +1738,12 @@
     return { eq: eq, need: c.toCall / (c.pot + c.toCall) };
   }
 
+  function geometricFrac(sprV, streetsLeft) {
+    if (!(sprV >= 2 && sprV <= 4) || !(streetsLeft >= 1)) return null;
+    var target = streetsLeft === 1 ? 1 : 2;
+    return (sprV - target) / (1 + 2 * target);
+  }
+
   function coachPostflop(c) {
     var esc = c.esc, fmt = c.fmt;
     var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
@@ -1779,6 +1786,9 @@
 
         var frac = tex === 'wet' ? 0.67 : 0.25;
         if (foldy < 0.25) frac = 0.75;
+        var geo = geometricFrac(sprV, streetsLeft);
+        var geoApplied = false;
+        if (geo != null && geo > frac) { frac = Math.min(0.75, geo); geoApplied = true; }
         var betSize = Math.max(1, Math.round(pot * frac));
 
         var heroStack = hero.stack;
@@ -1794,8 +1804,11 @@
         sprLine = (commit === 'commit' && !multiwayShoveBan)
           ? ' The pot is already nearly as big as your stack, so this bet puts almost everything in anyway.'
           : '';
-        var fracLabel = frac === 0.75 ? '¾' : (frac === 0.67 ? '⅔' : '¼');
-        var whyBet = tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
+        var fracLabel = frac >= 0.7 ? '¾' : (frac >= 0.6 ? '⅔' : (frac >= 0.45 ? '½' : (frac >= 0.3 ? '⅓' : '¼')));
+        var whyBet = geoApplied
+          ? ' — sized so a normal bet on the next street can still get the rest in' +
+            (tex === 'wet' ? ', and draws pay to chase' : '')
+          : tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
           : (frac === 0.75 ? ' — they never fold, so size up for value'
           : ' — dry board, few draws: bet small to keep worse hands calling');
         var vulnNote = '';

@@ -1,3 +1,33 @@
+## [1.8.138] — Geometric sizing: bet now so a normal river bet can get the rest in
+
+The old value sizing came from board texture alone: 1/4 pot dry, 2/3
+wet. On the screenshot hand that meant 89 into 355 with 935 behind —
+too small to build the pot for a hand that wants to get paid, while the
+alternative on offer was a 935 shove. When the stack-to-pot ratio is
+2-4 with streets left, the value bet is now sized geometrically: the
+bet that leaves the next street's ratio near 1 (one street left) or
+near 2 (two streets left), so a normal next-street bet can still get
+the rest in. Formula: (SPR - target) / (1 + 2 x target), capped at 3/4
+pot and only ever raising the texture size, never lowering it (wet
+boards and non-folders keep their bigger sizes). Turn SPR 2.63 now
+bets 1/2 pot (193) instead of 1/4 pot (89): after a call the pot is
+about 740 and about 740 is left behind — a pot-sized river bet gets
+it in. The message says so in plain words: "sized so a normal bet on
+the next street can still get the rest in."
+
+Deep-analysis note: geometric sizing is the solver answer to "how much
+now" when the goal is getting all the money in by the river without
+folding out worse hands early. 1/4 pot at SPR 2.63 leaves a river
+ratio of about 1.7 — still playable, but it strands value against
+worse hands that would call 1/2 pot. A shove folds those same hands
+out entirely. 1/2 pot threads it: worse hands call, the pot grows
+toward the stack, and the river decision stays a normal bet.
+
+Verified: the screenshot spot now bets 193 with next-street wording;
+pure geometric checks (turn 2.63 -> 0.54, flop 3 -> 0.20, null outside
+SPR 2-4 and on the river) in the screenshot test; the dry-default
+texture test is untouched.
+
 ## [1.8.137] — Hand-class honesty: trips and two pair are no longer "overpair"
 
 handClass mapped evaluator category 3 (trips) and category 2 (two pair)

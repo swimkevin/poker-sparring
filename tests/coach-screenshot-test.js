@@ -113,6 +113,20 @@ setTimeout(function () {
     'pocket pair above the board stays overpair (v1.8.137)');
   ok(txt.indexOf('full house beats it') !== -1,
     'paired-board trips message names what beats it (v1.8.137)');
+  ok(size >= 170 && size <= 210,
+    'screenshot geometric size is ~1/2 pot, not 1/4 pot (got ' + size + ', v1.8.138)');
+  ok(txt.indexOf('next street') !== -1,
+    'screenshot geometric message explains the next-street plan (v1.8.138)');
+  ok(typeof H.geometricFrac === 'function', 'geometricFrac hook exposed (v1.8.138)');
+  if (typeof H.geometricFrac === 'function') {
+    var g1 = H.geometricFrac(2.63, 1);
+    ok(Math.abs(g1 - 0.543) < 0.01, 'geometric turn SPR 2.63 -> ~0.54 (got ' + g1 + ')');
+    var g2 = H.geometricFrac(3, 2);
+    ok(Math.abs(g2 - 0.2) < 0.01, 'geometric flop SPR 3 -> ~0.2 (got ' + g2 + ')');
+    ok(H.geometricFrac(1.5, 1) === null, 'geometric null below SPR 2');
+    ok(H.geometricFrac(5, 1) === null, 'geometric null above SPR 4');
+    ok(H.geometricFrac(3, 0) === null, 'geometric null on river');
+  }
   console.log(fails === 0 ? 'COACH SCREENSHOT TEST PASSED' : 'COACH SCREENSHOT TEST FAILED (' + fails + ')');
   process.exit(fails ? 1 : 0);
 }, 800);

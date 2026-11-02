@@ -415,5 +415,13 @@ console.log('\n33. v1.8.137: trips and two pair are their own hand classes');
     'paired-board trips message names the vulnerability');
 }
 
+console.log('\n34. v1.8.138: geometric sizing for SPR 2-4 with streets left');
+{
+  ok(src.indexOf('geometricFrac(sprV, streetsLeft)') !== -1,
+    'value branch consults geometric sizing');
+  ok(src.indexOf('sized so a normal bet on the next street can still get the rest in') !== -1,
+    'geometric message explains the next-street plan in plain words');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
