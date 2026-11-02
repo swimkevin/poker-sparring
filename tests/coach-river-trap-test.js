@@ -163,6 +163,15 @@ setTimeout(function () {
   ok(narrowed.advice === 'fold', 'called-big villain narrows to a strong range and folds air (got ' + narrowed.advice + ', v1.8.149)');
   ok(strip(narrowed.html).indexOf('called a big bet earlier') !== -1,
     'narrowed message names the earlier big call (v1.8.149)');
+  var airTop = [{ r: 14, s: 0 }, { r: 13, s: 1 }];
+  var airCap = setupFacing('nathan', airTop, dryBoard, 2, 500, 50);
+  console.log('  air-cap says: ' + strip(airCap.html).slice(0, 220));
+  ok(airCap.advice === 'fold', 'air vs a near-never bluffer folds even at a small price (got ' + airCap.advice + ', v1.8.150)');
+  ok(strip(airCap.html).indexOf('only win when') !== -1,
+    'air-cap message names the bluff-catch logic (v1.8.150)');
+  var airCapControl = setupFacing('lag', airTop, dryBoard, 2, 500, 50);
+  console.log('  air-cap control says: ' + strip(airCapControl.html).slice(0, 200));
+  ok(airCapControl.advice === 'call', 'same air spot vs a bluffer still calls (got ' + airCapControl.advice + ', v1.8.150)');
   var narrowedControl = setupFacing('lag', airHigh, dryBoard, 2, 500, 340);
   console.log('  narrowed control says: ' + strip(narrowedControl.html).slice(0, 200));
   ok(narrowedControl.advice === 'call', 'same spot without the earlier big call still calls (got ' + narrowedControl.advice + ', v1.8.149)');

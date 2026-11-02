@@ -1,3 +1,35 @@
+## [1.8.150] — Bluff-catch thresholds keyed to villain bluff frequency
+
+With no pair, you only win when the villain is bluffing —
+but the facing math estimated air's equity against the
+villain's whole range pool, including weak hands he would
+check rather than bet. Against a player who almost never
+bluffs, that overstates air's equity badly: the old coach
+called Ace-King high against Nathan's bet at about 30–38%,
+as if a third of Nathan's betting range were bluffs, when
+Nathan bluffs about 2% of the time. New: for air hands
+facing a bet, equity is capped at the villain's bluff
+frequency plus 0.05 (the margin covers thin value bets air
+sometimes beats). The cap is deterministic, so capped folds
+are stable, and the message names the logic: with no pair,
+you only win when the villain is bluffing.
+
+Deep-analysis note: a bluff-catch is not a showdown-equity
+decision, it is a bluff-frequency decision. Equity against
+a range pool answers "how often does my hand beat his
+possible hands" — but the villain does not bet his possible
+hands, he bets his value hands plus his bluffs. When the
+bluff share is near zero, the betting range is nearly all
+value, and no-pair hands are nearly dead no matter what the
+pool says. The cap restores the missing conditioning: air's
+ceiling is the bluff rate, because bluffs are the only part
+of a betting range air can beat.
+
+Verified: Ace-King high vs Nathan's 50-into-500 turn bet now
+folds at a capped 7% vs an 8% price (stable across five
+runs) where the old coach called at 30–38%; the same spot
+vs a loose-aggressive bluffer still calls at about 40%.
+
 ## [1.8.149] — Range consistency: an earlier big call narrows the villain's range
 
 The range label already tracked bets street by street — a big

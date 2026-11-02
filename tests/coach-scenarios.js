@@ -513,5 +513,11 @@ console.log('\n44. v1.8.149: preflop-to-postflop range consistency — an earlie
     'narrowed message explains the earlier big call');
 }
 
+console.log('\n45. v1.8.150: bluff-catch thresholds keyed to villain bluff frequency');
+{
+  ok(src.indexOf('airCapped') !== -1,
+    'facing math caps air equity by the villain bluff frequency');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

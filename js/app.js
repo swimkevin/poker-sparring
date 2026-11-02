@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.149';
+  var APP_VERSION = '1.8.150';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1992,6 +1992,11 @@
     var bCredit = (hc === 'air' || hc === 'secondpair' || hc === 'weakpair')
       ? blockerCredit(hero.hole, table.community) : 0;
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
+    var airCapped = false;
+    if (hc === 'air' && adjEq > bluffy + 0.05) {
+      adjEq = bluffy + 0.05;
+      airCapped = true;
+    }
 
     var veto = riverMonsterVeto(c);
     var ranks = {};
@@ -2086,7 +2091,8 @@
       (riverPrior > 0 ? ' (rivers are under-bluffed)' : '') +
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
-      riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '');
+      riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
+      (airCapped ? ' With no pair, you only win when ' + vName + ' is bluffing.' : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."
