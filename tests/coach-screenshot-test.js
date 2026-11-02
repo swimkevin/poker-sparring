@@ -49,6 +49,24 @@ function strip(html) {
   return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function buildLowSprTable() {
+  var s = d.createElement('script');
+  s.textContent = [
+    'window.__lowTable = new PokerTable({ players: [',
+    '  { name: "hero", isHero: true }, { name: "A" },',
+    '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }, { name: "I" }, { name: "J" }',
+    '], sb: 5, bb: 10, startingStack: 400 });',
+    'var t = window.__lowTable;',
+    't.button = 0; t.street = "turn"; t.currentBet = 0; t.pot = 500;',
+    't.players[0].hole = [{ r: 13, s: 1 }, { r: 13, s: 0 }];',
+    't.community = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];',
+    't.players[1].stack = 400;',
+    'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+  ].join('\n');
+  d.head.appendChild(s);
+  return w.__lowTable;
+}
+
 setTimeout(function () {
   var fails = 0;
   function ok(c, m) { console.log((c ? 'ok' : 'FAIL') + ': ' + m); if (!c) fails++; }
@@ -71,6 +89,19 @@ setTimeout(function () {
   var size = m ? parseInt(m[1].replace(/,/g, ''), 10) : -1;
   ok(size > 0 && size <= 355, 'screenshot bet size is within the pot (got ' + size + ')');
   ok(size < 935, 'screenshot bet size is far below the full stack (got ' + size + ')');
+  ok(txt.indexOf('committed') === -1, 'screenshot message never says committed (v1.8.136 wording)');
+  var low = buildLowSprTable();
+  ok(low.livePlayers().length === 2, 'low-SPR spot is heads-up (got ' + low.livePlayers().length + ')');
+  H.setTable(low);
+  H.setHandRec(null);
+  H.setDecisions([]);
+  var vLow = w.coachVerdict();
+  var txtLow = strip(vLow.html);
+  console.log('  low-SPR coach says: ' + txtLow.slice(0, 200));
+  ok(vLow.advice === 'bet', 'low-SPR advice is bet (got ' + vLow.advice + ')');
+  ok(txtLow.indexOf('All-in') !== -1, 'low-SPR spot still shoves (SPR 0.8 is genuinely committed)');
+  ok(txtLow.indexOf('already as big as your stack') !== -1, 'low-SPR shove uses the new plain wording');
+  ok(txtLow.indexOf('committed') === -1, 'low-SPR shove never says committed (v1.8.136 wording)');
   console.log(fails === 0 ? 'COACH SCREENSHOT TEST PASSED' : 'COACH SCREENSHOT TEST FAILED (' + fails + ')');
   process.exit(fails ? 1 : 0);
 }, 800);

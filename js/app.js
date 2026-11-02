@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.135';
+  var APP_VERSION = '1.8.136';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1745,7 +1745,8 @@
     var multiway = isMultiway();
     var effChips = effStackChips(vIdx);
     var sprV = spr(effChips, pot);
-    var commit = sprVerdict(sprV, hc);
+    var streetsLeft = table.street === 'river' ? 0 : (table.street === 'turn' ? 1 : 2);
+    var commit = sprVerdict(sprV, hc, { multiway: multiway, streetsLeft: streetsLeft });
     var foldy = V ? villainFoldy(V.archetype) : 0.5;
     var canBet = legal.canBet || legal.canRaise;
     var range = V ? estimateVillainRange(vIdx)
@@ -1783,13 +1784,13 @@
         var multiwayShoveBan = multiway && table.street !== 'river' && hc !== 'nut' && sprV > 1.5;
         if (commit === 'commit' && !multiwayShoveBan && betSize < heroStack * 0.7) {
           betSize = heroStack;
-          sprLine = ' You\'re committed — just get it all in.';
+          sprLine = ' The pot is already as big as your stack — a normal bet would leave almost nothing behind, so get it all in now.';
           return mkVerdict('bet', 'strong',
             '<b>All-in</b> (' + fmt(betSize) + ').' + sprLine + rangeNote,
-            'When you\'re committed with a strong hand, shove — don\'t bet small and give free cards.');
+            'When the pot is already about as big as your stack, a normal bet leaves almost nothing for later streets, so shoving now loses nothing.');
         }
         sprLine = (commit === 'commit' && !multiwayShoveBan)
-          ? ' The pot\'s already big compared to your stacks — you\'re all-in anyway, so get the money in.'
+          ? ' The pot is already nearly as big as your stack, so this bet puts almost everything in anyway.'
           : '';
         var fracLabel = frac === 0.75 ? '¾' : (frac === 0.67 ? '⅔' : '¼');
         var whyBet = tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
@@ -1918,9 +1919,9 @@
 
     if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)
       return mkVerdict('call', 'strong',
-        'The pot\'s huge compared to what\'s left. With ' + handClassName(hc) +
-        ' you\'re <b>committed: call</b>.' + rangeNote,
-        'When the pot is big and your hand is strong, don\'t fold — you\'re already in too deep.');
+        'The pot is already nearly as big as your stack — calling costs almost nothing compared to what is already in there. With ' + handClassName(hc) +
+        ', <b>call</b>.' + rangeNote,
+        'When the pot is nearly as big as your stack and your hand is strong, folding saves almost nothing — call.');
 
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway &&

@@ -261,13 +261,17 @@ function spr(effStack, pot) {
   return Math.max(0, effStack / pot);
 }
 
-function sprVerdict(s, handClass) {
+function sprVerdict(s, handClass, opts) {
+  opts = opts || {};
+  var commitAt = 1;
+  if (opts.multiway) commitAt = 0.75;
+  if (opts.streetsLeft === 0) commitAt = 1.5;
   switch (handClass) {
-    case 'nut': return s <= 8 ? 'commit' : 'decide';
-    case 'overpair': return s <= 3 ? 'commit' : (s <= 8 ? 'decide' : 'pot-control');
-    case 'toppair': return s <= 2 ? 'commit' : (s <= 6 ? 'decide' : 'pot-control');
-    case 'secondpair': return s <= 1.5 ? 'decide' : 'pot-control';
-    case 'draw-strong': return s <= 3 ? 'commit' : 'implied';
+    case 'nut': return s <= commitAt ? 'commit' : 'decide';
+    case 'overpair': return s <= commitAt ? 'commit' : (s <= 6 ? 'decide' : 'pot-control');
+    case 'toppair': return s <= commitAt ? 'commit' : (s <= 5 ? 'decide' : 'pot-control');
+    case 'secondpair': return s <= 1 ? 'decide' : 'pot-control';
+    case 'draw-strong': return s <= commitAt ? 'commit' : 'implied';
     case 'draw': return s >= 6 ? 'implied' : 'decide';
     case 'draw-weak': return s >= 8 ? 'implied' : 'pot-control';
     default: return 'decide';

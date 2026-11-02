@@ -1,3 +1,39 @@
+## [1.8.136] — Commitment redefined: SPR ~1, not SPR 3 or 8
+
+The screenshot bug's second root cause was sprVerdict: an overpair
+"committed" at SPR <= 3 and the nuts at SPR <= 8, so a 2.63 SPR on the
+turn — a spot with a whole river street left — counted as committed and
+fed the shove branch. Committed now means roughly SPR <= 1: a normal
+value bet already puts ~70% or more of the stack in, so shoving loses
+nothing. The line tightens multiway (0.75: more players means more
+chance someone has you beat) and loosens on the river (1.5: no streets
+left, so a normal bet is effectively the stack). coachPostflop passes
+multiway count and streets remaining into sprVerdict; the old 2-arg
+calls keep working with heads-up, two-streets defaults.
+
+All three "committed" coach wordings are rewritten in plain pot-vs-
+stack language, with no jargon term: the shove now reads "The pot is
+already as big as your stack — a normal bet would leave almost
+nothing behind, so get it all in now", the near-stack tail reads "The
+pot is already nearly as big as your stack, so this bet puts almost
+everything in anyway", and the facing-call bypass reads "The pot is
+already nearly as big as your stack — calling costs almost nothing
+compared to what is already in there." The preflop re-raise
+"committed" line is a different mechanism (facing a re-raise with a
+premium) and is intentionally untouched.
+
+Deep-analysis note: turn SPR 2.63, bet 1/2 pot: the pot grows to about
+2x and the stack left is about 1x the original pot, leaving a river
+SPR near 1 — a clean river shove-or-fold spot. Shoving now instead
+folds out every worse hand and gets called only by better, which is
+exactly the wrong direction for a value hand with a street left.
+
+Verified: tests/test.js SPR assertions updated deliberately (the old
+SPR-2 commit assertions were the bug, not the test) plus new
+threshold, multiway, and river cases; a heads-up SPR-0.8 KK spot in
+the screenshot test still shoves, now with the new wording; the
+screenshot spot itself never says "committed".
+
 ## [1.8.135] — Kevin's hand, both halves: no multiway turn shove, no river call vs the trap
 
 TURN HALF. Kevin's screenshot hand (2026-11-02) — button, 4d 9c, turn

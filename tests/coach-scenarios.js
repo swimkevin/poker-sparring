@@ -385,5 +385,19 @@ console.log('\n31. v1.8.125: coach tone budget covers the base message, not just
      'core advice itself is never truncated — only optional notes are dropped');
 }
 
+console.log('\n32. v1.8.136: committed wording rewritten in plain pot-vs-stack language');
+{
+  ok(src.indexOf('committed — just get it all in') === -1,
+    'old "committed — just get it all in" shove line is gone');
+  ok(src.indexOf('already as big as your stack') !== -1,
+    'shove line explains pot vs stack in plain words');
+  ok(src.indexOf('all-in anyway, so get the money in') === -1,
+    'old "all-in anyway" tail is gone');
+  ok(src.indexOf('puts almost everything in anyway') !== -1,
+    'near-stack bet tail explains itself in plain words');
+  ok(src.indexOf('committed: call') === -1,
+    'old "committed: call" bypass line is gone');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

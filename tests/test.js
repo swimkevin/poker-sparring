@@ -82,13 +82,20 @@ function hand(str) {
 (function () {
   ok(EQ.spr(200, 100) === 2, 'spr = effStack/pot');
   ok(EQ.spr(200, 0) === 99, 'spr guards zero pot');
-  ok(EQ.sprVerdict(2, 'toppair') === 'commit', 'top pair commits at SPR 2');
+  ok(EQ.sprVerdict(2, 'toppair') === 'decide', 'top pair does NOT commit at SPR 2 (v1.8.136: commit means SPR ~1)');
   ok(EQ.sprVerdict(12, 'toppair') === 'pot-control', 'top pair pot-controls deep');
-  ok(EQ.sprVerdict(2, 'overpair') === 'commit', 'overpair commits at SPR 2');
+  ok(EQ.sprVerdict(2, 'overpair') === 'decide', 'overpair does NOT commit at SPR 2 (v1.8.136)');
   ok(EQ.sprVerdict(10, 'overpair') === 'pot-control', 'overpair cautious deep');
-  ok(EQ.sprVerdict(1, 'nut') === 'commit', 'nuts always commit shallow');
+  ok(EQ.sprVerdict(1, 'nut') === 'commit', 'nuts commit shallow');
+  ok(EQ.sprVerdict(5, 'nut') === 'decide', 'nuts do NOT commit at SPR 5 (v1.8.136: old <=8 line was the screenshot bug)');
+  ok(EQ.sprVerdict(2.63, 'overpair') === 'decide', 'screenshot SPR 2.63 is not committed (v1.8.136)');
+  ok(EQ.sprVerdict(0.8, 'overpair') === 'commit', 'overpair commits at SPR 0.8');
+  ok(EQ.sprVerdict(0.9, 'overpair', { multiway: true }) === 'decide', 'multiway tightens the commit line below 0.9');
+  ok(EQ.sprVerdict(0.7, 'overpair', { multiway: true }) === 'commit', 'multiway commits at SPR 0.7');
+  ok(EQ.sprVerdict(1.4, 'nut', { streetsLeft: 0 }) === 'commit', 'river commits a touch deeper (no streets left)');
   ok(EQ.sprVerdict(10, 'draw') === 'implied', 'draws want implied odds deep');
-  ok(EQ.sprVerdict(2, 'draw-strong') === 'commit', 'monster draw commits shallow');
+  ok(EQ.sprVerdict(2, 'draw-strong') === 'implied', 'monster draw does NOT commit at SPR 2, wants implied odds (v1.8.136)');
+  ok(EQ.sprVerdict(0.8, 'draw-strong') === 'commit', 'monster draw commits at SPR 0.8');
   ok(EQ.sprVerdict(4, 'secondpair') === 'pot-control', 'second pair never commits deep');
 
   // Implied odds: credit only deep + drawing/speculative.
