@@ -1,3 +1,29 @@
+## [1.8.134] — Last two unpinned README counts pinned in the docs-freshness gate
+
+Two exact README numbers had no enforcing test, so a future edit could rot
+them silently — the same drift class the v1.8.124–133 series pinned
+everywhere else. The gate now derives the ADR count from docs/adr/*.md
+and asserts README names it ("4 architecture decision records"), and
+counts index.html's rule-item divs and asserts README names that count
+("8 beginner rules"). Both were verified true before pinning, not fixed:
+the ADR directory holds exactly 0001–0004 and the Learn tab holds
+exactly 8 rule-items.
+
+Sensitivity checked: on a scratch tree, mutating README to "3 architecture
+decision records" fails exactly the ADR assertion, mutating it to
+"7 beginner rules" fails exactly the rules assertion, and deleting an ADR
+file fails the ADR assertion via the derived count.
+
+Verified, not changed: debloat scan clean (no dead top-level functions —
+initMobileTabs is a named IIFE; no dead CSS selectors — the one
+candidate, coach-recap-bad, is built dynamically as 'coach-recap-' +
+kind), chain parses to 36 suites, replay cap still 50, bot roster still
+14 profiles, 14 js/ files, app.js 2,548 lines (extraction still
+deferred per ROADMAP).
+
+Audit clean: livetest 10/10 with 0 issues and 0 JS errors, coach eval
+CLEAN over 11 hands with 0 flags (34 hero decisions), full suite green.
+
 ## [1.8.133] — Layer-count ambiguity resolved: README "6 layers" now has a stated counting rule
 
 Yesterday's run flagged it, this run fixed it without guessing: README

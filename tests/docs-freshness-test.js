@@ -149,6 +149,15 @@ ok(mobile.indexOf('900px') !== -1 && styleCss.indexOf('@media (max-width: 900px)
 ok(indexHtml.indexOf('manifest.json') !== -1 && appJs.indexOf("register('sw.js')") !== -1,
   'MOBILE PWA-shipped claim matches the index.html manifest link and app.js service-worker registration');
 
+var adrCount = fs.readdirSync(path.join(dir, 'docs', 'adr')).filter(function (f) { return f.slice(-3) === '.md'; }).length;
+ok(adrCount >= 1, 'ADR directory parses to a sane count (' + adrCount + ')');
+ok(readme.indexOf(adrCount + ' architecture decision records') !== -1,
+  'README ADR count matches docs/adr (' + adrCount + ')');
+var ruleCount = (indexHtml.match(/class="rule-item"/g) || []).length;
+ok(ruleCount >= 1, 'Learn tab parses to a sane beginner-rule count (' + ruleCount + ')');
+ok(readme.indexOf(ruleCount + ' beginner rules') !== -1,
+  'README beginner-rule count matches index.html rule-items (' + ruleCount + ')');
+
 var readmeVisible = readme.replace(/<!--[\s\S]*?-->/g, '');
 var linked = {};
 (readmeVisible.match(/docs\/[A-Za-z0-9_.\/-]+/g) || []).forEach(function (r) {
