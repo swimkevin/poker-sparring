@@ -1,3 +1,38 @@
+## [1.8.140] — Facing-bet bypass narrowed: auto-calls no longer skip the math
+
+The old facing-bet path auto-called with any "committed" nut,
+overpair, or top pair whenever the call was smaller than the
+effective stack — before it ever looked at the bet size, the
+villain's range, or the pot odds. A tight player's 2x-pot overbet
+got called the same way as a normal bet. Three narrows, plus a
+reorder. The bypass now fires only when all four hold: genuinely
+short stack-to-pot (at most 1), a nut or overpair hand (top pair no
+longer qualifies — it is too often second-best), a call no bigger
+than half the pot, and a villain whose range is not polarized to
+strength. And the tight-overbet fold now runs BEFORE the bypass,
+so a tight player's overbet folds even a committed hand. Anything
+outside the bypass falls through to the pot-odds math and shows
+it, which is the point: the coach must show its work when the
+price is big or the range is scary.
+
+Deep-analysis note: auto-calls leak most against polarized
+ranges. When a tight player bets big, his range is value-heavy,
+so a "strong" label is often second-best — the hand label must
+not outvote the range math. The probe work here corrected an
+assumption: top pair is genuinely ahead of the implemented strong
+range (about two-thirds equity at a one-third price), so the
+toppair change is about showing the math, not forcing a fold.
+Folding a strong hand needs either a monster signal (tight
+overbet, river trap) or a price the equity cannot cover — both
+now reach the math instead of being bypassed.
+
+Verified: committed overpair vs a tight 2x-pot overbet now folds
+("almost always the nuts"); a genuine short-stack overpair vs a
+normal bet still bypass-calls; oversized calls, toppair vs a
+polarized tight range, and a river SPR 1.5 overpair all now show
+the pot-odds math instead of the bypass line. The bypass tests
+fail 5-for-5 on the old code.
+
 ## [1.8.139] — Multiway value rules: bet bigger for value, never bluff through a crowd
 
 Multiway pots pulled the old coach in two directions at once: it

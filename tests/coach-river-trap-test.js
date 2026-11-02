@@ -103,6 +103,62 @@ setTimeout(function () {
   console.log('  nathan small-turn-bet says: ' + strip(v5.html).slice(0, 120));
   ok(v5.advice !== 'fold', 'nathan small-turn-bet advice is not fold (half-pot call does not narrow, got ' + v5.advice + ')');
 
+  function setupBypass(villainId, heroHole, board, street, potBefore, bet, heroStack) {
+    var s = d.createElement('script');
+    var js = [
+      'window.__byArch = ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0];',
+      'window.__byTable = new PokerTable({ players: [',
+      '  { name: "hero", isHero: true }, { name: "V", archetype: window.__byArch },',
+      '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }, { name: "I" }, { name: "J" }',
+      '], sb: 5, bb: 10, startingStack: 3000 });',
+      'var t = window.__byTable;',
+      't.button = 0; t.street = "' + street + '"; t.currentBet = ' + bet + '; t.pot = ' + potBefore + ';',
+      't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
+      't.players[0].stack = ' + heroStack + '; t.players[0].bet = 0;',
+      't.players[1].stack = ' + heroStack + '; t.players[1].bet = ' + bet + ';',
+      't.community = ' + JSON.stringify(board) + ';',
+      'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+    ].join('\n');
+    s.textContent = js;
+    d.head.appendChild(s);
+    var t = w.__byTable;
+    w.__coachTestHooks.setTable(t);
+    w.__coachTestHooks.setHandRec({ timeline: [
+      { t: 'action', street: street, player: 1, action: 'bet', bet: bet, pot: potBefore + bet }
+    ] });
+    w.__coachTestHooks.setDecisions([]);
+    return w.coachVerdict();
+  }
+  var q725 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+  var q7259 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
+  var kk = [{ r: 13, s: 1 }, { r: 13, s: 0 }];
+  var qk = [{ r: 12, s: 1 }, { r: 13, s: 0 }];
+  var b1 = setupBypass('rock', kk, q725, 'turn', 500, 1000, 1200);
+  console.log('  bypass overbet says: ' + strip(b1.html).slice(0, 160));
+  ok(b1.advice === 'fold', 'committed overpair vs tight overbet folds, bypass no longer overrides (got ' + b1.advice + ', v1.8.140)');
+  ok(strip(b1.html).indexOf('almost always the nuts') !== -1,
+    'tight-overbet fold message names the nuts (v1.8.140)');
+  var b2 = setupBypass('rock', kk, q725, 'turn', 500, 250, 600);
+  console.log('  bypass control says: ' + strip(b2.html).slice(0, 160));
+  ok(b2.advice === 'call', 'genuine short-SPR overpair vs normal bet still bypass-calls (got ' + b2.advice + ', v1.8.140)');
+  ok(strip(b2.html).indexOf('almost nothing') !== -1,
+    'bypass control keeps the plain-language commit message (v1.8.140)');
+  var b3 = setupBypass('lag', kk, q725, 'turn', 500, 900, 1120);
+  console.log('  bypass size-guard says: ' + strip(b3.html).slice(0, 160));
+  ok(b3.advice === 'call' && strip(b3.html).indexOf('Pot odds:') !== -1 &&
+    strip(b3.html).indexOf('almost nothing') === -1,
+    'oversized call (toCall > 1/2 pot) goes through the math, not the bypass (got ' + b3.advice + ', v1.8.140)');
+  var b4 = setupBypass('rock', qk, q725, 'turn', 500, 600, 880);
+  console.log('  bypass toppair-polar says: ' + strip(b4.html).slice(0, 160));
+  ok(b4.advice === 'call' && strip(b4.html).indexOf('Pot odds:') !== -1 &&
+    strip(b4.html).indexOf('almost nothing') === -1,
+    'toppair vs polarized tight range goes through the math, not the bypass (got ' + b4.advice + ', v1.8.140)');
+  var b5 = setupBypass('lag', kk, q7259, 'river', 1000, 600, 2400);
+  console.log('  bypass river-SPR says: ' + strip(b5.html).slice(0, 160));
+  ok(b5.advice === 'call' && strip(b5.html).indexOf('Pot odds:') !== -1 &&
+    strip(b5.html).indexOf('almost nothing') === -1,
+    'river SPR 1.5 overpair goes through the math, not the bypass (got ' + b5.advice + ', v1.8.140)');
+
   var eq = require('../js/equity.js');
   ok(typeof eq.estimateEquityVsMadePool === 'function', 'estimateEquityVsMadePool exported');
   var hero = [{ r: 4, s: 1 }, { r: 9, s: 0 }];

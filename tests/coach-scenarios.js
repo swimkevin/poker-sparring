@@ -409,8 +409,8 @@ console.log('\n33. v1.8.137: trips and two pair are their own hand classes');
   ok(src.indexOf("twopair: 'two pair'") !== -1, 'twopair has a plain name');
   ok(/\(hc === 'nut' \|\| hc === 'overpair' \|\| hc === 'toppair' \|\| hc === 'trips' \|\| hc === 'twopair'\) && canBet/.test(src),
     'value-bet branch covers trips and twopair');
-  ok(src.indexOf("if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)") !== -1,
-    'facing-call bypass still excludes trips/twopair (vulnerable hands pass the math)');
+  ok(src.indexOf("if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&") !== -1,
+    'facing-call bypass still excludes trips/twopair/toppair (vulnerable hands pass the math, v1.8.140)');
   ok(src.indexOf('full house beats it') !== -1,
     'paired-board trips message names the vulnerability');
 }
@@ -431,6 +431,16 @@ console.log('\n35. v1.8.139: multiway value floor + multiway bluff ban');
     'multiway floor message explains more callers = more value');
   ok(src.indexOf("if (multiway)\n          return mkVerdict('check', 'strong',\n            '<b>Check</b> — too many players to bluff through.") !== -1,
     'air branch bans bluffs outright multiway');
+}
+
+console.log('\n36. v1.8.140: facing-bet bypass narrowing');
+{
+  ok(src.indexOf("if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&") !== -1,
+    'bypass requires short SPR, nut/overpair only');
+  ok(src.indexOf('toCall <= 0.5 * pot && !polarStrong)') !== -1,
+    'bypass requires a non-huge call and a non-polarized villain');
+  ok(src.indexOf("if (tell && tell.unit === 'pot' && tell.size === 'overbet' && tight > 0.6") !== -1,
+    'tight-overbet fold is checked before the bypass');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

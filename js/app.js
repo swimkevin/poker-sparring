@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.139';
+  var APP_VERSION = '1.8.140';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1950,7 +1950,14 @@
         'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him — especially when the river card helps exactly the hands he called with.');
     }
 
-    if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)
+    if (tell && tell.unit === 'pot' && tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
+        !(V && V.archetype && V.archetype.wideOverbet))
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — an overbet from a tight player is almost always the nuts. Don\'t pay it off.' + rangeNote,
+        'Respect overbets from tight players: it\'s the nuts far more often than a bluff.');
+
+    if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&
+        toCall <= 0.5 * pot && !polarStrong)
       return mkVerdict('call', 'strong',
         'The pot is already nearly as big as your stack — calling costs almost nothing compared to what is already in there. With ' + handClassName(hc) +
         ', <b>call</b>.' + rangeNote,
@@ -1962,12 +1969,6 @@
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');
-
-      if (tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
-          !(V && V.archetype && V.archetype.wideOverbet))
-        return mkVerdict('fold', 'strong',
-          '<b>Fold</b> — an overbet from a tight player is almost always the nuts. Don\'t pay it off.' + rangeNote,
-          'Respect overbets from tight players: it\'s the nuts far more often than a bluff.');
     }
 
     if (hc === 'board')
