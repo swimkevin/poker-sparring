@@ -1,3 +1,37 @@
+## [1.8.144] — Global guardrail audit: no bet above 1.5x pot outside the allowed spots
+
+The original bug was a 2.63x-pot shove. Nine iterations later,
+the audit asks whether any such recommendation survives anywhere
+in the coach's leading game. New permanent guardrail: a sweep
+over 144 leading spots — 9 hand classes, turn and river, 4
+stack-to-pot ratios, heads-up and 4-way — asserting that no
+recommended bet exceeds 1.5x pot except in genuinely short
+stack-to-pot spots (at most about 1), river-nut spots, and
+short-stack spots. Result: zero violations. The overbet bug is
+fixed at the root, not papered over in one hand: commitment now
+means SPR near 1, multiway shoves are banned above SPR 1.5,
+geometric and protection floors cap at 3/4 pot, and every other
+leading size is 1/4 to 3/4 pot. The sweep is validated
+non-vacuous: injecting a 2x-pot value size flags 48 violations
+and fails the test.
+
+Deep-analysis note: an audit that finds nothing is still the
+right release when the invariant is permanent. The shove bug
+came back in spirit twice before (the 1.8.91 commit rule, the
+random-equity river call) because each fix guarded one hand,
+not the rule. The sweep guards the rule: any future change
+that reintroduces an overbet recommendation anywhere in the
+leading game fails the build. Scope note: the sweep covers
+leading bets, whose sizes appear in the message; facing raises
+state a multiple of the villain's bet without an explicit size
+and are not swept — that gap is named here for the solver lab
+to close with EV comparison rather than message parsing.
+
+Verified: 144 spots, 0 violations on the shipped code, 48
+violations on an injected 2x-pot size; mid-program coach-eval
+on the 1.8.141 tree was CLEAN (11 hands, 35 decisions, 0
+flags); full suite and livetest green.
+
 ## [1.8.143] — Plain-language sizing math for value bets
 
 Value bets told the player what to do but not why the size was

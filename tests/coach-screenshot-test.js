@@ -245,6 +245,87 @@ setTimeout(function () {
     ok(H.geometricFrac(5, 1) === null, 'geometric null above SPR 4');
     ok(H.geometricFrac(3, 0) === null, 'geometric null on river');
   }
+  function buildSweepSpot(heroHole, board, street, potAmt, heroStack, nLive) {
+    var s = d.createElement('script');
+    s.textContent = [
+      'window.__swTable = new PokerTable({ players: [',
+      '  { name: "hero", isHero: true }, { name: "V" },',
+      '  { name: "B" }, { name: "C" },',
+      '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+      '], sb: 5, bb: 10, startingStack: 3000 });',
+      'var t = window.__swTable;',
+      't.button = 0; t.street = "' + street + '"; t.currentBet = 0; t.pot = ' + potAmt + ';',
+      't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
+      't.players[0].stack = ' + heroStack + ';',
+      't.players[1].stack = ' + heroStack + ';',
+      't.community = ' + JSON.stringify(board) + ';',
+      'for (var i = ' + nLive + '; i < 8; i++) t.players[i].folded = true;'
+    ].join('\n');
+    d.head.appendChild(s);
+    return w.__swTable;
+  }
+  var sweepHands = [
+    ['nut', [{ r: 4, s: 1 }, { r: 4, s: 2 }],
+      [{ r: 4, s: 0 }, { r: 4, s: 3 }, { r: 12, s: 1 }, { r: 7, s: 0 }],
+      [{ r: 4, s: 0 }, { r: 4, s: 3 }, { r: 12, s: 1 }, { r: 7, s: 0 }, { r: 9, s: 1 }]],
+    ['overpair', [{ r: 13, s: 1 }, { r: 13, s: 0 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }]],
+    ['toppair', [{ r: 12, s: 1 }, { r: 13, s: 0 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }]],
+    ['trips', [{ r: 4, s: 1 }, { r: 9, s: 0 }],
+      [{ r: 7, s: 1 }, { r: 4, s: 0 }, { r: 12, s: 1 }, { r: 4, s: 3 }],
+      [{ r: 7, s: 1 }, { r: 4, s: 0 }, { r: 12, s: 1 }, { r: 4, s: 3 }, { r: 9, s: 2 }]],
+    ['twopair', [{ r: 12, s: 0 }, { r: 2, s: 1 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 7, s: 3 }, { r: 2, s: 0 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 9, s: 1 }]],
+    ['secondpair', [{ r: 7, s: 0 }, { r: 13, s: 1 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }]],
+    ['draw', [{ r: 13, s: 2 }, { r: 6, s: 2 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 10, s: 0 }]],
+    ['draw-strong', [{ r: 8, s: 2 }, { r: 6, s: 2 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 10, s: 0 }]],
+    ['air', [{ r: 9, s: 0 }, { r: 3, s: 1 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }],
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 10, s: 0 }]]
+  ];
+  var sweepStacks = [200, 600, 1052, 2000];
+  var sweepViolations = [];
+  var sweepCount = 0;
+  sweepHands.forEach(function (sh) {
+    ['turn', 'river'].forEach(function (street) {
+      var board = street === 'turn' ? sh[2] : sh[3];
+      var hc = H.handClass(sh[1], board);
+      sweepStacks.forEach(function (stk) {
+        [2, 4].forEach(function (nLive) {
+          H.setTable(buildSweepSpot(sh[1], board, street, 400, stk, nLive));
+          H.setHandRec(null);
+          H.setDecisions([]);
+          var sv = w.coachVerdict();
+          sweepCount++;
+          if (sv.error) { sweepViolations.push(sh[0] + ' ' + street + ' stack ' + stk + ' live ' + nLive + ': error ' + sv.error); return; }
+          if (sv.advice !== 'bet') return;
+          var stx = strip(sv.html);
+          var sm = /pot \(([\d,]+)\)/.exec(stx) || /All-in \(([\d,]+)\)/.exec(stx);
+          if (!sm) { sweepViolations.push(sh[0] + ' ' + street + ' stack ' + stk + ' live ' + nLive + ': bet with no parsable size'); return; }
+          var ratio = parseInt(sm[1].replace(/,/g, ''), 10) / 400;
+          var sprV = stk / 400;
+          var allowed = ratio <= 1.5 || sprV <= 1.05 || (street === 'river' && hc === 'nut') || stk <= 200;
+          if (!allowed) sweepViolations.push(sh[0] + ' ' + street + ' stack ' + stk + ' live ' + nLive + ': bet ratio ' + ratio.toFixed(2) + 'x pot (hc ' + hc + ')');
+        });
+      });
+    });
+  });
+  console.log('  guardrail sweep: ' + sweepCount + ' spots, violations: ' + sweepViolations.length +
+    (sweepViolations.length ? ' — ' + sweepViolations.slice(0, 5).join(' | ') : ''));
+  ok(sweepCount === 144, 'guardrail sweep covers 144 spots (got ' + sweepCount + ', v1.8.144)');
+  ok(sweepViolations.length === 0,
+    'guardrail sweep finds no bet above 1.5x pot outside short-SPR, river-nut, and short-stack spots (v1.8.144)');
+
   console.log(fails === 0 ? 'COACH SCREENSHOT TEST PASSED' : 'COACH SCREENSHOT TEST FAILED (' + fails + ')');
   process.exit(fails ? 1 : 0);
 }, 800);
