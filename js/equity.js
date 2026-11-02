@@ -294,11 +294,13 @@ function impliedCredit(o) {
 
 function rioPenalty(o) {
   o = o || {};
-  if (o.nutDraw) return 0;
+  if (o.nutDraw && !o.vulnerableMade) return 0;
   var p = 0;
   if (o.villainTight > 0.6) p += 0.06;
   if (o.multiway) p += 0.04;
-  return Math.min(0.10, p);
+  if (o.nonNutDraw && o.villainTight > 0.6) p += 0.04;
+  if (o.vulnerableMade && o.villainTight > 0.6) p += 0.03;
+  return Math.min(0.14, p);
 }
 
 function villainFoldy(archetype) {

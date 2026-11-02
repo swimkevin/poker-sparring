@@ -1,3 +1,48 @@
+## [1.8.141] — Equity vs range, multiway dilution, reverse implied odds, narrowed-figure calls
+
+Four facing-bet fixes in one release. First, when no action-derived
+range tier applies, the coach no longer falls back to random hands:
+it uses the villain archetype's opening range as the proxy and says
+so ("against the kinds of hands he plays"). Random hands remain
+only for a truly unknown villain, still labeled a rough guide.
+Second, multiway facing equity is diluted: beating one range at
+50% means beating three ranges at about 13%, so the single-range
+figure is raised to the power of the live-opponent count (capped
+at 3) before the threshold compare, and the message says everyone
+still in must lose. The random-hands branch is exempt because its
+simulation already plays against all opponents at once — diluting
+it again would double-count. Third, reverse implied odds grow
+teeth: a non-nut draw against a tight player takes an extra 0.04,
+and a vulnerable made hand (trips or two pair on a paired board)
+against a tight player takes 0.03, on top of the existing tight
+and multiway penalties (cap raised 0.10 to 0.14). Fourth, the
+carried 1.8.135 item: when the river-monster gate holds but the
+narrowed equity still says call, the coach now shows the exact
+narrowed figure (33% on the blank river) instead of the tier
+figure (~96%), and decides by direct pot-odds comparison rather
+than the banded threshold — the banded math would have flipped
+that exact 33%-vs-30% call into a fold on a rounding edge, which
+is why the gate-call gets its own branch. A nut hand that can
+still raise keeps the raise branch.
+
+Deep-analysis note: the multiway bug was the largest leak of the
+four. A pair-plus-flush-draw at 50% heads-up looks like a call at
+a 31% price; multiway it is 13% and a clear fold, and the old
+coach called it. The general rule: every extra opponent multiplies
+the chance someone has you beat, so single-opponent equity is
+nearly useless multiway. The RIO extension prices the specific
+way tight ranges punish you: they pay your draws only when you
+are beat, and they hold the full houses on paired boards.
+
+Verified: dilution heads-up calls at 50% and multiway folds at
+about 13% ("beating everyone still in"); archetype-range spots
+name the kinds of hands instead of random hands; blank-river
+Nathan and Alice spots call on the exact 33%; RIO penalties are
+unit-tested deterministically (a live flip test would be Monte
+Carlo noise at a 0.04 shift, so the penalty itself is pinned in
+tests/test.js instead). The river-trap tests fail 7-for-7 on the
+old code.
+
 ## [1.8.140] — Facing-bet bypass narrowed: auto-calls no longer skip the math
 
 The old facing-bet path auto-called with any "committed" nut,

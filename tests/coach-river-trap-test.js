@@ -96,8 +96,61 @@ setTimeout(function () {
   ok(v3.advice !== 'fold', 'lag 7-river advice is not fold (bluffer control, got ' + v3.advice + ')');
 
   var v4 = setup('nathan', 2, 0, 266, 355, 669, 887, 669);
-  console.log('  nathan blank-river says: ' + strip(v4.html).slice(0, 120));
+  console.log('  nathan blank-river says: ' + strip(v4.html).slice(0, 200));
   ok(v4.advice !== 'fold', 'nathan blank-river advice is not fold (river did not improve his range, got ' + v4.advice + ')');
+  ok(strip(v4.html).indexOf('33%') !== -1,
+    'nathan blank-river message shows the narrowed 33% figure, not the tier figure (v1.8.141)');
+  ok(strip(v4.html).indexOf('simulated 150') === -1,
+    'nathan blank-river message uses the exact narrowed figure, not a simulation line (v1.8.141)');
+  var v6 = setup('alice', 2, 0, 266, 355, 669, 887, 669);
+  console.log('  alice blank-river says: ' + strip(v6.html).slice(0, 120));
+  ok(v6.advice === 'call' && strip(v6.html).indexOf('33%') !== -1,
+    'alice blank-river also calls on the narrowed figure, not nathan-hardcoded (got ' + v6.advice + ', v1.8.141)');
+  function setupFacing(villainId, heroHole, board, nLive, potBefore, bet) {
+    var s = d.createElement('script');
+    var js = [
+      'window.__fcArch = ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0];',
+      'window.__fcTable = new PokerTable({ players: [',
+      '  { name: "hero", isHero: true }, { name: "V", archetype: window.__fcArch },',
+      '  { name: "B" }, { name: "C" },',
+      '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+      '], sb: 5, bb: 10, startingStack: 3000 });',
+      'var t = window.__fcTable;',
+      't.button = 0; t.street = "turn"; t.currentBet = ' + bet + '; t.pot = ' + potBefore + ';',
+      't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
+      't.players[0].stack = 2000; t.players[0].bet = 0;',
+      't.players[1].stack = 2000; t.players[1].bet = ' + bet + ';',
+      't.community = ' + JSON.stringify(board) + ';',
+      'for (var i = ' + nLive + '; i < 8; i++) t.players[i].folded = true;'
+    ].join('\n');
+    s.textContent = js;
+    d.head.appendChild(s);
+    var t = w.__fcTable;
+    w.__coachTestHooks.setTable(t);
+    w.__coachTestHooks.setHandRec({ timeline: [
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: bet, pot: potBefore + bet }
+    ] });
+    w.__coachTestHooks.setDecisions([]);
+    return w.coachVerdict();
+  }
+  var flushBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+  var pairFlush = [{ r: 2, s: 2 }, { r: 13, s: 2 }];
+  var fdHu = setupFacing('lag', pairFlush, flushBoard, 2, 500, 400);
+  console.log('  dilution heads-up says: ' + strip(fdHu.html).slice(0, 160));
+  ok(fdHu.advice === 'call', 'dilution heads-up control calls (got ' + fdHu.advice + ', v1.8.141)');
+  var fdMw = setupFacing('lag', pairFlush, flushBoard, 4, 500, 400);
+  console.log('  dilution multiway says: ' + strip(fdMw.html).slice(0, 200));
+  ok(fdMw.advice === 'fold', 'dilution multiway folds: must beat all three ranges (got ' + fdMw.advice + ', v1.8.141)');
+  ok(strip(fdMw.html).indexOf('beating everyone still in') !== -1,
+    'dilution multiway message says everyone still in must lose (v1.8.141)');
+  var dryBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+  var secondPair = [{ r: 7, s: 0 }, { r: 13, s: 1 }];
+  var ar = setupFacing('lag', secondPair, dryBoard, 2, 500, 200);
+  console.log('  archetype-range says: ' + strip(ar.html).slice(0, 200));
+  ok(strip(ar.html).indexOf('kinds of hands') !== -1,
+    'archetype-range message names the kinds of hands he plays (v1.8.141)');
+  ok(strip(ar.html).indexOf('random hands') === -1,
+    'archetype-range message never falls back to random hands (v1.8.141)');
 
   var v5 = setup('nathan', 7, 2, 178, 355, 757, 711, 757);
   console.log('  nathan small-turn-bet says: ' + strip(v5.html).slice(0, 120));

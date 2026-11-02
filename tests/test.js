@@ -117,6 +117,14 @@ function hand(str) {
     'RIO penalty capped at 0.10');
   ok(EQ.rioPenalty({ nutDraw: false, villainTight: 0.2, multiway: false }) === 0,
     'no RIO penalty vs loose heads-up');
+  ok(EQ.rioPenalty({ nutDraw: false, villainTight: 0.9, multiway: false, nonNutDraw: true }) >= 0.10,
+    'non-nut draw vs tight takes an extra RIO penalty (v1.8.141)');
+  ok(EQ.rioPenalty({ nutDraw: false, villainTight: 0.9, multiway: true, nonNutDraw: true }) <= 0.14,
+    'extended RIO penalty capped at 0.14 (v1.8.141)');
+  ok(EQ.rioPenalty({ nutDraw: true, villainTight: 0.9, multiway: false, vulnerableMade: true }) >= 0.09,
+    'vulnerable made hand on a paired board vs tight takes a RIO penalty (v1.8.141)');
+  ok(EQ.rioPenalty({ nutDraw: true, villainTight: 0.2, multiway: false, vulnerableMade: true }) === 0,
+    'no vulnerable-made RIO penalty vs loose (v1.8.141)');
 })();
 
 // ---------- engine: 300-hand soak test ----------

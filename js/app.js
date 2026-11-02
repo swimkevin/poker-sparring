@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.140';
+  var APP_VERSION = '1.8.141';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1917,28 +1917,46 @@
     if (multiway && betCallAhead()) rangeAdjust += 0.05;
 
     var rangeEqTier = polarStrong ? 2 : (range.label === 'strong' ? 3 : 0);
+    var vTier = (V && V.archetype && V.archetype.openTier) || 0;
+    var singleRange = !!rangeEqTier || !!vTier;
     var eq2 = rangeEqTier
       ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 150)
+      : vTier
+      ? estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 150)
       : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
 
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
     var credit = impliedCredit({ draw: anyDraw, smallPair: false, effStackBB: effBB,
       villainStubborn: stubborn, inPosition: inPos });
+    var rankSeen = {};
+    var boardPaired = table.community.some(function (cc) {
+      if (rankSeen[cc.r]) return true;
+      rankSeen[cc.r] = true;
+      return false;
+    });
     var debit = rioPenalty({ nutDraw: isNutFlushDraw(hero.hole, table.community) || !anyDraw,
-      villainTight: tight, multiway: multiway });
+      villainTight: tight, multiway: multiway,
+      nonNutDraw: (hc === 'draw' || hc === 'draw-weak') && !isNutFlushDraw(hero.hole, table.community),
+      vulnerableMade: (hc === 'trips' || hc === 'twopair') && boardPaired });
     var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
+    var diluted = false;
+    if (multiway && singleRange) {
+      var nOpp = Math.min(3, table.livePlayers().length - 1);
+      adjEq = Math.pow(adjEq, nOpp);
+      diluted = true;
+    }
 
     var veto = riverMonsterVeto(c);
+    var ranks = {};
+    table.community.forEach(function (cc) { ranks[cc.r] = (ranks[cc.r] || 0) + 1; });
+    var paired = Object.keys(ranks).filter(function (r) { return ranks[r] >= 2; })
+      .map(Number).sort(function (a, b) { return b - a; });
+    var top = Math.max.apply(null, table.community.map(function (cc) { return cc.r; }));
+    var narrowDesc = paired.length
+      ? 'a ' + paired.map(function (r) { return rankName(r); }).join(', a ') + ', or a strong ' + rankName(top)
+      : 'strong hands';
     if (veto && veto.eq <= veto.need) {
-      var ranks = {};
-      table.community.forEach(function (cc) { ranks[cc.r] = (ranks[cc.r] || 0) + 1; });
-      var paired = Object.keys(ranks).filter(function (r) { return ranks[r] >= 2; })
-        .map(Number).sort(function (a, b) { return b - a; });
-      var top = Math.max.apply(null, table.community.map(function (cc) { return cc.r; }));
-      var narrowDesc = paired.length
-        ? 'a ' + paired.map(function (r) { return rankName(r); }).join(', a ') + ', or a strong ' + rankName(top)
-        : 'strong hands';
       var riverRank = rankName(table.community[table.community.length - 1].r);
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
@@ -1949,6 +1967,14 @@
         '. The math says <b>fold</b>.' + rangeNote,
         'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him — especially when the river card helps exactly the hands he called with.');
     }
+
+    if (veto && !(hc === 'nut' && legal.canRaise))
+      return mkVerdict('call', 'marginal',
+        '<b>Call</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
+        narrowDesc + '. Against the hands he would play this way you win about ' + pct(veto.eq) +
+        ' of the time, and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs only ' + pct(veto.need) +
+        '. The math says <b>call</b>.' + rangeNote,
+        'Even against a tight range, call when the price is right — the math, not the fear, decides.');
 
     if (tell && tell.unit === 'pot' && tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
         !(V && V.archetype && V.archetype.wideOverbet))
@@ -2000,8 +2026,11 @@
 
     var eqSource = rangeEqTier
       ? 'simulated 150× vs ' + vName + '\'s strong range'
+      : vTier
+      ? 'simulated 150× vs the kinds of hands ' + vName + ' plays'
       : 'simulated 150× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
+    if (diluted) eqSource += ', beating everyone still in';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' +

@@ -443,5 +443,21 @@ console.log('\n36. v1.8.140: facing-bet bypass narrowing');
     'tight-overbet fold is checked before the bypass');
 }
 
+console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call');
+{
+  ok(src.indexOf('var vTier = (V && V.archetype && V.archetype.openTier) || 0;') !== -1,
+    'facing math falls back to the villain archetype openTier range');
+  ok(src.indexOf('simulated 150× vs the kinds of hands ') !== -1,
+    'archetype-range source wording names the kinds of hands he plays');
+  ok(src.indexOf('Math.pow(adjEq, nOpp)') !== -1,
+    'multiway facing equity is diluted across all live opponents');
+  ok(src.indexOf('beating everyone still in') !== -1,
+    'diluted message says everyone still in must lose');
+  ok(src.indexOf('nonNutDraw:') !== -1 && src.indexOf('vulnerableMade:') !== -1,
+    'facing math passes non-nut-draw and vulnerable-made flags to rioPenalty');
+  ok(src.indexOf("if (veto && !(hc === 'nut' && legal.canRaise))") !== -1,
+    'veto-call branch shows the narrowed figure when the gate holds but calls');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
