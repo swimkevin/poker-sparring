@@ -505,5 +505,13 @@ console.log('\n43. v1.8.148: multiway dilution — shared-runout sim replaces th
     'power-rule dilution is gone from the facing math');
 }
 
+console.log('\n44. v1.8.149: preflop-to-postflop range consistency — an earlier big call narrows the range');
+{
+  ok(src.indexOf('narrowedByCall') !== -1,
+    'facing math narrows the range when the villain called a big bet earlier');
+  ok(src.indexOf('called a big bet earlier in the hand, so his range is still strong') !== -1,
+    'narrowed message explains the earlier big call');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

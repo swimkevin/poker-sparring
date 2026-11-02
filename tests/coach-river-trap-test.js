@@ -106,7 +106,7 @@ setTimeout(function () {
   console.log('  alice blank-river says: ' + strip(v6.html).slice(0, 120));
   ok(v6.advice === 'call' && strip(v6.html).indexOf('33%') !== -1,
     'alice blank-river also calls on the narrowed figure, not nathan-hardcoded (got ' + v6.advice + ', v1.8.141)');
-  function setupFacing(villainId, heroHole, board, nLive, potBefore, bet) {
+  function setupFacing(villainId, heroHole, board, nLive, potBefore, bet, timeline) {
     var s = d.createElement('script');
     var js = [
       'window.__fcArch = ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0];',
@@ -127,7 +127,7 @@ setTimeout(function () {
     d.head.appendChild(s);
     var t = w.__fcTable;
     w.__coachTestHooks.setTable(t);
-    w.__coachTestHooks.setHandRec({ timeline: [
+    w.__coachTestHooks.setHandRec({ timeline: timeline || [
       { t: 'action', street: 'turn', player: 1, action: 'bet', bet: bet, pot: potBefore + bet }
     ] });
     w.__coachTestHooks.setDecisions([]);
@@ -151,7 +151,21 @@ setTimeout(function () {
   ok(fdMwFold.advice === 'fold', 'dilution multiway weak pair still folds (got ' + fdMwFold.advice + ', v1.8.148)');
   ok(strip(fdMwFold.html).indexOf('beating everyone still in') !== -1,
     'dilution multiway weak-pair message says everyone still in must lose (v1.8.148)');
+  var airHigh = [{ r: 14, s: 0 }, { r: 9, s: 1 }];
   var dryBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+  var narrowedTimeline = [
+    { t: 'action', street: 'flop', player: 2, action: 'bet', bet: 300, pot: 800 },
+    { t: 'action', street: 'flop', player: 1, action: 'call' },
+    { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 340, pot: 840 }
+  ];
+  var narrowed = setupFacing('lag', airHigh, dryBoard, 2, 500, 340, narrowedTimeline);
+  console.log('  narrowed says: ' + strip(narrowed.html).slice(0, 220));
+  ok(narrowed.advice === 'fold', 'called-big villain narrows to a strong range and folds air (got ' + narrowed.advice + ', v1.8.149)');
+  ok(strip(narrowed.html).indexOf('called a big bet earlier') !== -1,
+    'narrowed message names the earlier big call (v1.8.149)');
+  var narrowedControl = setupFacing('lag', airHigh, dryBoard, 2, 500, 340);
+  console.log('  narrowed control says: ' + strip(narrowedControl.html).slice(0, 200));
+  ok(narrowedControl.advice === 'call', 'same spot without the earlier big call still calls (got ' + narrowedControl.advice + ', v1.8.149)');
   var secondPair = [{ r: 7, s: 0 }, { r: 13, s: 1 }];
   var ar = setupFacing('lag', secondPair, dryBoard, 2, 500, 200);
   console.log('  archetype-range says: ' + strip(ar.html).slice(0, 200));

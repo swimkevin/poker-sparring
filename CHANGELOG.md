@@ -1,3 +1,36 @@
+## [1.8.149] — Range consistency: an earlier big call narrows the villain's range
+
+The range label already tracked bets street by street — a big
+earlier bet locks the range to strong even if the current bet
+is small — but it ignored calls. A villain who called a large
+bet on an earlier street and now bets small was simulated
+with his wide opening range, as if the big call had told us
+nothing. It tells us a lot: only strong hands call a large
+bet. New: when the villain called a big bet (at least 0.6 of
+the pot) on an earlier street and the current bet does not
+already signal strength, the facing math simulates against
+the strong range (tier 3) instead of the opening range, the
+wide-range "lean call" branch is disabled for that spot
+(a narrowed range is not wide), and the message names the
+earlier big call as the reason.
+
+Deep-analysis note: range narrowing is cumulative, not
+per-street. Each action filters the range, and a call of a
+large bet is one of the strongest filters in the game: it
+removes every hand too weak to pay that price, leaving
+mostly value. A later small bet does not un-narrow the
+range — small bets from strong ranges are common (blocking
+bets, value extraction, traps). Treating the current size as
+the whole story double-counts the small bet and erases the
+big call. The fix reads the line as a whole: big call, then
+small bet, still a strong range.
+
+Verified: Ace-high air vs a loose-aggressive villain who
+called a big flop bet and now bets 340 into 500 on the turn
+now folds (about 9–16% vs a 29% price, stable across five
+runs) where the old coach called it at about 25–27%; the
+same spot without the earlier big call still calls.
+
 ## [1.8.148] — Multiway dilution, deepened: a shared-runout sim replaces the power rule
 
 Version 1.8.141 diluted single-range equity multiway with a

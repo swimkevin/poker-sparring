@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.148';
+  var APP_VERSION = '1.8.149';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1953,6 +1953,12 @@
 
     var rangeEqTier = polarStrong ? 2 : (range.label === 'strong' ? 3 : 0);
     var vTier = (V && V.archetype && V.archetype.openTier) || 0;
+    var narrowedByCall = !rangeEqTier && villainCalledBig(vIdx);
+    var narrowedClause = ' He called a big bet earlier in the hand, so his range is still strong despite this smaller bet.';
+    if (narrowedByCall) {
+      rangeEqTier = 3;
+      rangeNote += narrowedClause;
+    }
     var singleRange = !!rangeEqTier || !!vTier;
     var eq2 = rangeEqTier
       ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 150)
@@ -2080,7 +2086,7 @@
       (riverPrior > 0 ? ' (rivers are under-bluffed)' : '') +
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
-      riskPremiumNote(rp2);
+      riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."
@@ -2088,7 +2094,7 @@
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
         'Calling when you win often enough is how winning poker works.');
-    if ((bluffy > 0.5 || range.label === 'wide') && adjEq > threshold - 0.10)
+    if ((bluffy > 0.5 || range.label === 'wide') && !narrowedByCall && adjEq > threshold - 0.10)
       return mkVerdict('call', 'marginal',
         mathLine + 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.',
         'Against heavy bluffers, call lighter: their range holds more air than usual.');
