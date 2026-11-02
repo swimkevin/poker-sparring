@@ -181,6 +181,19 @@ setTimeout(function () {
   ok(airCap.advice === 'fold', 'air vs a near-never bluffer folds even at a small price (got ' + airCap.advice + ', v1.8.150)');
   ok(strip(airCap.html).indexOf('only win when') !== -1,
     'air-cap message names the bluff-catch logic (v1.8.150)');
+  var pairedDrawBoard = [{ r: 12, s: 2 }, { r: 12, s: 1 }, { r: 7, s: 2 }, { r: 5, s: 3 }];
+  var nutDraw = [{ r: 14, s: 2 }, { r: 2, s: 2 }];
+  var pairedDraw = setupFacing('rock', nutDraw, pairedDrawBoard, 4, 500, 350);
+  console.log('  paired-draw says: ' + strip(pairedDraw.html).slice(0, 220));
+  ok(pairedDraw.advice === 'fold', 'nut draw on a paired board vs tight folds with full-house risk priced in (got ' + pairedDraw.advice + ', v1.8.152)');
+  ok(strip(pairedDraw.html).indexOf('only win when') === -1,
+    'paired draw is not misclassified as air (no bluff-catch cap clause, v1.8.152)');
+  ok(strip(pairedDraw.html).indexOf('beating everyone still in') !== -1,
+    'paired draw is simulated multiway like a real draw (v1.8.152)');
+  var unpairedDrawBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 3, s: 0 }, { r: 5, s: 3 }];
+  var pairedDrawControl = setupFacing('rock', nutDraw, unpairedDrawBoard, 4, 500, 350);
+  console.log('  paired-draw control says: ' + strip(pairedDrawControl.html).slice(0, 200));
+  ok(pairedDrawControl.advice === 'call', 'same nut draw on an unpaired board still calls (got ' + pairedDrawControl.advice + ', v1.8.152)');
   var airCapControl = setupFacing('lag', airTop, dryBoard, 2, 500, 50);
   console.log('  air-cap control says: ' + strip(airCapControl.html).slice(0, 200));
   ok(airCapControl.advice === 'call', 'same air spot vs a bluffer still calls (got ' + airCapControl.advice + ', v1.8.150)');

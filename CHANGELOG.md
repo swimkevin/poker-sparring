@@ -1,3 +1,44 @@
+## [1.8.152] — Draw/implied/reverse-implied odds: paired-board draws are draws, with full-house risk
+
+Two stacked bugs, both about draws on paired boards. First,
+a classification bug: when the board pairs, the evaluator's
+best hand is one pair, and the old hand classifier returned
+'air' whenever the hero did not hold the paired rank — even
+when the hero held a flush or straight draw. A nut flush
+draw on a paired board was therefore treated as a
+bluff-catch, and the 1.8.150 air cap crushed its equity to
+about 7% against tight players. New: the board-pair branch
+checks draws before calling the hand air, so a draw is a
+draw even when the board pairs. Second, a reverse-implied
+odds gap: the vulnerable-made flag (paired board means full
+houses are possible) covered only made trips and two pair,
+not draws. A flush draw on a paired board can hit its flush
+and still lose to a boat, and tight players hold boats
+often. New: the flag covers draws too, so nut draws on
+paired boards now carry the full-house penalty instead of
+the old zero (the early return for nut draws only applies
+when nothing vulnerable is possible).
+
+Deep-analysis note: classification errors compound. The air
+cap was correct for air, and the paired-board penalty was
+correct for made hands — but a misclassified draw got the
+wrong one of each: capped like a bluff-catch instead of
+priced like a draw, and charged no boat risk at all. The
+fix reads the hand for what it is (a draw on a dangerous
+board) and then prices both sides: the draw equity and
+credit for hitting, minus the reverse-implied cost of
+hitting second-best.
+
+Verified: a multiway nut flush draw on a paired turn board
+vs a tight player now folds at about 16–21% (draw equity
+plus credit minus the 0.13 boat penalty) against a 29%
+price, where the old coach showed a capped 7% for the wrong
+reason; the same draw on an unpaired board still calls at
+about 36–40%. The v1.8.62 board-pair check is deliberately
+updated: a board pair without a hero card is still not the
+hero's pair — it is now a draw if the hero is drawing, else
+air.
+
 ## [1.8.151] — Tourney risk premium: the veto call respects tournament pressure
 
 The facing math already added a tournament risk premium to

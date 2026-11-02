@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.151';
+  var APP_VERSION = '1.8.152';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1157,7 +1157,11 @@
         var pr = ev.kickers[0];
 
         var heroHasPair = hole.some(function (c) { return c.r === pr; });
-        if (!heroHasPair) return 'air';
+        if (!heroHasPair) {
+          if (d.flushDraw || d.oesd) return 'draw';
+          if (d.gutshot) return 'draw-weak';
+          return 'air';
+        }
         var boardRanks = community.map(function (c) { return c.r; }).sort(function (a, b) { return b - a; });
         var bmax = boardRanks[0], bsecond = boardRanks[1];
         if (pr > bmax) return 'overpair';
@@ -1980,7 +1984,7 @@
     var debit = rioPenalty({ nutDraw: isNutFlushDraw(hero.hole, table.community) || !anyDraw,
       villainTight: tight, multiway: multiway,
       nonNutDraw: (hc === 'draw' || hc === 'draw-weak') && !isNutFlushDraw(hero.hole, table.community),
-      vulnerableMade: (hc === 'trips' || hc === 'twopair') && boardPaired });
+      vulnerableMade: (hc === 'trips' || hc === 'twopair' || anyDraw) && boardPaired });
     var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
     var diluted = false;
     if (multiway && singleRange) {

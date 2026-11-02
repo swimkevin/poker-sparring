@@ -54,7 +54,11 @@ console.log('\n2. countLimpers only counts pre-raise calls (v1.8.62 fix)');
 console.log('\n3. handClass: board pair ≠ hero pair (v1.8.62 fix)');
 {
   ok(src.includes('heroHasPair'), 'handClass checks heroHasPair');
-  ok(src.includes("if (!heroHasPair) return 'air'"), 'board pair without hero card → air');
+  var hpIdx = src.indexOf('if (!heroHasPair) {');
+  var airIdx = src.indexOf("return 'air'", hpIdx);
+  var drawIdx = src.indexOf("if (d.flushDraw || d.oesd) return 'draw';", hpIdx);
+  ok(hpIdx !== -1 && drawIdx !== -1 && drawIdx < airIdx,
+    'board pair without hero card → draw if drawing, else air (v1.8.152 refines v1.8.62)');
 }
 
 console.log('\n4. No multiway semi-bluffs (v1.8.62 fix)');
@@ -523,6 +527,15 @@ console.log('\n46. v1.8.151: tourney risk premium — the veto call respects tou
 {
   ok(src.indexOf('veto.need + tourneyRiskPremium(effBB)') !== -1,
     'veto call is gated on the pot-odds need plus the tournament premium');
+}
+
+console.log('\n47. v1.8.152: draw/implied/reverse-implied odds — paired-board draws are draws, with full-house risk');
+{
+  ok(src.indexOf('if (!heroHasPair) {') !== -1 &&
+    src.indexOf('if (d.flushDraw || d.oesd) return \'draw\';') !== -1,
+    'board-pair air branch checks draws before calling the hand air');
+  ok(src.indexOf('|| anyDraw) && boardPaired') !== -1,
+    'vulnerable-made flag covers draws on paired boards, not just made hands');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
