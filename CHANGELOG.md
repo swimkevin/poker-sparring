@@ -1,3 +1,32 @@
+## [1.8.154] — Solver-lab leak round: the lab now guards every fix, and its stale spot is fixed
+
+Running the lab against the current coach found the lab itself
+had drifted. Its multiway dilution spot still asserted the
+pre-1.8.148 fold at a 400 bet — a spot the shared-runout model
+later showed is marginal (about a coin flip at a 31% price),
+so the lab was passing that spot by luck on some runs and
+would have failed it on others. That spot now asserts the
+stable 1.8.148 call at a 200 bet, with a weak-pair fold as
+the new fold control.
+
+The library also grows to cover every fix since the lab
+shipped: the passive-trapper small-bet call, the narrowed
+range after an earlier big call, the bluff-frequency cap on
+air, the tourney veto, the paired-board draw fold, and the
+river value floor — plus game-mode support so tourney
+spots can run. The lab passes all spots three runs in a
+row, and disabling the river floor makes it fail on that
+spot, so the new coverage is proven to bite.
+
+Deep-analysis note: a diagnostic library is only as honest
+as its expectations. When the model behind a spot improves,
+the spot's expected action must be re-derived from the new
+model — keeping the old expectation turns the lab into a
+coin flip that sometimes blocks a good coach and sometimes
+passes a bad one. The leak round's real find is that drift,
+not a new coach error: the coach itself passed every new
+spot on the first run.
+
 ## [1.8.153] — Geometric sizing part 2: river value bets floor at half pot
 
 Pre-river value sizing is driven by board texture: a dry

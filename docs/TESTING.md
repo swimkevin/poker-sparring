@@ -88,9 +88,10 @@ has caught and pinned.
 the way a solver would: it replays a library of diagnostic spots —
 including both halves of the screenshot hand that started the
 coach-improvement program, plus the key regression spots for
-multiway play, the facing-bet bypass, dilution, and range-based
-equity — and compares the coach's recommended action against the
-alternatives on EV.
+multiway play, the facing-bet bypass, dilution, range-based
+equity, sizing tells, range narrowing, bluff-catch caps, tourney
+risk, paired-board draws, and river sizing — and compares the
+coach's recommended action against the alternatives on EV.
 
 Run it with:
 

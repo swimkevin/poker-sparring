@@ -1,7 +1,9 @@
 // Solver lab: a headless harness that keeps the coach honest the way a
 // solver would — by replaying a library of diagnostic spots, comparing
 // the coach's recommended action against the alternatives on EV, and
-// failing on clearly losing advice.
+// failing on clearly losing advice. The library covers both Kevin hands
+// plus the regression spot for every coach fix since, so a later change
+// that re-breaks an earlier fix fails the lab instead of shipping.
 //
 // Run: npm run solver-lab
 // Runtime: seconds (one jsdom load plus a handful of synchronous
@@ -80,7 +82,10 @@ function runSpot(spot) {
   w.__coachTestHooks.setTable(t);
   w.__coachTestHooks.setHandRec({ timeline: spot.timeline || [] });
   w.__coachTestHooks.setDecisions([]);
-  return w.coachVerdict();
+  if (spot.mode) w.__coachTestHooks.setGameMode(spot.mode);
+  var v = w.coachVerdict();
+  w.__coachTestHooks.setGameMode('cash');
+  return v;
 }
 function sizeOf(msg) {
   var m = /pot \(([\d,]+)\)/.exec(msg) || /All-in \(([\d,]+)\)/.exec(msg);
@@ -107,6 +112,13 @@ function riverTimeline(turnBet, turnPot, shove, riverPot) {
 }
 function betTimeline(street, bet, potBefore) {
   return [{ t: 'action', street: street, player: 1, action: 'bet', bet: bet, pot: potBefore + bet }];
+}
+function narrowedTimeline() {
+  return [
+    { t: 'action', street: 'flop', player: 2, action: 'bet', bet: 300, pot: 800 },
+    { t: 'action', street: 'flop', player: 1, action: 'call' },
+    { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 340, pot: 840 }
+  ];
 }
 
 var SPOTS = [
@@ -144,8 +156,35 @@ var SPOTS = [
     timeline: betTimeline('turn', 400, 500) },
   { name: 'dilution-multiway', kind: 'facing', villain: 'lag',
     hero: [C(2, 2), C(13, 2)], board: FLUSH_BOARD, street: 'turn',
+    potBefore: 500, bet: 200, heroStack: 2000, nLive: 4, expect: 'call',
+    timeline: betTimeline('turn', 200, 500) },
+  { name: 'dilution-multiway-fold', kind: 'facing', villain: 'lag',
+    hero: [C(2, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 400, heroStack: 2000, nLive: 4, expect: 'fold',
     timeline: betTimeline('turn', 400, 500) },
+  { name: 'trapper-small-bet', kind: 'facing', villain: 'nathan',
+    hero: [C(13, 1), C(13, 0)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('turn', 200, 500) },
+  { name: 'narrowed-range', kind: 'facing', villain: 'lag',
+    hero: [C(14, 0), C(9, 1)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 340, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: narrowedTimeline() },
+  { name: 'air-cap', kind: 'facing', villain: 'nathan',
+    hero: [C(14, 0), C(13, 1)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 50, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 50, 500) },
+  { name: 'tourney-veto', kind: 'facing', villain: 'nathan',
+    hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
+    potBefore: 250, bet: 188, heroStack: 200, villainStack: 0, nLive: 2, expect: 'fold',
+    timeline: riverTimeline(75, 100, 188, 250), mode: 'tourney' },
+  { name: 'paired-draw', kind: 'facing', villain: 'rock',
+    hero: [C(14, 2), C(2, 2)], board: [C(12, 2), C(12, 1), C(7, 2), C(5, 3)], street: 'turn',
+    potBefore: 500, bet: 350, heroStack: 2000, nLive: 4, expect: 'fold',
+    timeline: betTimeline('turn', 350, 500) },
+  { name: 'river-floor', kind: 'leading',
+    hero: [C(14, 2), C(14, 3)], board: [C(2, 0), C(5, 1), C(8, 2), C(11, 3), C(13, 0)],
+    street: 'river', potBefore: 400, heroStack: 2000, nLive: 2, expect: 'bet', expectSize: 200 },
   { name: 'archetype-range', kind: 'facing', villain: 'lag',
     hero: [C(7, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
