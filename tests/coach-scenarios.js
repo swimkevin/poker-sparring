@@ -487,5 +487,13 @@ console.log('\n41. v1.8.146: sizing tell keyed to profile — no small-bet raise
     'small-bet raise branch is guarded by a passive-trapper flag');
 }
 
+console.log('\n42. v1.8.147: blockers — nut-flush blocker credit for bluff-catches');
+{
+  ok(equitySrc.indexOf('function blockerCredit(hole, community)') !== -1,
+    'equity layer exposes a pure blocker-credit helper');
+  ok(src.indexOf('bCredit') !== -1,
+    'facing math applies blocker credit for bluff-catch hands');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

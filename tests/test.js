@@ -125,6 +125,23 @@ function hand(str) {
     'vulnerable made hand on a paired board vs tight takes a RIO penalty (v1.8.141)');
   ok(EQ.rioPenalty({ nutDraw: true, villainTight: 0.2, multiway: false, vulnerableMade: true }) === 0,
     'no vulnerable-made RIO penalty vs loose (v1.8.141)');
+  ok(typeof EQ.blockerCredit === 'function', 'blockerCredit helper exists (v1.8.147)');
+  if (typeof EQ.blockerCredit === 'function') {
+    var AH = [{ r: 14, s: 2 }, { r: 13, s: 0 }];
+    var KH = [{ r: 13, s: 2 }, { r: 12, s: 0 }];
+    var flushBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 3 }];
+    var rainbow = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+    ok(EQ.blockerCredit(AH, flushBoard) >= 0.04,
+      'ace of the flush suit on a 3-flush board earns blocker credit (v1.8.147)');
+    ok(EQ.blockerCredit(KH, flushBoard) === 0,
+      'king of the flush suit is not the nut blocker (v1.8.147)');
+    ok(EQ.blockerCredit(AH, rainbow) === 0,
+      'no blocker credit without a flush board (v1.8.147)');
+    var heroFlush = [{ r: 14, s: 2 }, { r: 13, s: 2 }];
+    var fourFlush = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 3 }];
+    ok(EQ.blockerCredit(heroFlush, fourFlush) === 0,
+      'no blocker credit when hero already has the flush (v1.8.147)');
+  }
 })();
 
 // ---------- engine: 300-hand soak test ----------

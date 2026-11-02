@@ -292,6 +292,18 @@ function impliedCredit(o) {
   return Math.min(0.15, c);
 }
 
+function blockerCredit(hole, community) {
+  var suits = {};
+  community.forEach(function (c) { suits[c.s] = (suits[c.s] || 0) + 1; });
+  for (var s = 0; s < 4; s++) {
+    if (!(suits[s] >= 3)) continue;
+    var heroSuited = hole.filter(function (c) { return c.s === s; }).length;
+    if (heroSuited + suits[s] >= 5) continue;
+    if (hole.some(function (c) { return c.s === s && c.r === 14; })) return 0.04;
+  }
+  return 0;
+}
+
 function rioPenalty(o) {
   o = o || {};
   if (o.nutDraw && !o.vulnerableMade) return 0;
@@ -346,6 +358,7 @@ if (typeof module !== 'undefined' && module.exports) {
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,
     exploitLine: exploitLine, EXPLOIT_LINES: EXPLOIT_LINES,
-    spr: spr, sprVerdict: sprVerdict, impliedCredit: impliedCredit, rioPenalty: rioPenalty
+    spr: spr, sprVerdict: sprVerdict, impliedCredit: impliedCredit, rioPenalty: rioPenalty,
+    blockerCredit: blockerCredit
   };
 }

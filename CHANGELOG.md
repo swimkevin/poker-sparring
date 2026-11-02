@@ -1,3 +1,36 @@
+## [1.8.147] — Blockers: the nut-flush blocker earns a bluff-catch credit
+
+Blockers remove combos from the villain's value range, and the
+coach ignored them when facing a bet — except for one line in
+bluff explanations ("you block their best flush"). New: a pure
+equity helper, `blockerCredit`, returns 0.04 when the hero
+holds the Ace of a suit with three or more cards of that suit
+on the board (so nobody can hold the nut flush) and the hero
+does not already hold a flush himself. The facing-bet math
+adds that credit for bluff-catch hands — air, second pair,
+weak pair — after multiway dilution, so the blocker keeps its
+full value multiway: the Ace blocks the nut flush for every
+opponent, not just the bettor. Strong hands and draws do not
+get it: their equity comes from their own strength, not from
+what the villain cannot hold.
+
+Deep-analysis note: blockers matter most exactly where the
+decision is closest — calling with a marginal hand against a
+bet on a flush board. Without the Ace, the villain's betting
+range holds all the nut flushes; with it, the top of that
+range is gone, and the same bet is suddenly bluff-heavier.
+A 0.04 credit is small on purpose: it only removes one hand
+type (the nut flush), not every flush, and it must not turn a
+clear fold into a call — it tips close calls, which is where
+blockers actually live.
+
+Verified: deterministic unit tests pin the helper (Ace earns
+the credit, King does not, no flush board earns nothing, an
+already-made flush earns nothing). A live flip test is
+deliberately not included: at a 0.04 shift, Monte Carlo noise
+would make it flaky, the same reason the reverse-implied-odds
+extension is unit-tested rather than live-tested.
+
 ## [1.8.146] — Sizing tells keyed to profile: never raise a trapper's small bet
 
 Release note: version 1.8.145 was built (solver lab, entry
