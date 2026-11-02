@@ -102,6 +102,17 @@ setTimeout(function () {
   ok(txtLow.indexOf('All-in') !== -1, 'low-SPR spot still shoves (SPR 0.8 is genuinely committed)');
   ok(txtLow.indexOf('already as big as your stack') !== -1, 'low-SPR shove uses the new plain wording');
   ok(txtLow.indexOf('committed') === -1, 'low-SPR shove never says committed (v1.8.136 wording)');
+  function C(r, s) { return { r: r, s: s }; }
+  ok(H.handClass([C(4, 1), C(9, 0)], [C(7, 1), C(4, 0), C(12, 1), C(4, 3)]) === 'trips',
+    'screenshot trips hand class is trips, not overpair (v1.8.137)');
+  ok(H.handClass([C(12, 1), C(7, 0)], [C(12, 2), C(7, 1), C(2, 0)]) === 'twopair',
+    'two-pair hand class is twopair, not overpair (v1.8.137)');
+  ok(H.handClass([C(4, 0), C(4, 1)], [C(4, 2), C(12, 1), C(7, 0)]) === 'trips',
+    'pocket-pair set class is trips too (v1.8.137)');
+  ok(H.handClass([C(13, 1), C(13, 0)], [C(12, 2), C(7, 1), C(2, 0), C(5, 3)]) === 'overpair',
+    'pocket pair above the board stays overpair (v1.8.137)');
+  ok(txt.indexOf('full house beats it') !== -1,
+    'paired-board trips message names what beats it (v1.8.137)');
   console.log(fails === 0 ? 'COACH SCREENSHOT TEST PASSED' : 'COACH SCREENSHOT TEST FAILED (' + fails + ')');
   process.exit(fails ? 1 : 0);
 }, 800);

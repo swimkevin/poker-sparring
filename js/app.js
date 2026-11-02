@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.136';
+  var APP_VERSION = '1.8.137';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1151,7 +1151,8 @@
     }
     if (d.flushDraw && d.oesd) return 'draw-strong';
     if (ev) {
-      if (ev.cat === 3 || ev.cat === 2) return 'overpair';
+      if (ev.cat === 3) return 'trips';
+      if (ev.cat === 2) return 'twopair';
       if (ev.cat === 1) {
         var pr = ev.kickers[0];
 
@@ -1172,6 +1173,7 @@
 
   function handClassName(hc) {
     return { nut: 'the nuts', overpair: 'an overpair', toppair: 'top pair',
+      trips: 'three of a kind', twopair: 'two pair',
       secondpair: 'second pair', weakpair: 'a weak pair', 'draw-strong': 'a monster draw', draw: 'a draw',
       'draw-weak': 'a weak draw', air: 'nothing',
       board: 'the board (your cards don\'t improve it)' }[hc] || 'your hand';
@@ -1768,7 +1770,7 @@
       var vManiac = V && villainBluffy(V.archetype) > 0.6 &&
         (V.archetype.aggression || 0) > 0.5;
 
-      if ((hc === 'nut' || hc === 'overpair' || hc === 'toppair') && canBet) {
+      if ((hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair') && canBet) {
         if (vManiac)
           return mkVerdict('check', 'marginal',
             '<b>Check</b> your monster — ' + vName + ' bluffs constantly. Let them bet into you, then raise.' + rangeNote,
@@ -1796,9 +1798,19 @@
         var whyBet = tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
           : (frac === 0.75 ? ' — they never fold, so size up for value'
           : ' — dry board, few draws: bet small to keep worse hands calling');
+        var vulnNote = '';
+        if (hc === 'trips') {
+          var seenRanks = {};
+          var pairedBoard = table.community.some(function (cc) {
+            if (seenRanks[cc.r]) return true;
+            seenRanks[cc.r] = true;
+            return false;
+          });
+          if (pairedBoard) vulnNote = ' — three of a kind is strong, but a full house beats it, and the paired board makes full houses possible';
+        }
         return mkVerdict('bet', 'strong',
           '<b>Bet for value</b> ~' + fracLabel + ' pot (' + fmt(betSize) + ')' +
-          whyBet + '.' + sprLine + rangeNote,
+          whyBet + vulnNote + '.' + sprLine + rangeNote,
           'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
 
@@ -1925,7 +1937,7 @@
 
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway &&
-          (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || anyDraw))
+          (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw))
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');

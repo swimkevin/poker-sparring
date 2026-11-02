@@ -1,3 +1,31 @@
+## [1.8.137] — Hand-class honesty: trips and two pair are no longer "overpair"
+
+handClass mapped evaluator category 3 (trips) and category 2 (two pair)
+both to 'overpair'. That fed the old commitment logic (trips counted as
+a near-nut) and hid the real vulnerability: on a paired board, trips
+loses to every full house. Trips is now its own class ('three of a
+kind'), two pair is its own class ('two pair'), and a pocket pair above
+the board stays 'overpair'. Both new classes get their own sprVerdict
+bands, both stay in the value-bet and small-bet-raise branches (they
+are value hands — the fix is honesty, not passivity), and neither is
+in the facing-call bypass list: a vulnerable hand must pass the
+pot-odds math, never auto-call. A paired-board trips value bet now
+says plainly what beats it: "three of a kind is strong, but a full
+house beats it, and the paired board makes full houses possible." A
+set on an unpaired board gets no such clause — it is not immediately
+vulnerable to a made full house.
+
+Deep-analysis note: on the screenshot board (7d 4c Qd 4s), trips 4s
+loses right now to 77, QQ, Q7 and Q4 (all full houses) and ties 74;
+every other hand is behind. That is a strong value hand with a capped
+ceiling — bet it for value, do not treat it as a hand that can never
+be beaten, and do not auto-call a big raise with it.
+
+Verified: handClass checks for trips, set, two pair and overpair in the
+screenshot test; the screenshot verdict now carries the vulnerability
+clause; static checks pin the value-branch coverage and the bypass
+exclusion.
+
 ## [1.8.136] — Commitment redefined: SPR ~1, not SPR 3 or 8
 
 The screenshot bug's second root cause was sprVerdict: an overpair

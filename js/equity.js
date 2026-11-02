@@ -270,6 +270,8 @@ function sprVerdict(s, handClass, opts) {
     case 'nut': return s <= commitAt ? 'commit' : 'decide';
     case 'overpair': return s <= commitAt ? 'commit' : (s <= 6 ? 'decide' : 'pot-control');
     case 'toppair': return s <= commitAt ? 'commit' : (s <= 5 ? 'decide' : 'pot-control');
+    case 'trips': return s <= commitAt ? 'commit' : (s <= 6 ? 'decide' : 'pot-control');
+    case 'twopair': return s <= commitAt ? 'commit' : (s <= 5 ? 'decide' : 'pot-control');
     case 'secondpair': return s <= 1 ? 'decide' : 'pot-control';
     case 'draw-strong': return s <= commitAt ? 'commit' : 'implied';
     case 'draw': return s >= 6 ? 'implied' : 'decide';

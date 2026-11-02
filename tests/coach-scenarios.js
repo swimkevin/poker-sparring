@@ -399,5 +399,21 @@ console.log('\n32. v1.8.136: committed wording rewritten in plain pot-vs-stack l
     'old "committed: call" bypass line is gone');
 }
 
+console.log('\n33. v1.8.137: trips and two pair are their own hand classes');
+{
+  ok(/if \(ev\.cat === 3\) return 'trips';/.test(src),
+    'handClass maps trips (cat 3) to trips, not overpair');
+  ok(/if \(ev\.cat === 2\) return 'twopair';/.test(src),
+    'handClass maps two pair (cat 2) to twopair, not overpair');
+  ok(src.indexOf("trips: 'three of a kind'") !== -1, 'trips has a plain name');
+  ok(src.indexOf("twopair: 'two pair'") !== -1, 'twopair has a plain name');
+  ok(/\(hc === 'nut' \|\| hc === 'overpair' \|\| hc === 'toppair' \|\| hc === 'trips' \|\| hc === 'twopair'\) && canBet/.test(src),
+    'value-bet branch covers trips and twopair');
+  ok(src.indexOf("if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)") !== -1,
+    'facing-call bypass still excludes trips/twopair (vulnerable hands pass the math)');
+  ok(src.indexOf('full house beats it') !== -1,
+    'paired-board trips message names the vulnerability');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
