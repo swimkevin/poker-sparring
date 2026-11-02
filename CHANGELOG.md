@@ -1,3 +1,43 @@
+## [1.8.142] — Board vulnerability sizing: protection floors and a fold-to-a-raise plan
+
+A strong hand on a dangerous board was sized by texture alone,
+and texture misses the main danger: paired boards read "dry"
+because the rank set is small, so trips on a paired board bet
+1/4 pot — too small to charge worse hands or protect against the
+full houses the board makes possible. New: a board-vulnerability
+check (paired rank, 3+ cards of one suit, or 4 cards to a
+straight) sets a 2/3-pot protection floor for strong-but-
+vulnerable hands — trips and two pair on paired boards, overpair
+and top pair on flush/straight boards — whenever texture,
+geometric, or multiway sizing would go smaller. (Wet boards
+already bet 2/3, so the floor only bites where texture
+under-sizes, chiefly paired-dry boards.) The message now also
+says plainly what beats the hand and what to do if raised:
+trips and two pair name the full house, overpairs name the
+flush or straight, each with "if raised big, slow down — a big
+raise here usually means" the beating hand.
+
+Deep-analysis note: protection sizing is value sizing with a
+deadline. On a paired board, every future card can only keep
+your trips ahead or kill it — there is no card that improves
+trips to safety except the case card, while any Queen, Seven,
+or paired rank either ties or beats you. Betting 1/4 pot lets
+worse hands and draws continue cheaply; 2/3 pot charges them
+while they still call. And the fold-to-a-raise plan matters
+because the raise is the information: on a paired board, a big
+raise is a full house far more often than a bluff, so the plan
+is set before the raise arrives, not improvised after it.
+
+Verified: trips on a paired dry board now bets 268 (2/3 pot)
+instead of 100, with the paired-board reason and the slow-down
+plan; two pair on a paired board gains the full-house clause;
+overpair on a 3-flush board names the flush and the plan. The
+screenshot hand moves from 193 (1/2 pot, geometric) to 238
+(2/3 pot): the protection floor intentionally supersedes the
+geometric size on a paired board, and the message keeps the
+next-street plan — the 1.8.138 size assertion was updated
+deliberately for this, with the reason here.
+
 ## [1.8.141] — Equity vs range, multiway dilution, reverse implied odds, narrowed-figure calls
 
 Four facing-bet fixes in one release. First, when no action-derived

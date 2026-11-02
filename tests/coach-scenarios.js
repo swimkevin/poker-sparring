@@ -459,5 +459,17 @@ console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call'
     'veto-call branch shows the narrowed figure when the gate holds but calls');
 }
 
+console.log('\n38. v1.8.142: board vulnerability sizing + fold-to-raise plan');
+{
+  ok(src.indexOf('function boardVulnerability(community)') !== -1,
+    'board vulnerability helper detects paired, flush, and straight boards');
+  ok(src.indexOf('vulnFloor') !== -1,
+    'vulnerable value hands floor at 2/3 pot for protection');
+  ok(src.indexOf('slow down') !== -1,
+    'vulnerable value messages give the fold-to-a-raise plan');
+  ok(src.indexOf('flush beats you') !== -1,
+    'overpair on a flush board names the flush danger');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

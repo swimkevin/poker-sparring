@@ -113,8 +113,8 @@ setTimeout(function () {
     'pocket pair above the board stays overpair (v1.8.137)');
   ok(txt.indexOf('full house beats it') !== -1,
     'paired-board trips message names what beats it (v1.8.137)');
-  ok(size >= 170 && size <= 210,
-    'screenshot geometric size is ~1/2 pot, not 1/4 pot (got ' + size + ', v1.8.138)');
+  ok(size >= 230 && size <= 245,
+    'screenshot size is ~2/3 pot: the paired-board protection floor lifts the 1/2-pot geometric size (got ' + size + ', v1.8.142)');
   ok(txt.indexOf('next street') !== -1,
     'screenshot geometric message explains the next-street plan (v1.8.138)');
   ok(typeof H.geometricFrac === 'function', 'geometricFrac hook exposed (v1.8.138)');
@@ -162,6 +162,67 @@ setTimeout(function () {
   ok(vAir.advice === 'check', 'multiway air advice is check, never a bluff (got ' + vAir.advice + ', v1.8.139)');
   ok(txtAir.indexOf('too many players to bluff through') !== -1,
     'multiway air message names the multiway bluff ban (v1.8.139)');
+  function buildValueSpot(heroHole, board, potAmt, heroStack, nLive) {
+    var s = d.createElement('script');
+    s.textContent = [
+      'window.__vsTable = new PokerTable({ players: [',
+      '  { name: "hero", isHero: true }, { name: "V" },',
+      '  { name: "B" }, { name: "C" },',
+      '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+      '], sb: 5, bb: 10, startingStack: 2000 });',
+      'var t = window.__vsTable;',
+      't.button = 0; t.street = "turn"; t.currentBet = 0; t.pot = ' + potAmt + ';',
+      't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
+      't.players[0].stack = ' + heroStack + ';',
+      't.community = ' + JSON.stringify(board) + ';',
+      'for (var i = ' + nLive + '; i < 8; i++) t.players[i].folded = true;'
+    ].join('\n');
+    d.head.appendChild(s);
+    return w.__vsTable;
+  }
+  function valueVerdict(heroHole, board, potAmt, heroStack, nLive) {
+    H.setTable(buildValueSpot(heroHole, board, potAmt, heroStack, nLive));
+    H.setHandRec(null);
+    H.setDecisions([]);
+    var v = w.coachVerdict();
+    var tx = strip(v.html);
+    var m = /pot \(([\d,]+)\)/.exec(tx);
+    return { v: v, txt: tx, size: m ? parseInt(m[1].replace(/,/g, ''), 10) : -1 };
+  }
+  var pairedDry = [{ r: 7, s: 1 }, { r: 4, s: 0 }, { r: 12, s: 1 }, { r: 4, s: 3 }];
+  var tripsDry = valueVerdict([{ r: 4, s: 1 }, { r: 9, s: 0 }], pairedDry, 400, 2000, 2);
+  console.log('  trips paired-dry coach says: ' + tripsDry.txt.slice(0, 220));
+  ok(tripsDry.v.advice === 'bet', 'trips paired-dry advice is bet (got ' + tripsDry.v.advice + ')');
+  ok(tripsDry.size === 268, 'trips paired-dry protection floor bets 2/3 pot, not 1/4 (got ' + tripsDry.size + ', v1.8.142)');
+  ok(tripsDry.txt.indexOf('slow down') !== -1,
+    'trips paired-dry message gives the fold-to-a-raise plan (v1.8.142)');
+  var twoPairBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 7, s: 3 }, { r: 2, s: 0 }];
+  var twoPair = valueVerdict([{ r: 12, s: 0 }, { r: 2, s: 1 }], twoPairBoard, 400, 2000, 2);
+  console.log('  twopair paired coach says: ' + twoPair.txt.slice(0, 220));
+  ok(twoPair.v.advice === 'bet', 'twopair paired advice is bet (got ' + twoPair.v.advice + ')');
+  ok(twoPair.size === 268, 'twopair paired protection floor bets 2/3 pot (got ' + twoPair.size + ', v1.8.142)');
+  ok(twoPair.txt.indexOf('full house beats it') !== -1,
+    'twopair paired message names the full-house danger (v1.8.142)');
+  ok(twoPair.txt.indexOf('slow down') !== -1,
+    'twopair paired message gives the fold-to-a-raise plan (v1.8.142)');
+  var flushBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 3 }];
+  var overFlush = valueVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], flushBoard, 400, 2000, 2);
+  console.log('  overpair flush-board coach says: ' + overFlush.txt.slice(0, 220));
+  ok(overFlush.txt.indexOf('flush beats you') !== -1,
+    'overpair flush-board message names the flush danger (v1.8.142)');
+  ok(overFlush.txt.indexOf('slow down') !== -1,
+    'overpair flush-board message gives the fold-to-a-raise plan (v1.8.142)');
+  ok(typeof H.boardVulnerability === 'function', 'boardVulnerability hook exposed (v1.8.142)');
+  if (typeof H.boardVulnerability === 'function') {
+    var bv1 = H.boardVulnerability(pairedDry);
+    ok(bv1.paired && !bv1.flush && !bv1.straight, 'paired-dry board flags paired only');
+    var bv2 = H.boardVulnerability(flushBoard);
+    ok(bv2.flush && !bv2.paired, '3-flush board flags flush');
+    var bv3 = H.boardVulnerability([{ r: 12, s: 2 }, { r: 11, s: 1 }, { r: 10, s: 0 }, { r: 9, s: 3 }]);
+    ok(bv3.straight && !bv3.paired && !bv3.flush, '4-straight board flags straight only');
+    var bv4 = H.boardVulnerability([{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }]);
+    ok(!bv4.paired && !bv4.flush && !bv4.straight, 'dry rainbow board flags nothing');
+  }
   if (typeof H.geometricFrac === 'function') {
     var g1 = H.geometricFrac(2.63, 1);
     ok(Math.abs(g1 - 0.543) < 0.01, 'geometric turn SPR 2.63 -> ~0.54 (got ' + g1 + ')');

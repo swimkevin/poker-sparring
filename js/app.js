@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.141';
+  var APP_VERSION = '1.8.142';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1315,6 +1315,7 @@
       adviceFollowed: adviceFollowed,
       handClass: handClass,
       boardTexture: boardTexture,
+      boardVulnerability: boardVulnerability,
       geometricFrac: geometricFrac,
       estimateVillainRange: estimateVillainRange,
       preflopSpot: preflopSpot,
@@ -1738,6 +1739,18 @@
     return { eq: eq, need: c.toCall / (c.pot + c.toCall) };
   }
 
+  function boardVulnerability(community) {
+    var ranks = {}, suits = [0, 0, 0, 0];
+    community.forEach(function (cc) { ranks[cc.r] = (ranks[cc.r] || 0) + 1; suits[cc.s]++; });
+    var paired = Object.keys(ranks).some(function (r) { return ranks[r] >= 2; });
+    var flush = suits.some(function (n) { return n >= 3; });
+    var rs = Object.keys(ranks).map(Number).sort(function (a, b) { return a - b; });
+    var straight = false;
+    for (var i = 0; i + 3 < rs.length; i++) if (rs[i + 3] - rs[i] <= 4) straight = true;
+    return { paired: paired, flush: flush, straight: straight,
+      vulnerable: paired || flush || straight };
+  }
+
   function geometricFrac(sprV, streetsLeft) {
     if (!(sprV >= 2 && sprV <= 4) || !(streetsLeft >= 1)) return null;
     var target = streetsLeft === 1 ? 1 : 2;
@@ -1791,6 +1804,20 @@
         if (geo != null && geo > frac) { frac = Math.min(0.75, geo); geoApplied = true; }
         var multiFloor = false;
         if (multiway && frac < 0.5) { frac = 0.5; multiFloor = true; }
+        var vuln = boardVulnerability(table.community);
+        var vulnFloor = false;
+        var vulnWhy = '';
+        if ((hc === 'trips' || hc === 'twopair') && vuln.paired) {
+          vulnFloor = true;
+          vulnWhy = ' — paired board: a full house beats you, so get value now while worse hands still call';
+        } else if ((hc === 'overpair' || hc === 'toppair') && vuln.flush) {
+          vulnFloor = true;
+          vulnWhy = ' — three cards to a flush out there: charge the draws';
+        } else if ((hc === 'overpair' || hc === 'toppair') && vuln.straight) {
+          vulnFloor = true;
+          vulnWhy = ' — four cards to a straight out there: charge the draws';
+        }
+        if (vulnFloor && frac < 0.67) frac = 0.67;
         var betSize = Math.max(1, Math.round(pot * frac));
 
         var heroStack = hero.stack;
@@ -1812,19 +1839,23 @@
           : geoApplied
           ? ' — sized so a normal bet on the next street can still get the rest in' +
             (tex === 'wet' ? ', and draws pay to chase' : '')
+          : vulnFloor && vulnWhy
+          ? vulnWhy
           : tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
           : (frac === 0.75 ? ' — they never fold, so size up for value'
           : ' — dry board, few draws: bet small to keep worse hands calling');
         var vulnNote = '';
-        if (hc === 'trips') {
-          var seenRanks = {};
-          var pairedBoard = table.community.some(function (cc) {
-            if (seenRanks[cc.r]) return true;
-            seenRanks[cc.r] = true;
-            return false;
-          });
-          if (pairedBoard) vulnNote = ' — three of a kind is strong, but a full house beats it, and the paired board makes full houses possible';
-        }
+        if ((hc === 'trips' || hc === 'twopair') && vuln.paired)
+          vulnNote = (hc === 'trips'
+            ? ' — three of a kind is strong, but a full house beats it, and the paired board makes full houses possible'
+            : ' — two pair is strong, but a full house beats it, and the paired board makes full houses possible') +
+            '. If raised big, slow down — a big raise here usually means the full house';
+        else if ((hc === 'overpair' || hc === 'toppair') && vuln.flush)
+          vulnNote = ' — a flush beats you, and three cards to a flush are out there' +
+            '. If raised big, slow down — a big raise here usually means the flush';
+        else if ((hc === 'overpair' || hc === 'toppair') && vuln.straight)
+          vulnNote = ' — a straight beats you, and four cards to a straight are out there' +
+            '. If raised big, slow down — a big raise here usually means the straight';
         return mkVerdict('bet', 'strong',
           '<b>Bet for value</b> ~' + fracLabel + ' pot (' + fmt(betSize) + ')' +
           whyBet + vulnNote + '.' + sprLine + rangeNote,
