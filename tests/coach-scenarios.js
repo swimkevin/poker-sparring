@@ -481,5 +481,11 @@ console.log('\n39. v1.8.143: plain-language sizing math for value bets');
     'small value bets explain why not to bet bigger');
 }
 
+console.log('\n41. v1.8.146: sizing tell keyed to profile — no small-bet raise into trappers');
+{
+  ok(src.indexOf('passiveTrapper') !== -1,
+    'small-bet raise branch is guarded by a passive-trapper flag');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

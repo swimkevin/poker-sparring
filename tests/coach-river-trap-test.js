@@ -212,6 +212,16 @@ setTimeout(function () {
     strip(b5.html).indexOf('almost nothing') === -1,
     'river SPR 1.5 overpair goes through the math, not the bypass (got ' + b5.advice + ', v1.8.140)');
 
+  var sN = setupBypass('nathan', kk, q725, 'turn', 500, 200, 2000);
+  console.log('  trapper small-bet says: ' + strip(sN.html).slice(0, 160));
+  ok(sN.advice !== 'raise', 'small bet from a passive trapper is not raised into (got ' + sN.advice + ', v1.8.146)');
+  ok(strip(sN.html).indexOf('tiny bet') === -1,
+    'trapper small-bet message never calls it a tiny bet to attack (v1.8.146)');
+  var sL = setupBypass('lag', kk, q725, 'turn', 500, 200, 2000);
+  console.log('  lag small-bet says: ' + strip(sL.html).slice(0, 160));
+  ok(sL.advice === 'raise' && strip(sL.html).indexOf('tiny bet') !== -1,
+    'small bet from an aggressive player is still raised (got ' + sL.advice + ', v1.8.146)');
+
   var eq = require('../js/equity.js');
   ok(typeof eq.estimateEquityVsMadePool === 'function', 'estimateEquityVsMadePool exported');
   var hero = [{ r: 4, s: 1 }, { r: 9, s: 0 }];

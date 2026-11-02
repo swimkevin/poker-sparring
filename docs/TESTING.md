@@ -81,3 +81,53 @@ verified by running the new tests against the unfixed code before committing.
 `npm test` (all 38 suites) gates every release; a red suite blocks the
 push. See `docs/INCIDENTS.md` for the production bugs this discipline
 has caught and pinned.
+
+## Solver lab
+
+`tests/solver-lab.js` is a headless harness that keeps the coach honest
+the way a solver would: it replays a library of diagnostic spots —
+including both halves of the screenshot hand that started the
+coach-improvement program, plus the key regression spots for
+multiway play, the facing-bet bypass, dilution, and range-based
+equity — and compares the coach's recommended action against the
+alternatives on EV.
+
+Run it with:
+
+```
+npm run solver-lab
+```
+
+Expected runtime is seconds, not minutes: one page load plus a
+handful of synchronous verdicts and equity evaluations. That is
+deliberate — the lab is designed to run inside the daily
+improvement loop on every run, which the full coach-eval
+simulation is too slow for.
+
+What counts as failure (exit code 1):
+
+- Any diagnostic spot where the coach's action differs from the
+  known-correct action — a clearly losing recommendation.
+- Any leading bet above 1.5x pot outside short stack-to-pot,
+  river-nut, and short-stack spots — the guardrail from the
+  audit release.
+- Any river spot where exact enumeration says calling loses
+  money and the coach calls anyway — reported with the EV loss.
+
+Honesty note, stated in the lab's own header too: river spots
+with a made-hand pool get exact equity (full enumeration, no
+Monte Carlo noise), so their EV verdicts are exact. Other
+facing spots report the coach's own Monte Carlo figure as
+coach-implied EV for the leak report only — the lab does not
+fail on Monte Carlo EV loss, because simulation noise would
+make that flaky. Leading spots are checked against guardrail
+invariants rather than fake-precision EV: there is no single
+"correct" bet size, only sizes that are clearly too big.
+
+The lab is intentionally not part of the `npm test` chain and
+does not gate releases in CI. It gates the daily loop instead:
+a loop run that ends with a failing lab report must treat the
+coach as leaking and fix the top leak before shipping anything
+else. To add a diagnostic spot, append one entry to the spot
+list in `tests/solver-lab.js` with the known-correct action;
+the lab fails on it until the coach agrees.

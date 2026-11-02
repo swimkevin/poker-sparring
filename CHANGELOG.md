@@ -1,3 +1,80 @@
+## [1.8.146] — Sizing tells keyed to profile: never raise a trapper's small bet
+
+Release note: version 1.8.145 was built (solver lab, entry
+below) and validated by lab runs plus injection tests, but
+its full-suite run was still in flight when this release's
+work started, so the lab ships in this release instead and
+1.8.145 was never pushed separately. The lab's own
+verification stands as written in its entry; this release's
+full suite gates the combined tree.
+
+A small bet is not one tell — it means different things from
+different players, and the coach treated it as one. The
+small-bet raise branch ("usually a marginal hand begging for
+a cheap showdown, raise and take it away") fired against
+everyone, including passive trappers whose small bets are
+often monsters inducing a raise. New: the branch is
+suppressed for passive trappers — players flagged neverRaise
+with a bluff frequency at or below 0.10 — who fall through to
+the pot-odds math instead. Against aggressive players the
+raise still fires. Also fixed in passing: an unused variable
+in the solver lab (lint-only, no
+behavior change).
+
+Deep-analysis note: sizing tells are only tells conditional
+on profile. A small bet from a loose-aggressive player is
+usually weakness (a hand that wants a cheap showdown, or a
+probe) — raising attacks exactly that range. A small bet
+from a player who never raises and almost never bluffs is
+the opposite shape: his betting range is value-heavy even
+when the size is small, because he does not bet weak hands
+for any size. Raising into that range builds a pot against
+the hands that beat you and folds out nothing you wanted to
+keep. The size is the same; the range behind it is not.
+
+Verified: overpair vs a trapper's small bet now calls on the
+math (about 79% equity at a 22% price) instead of raising;
+the same spot vs an aggressive player still raises. The
+trapper tests fail on the old code.
+
+## [1.8.145] — Solver lab: a headless harness so the coach keeps improving like a solver
+
+New file `tests/solver-lab.js`, wired as `npm run solver-lab`
+and deliberately NOT added to the `npm test` chain (so CI is
+unaffected). It replays a library of diagnostic spots — both
+halves of the screenshot hand plus the key regression spots
+for multiway play, the facing-bet bypass, dilution, and
+range-based equity — and checks each one three ways: the
+coach's action must match the known-correct action, leading
+bets must respect the 1.5x-pot guardrail, and river spots get
+exact EV math (full enumeration of the narrowed made-hand
+pool, no Monte Carlo noise) with EV loss reported and failed
+on. Runtime is about four seconds, so the daily loop can run
+it every run — unlike the full coach-eval simulation, which
+takes an order of magnitude longer. Documentation for the
+daily loop (command, runtime, failure definition, and the
+exact-vs-Monte-Carlo honesty note) lives in a new
+`docs/TESTING.md` section and in the lab's own header.
+
+Deep-analysis note: the lab's design choice is what makes it
+trustworthy. Facing-bet EV is only failed on where it is
+exact (river narrowed pools: the Nathan 7-river call loses
+340 chips, the blank-river call wins 66 — both decided
+exactly). Everywhere else, Monte Carlo figures are reported
+for the leak report but never failed on, because a 150-sample
+simulation carries noise that would turn the lab flaky. And
+leading spots are judged by guardrails, not by pretending
+there is one true bet size. A lab that fails on noise teaches
+the loop to ignore it; a lab that fails only on real leaks
+teaches the loop to fix them.
+
+Verified: 13 spots, 0 failures, total exact EV loss 0 on the
+shipped code, in about four seconds. Both failure modes were
+proven by injection before shipping: a 2x-pot value size
+fails 4 leading spots on the guardrail, and disabling the
+river-monster veto fails the Nathan 7-river spot with an
+exact EV loss of 340.
+
 ## [1.8.144] — Global guardrail audit: no bet above 1.5x pot outside the allowed spots
 
 The original bug was a 2.63x-pot shove. Nine iterations later,

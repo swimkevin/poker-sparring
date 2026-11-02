@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.144';
+  var APP_VERSION = '1.8.146';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2024,8 +2024,9 @@
         ', <b>call</b>.' + rangeNote,
         'When the pot is nearly as big as your stack and your hand is strong, folding saves almost nothing — call.');
 
+    var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
     if (tell && tell.unit === 'pot') {
-      if (tell.size === 'small' && legal.canRaise && !multiway &&
+      if (tell.size === 'small' && legal.canRaise && !multiway && !passiveTrapper &&
           (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw))
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
