@@ -1,3 +1,36 @@
+## [1.8.143] — Plain-language sizing math for value bets
+
+Value bets told the player what to do but not why the size was
+right — the same gap the bluff break-even line already closed
+for bluffs ("needs 33% folds"). Now every value bet in the main
+value branch states the pot, the bet, and the tradeoff in plain
+words. Big value bets (half pot or more): "Pot 355, bet 238.
+Big enough to charge draws and build the pot, small enough
+that worse hands still call — a shove would fold those hands
+out." Small value bets: "Pot 400, bet 100. Small enough that
+worse hands still call — a bigger bet would fold them out."
+The beginner can now see, for any value bet, why a shove is
+wrong and why the suggested size is right, in both directions.
+Scope note: the thin-value second-pair branch keeps its
+existing reason line; this line covers the main strong-hand
+value branch.
+
+Deep-analysis note: value-bet sizing is a two-sided tradeoff,
+and the old message only argued one side ("bet small to keep
+worse hands calling" or "make draws pay"). The honest math is:
+every size trades value extracted against hands that call
+versus hands that fold. A shove maximizes fold equity, which
+is exactly backwards for a value hand — it folds out the
+worse hands you profit from and gets called only by better.
+A tiny bet keeps everyone in but strands value. The right size
+is the largest bet worse hands still call, and the message now
+says which side of that line the bet sits on.
+
+Verified: the screenshot hand reads "Pot 355, bet 238" with the
+why-not-shove line; a dry small-value spot reads "Pot 400,
+bet 100" with the why-not-bigger line. The value tests fail
+4-for-4 on the old code.
+
 ## [1.8.142] — Board vulnerability sizing: protection floors and a fold-to-a-raise plan
 
 A strong hand on a dangerous board was sized by texture alone,

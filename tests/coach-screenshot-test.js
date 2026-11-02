@@ -117,6 +117,19 @@ setTimeout(function () {
     'screenshot size is ~2/3 pot: the paired-board protection floor lifts the 1/2-pot geometric size (got ' + size + ', v1.8.142)');
   ok(txt.indexOf('next street') !== -1,
     'screenshot geometric message explains the next-street plan (v1.8.138)');
+  ok(txt.indexOf('Pot 355, bet 238') !== -1,
+    'screenshot value message shows pot and bet size in plain words (v1.8.143)');
+  ok(txt.indexOf('shove would fold') !== -1,
+    'screenshot value message explains why not to shove (v1.8.143)');
+  var dryBoard2 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+  var smallVal = valueVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], dryBoard2, 400, 2000, 2);
+  console.log('  small value coach says: ' + smallVal.txt.slice(0, 220));
+  ok(smallVal.v.advice === 'bet' && smallVal.size === 100,
+    'small dry value spot still bets 1/4 pot (got ' + smallVal.v.advice + ' ' + smallVal.size + ', v1.8.143)');
+  ok(smallVal.txt.indexOf('Pot 400, bet 100') !== -1,
+    'small value message shows pot and bet size in plain words (v1.8.143)');
+  ok(smallVal.txt.indexOf('Small enough that worse hands still call') !== -1,
+    'small value message explains why not to bet bigger (v1.8.143)');
   ok(typeof H.geometricFrac === 'function', 'geometricFrac hook exposed (v1.8.138)');
   function buildMultiwayTable(heroHole, villainArchId) {
     var s = d.createElement('script');

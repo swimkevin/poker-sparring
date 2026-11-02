@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.142';
+  var APP_VERSION = '1.8.143';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1856,9 +1856,13 @@
         else if ((hc === 'overpair' || hc === 'toppair') && vuln.straight)
           vulnNote = ' — a straight beats you, and four cards to a straight are out there' +
             '. If raised big, slow down — a big raise here usually means the straight';
+        var valueMath = '. Pot ' + fmt(pot) + ', bet ' + fmt(betSize) + '. ' +
+          (frac >= 0.5
+          ? 'Big enough to charge draws and build the pot, small enough that worse hands still call — a shove would fold those hands out.'
+          : 'Small enough that worse hands still call — a bigger bet would fold them out.');
         return mkVerdict('bet', 'strong',
           '<b>Bet for value</b> ~' + fracLabel + ' pot (' + fmt(betSize) + ')' +
-          whyBet + vulnNote + '.' + sprLine + rangeNote,
+          whyBet + vulnNote + valueMath + sprLine + rangeNote,
           'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
 

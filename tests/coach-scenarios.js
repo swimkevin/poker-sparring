@@ -471,5 +471,15 @@ console.log('\n38. v1.8.142: board vulnerability sizing + fold-to-raise plan');
     'overpair on a flush board names the flush danger');
 }
 
+console.log('\n39. v1.8.143: plain-language sizing math for value bets');
+{
+  ok(src.indexOf('valueMath') !== -1,
+    'value bets carry a plain-language sizing-math line');
+  ok(src.indexOf('a shove would fold those hands out') !== -1,
+    'big value bets explain why not to shove');
+  ok(src.indexOf('Small enough that worse hands still call') !== -1,
+    'small value bets explain why not to bet bigger');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
