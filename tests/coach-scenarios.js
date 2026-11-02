@@ -519,5 +519,11 @@ console.log('\n45. v1.8.150: bluff-catch thresholds keyed to villain bluff frequ
     'facing math caps air equity by the villain bluff frequency');
 }
 
+console.log('\n46. v1.8.151: tourney risk premium — the veto call respects tournament pressure');
+{
+  ok(src.indexOf('veto.need + tourneyRiskPremium(effBB)') !== -1,
+    'veto call is gated on the pot-odds need plus the tournament premium');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

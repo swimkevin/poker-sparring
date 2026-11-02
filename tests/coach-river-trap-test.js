@@ -39,7 +39,7 @@ function strip(html) {
 // turn bet size. turnPot: pot before the turn bet. heroStack: hero's stack
 // on the river (after paying the turn bet). riverPot: pot before the river
 // shove. shove: villain's river bet total.
-function setup(villainId, riverRank, riverSuit, turnBet, turnPot, heroStack, riverPot, shove) {
+function setup(villainId, riverRank, riverSuit, turnBet, turnPot, heroStack, riverPot, shove, mode) {
   var s = d.createElement('script');
   var js = [
     'window.__riverArch = ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0];',
@@ -66,7 +66,10 @@ function setup(villainId, riverRank, riverSuit, turnBet, turnPot, heroStack, riv
     { t: 'action', street: 'river', player: 1, action: 'bet', bet: shove, pot: riverPot + shove }
   ] });
   w.__coachTestHooks.setDecisions([]);
-  return w.coachVerdict();
+  if (mode) w.__coachTestHooks.setGameMode(mode);
+  var v = w.coachVerdict();
+  w.__coachTestHooks.setGameMode('cash');
+  return v;
 }
 
 setTimeout(function () {
@@ -102,6 +105,15 @@ setTimeout(function () {
     'nathan blank-river message shows the narrowed 33% figure, not the tier figure (v1.8.141)');
   ok(strip(v4.html).indexOf('simulated 150') === -1,
     'nathan blank-river message uses the exact narrowed figure, not a simulation line (v1.8.141)');
+  var vTourney = setup('nathan', 2, 0, 75, 100, 200, 250, 188, 'tourney');
+  console.log('  tourney blank-river says: ' + strip(vTourney.html).slice(0, 220));
+  ok(vTourney.advice === 'fold', 'tourney blank-river folds the marginal veto call (got ' + vTourney.advice + ', v1.8.151)');
+  ok(strip(vTourney.html).indexOf('tournament') !== -1,
+    'tourney blank-river message names the tournament reason (v1.8.151)');
+  var vTourneyCash = setup('nathan', 2, 0, 75, 100, 200, 250, 188);
+  console.log('  tourney cash control says: ' + strip(vTourneyCash.html).slice(0, 200));
+  ok(vTourneyCash.advice === 'call' && strip(vTourneyCash.html).indexOf('33%') !== -1,
+    'same small spot in cash still calls on the narrowed figure (got ' + vTourneyCash.advice + ', v1.8.151)');
   var v6 = setup('alice', 2, 0, 266, 355, 669, 887, 669);
   console.log('  alice blank-river says: ' + strip(v6.html).slice(0, 120));
   ok(v6.advice === 'call' && strip(v6.html).indexOf('33%') !== -1,

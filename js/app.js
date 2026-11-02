@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.150';
+  var APP_VERSION = '1.8.151';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1311,6 +1311,7 @@
       recap: coachRecap,
       setDecisions: function (ds) { coachDecisions = ds; },
       setTable: function (t) { table = t; },
+      setGameMode: function (m) { gameMode = m; },
       setHandRec: function (r) { handRec = r; },
       adviceFollowed: adviceFollowed,
       handClass: handClass,
@@ -2019,13 +2020,21 @@
         'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him — especially when the river card helps exactly the hands he called with.');
     }
 
-    if (veto && !(hc === 'nut' && legal.canRaise))
-      return mkVerdict('call', 'marginal',
-        '<b>Call</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
+    if (veto && !(hc === 'nut' && legal.canRaise)) {
+      if (veto.eq > veto.need + tourneyRiskPremium(effBB))
+        return mkVerdict('call', 'marginal',
+          '<b>Call</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
+          narrowDesc + '. Against the hands he would play this way you win about ' + pct(veto.eq) +
+          ' of the time, and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs only ' + pct(veto.need) +
+          '. The math says <b>call</b>.' + rangeNote,
+          'Even against a tight range, call when the price is right — the math, not the fear, decides.');
+      return mkVerdict('fold', 'marginal',
+        '<b>Fold</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
         narrowDesc + '. Against the hands he would play this way you win about ' + pct(veto.eq) +
-        ' of the time, and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs only ' + pct(veto.need) +
-        '. The math says <b>call</b>.' + rangeNote,
-        'Even against a tight range, call when the price is right — the math, not the fear, decides.');
+        ' of the time, and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
+        '. In cash that is a call, but in a tournament chips lost hurt more than chips won help, so this close call is a fold.' + rangeNote,
+        'Tournament poker: near pay jumps, a marginal chip call can lose money even when it wins chips — fold the close ones.');
+    }
 
     if (tell && tell.unit === 'pot' && tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
         !(V && V.archetype && V.archetype.wideOverbet))

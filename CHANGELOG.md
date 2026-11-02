@@ -1,3 +1,33 @@
+## [1.8.151] — Tourney risk premium: the veto call respects tournament pressure
+
+The facing math already added a tournament risk premium to
+its pot-odds threshold — but the river-monster veto call
+bypassed that math entirely, comparing narrowed equity
+directly to the pot-odds need. In a tournament that is a
+leak: a call that wins chips can still lose money, because
+chips lost near pay jumps hurt more than chips won help.
+New: the veto call now requires narrowed equity above the
+need plus the tournament premium (0.12 at 12 big blinds or
+less, 0.08 to 20, 0.04 to 35, 0 above). A veto spot that
+clears the chip need but not the premium folds with a plain
+explanation: in cash it is a call, in a tournament the close
+call is a fold. Cash behavior is unchanged (premium 0).
+
+Deep-analysis note: tournament equity is not chip equity.
+With a 33% hand at a 30% price, calling wins 3 chips per
+100 in chip terms — but the chips you lose come out of your
+tournament life, and the chips you win buy less than face
+value once pay jumps loom. The premium prices that
+asymmetry. Marginal chip calls are exactly where tournaments
+are won and lost, because they feel correct (the pot odds
+say yes) while quietly bleeding tournament equity.
+
+Verified: a small blank-river veto spot (33% vs a 30%
+price) calls in cash and folds in tournament mode, with the
+message naming the tournament reason. Both figures are
+exact-enumeration, so the flip is deterministic, not Monte
+Carlo noise.
+
 ## [1.8.150] — Bluff-catch thresholds keyed to villain bluff frequency
 
 With no pair, you only win when the villain is bluffing —
