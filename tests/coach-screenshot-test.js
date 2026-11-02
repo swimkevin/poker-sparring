@@ -118,6 +118,50 @@ setTimeout(function () {
   ok(txt.indexOf('next street') !== -1,
     'screenshot geometric message explains the next-street plan (v1.8.138)');
   ok(typeof H.geometricFrac === 'function', 'geometricFrac hook exposed (v1.8.138)');
+  function buildMultiwayTable(heroHole, villainArchId) {
+    var s = d.createElement('script');
+    var arch = villainArchId
+      ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainArchId + '"; })[0]'
+      : 'null';
+    s.textContent = [
+      'window.__mwTable = new PokerTable({ players: [',
+      '  { name: "hero", isHero: true }, { name: "V", archetype: ' + arch + ' },',
+      '  { name: "B" }, { name: "C" },',
+      '  { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+      '], sb: 5, bb: 10, startingStack: 2000 });',
+      'var t = window.__mwTable;',
+      't.button = 0; t.street = "turn"; t.currentBet = 0; t.pot = 400;',
+      't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
+      't.community = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];',
+      'for (var i = 4; i < 8; i++) t.players[i].folded = true;'
+    ].join('\n');
+    d.head.appendChild(s);
+    return w.__mwTable;
+  }
+  var mw = buildMultiwayTable([{ r: 13, s: 1 }, { r: 13, s: 0 }], null);
+  ok(mw.livePlayers().length === 4, 'multiway value spot is 4-way (got ' + mw.livePlayers().length + ')');
+  H.setTable(mw);
+  H.setHandRec(null);
+  H.setDecisions([]);
+  var vMw = w.coachVerdict();
+  var txtMw = strip(vMw.html);
+  console.log('  multiway value coach says: ' + txtMw.slice(0, 200));
+  var mMw = /pot \(([\d,]+)\)/.exec(txtMw);
+  var sizeMw = mMw ? parseInt(mMw[1].replace(/,/g, ''), 10) : -1;
+  ok(vMw.advice === 'bet', 'multiway value advice is bet (got ' + vMw.advice + ')');
+  ok(sizeMw === 200, 'multiway value floor lifts dry 1/4 pot to 1/2 pot (got ' + sizeMw + ', v1.8.139)');
+  ok(txtMw.indexOf('more callers means more value') !== -1,
+    'multiway value message explains the floor (v1.8.139)');
+  var air = buildMultiwayTable([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'rock');
+  H.setTable(air);
+  H.setHandRec(null);
+  H.setDecisions([]);
+  var vAir = w.coachVerdict();
+  var txtAir = strip(vAir.html);
+  console.log('  multiway air coach says: ' + txtAir.slice(0, 200));
+  ok(vAir.advice === 'check', 'multiway air advice is check, never a bluff (got ' + vAir.advice + ', v1.8.139)');
+  ok(txtAir.indexOf('too many players to bluff through') !== -1,
+    'multiway air message names the multiway bluff ban (v1.8.139)');
   if (typeof H.geometricFrac === 'function') {
     var g1 = H.geometricFrac(2.63, 1);
     ok(Math.abs(g1 - 0.543) < 0.01, 'geometric turn SPR 2.63 -> ~0.54 (got ' + g1 + ')');

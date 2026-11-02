@@ -423,5 +423,15 @@ console.log('\n34. v1.8.138: geometric sizing for SPR 2-4 with streets left');
     'geometric message explains the next-street plan in plain words');
 }
 
+console.log('\n35. v1.8.139: multiway value floor + multiway bluff ban');
+{
+  ok(src.indexOf('if (multiway && frac < 0.5) { frac = 0.5; multiFloor = true; }') !== -1,
+    'multiway value bets floor at 1/2 pot');
+  ok(src.indexOf('more callers means more value') !== -1,
+    'multiway floor message explains more callers = more value');
+  ok(src.indexOf("if (multiway)\n          return mkVerdict('check', 'strong',\n            '<b>Check</b> — too many players to bluff through.") !== -1,
+    'air branch bans bluffs outright multiway');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

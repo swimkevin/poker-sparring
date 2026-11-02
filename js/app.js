@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.138';
+  var APP_VERSION = '1.8.139';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1789,6 +1789,8 @@
         var geo = geometricFrac(sprV, streetsLeft);
         var geoApplied = false;
         if (geo != null && geo > frac) { frac = Math.min(0.75, geo); geoApplied = true; }
+        var multiFloor = false;
+        if (multiway && frac < 0.5) { frac = 0.5; multiFloor = true; }
         var betSize = Math.max(1, Math.round(pot * frac));
 
         var heroStack = hero.stack;
@@ -1805,7 +1807,9 @@
           ? ' The pot is already nearly as big as your stack, so this bet puts almost everything in anyway.'
           : '';
         var fracLabel = frac >= 0.7 ? '¾' : (frac >= 0.6 ? '⅔' : (frac >= 0.45 ? '½' : (frac >= 0.3 ? '⅓' : '¼')));
-        var whyBet = geoApplied
+        var whyBet = multiFloor
+          ? ' — multiway: more callers means more value, and a bigger bet charges the draws'
+          : geoApplied
           ? ' — sized so a normal bet on the next street can still get the rest in' +
             (tex === 'wet' ? ', and draws pay to chase' : '')
           : tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
@@ -1869,6 +1873,10 @@
       }
 
       if (canBet) {
+        if (multiway)
+          return mkVerdict('check', 'strong',
+            '<b>Check</b> — too many players to bluff through. Save it for a better spot.' + rangeNote,
+            'Multiway pots kill bluffs: everyone has to fold, and someone usually won\'t.');
         var scare = scareCardRank();
 
         var checkedAround = table.currentBet === 0 && (posName === 'button' || posName === 'cutoff');

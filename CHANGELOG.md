@@ -1,3 +1,35 @@
+## [1.8.139] — Multiway value rules: bet bigger for value, never bluff through a crowd
+
+Multiway pots pulled the old coach in two directions at once: it
+appended "bluffs rarely work multiway; bet only for value" and then,
+with air on the button after everyone checked, recommended a bluff.
+And its dry-board value bet stayed at 1/4 pot even with three
+callers waiting. Two changes. First, value bets floor at 1/2 pot
+multiway: more callers means more value and more hands that can
+outdraw you, so the dry 1/4-pot size is lifted (geometric and wet
+sizes, already bigger, are untouched). Second, air bluffs are banned
+outright multiway: the old spot score could still fire when checked
+around on the button with a folder, but a bluff that needs three
+players to fold is a loser even against folders — if each folds
+about half the time, all three fold only about one time in eight,
+far below the one-in-three break-even of a half-pot bluff. Second
+pair and draws already checked multiway, so this closes the last
+hole: multiway, the coach now only bets for value.
+
+Deep-analysis note: multiway value and multiway bluffs point in
+opposite directions and the old code split the difference badly.
+Value goes up because P(someone calls with worse) grows with N and
+P(someone outdraws you) grows too — bigger bets harvest both.
+Bluffs collapse because the fold probability multiplies across
+opponents. The screenshot contradiction is resolved: the note and
+the action finally agree.
+
+Verified: a dry 4-way value spot now bets 200 (1/2 pot) with the
+"more callers means more value" wording; a 4-way air spot on the
+button after everyone checked now checks instead of bluffing; the
+screenshot spot is unchanged (geometric 0.54 already above the
+floor).
+
 ## [1.8.138] — Geometric sizing: bet now so a normal river bet can get the rest in
 
 The old value sizing came from board texture alone: 1/4 pot dry, 2/3
