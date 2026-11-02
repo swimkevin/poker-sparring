@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.134';
+  var APP_VERSION = '1.8.135';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1308,6 +1308,8 @@
     window.__coachTestHooks = {
       recap: coachRecap,
       setDecisions: function (ds) { coachDecisions = ds; },
+      setTable: function (t) { table = t; },
+      setHandRec: function (r) { handRec = r; },
       adviceFollowed: adviceFollowed,
       handClass: handClass,
       boardTexture: boardTexture,
@@ -1694,6 +1696,45 @@
       'Folding when the price is wrong saves more money than risky calls ever win.');
   }
 
+  function villainCalledBig(vIdx) {
+    if (!handRec || !handRec.timeline) return false;
+    var lastBet = {}, large = {}, called = false;
+    handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action') return;
+      if (t.street === 'preflop' || t.street === table.street) return;
+      if (t.action === 'bet' || t.action === 'raise') {
+        var key = t.player + '|' + t.street;
+        var prev = lastBet[key] || 0;
+        var added = (t.bet || 0) - prev;
+        var potBefore = (t.pot || 0) - added;
+        if (added > 0 && potBefore > 0 && added / potBefore >= 0.6) large[t.street] = true;
+        lastBet[key] = t.bet || 0;
+      } else if (t.action === 'call' && t.player === vIdx && large[t.street]) called = true;
+    });
+    return called;
+  }
+
+  function villainFirstRiverAggro(vIdx) {
+    if (!handRec || !handRec.timeline) return false;
+    var early = false, river = false;
+    handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.player !== vIdx) return;
+      if (t.action === 'bet' || t.action === 'raise') {
+        if (t.street === 'river') river = true; else early = true;
+      }
+    });
+    return river && !early;
+  }
+
+  function riverMonsterVeto(c) {
+    if (table.street !== 'river' || !c.V || c.toCall <= 0) return null;
+    if (villainBluffy(c.V.archetype) > 0.1) return null;
+    if (!villainCalledBig(c.vIdx) || !villainFirstRiverAggro(c.vIdx)) return null;
+    var eq = estimateEquityVsMadePool(c.hero.hole, table.community, 3);
+    if (eq == null) return null;
+    return { eq: eq, need: c.toCall / (c.pot + c.toCall) };
+  }
+
   function coachPostflop(c) {
     var esc = c.esc, fmt = c.fmt;
     var hero = c.hero, legal = c.legal, toCall = c.toCall, pot = c.pot;
@@ -1739,14 +1780,15 @@
 
         var heroStack = hero.stack;
         var sprLine;
-        if (commit === 'commit' && betSize < heroStack * 0.7) {
+        var multiwayShoveBan = multiway && table.street !== 'river' && hc !== 'nut' && sprV > 1.5;
+        if (commit === 'commit' && !multiwayShoveBan && betSize < heroStack * 0.7) {
           betSize = heroStack;
           sprLine = ' You\'re committed — just get it all in.';
           return mkVerdict('bet', 'strong',
             '<b>All-in</b> (' + fmt(betSize) + ').' + sprLine + rangeNote,
             'When you\'re committed with a strong hand, shove — don\'t bet small and give free cards.');
         }
-        sprLine = (commit === 'commit')
+        sprLine = (commit === 'commit' && !multiwayShoveBan)
           ? ' The pot\'s already big compared to your stacks — you\'re all-in anyway, so get the money in.'
           : '';
         var fracLabel = frac === 0.75 ? '¾' : (frac === 0.67 ? '⅔' : '¼');
@@ -1853,6 +1895,27 @@
       villainTight: tight, multiway: multiway });
     var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
 
+    var veto = riverMonsterVeto(c);
+    if (veto && veto.eq <= veto.need) {
+      var ranks = {};
+      table.community.forEach(function (cc) { ranks[cc.r] = (ranks[cc.r] || 0) + 1; });
+      var paired = Object.keys(ranks).filter(function (r) { return ranks[r] >= 2; })
+        .map(Number).sort(function (a, b) { return b - a; });
+      var top = Math.max.apply(null, table.community.map(function (cc) { return cc.r; }));
+      var narrowDesc = paired.length
+        ? 'a ' + paired.map(function (r) { return rankName(r); }).join(', a ') + ', or a strong ' + rankName(top)
+        : 'strong hands';
+      var riverRank = rankName(table.community[table.community.length - 1].r);
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
+        narrowDesc + '. The river ' + riverRank + ' completes the hands he called with, and ' + vName +
+        ' almost never bluffs — this is his first big bet of the hand, and from him that is a monster far more often than a bluff. ' +
+        'Against the hands he would play this way you win only about ' + pct(veto.eq) +
+        ' of the time, but calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
+        '. The math says <b>fold</b>.' + rangeNote,
+        'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him — especially when the river card helps exactly the hands he called with.');
+    }
+
     if (commit === 'commit' && (hc === 'nut' || hc === 'overpair' || hc === 'toppair') && toCall < effChips)
       return mkVerdict('call', 'strong',
         'The pot\'s huge compared to what\'s left. With ' + handClassName(hc) +
@@ -1901,11 +1964,8 @@
     var strongAdj = rangeAdjust > 0.005;
 
     var eqSource = rangeEqTier
-      ? (strongAdj
-
-        ? '150 Monte Carlo simulations'
-        : 'simulated 150× vs ' + vName + '\'s strong range')
-      : 'simulated 150× vs random hands' +
+      ? 'simulated 150× vs ' + vName + '\'s strong range'
+      : 'simulated 150× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +

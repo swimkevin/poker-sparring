@@ -99,7 +99,7 @@ When adding a cross-file call, add it to the guard block too.
 
 ## Testing strategy
 
-`npm test` runs 36 suites in total (unit, component, smoke, netplay, worker,
+`npm test` runs 38 suites in total (unit, component, smoke, netplay, worker,
 service worker, coach audits, and more). The three layers below are the shape
 of it:
 

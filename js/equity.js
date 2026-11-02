@@ -125,6 +125,30 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   return score / iters;
 }
 
+function estimateEquityVsMadePool(hole, community, minCat) {
+  if (!hole || !community || community.length < 5) return null;
+  minCat = minCat || 3;
+  var known = {};
+  hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var myScore = evaluate7(hole.concat(community)).score;
+  var total = 0, score = 0;
+  for (var i = 0; i < rest.length; i++)
+    for (var j = i + 1; j < rest.length; j++) {
+      var vh = [rest[i], rest[j]];
+      var op = evaluate7(vh.concat(community));
+      if (op.cat < minCat) continue;
+      total++;
+      if (myScore > op.score) score += 1;
+      else if (myScore === op.score) score += 0.5;
+    }
+  if (!total) return null;
+  return score / total;
+}
+
 function madeStrength(hole, community) {
   var cards = hole.concat(community);
   var ev = cards.length >= 5 ? evaluate7(cards) : null;
@@ -309,6 +333,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
+    estimateEquityVsMadePool: estimateEquityVsMadePool,
     madeStrength: madeStrength,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,

@@ -1,3 +1,69 @@
+## [1.8.135] — Kevin's hand, both halves: no multiway turn shove, no river call vs the trap
+
+TURN HALF. Kevin's screenshot hand (2026-11-02) — button, 4d 9c, turn
+board 7d 4c Qd 4s, pot 355, stacks ~935, 5 players in, nothing to call —
+got "All-in (935). You're committed — just get it all in." A 935 shove
+into a 355 pot (263% of the pot) folds every worse hand and only gets
+called by better, and the same message then added "bet only for value
+multiway" — the sizing contradicted its own logic. Reproduced exactly
+in a new live-verdict test before fixing: the test drives the real
+coachVerdict on a real PokerTable set to that exact state (new
+setTable/setHandRec test hooks, same pattern as the existing
+setDecisions hook).
+
+Fix, minimal and targeted: when the pot is multiway, the street is not
+the river, the hand is not the nuts, and the pot is already big compared
+to the stacks by more than 1.5x, the commit-to-shove branch no longer
+fires — the coach gives its normal value bet instead, and the "you're
+all-in anyway" tail is suppressed in the same case so the message no
+longer contradicts the bet size. The screenshot hand now reads "Bet for
+value ~1/4 pot (89)". The 1/4-pot size itself is the old dry-board
+default; geometric multiway sizing is iteration 4 of this program, and
+the "committed" wording rewrite is iteration 2 — both intentionally
+follow, so this release changes only the shove decision.
+
+RIVER HALF (co-primary, same hand). Turn: hero bet 3/4 pot, Nathan
+called. River: a 7 (board 7d 4c Qd 4s 7h, hero has 4s full of 7s).
+Nathan shoves. The old coach said "you win about 97%, call" — equity vs
+random hands, while its own vs-line said "believe his river bet". The
+97% is true vs random and meaningless here, ex ante: Nathan almost
+never bluffs (bluff 0.02), this is his first big bet of the hand, his
+big-turn-call range is a 7, a 4, or a strong Queen, and the river 7
+makes any 7 a bigger full house. This is the third time a vs-random
+number has been disputed (Amogh, 2026-10-10, was the second).
+
+Fix, by range + profile logic, never by villain name: new
+estimateEquityVsMadePool in js/equity.js enumerates every remaining
+hole combo that makes trips-or-better on the river board and returns
+hero's exact equity vs that pool (7-river: 14.8%; blank river: 33.0%).
+A river-monster veto in coachPostflop fires when the villain almost
+never bluffs (bluff <= 0.10), called a big bet (>= 0.6x pot) on an
+earlier postflop street, and this is his first aggression of the hand
+— and the narrowed equity is below the pot-odds need. The veto sits
+BEFORE the committed-call bypass and the nuts-raise branch, so neither
+skips the range math. The river message now reads: "Fold — V called a
+big bet earlier in the hand, so he is down to a Seven, a Four, or a
+strong Queen. The river Seven completes the hands he called with, and
+V almost never bluffs — this is his first big bet of the hand, and from
+him that is a monster far more often than a bluff. Against the hands he
+would play this way you win only about 15% of the time, but calling 669
+to win 1,556 needs 30%. The math says fold." Also fixed in the same
+pass: the facing-bet equity line no longer says a vague "150 Monte
+Carlo simulations" for strong ranges (it names the range), and a
+random-hands figure is now labeled "only a rough guide, since we have
+no read on his range yet".
+
+Verified: new tests/coach-river-trap-test.js fails on the old code
+(Nathan 7-river: call at 97%; Alice 7-river: call at 99%) and passes on
+the fix, including the controls that must NOT fold — bluffer (lag)
+calls, blank-river Nathan calls, half-pot-turn-call Nathan calls — and
+the pure narrowed-equity numbers above. Carried forward to iteration 7:
+when the river-monster gate holds but the narrowed equity still says
+call (blank river), the message still shows the tier-range figure
+(~96%) rather than the narrowed figure (33%); unifying that number is
+iteration 7's equity-vs-range work. Suite count 36 -> 38 across README,
+ROADMAP, ARCHITECTURE, TESTING and AI-WORKFLOW (two new suites).
+
 ## [1.8.134] — Last two unpinned README counts pinned in the docs-freshness gate
 
 Two exact README numbers had no enforcing test, so a future edit could rot
