@@ -1,3 +1,23 @@
+## [1.8.156] — Facing-raise advice states the exact raise size
+
+Postflop raise recommendations used to say "~3× their bet" with no
+chip amount (the nuts) or no size at all (attacking a tiny bet,
+semi-bluff raising a draw) — the player had to do the arithmetic
+mid-hand. Every postflop raise line now states the raise-to total,
+clamped to the legal min/max like the preflop premium re-raise
+already did: the nuts raise to 3× the bet, a tiny-bet attack to
+3× the bet, a draw semi-bluff raise to 3× the bet. The solver lab
+gains a spot for each of the three branches and fails if a raise
+line ever ships without a parsable size.
+
+Root cause found on the way: `legalActions` returned NaN for
+`minRaiseTo` on any table that never started a hand, because
+`lastRaiseSize` is only set in `startHand`. The engine now falls
+back to the big blind, so headless tables and the coach's clamp
+both get a real number. Also fixed: an ESLint `no-redeclare`
+failure in the coach scenarios test (a second `var drawIdx` in a
+later block) that the suite had been carrying.
+
 ## [1.8.155] — Release repair: 1.8.154 shipped with a stale version identity
 
 1.8.154's push listed every file that release changed except

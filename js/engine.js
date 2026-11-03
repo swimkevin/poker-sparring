@@ -125,11 +125,12 @@ class PokerTable {
     var toCall = this.currentBet - p.bet;
     var maxTo = p.bet + p.stack;
     var out = { toCall: toCall, canCheck: toCall === 0, callAmount: Math.min(toCall, p.stack) };
+    var lastRaise = this.lastRaiseSize || this.bb;
     if (toCall > 0) {
 
       out.canRaise = p.stack > toCall;
       if (out.canRaise) {
-        out.minRaiseTo = Math.min(this.currentBet + this.lastRaiseSize, maxTo);
+        out.minRaiseTo = Math.min(this.currentBet + lastRaise, maxTo);
         out.maxRaiseTo = maxTo;
       }
     } else if (this.currentBet === 0) {
@@ -140,7 +141,7 @@ class PokerTable {
 
       out.canRaise = p.stack > 0;
       if (out.canRaise) {
-        out.minRaiseTo = Math.min(this.currentBet + this.lastRaiseSize, maxTo);
+        out.minRaiseTo = Math.min(this.currentBet + lastRaise, maxTo);
         out.maxRaiseTo = maxTo;
       }
     }

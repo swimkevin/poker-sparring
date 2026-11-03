@@ -1402,5 +1402,16 @@ function heroPolicy(table, idx) {
 })();
 
 
+var freshT = new EN.PokerTable({
+  players: [{ name: 'You', isHero: true }, { name: 'V' }],
+  sb: 5, bb: 10, startingStack: 2000
+});
+freshT.currentBet = 400;
+freshT.players[0].stack = 2000;
+freshT.players[1].bet = 400;
+var freshLegal = freshT.legalActions(0);
+ok(freshLegal.canRaise && isFinite(freshLegal.minRaiseTo) && freshLegal.minRaiseTo === 410,
+  'fresh table (no startHand) still reports a numeric minRaiseTo (got ' + freshLegal.minRaiseTo + ')');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

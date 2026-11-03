@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.155';
+  var APP_VERSION = '1.8.156';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2062,10 +2062,12 @@
     var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway && !passiveTrapper &&
-          (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw))
+          (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
+        var tinyTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
         return mkVerdict('raise', 'marginal',
-          'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> and take it away.' + rangeNote,
+          'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> (~3× their bet) and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');
+      }
     }
 
     if (hc === 'board')
@@ -2077,15 +2079,19 @@
         ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
-    if (hc === 'nut' && legal.canRaise)
+    if (hc === 'nut' && legal.canRaise) {
+      var nutTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
       return mkVerdict('raise', 'strong',
-        '<b>Raise for value</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.' + rangeNote,
+        '<b>Raise for value</b> to ~<b>' + fmt(nutTo) + '</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.' + rangeNote,
         'With the near-nuts, raise: every street you don\'t build the pot costs money.');
-    if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway)
+    }
+    if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway) {
+      var drawTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
       return mkVerdict('raise', 'marginal',
-        '<b>Raise</b> sometimes: you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +
+        '<b>Raise</b> sometimes to ~<b>' + fmt(drawTo) + '</b> (~3× their bet): you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +
         fmt(toCall) + '.' + rangeNote,
         '');
+    }
 
     var rp2 = tourneyRiskPremium(effBB);
     var threshold = need2 + rangeAdjust + rp2;

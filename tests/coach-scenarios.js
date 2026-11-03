@@ -260,8 +260,8 @@ console.log('\n22. v1.8.74: made straight+ beats draw label, bullets, no solo vi
   // (v1.8.101 restructured the line to add the 'board' class — the ordering
   // guarantee is what matters.)
   var catIdx = src.indexOf('ev.cat >= 4');
-  var drawIdx = src.indexOf("return 'draw-strong'");
-  ok(catIdx !== -1 && drawIdx !== -1 && catIdx < drawIdx,
+  var drawStrongIdx = src.indexOf("return 'draw-strong'");
+  ok(catIdx !== -1 && drawStrongIdx !== -1 && catIdx < drawStrongIdx,
     'made straight+ classified before draw labels');
   ok(src.includes("if (boardOnly) return 'board';"),
     'board-play (no hole card in best 5) classified separately');
