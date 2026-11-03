@@ -167,6 +167,15 @@ setTimeout(function () {
     ok(stripAdvice(pfSteal.html).indexOf('to ~ 25') !== -1,
       'steal raise states the exact size to ~25 (2.5x blind, v1.8.158)');
 
+    // Facing-3bet calls show pot-odds math (v1.8.159).
+    var pf3bet = preflopVerdict([{ r: 11, s: 1 }, { r: 11, s: 0 }], 'rock', 90,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }], 3, 30, 90);
+    ok(pf3bet.advice === 'call', 'facing-3bet medium pair in position calls (got ' + pf3bet.advice + ')');
+    ok(stripAdvice(pf3bet.html).indexOf('Pay 90 to win 210') !== -1 &&
+      stripAdvice(pf3bet.html).indexOf('need 43%') !== -1,
+      'facing-3bet call states pot-odds math: Pay 90 to win 210, need 43% (v1.8.159)');
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

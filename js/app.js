@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.158';
+  var APP_VERSION = '1.8.159';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1559,6 +1559,8 @@
 
     if (spot === 'facing-3bet') {
       var effBB3 = effStackBB(vIdx);
+      var need3 = toCall / (pot + toCall);
+      var math3 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — need <b>' + pct(need3) + '</b> to break even.';
       if (tier === 1) {
         if (legal.canRaise) {
           var fourTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 2.3)));
@@ -1573,13 +1575,13 @@
       if (tier === 2)
         return mkVerdict(inPos && effBB3 >= 40 ? 'call' : 'fold', inPos && effBB3 >= 40 ? 'marginal' : 'strong',
           inPos && effBB3 >= 40
-            ? '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re deep. Fold to more heat.'
+            ? '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re deep. Fold to more heat.' + math3
             : '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a re-raise' + (inPos ? '' : ' out of position') + '.',
           'Medium pairs and broadways shrink fast against re-raises — call only deep and in position.');
       if (isSmallPair(hero.hole)) {
         if (toCall * 15 <= effStackChips(vIdx))
           return mkVerdict('call', 'marginal',
-            '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.',
+            '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math3,
             'You can call re-raises with small pairs only when ~15× the call sits behind.');
         return mkVerdict('fold', 'strong',
           '<b>Fold</b> — too shallow to chase a set against a re-raise. The implied odds aren\'t there.',
@@ -1587,7 +1589,7 @@
       }
       if (tier <= 4 && inPos && effBB3 >= 30)
         return mkVerdict('call', 'marginal',
-          '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.',
+          '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.' + math3,
           'Calling re-raises in position with playable hands is fine when deep.');
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.',

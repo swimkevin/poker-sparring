@@ -1,3 +1,16 @@
+## [1.8.159] — Facing-3bet calls show the pot-odds math
+
+Facing an open, the coach already showed "Pay X to win Y — need
+Z%". Facing a re-raise, the three price-sensitive call lines
+(medium pair in position, set-mining small pair, playable hand
+in position deep) just said "Call" with no price at all — the
+player had to trust the call without seeing whether the price
+was right. All three now carry the same math line, computed
+from the actual call amount and pot: "Pay 90 to win 210 — need
+43% to break even" in the regression spot. The fold lines are
+unchanged, and the premium all-in call stays a strength call,
+not a price call.
+
 ## [1.8.158] — Preflop raise advice states the exact chip amount
 
 The postflop raise lines got exact sizes in 1.8.156, but preflop
