@@ -1,3 +1,21 @@
+## [1.8.160] — Solver lab now fails on gross EV errors, not just wrong actions
+
+The lab's Monte Carlo facing figures were report-only by design:
+simulation noise made small EV differences un-failable, so a
+coach action could be grossly wrong on EV and still pass as long
+as it matched the spot's expected action. Four facing spots
+(the dilution trio and the archetype-range spot) are now
+gross-checked: a seeded shared-runout simulation (1,000 sims,
+fixed seed per spot, deterministic across runs) must agree with
+the coach's action within 20 points of equity — far above
+simulation noise (~1–2 points), far below a real leak. A
+scratch mutation returning 0% equity fails all three call spots
+and returning 99% fails the fold spot, so the check is proven to
+bite in both directions. The leading-bet guardrail tightens in
+the same release: the blanket river-nut exception is gone, so a
+future river-nut overbet above 1.5× pot now fails unless a
+short-stack or short-SPR exception genuinely applies.
+
 ## [1.8.159] — Facing-3bet calls show the pot-odds math
 
 Facing an open, the coach already showed "Pay X to win Y — need

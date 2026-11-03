@@ -12,16 +12,21 @@
 // Failure definition:
 //   - any diagnostic spot where the coach's action differs from the
 //     known-correct action -> FAIL (a clearly losing recommendation);
-//   - any leading bet above 1.5x pot outside short stack-to-pot,
-//     river-nut, and short-stack spots -> FAIL (the guardrail);
+//   - any leading bet above 1.5x pot outside short stack-to-pot
+//     and short-stack spots -> FAIL (the guardrail);
+//   - any gross-checked facing spot where a seeded shared-runout
+//     simulation disagrees with the coach's action by more than 20
+//     points of equity -> FAIL (a gross error, not noise);
 //   - any river spot where exact enumeration says calling loses money
 //     and the coach calls anyway -> FAIL, with the EV loss reported.
 // Honesty note: river spots with a made-hand pool get EXACT equity
 // (full enumeration, no Monte Carlo noise), so their EV verdicts are
 // exact. Other facing spots report the coach's own Monte Carlo
 // figure as coach-implied EV for the leak report only — the lab does
-// not fail on Monte Carlo EV loss, because simulation noise would
-// make that flaky. Leading spots are checked against guardrail
+// not fail on small Monte Carlo EV differences, because simulation
+// noise would make that flaky, but a 20-point gross disagreement on
+// a seeded simulation fails, since no plausible noise explains it.
+// Leading spots are checked against guardrail
 // invariants rather than fake-precision EV: there is no single
 // "correct" bet size, only sizes that are clearly too big.
 // The lab is intentionally NOT part of the npm test chain: it is a
@@ -95,6 +100,29 @@ function pctOf(msg) {
   var m = /You win about (\d+)%/.exec(msg);
   return m ? parseInt(m[1], 10) / 100 : null;
 }
+function seededGrossEq(spot) {
+  var h = 0;
+  for (var i = 0; i < spot.name.length; i++) h = (h * 31 + spot.name.charCodeAt(i)) % 2147483647;
+  var seed = h || 1;
+  function rnd() {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  }
+  var arch = spot.villain
+    ? w.ARCHETYPES.filter(function (a) { return a.id === spot.villain; })[0]
+    : null;
+  var tiers = [];
+  for (var o = 0; o < (spot.nLive || 2) - 1; o++) tiers.push(o === 0 ? ((arch && arch.openTier) || 3) : 0);
+  var realRandom = Math.random;
+  Math.random = rnd;
+  var eq;
+  try {
+    eq = EQ.estimateEquityVsRanges(spot.hero, spot.board, tiers, 1000);
+  } finally {
+    Math.random = realRandom;
+  }
+  return eq;
+}
 
 var C = function (r, s) { return { r: r, s: s }; };
 var Q725 = [C(12, 2), C(7, 1), C(2, 0), C(5, 3)];
@@ -153,15 +181,15 @@ var SPOTS = [
   { name: 'dilution-headsup', kind: 'facing', villain: 'lag',
     hero: [C(2, 2), C(13, 2)], board: FLUSH_BOARD, street: 'turn',
     potBefore: 500, bet: 400, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 400, 500) },
+    timeline: betTimeline('turn', 400, 500), grossCheck: true },
   { name: 'dilution-multiway', kind: 'facing', villain: 'lag',
     hero: [C(2, 2), C(13, 2)], board: FLUSH_BOARD, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 4, expect: 'call',
-    timeline: betTimeline('turn', 200, 500) },
+    timeline: betTimeline('turn', 200, 500), grossCheck: true },
   { name: 'dilution-multiway-fold', kind: 'facing', villain: 'lag',
     hero: [C(2, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 400, heroStack: 2000, nLive: 4, expect: 'fold',
-    timeline: betTimeline('turn', 400, 500) },
+    timeline: betTimeline('turn', 400, 500), grossCheck: true },
   { name: 'trapper-small-bet', kind: 'facing', villain: 'nathan',
     hero: [C(13, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
@@ -188,7 +216,7 @@ var SPOTS = [
   { name: 'archetype-range', kind: 'facing', villain: 'lag',
     hero: [C(7, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 200, 500), expectWord: 'kinds of hands' },
+    timeline: betTimeline('turn', 200, 500), expectWord: 'kinds of hands', grossCheck: true },
   { name: 'nut-raise-size', kind: 'facing-raise', villain: 'lag',
     hero: [C(5, 0), C(2, 1)], board: [C(9, 0), C(8, 1), C(7, 2), C(6, 3)], street: 'turn',
     potBefore: 500, bet: 400, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 1200,
@@ -222,9 +250,8 @@ setTimeout(function () {
       var potTotal = spot.potBefore;
       var ratio = size == null ? null : size / potTotal;
       var sprV = spot.heroStack / potTotal;
-      var hc = w.__coachTestHooks.handClass(spot.hero, spot.board);
       var allowed = ratio == null || ratio <= 1.5 || sprV <= 1.05 ||
-        (spot.street === 'river' && hc === 'nut') || spot.heroStack <= 200 || spot.allowAllIn;
+        spot.heroStack <= 200 || spot.allowAllIn;
       if (size == null) problems.push('bet with no parsable size');
       else if (!allowed) problems.push('bet ratio ' + ratio.toFixed(2) + 'x pot exceeds guardrail');
       if (spot.expectSize != null && size !== spot.expectSize)
@@ -262,6 +289,14 @@ setTimeout(function () {
       evNote = pct == null ? 'no equity figure in message'
         : 'coach-implied eq ' + Math.round(pct * 100) + '% vs need ' + Math.round(needF * 100) +
           '% (Monte Carlo, reported only)';
+      if (spot.grossCheck) {
+        var grossEq = seededGrossEq(spot);
+        evNote += ' | seeded eq ' + (grossEq * 100).toFixed(1) + '%';
+        if (v.advice === 'call' && grossEq < needF - 0.20)
+          problems.push('gross EV failure: seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a call');
+        if (v.advice === 'fold' && grossEq > needF + 0.20)
+          problems.push('gross EV failure: seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a fold');
+      }
     }
     if (spot.expectWord && msg.indexOf(spot.expectWord) === -1)
       problems.push('message missing "' + spot.expectWord + '"');
