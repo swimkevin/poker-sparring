@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.157';
+  var APP_VERSION = '1.8.158';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1521,7 +1521,7 @@
     if (spot === 'open') {
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
-          c.nmHtml + ' — a premium and no one raised. <b>Raise</b> 2.5–3× the blind and build a pot while you\'re ahead.',
+          c.nmHtml + ' — a premium and no one raised. <b>Raise</b> to ' + fmt(Math.round(table.bb * 2.5)) + '–' + fmt(table.bb * 3) + ' (2.5–3× the blind) and build a pot while you\'re ahead.',
           'Raise premiums first-in: checking lets worse hands see free cards.');
       return mkVerdict('check', 'marginal',
         '<b>Check</b> and take the free flop' +
@@ -1532,24 +1532,25 @@
     var steal = isStealSpot();
     if (steal) {
       var folders = steal.targets.filter(function (p) { return villainFoldy(p.archetype) > 0.5; });
+      var stealTo = Math.round(table.bb * 2.5);
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
-          c.nmHtml + ' on the ' + steal.pos + ' — <b>raise 2.5×</b> for value. Best hand, best seat.',
+          c.nmHtml + ' on the ' + steal.pos + ' — <b>raise</b> to ~<b>' + fmt(stealTo) + '</b> (2.5× the blind) for value. Best hand, best seat.',
           'Late position plus a premium: raise every time.');
       if (tier <= 4)
         return mkVerdict('raise', 'strong',
-          'Folded to you on the ' + steal.pos + '. <b>Raise 2.5×</b> — a clean steal spot' +
+          'Folded to you on the ' + steal.pos + '. <b>Raise</b> to ~<b>' + fmt(stealTo) + '</b> (2.5× the blind) — a clean steal spot' +
           (folders.length ? '; ' + esc(folders[0].name) + ' folds too much' : '') + '.',
           'Steal blinds when it folds to you late: uncontested pots are pure profit.');
 
       if (tier === 5 && gameMode === 'tourney' && heroIsBigStack())
         return mkVerdict('raise', 'marginal',
-          'You\'re the big stack — <b>raise 2.5×</b> with ' + c.nmHtml +
+          'You\'re the big stack — <b>raise</b> to ~<b>' + fmt(stealTo) + '</b> (2.5× the blind) with ' + c.nmHtml +
           '. Medium stacks have to fold a lot to stay alive, so your bluffs work more often.',
           'When you have the most chips in a tournament, be aggressive: others are scared to bust.');
       if (tier === 5 && folders.length === steal.targets.length)
         return mkVerdict('raise', 'marginal',
-          'Both blinds fold too much — <b>raise 2.5×</b> as a steal, but give it up if they fight back.',
+          'Both blinds fold too much — <b>raise</b> to ~<b>' + fmt(stealTo) + '</b> (2.5× the blind) as a steal, but give it up if they fight back.',
           'Steals work because folds are instant profit — don\'t marry the hand.');
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + c.nmHtml + ' isn\'t worth playing, even on the ' + steal.pos + '. Discipline is the edge.',
@@ -1607,24 +1608,25 @@
 
     var nRaises = preflopRaiseCount();
     if (nRaises === 0 && countLimpers() > 0) {
+      var isoTo = table.bb * 4;
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
-          c.nmHtml + ' — limpers are weak. <b>Raise 4×</b> to isolate one of them and play for stacks.',
+          c.nmHtml + ' — limpers are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to isolate one of them and play for stacks.',
           'Isolate limpers with premiums: raise big, play heads-up, stack them.');
       if (tier <= 3 && inPos)
         return mkVerdict('raise', 'marginal',
-          '<b>Raise 4×</b> to isolate — limpers rarely have much, and you have position.',
+          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to isolate — limpers rarely have much, and you have position.',
           'Attack limpers from late position; they fold or play bloated pots out of position.');
 
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise 4×</b> to punish the limpers — ' + countLimpers() + ' limpers means ' +
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to punish the limpers — ' + countLimpers() + ' limpers means ' +
           UI.fmt(table.potTotal()) + ' of dead money. Or call behind; both are fine. Mix in the raise sometimes.',
           'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
 
       if (countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise 4×</b> to attack the dead money — ' + countLimpers() + ' limpers means ' +
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to attack the dead money — ' + countLimpers() + ' limpers means ' +
           UI.fmt(table.potTotal()) + ' sitting there. Take it down now or isolate one player. Or fold; both are fine.',
           'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — folding is fine too.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
@@ -1669,10 +1671,12 @@
 
     var hasAce = hero.hole.some(function (x) { return x.r === 14; });
     if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
-        villainFoldy(V.archetype) > 0.5 && !multiway)
+        villainFoldy(V.archetype) > 0.5 && !multiway) {
+      var bluffTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (inPos ? 3 : 4))));
       return mkVerdict('raise', 'marginal',
-        'Mix in a <b>bluff re-raise</b> sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
+        'Mix in a <b>bluff re-raise</b> to ~<b>' + fmt(bluffTo) + '</b> (' + (inPos ? 3 : 4) + '× their open) sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
         'Only bluff re-raise when they fold a lot — never into multiple players.');
+    }
 
     var vOpenTier = (V && V.archetype && V.archetype.openTier) || 3;
     var eq = rangeAwareEquityPreflop(hero.hole, vOpenTier);

@@ -1,3 +1,17 @@
+## [1.8.158] — Preflop raise advice states the exact chip amount
+
+The postflop raise lines got exact sizes in 1.8.156, but preflop
+still said "raise 2.5×", "raise 4×", or "bluff re-raise sometimes"
+with no amount. Every preflop raise line now states the raise-to
+total: first-in premiums to 25–30 (2.5–3× the blind), steals to
+25 (2.5× the blind), isolations to 40 (4× the blind), and the
+suited-ace bluff re-raise to 3× the open in position / 4× out of
+position, clamped to the legal min/max like the premium re-raise
+already was. The strategy is unchanged — only the amount is now
+on the screen instead of in the player's head. Regression tests
+in the coach-advice suite pin the bluff re-raise at 90 (3× a 30
+open) and the steal at 25.
+
 ## [1.8.157] — River veto is multiway-diluted: beating one trapper is not beating the table
 
 The river monster veto — fold when a non-bluffer who called a big

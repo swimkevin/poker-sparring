@@ -34,6 +34,36 @@ function ok(cond, name) {
   else { fail++; console.log('FAIL: ' + name); }
 }
 
+function stripAdvice(html) {
+  return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2) {
+  var s = d.createElement('script');
+  var arch = villainId
+    ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
+    : 'null';
+  s.textContent = [
+    'window.__pfTable = new PokerTable({ players: [',
+    '  { name: "hero", isHero: true }, { name: "V", archetype: ' + arch + ' }, { name: "S" },',
+    '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+    '], sb: 5, bb: 10, startingStack: 2000 });',
+    'var t = window.__pfTable;',
+    't.button = 0; t.street = "preflop"; t.currentBet = ' + open + '; t.pot = 0; t.sbIdx = 1; t.bbIdx = 2;',
+    't.players[0].hole = ' + JSON.stringify(hero) + ';',
+    't.players[0].stack = 2000; t.players[0].bet = 0;',
+    't.players[1].stack = 2000; t.players[1].bet = ' + bet1 + ';',
+    't.players[2].stack = 2000; t.players[2].bet = ' + bet2 + ';',
+    't.community = [];',
+    'for (var i = ' + liveCount + '; i < 8; i++) t.players[i].folded = true;'
+  ].join('\n');
+  d.head.appendChild(s);
+  var t = w.__pfTable;
+  w.__coachTestHooks.setTable(t);
+  w.__coachTestHooks.setHandRec({ timeline: timeline });
+  w.__coachTestHooks.setDecisions([]);
+  return w.coachVerdict();
+}
+
 setTimeout(function () {
   try {
     var H = w.__coachTestHooks;
@@ -124,6 +154,18 @@ setTimeout(function () {
       });
       ok(nR2 === 1 && nL2 === 1, 'raise blocks limpers branch (1 limp counted, not 2)');
     })();
+
+    // Preflop raise advice states exact chip amounts (v1.8.158).
+    var pfBluff = preflopVerdict([{ r: 14, s: 0 }, { r: 5, s: 0 }], 'rock', 30,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }], 2, 30, 10);
+    ok(!pfBluff.error, 'bluff re-raise verdict has no error' + (pfBluff.error ? ' (' + pfBluff.error + ')' : ''));
+    ok(pfBluff.advice === 'raise', 'bluff re-raise advice is raise (got ' + pfBluff.advice + ')');
+    ok(stripAdvice(pfBluff.html).indexOf('to ~ 90') !== -1,
+      'bluff re-raise states the exact size to ~90 (3x open in position, v1.8.158)');
+    var pfSteal = preflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], 'rock', 10, [], 3, 5, 10);
+    ok(pfSteal.advice === 'raise', 'steal advice is raise (got ' + pfSteal.advice + ')');
+    ok(stripAdvice(pfSteal.html).indexOf('to ~ 25') !== -1,
+      'steal raise states the exact size to ~25 (2.5x blind, v1.8.158)');
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
