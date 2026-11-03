@@ -39,7 +39,7 @@ function strip(html) {
 // turn bet size. turnPot: pot before the turn bet. heroStack: hero's stack
 // on the river (after paying the turn bet). riverPot: pot before the river
 // shove. shove: villain's river bet total.
-function setup(villainId, riverRank, riverSuit, turnBet, turnPot, heroStack, riverPot, shove, mode) {
+function setup(villainId, riverRank, riverSuit, turnBet, turnPot, heroStack, riverPot, shove, mode, liveExtra) {
   var s = d.createElement('script');
   var js = [
     'window.__riverArch = ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0];',
@@ -54,7 +54,7 @@ function setup(villainId, riverRank, riverSuit, turnBet, turnPot, heroStack, riv
     't.players[1].stack = 0; t.players[1].bet = ' + shove + ';',
     't.community = [{ r: 7, s: 1 }, { r: 4, s: 0 }, { r: 12, s: 1 }, { r: 4, s: 3 },',
     '  { r: ' + riverRank + ', s: ' + riverSuit + ' }];',
-    'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+    'for (var i = ' + (liveExtra ? 3 : 2) + '; i < 8; i++) t.players[i].folded = true;'
   ].join('\n');
   s.textContent = js;
   d.head.appendChild(s);
@@ -289,6 +289,16 @@ setTimeout(function () {
   ok(eq7 != null && eq7 < 0.30, '7-river narrowed equity is below 30% (got ' + eq7 + ')');
   ok(eq2 != null && eq2 > 0.30, 'blank-river narrowed equity is above the 30% call threshold (got ' + eq2 + ' — just above it, which is why the blank-river coach calls)');
   ok(eq2 > eq7, 'river 7 lowers narrowed equity vs a blank river');
+
+  var vMulti = setup('nathan', 2, 0, 266, 355, 669, 887, 669, null, true);
+  console.log('  nathan blank-river multiway says: ' + strip(vMulti.html).slice(0, 220));
+  ok(vMulti.advice === 'fold', 'nathan blank-river folds multiway: beating everyone still in kills the heads-up call (got ' + vMulti.advice + ', v1.8.157)');
+  ok(strip(vMulti.html).indexOf('beating everyone still in') !== -1,
+    'multiway veto message names the beat-everyone requirement (v1.8.157)');
+  var eqMulti = eq.estimateEquityVsMadePoolMulti(hero, board2, 3, 2);
+  console.log('  multiway narrowed equity: ' + eqMulti);
+  ok(eqMulti != null && eqMulti < eq2,
+    'multiway made-pool equity is below the heads-up figure (got ' + eqMulti + ' vs ' + eq2 + ')');
 
   console.log(fails === 0 ? 'COACH RIVER TRAP TEST PASSED' : 'COACH RIVER TRAP TEST FAILED (' + fails + ')');
   process.exit(fails ? 1 : 0);

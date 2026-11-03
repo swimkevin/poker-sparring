@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.156';
+  var APP_VERSION = '1.8.157';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1739,9 +1739,12 @@
     if (table.street !== 'river' || !c.V || c.toCall <= 0) return null;
     if (villainBluffy(c.V.archetype) > 0.1) return null;
     if (!villainCalledBig(c.vIdx) || !villainFirstRiverAggro(c.vIdx)) return null;
-    var eq = estimateEquityVsMadePool(c.hero.hole, table.community, 3);
+    var nOpp = liveOpponents().length;
+    var eq = nOpp > 1
+      ? estimateEquityVsMadePoolMulti(c.hero.hole, table.community, 3, nOpp)
+      : estimateEquityVsMadePool(c.hero.hole, table.community, 3);
     if (eq == null) return null;
-    return { eq: eq, need: c.toCall / (c.pot + c.toCall) };
+    return { eq: eq, need: c.toCall / (c.pot + c.toCall), multi: nOpp > 1 };
   }
 
   function boardVulnerability(community) {
@@ -2010,6 +2013,7 @@
     }
 
     var veto = riverMonsterVeto(c);
+    var vetoMultiNote = veto && veto.multi ? ', beating everyone still in' : '';
     var ranks = {};
     table.community.forEach(function (cc) { ranks[cc.r] = (ranks[cc.r] || 0) + 1; });
     var paired = Object.keys(ranks).filter(function (r) { return ranks[r] >= 2; })
@@ -2025,7 +2029,7 @@
         narrowDesc + '. The river ' + riverRank + ' completes the hands he called with, and ' + vName +
         ' almost never bluffs — this is his first big bet of the hand, and from him that is a monster far more often than a bluff. ' +
         'Against the hands he would play this way you win only about ' + pct(veto.eq) +
-        ' of the time, but calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
+        ' of the time' + vetoMultiNote + ', but calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
         '. The math says <b>fold</b>.' + rangeNote,
         'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him — especially when the river card helps exactly the hands he called with.');
     }
@@ -2035,13 +2039,13 @@
         return mkVerdict('call', 'marginal',
           '<b>Call</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
           narrowDesc + '. Against the hands he would play this way you win about ' + pct(veto.eq) +
-          ' of the time, and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs only ' + pct(veto.need) +
+          ' of the time' + vetoMultiNote + ', and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs only ' + pct(veto.need) +
           '. The math says <b>call</b>.' + rangeNote,
           'Even against a tight range, call when the price is right — the math, not the fear, decides.');
       return mkVerdict('fold', 'marginal',
         '<b>Fold</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
         narrowDesc + '. Against the hands he would play this way you win about ' + pct(veto.eq) +
-        ' of the time, and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
+        ' of the time' + vetoMultiNote + ', and calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
         '. In cash that is a call, but in a tournament chips lost hurt more than chips won help, so this close call is a fold.' + rangeNote,
         'Tournament poker: near pay jumps, a marginal chip call can lose money even when it wins chips — fold the close ones.');
     }

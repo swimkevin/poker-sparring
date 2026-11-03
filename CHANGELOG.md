@@ -1,3 +1,19 @@
+## [1.8.157] — River veto is multiway-diluted: beating one trapper is not beating the table
+
+The river monster veto — fold when a non-bluffer who called a big
+bet earlier suddenly bets big on a helpful river — computed its
+equity against one opponent's made-hand pool even when other
+players were still in. On a blank river that heads-up figure said
+call (33% vs a 30% price), but with one more player still to beat
+the same hand wins 0% of the time against two made-pool hands.
+The veto now uses a new exact multi-opponent made-pool equity
+(`estimateEquityVsMadePoolMulti`: exact enumeration for up to
+three opponents, a seeded simulation beyond that — never the
+power rule, which understates shared-runout equity), and its
+message says "beating everyone still in" when diluted. The solver
+lab gains the multiway blank-river spot, which folds, against the
+heads-up blank-river spot, which still calls.
+
 ## [1.8.156] — Facing-raise advice states the exact raise size
 
 Postflop raise recommendations used to say "~3× their bet" with no

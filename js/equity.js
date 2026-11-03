@@ -215,6 +215,95 @@ function estimateEquityVsMadePool(hole, community, minCat) {
   return score / total;
 }
 
+function estimateEquityVsMadePoolMulti(hole, community, minCat, nOpp) {
+  if (!hole || !community || community.length < 5) return null;
+  nOpp = nOpp || 1;
+  if (nOpp <= 1) return estimateEquityVsMadePool(hole, community, minCat);
+  minCat = minCat || 3;
+  var known = {};
+  hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var pool = [], scores = [];
+  for (var i = 0; i < rest.length; i++)
+    for (var j = i + 1; j < rest.length; j++) {
+      var vh = [rest[i], rest[j]];
+      var op = evaluate7(vh.concat(community));
+      if (op.cat < minCat) continue;
+      pool.push(vh);
+      scores.push(op.score);
+    }
+  if (!pool.length) return null;
+  var myScore = evaluate7(hole.concat(community)).score;
+  function scoreCombo(idx) {
+    var beaten = true, tied = false;
+    for (var k = 0; k < idx.length; k++) {
+      if (scores[idx[k]] > myScore) { beaten = false; break; }
+      if (scores[idx[k]] === myScore) tied = true;
+    }
+    if (!beaten) return 0;
+    return tied ? 0.5 : 1;
+  }
+  function disjoint(idx) {
+    var seen = {};
+    for (var k = 0; k < idx.length; k++) {
+      var h = pool[idx[k]];
+      if (seen[_key(h[0])] || seen[_key(h[1])]) return false;
+      seen[_key(h[0])] = 1;
+      seen[_key(h[1])] = 1;
+    }
+    return true;
+  }
+  if (nOpp <= 3) {
+    var total = 0, score = 0, idx = [];
+    function walk(start, depth) {
+      if (depth === nOpp) {
+        if (!disjoint(idx)) return;
+        total++;
+        score += scoreCombo(idx);
+        return;
+      }
+      for (var p = start; p < pool.length; p++) {
+        idx.push(p);
+        walk(p + 1, depth + 1);
+        idx.pop();
+      }
+    }
+    walk(0, 0);
+    if (!total) return null;
+    return score / total;
+  }
+  var seed = 1234567;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  function rnd() {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  }
+  var sims = 20000, sTotal = 0, sScore = 0;
+  for (var n = 0; n < sims; n++) {
+    var picked = [], used = {};
+    var okHand = true;
+    for (var o = 0; o < nOpp; o++) {
+      var h = null;
+      for (var t = 0; t < 200; t++) {
+        var cand = pool[Math.floor(rnd() * pool.length)];
+        if (!used[_key(cand[0])] && !used[_key(cand[1])]) { h = cand; break; }
+      }
+      if (!h) { okHand = false; break; }
+      used[_key(h[0])] = 1;
+      used[_key(h[1])] = 1;
+      picked.push(pool.indexOf(h));
+    }
+    if (!okHand) continue;
+    sTotal++;
+    sScore += scoreCombo(picked);
+  }
+  if (!sTotal) return null;
+  return sScore / sTotal;
+}
+
 function madeStrength(hole, community) {
   var cards = hole.concat(community);
   var ev = cards.length >= 5 ? evaluate7(cards) : null;
@@ -421,6 +510,7 @@ if (typeof module !== 'undefined' && module.exports) {
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
+    estimateEquityVsMadePoolMulti: estimateEquityVsMadePoolMulti,
     madeStrength: madeStrength,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,

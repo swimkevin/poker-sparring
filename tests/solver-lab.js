@@ -201,6 +201,10 @@ var SPOTS = [
     hero: [C(8, 2), C(6, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)], street: 'turn',
     potBefore: 500, bet: 300, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 900,
     timeline: betTimeline('turn', 300, 500) },
+  { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
+    hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
+    potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',
+    timeline: riverTimeline(266, 355, 669, 887), exactPool: true, multiOpp: 2 }
 ];
 
 setTimeout(function () {
@@ -229,7 +233,9 @@ setTimeout(function () {
     }
     if (spot.kind === 'facing-exact') {
       var pot = spot.potBefore + spot.bet;
-      var eq = EQ.estimateEquityVsMadePool(spot.hero, spot.board, 3);
+      var eq = spot.multiOpp
+        ? EQ.estimateEquityVsMadePoolMulti(spot.hero, spot.board, 3, spot.multiOpp)
+        : EQ.estimateEquityVsMadePool(spot.hero, spot.board, 3);
       var need = spot.bet / (pot + spot.bet);
       var evCall = eq * (pot + spot.bet) - spot.bet;
       var evCoach = v.advice === 'call' ? evCall : 0;
