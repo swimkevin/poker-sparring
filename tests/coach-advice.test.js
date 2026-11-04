@@ -176,6 +176,16 @@ setTimeout(function () {
       stripAdvice(pf3bet.html).indexOf('need 43%') !== -1,
       'facing-3bet call states pot-odds math: Pay 90 to win 210, need 43% (v1.8.159)');
 
+    // Facing-4bet shove states the amount (v1.8.163).
+    var pf4bet = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 270,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 270, pot: 405 }], 3, 270, 90);
+    ok(!pf4bet.error, 'facing-4bet verdict has no error' + (pf4bet.error ? ' (' + pf4bet.error + ')' : ''));
+    ok(pf4bet.advice === 'raise', 'facing-4bet premium advice is raise (got ' + pf4bet.advice + ')');
+    ok(stripAdvice(pf4bet.html).indexOf('2,000') !== -1,
+      'facing-4bet shove states the all-in amount 2,000 (v1.8.163)');
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

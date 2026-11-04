@@ -1,3 +1,11 @@
+## [1.8.163] — Facing-4bet shove states the amount
+
+Every other raise line states its size since 1.8.156/1.8.158, but the
+facing-4bet premium line still just said "shove or call it off" with
+no number. It now states the all-in total ("shove 2,000"), clamped
+to the legal max like the other raise lines. The call branch for a
+villain shove is unchanged.
+
 ## [1.8.162] — River value hands bet the fraction, never commit-shove
 
 On the river, a strong hand at SPR 1.4 was told to go all-in (140

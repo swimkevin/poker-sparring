@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.162';
+  var APP_VERSION = '1.8.163';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1597,12 +1597,14 @@
     }
 
     if (spot === 'facing-4bet+') {
-      if (tier === 1)
+      if (tier === 1) {
+        var shoveTo = Math.min(legal.maxRaiseTo, hero.stack + (hero.bet || 0));
         return mkVerdict(legal.canRaise ? 'raise' : 'call', 'strong',
           legal.canRaise
-            ? 'They re-raised again. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> or call it off.'
+            ? 'They re-raised again. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> ' + fmt(shoveTo) + ' or call it off.'
             : 'They shoved. With ' + c.nmHtml + ', <b>call</b> — folding a premium to one shove burns money.',
           'Against a second re-raise only the very best hands continue — everything else folds.');
+      }
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — a second re-raise at these stakes is almost always the nuts.',
         'Respect second re-raises: players don\'t bluff them often enough to call light.');
