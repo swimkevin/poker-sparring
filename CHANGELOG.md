@@ -1,3 +1,15 @@
+## [1.8.164] — Short-stack branch keys on the hero's stack, not the effective stack
+
+The tournament short-stack branch ("shove or fold") keyed on the
+effective stack — the smaller of hero and villain. So a deep hero
+(200bb) facing a 10bb villain was told to shove-or-fold hero's whole
+stack, including shoving 2,000 over a short villain's raise. The
+push/fold chart is a hero-stack chart, and a deep hero should play
+normally against a short villain (with the short stack already
+capping implied odds in the normal branches). The branch now keys
+on hero's own stack in big blinds; hero-short behavior is
+unchanged, since the hero was the minimum there anyway.
+
 ## [1.8.163] — Facing-4bet shove states the amount
 
 Every other raise line states its size since 1.8.156/1.8.158, but the

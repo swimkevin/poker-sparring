@@ -186,6 +186,38 @@ setTimeout(function () {
     ok(stripAdvice(pf4bet.html).indexOf('2,000') !== -1,
       'facing-4bet shove states the all-in amount 2,000 (v1.8.163)');
 
+    // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
+    (function () {
+      var s = d.createElement('script');
+      s.textContent = [
+        'window.__ssTable = new PokerTable({ players: [',
+        '  { name: "hero", isHero: true }, { name: "V", archetype: ARCHETYPES.filter(function (a) { return a.id === "rock"; })[0] }, { name: "S" },',
+        '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+        '], sb: 5, bb: 10, startingStack: 2000 });',
+        'var t = window.__ssTable;',
+        't.button = 0; t.street = "preflop"; t.currentBet = 0; t.pot = 0; t.sbIdx = 1; t.bbIdx = 2;',
+        't.players[0].hole = [{ r: 14, s: 0 }, { r: 14, s: 1 }];',
+        't.players[0].stack = 2000; t.players[0].bet = 0;',
+        't.players[1].stack = 100; t.players[1].bet = 0;',
+        't.players[2].stack = 2000; t.players[2].bet = 0;',
+        't.community = [];',
+        'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+      ].join('\n');
+      d.head.appendChild(s);
+      var t = w.__ssTable;
+      H.setTable(t);
+      H.setHandRec({ timeline: [] });
+      H.setDecisions([]);
+      H.setGameMode('tourney');
+      var vSs = w.coachVerdict();
+      H.setGameMode('cash');
+      var txtSs = stripAdvice(vSs.html);
+      ok(!vSs.error, 'deep hero vs short villain verdict has no error' + (vSs.error ? ' (' + vSs.error + ')' : ''));
+      ok(vSs.advice === 'raise', 'deep hero vs short villain advice is raise (got ' + vSs.advice + ')');
+      ok(txtSs.indexOf('Shove') === -1, 'deep hero is not told to shove-or-fold on a short villain stack (v1.8.164)');
+      ok(txtSs.indexOf('25') !== -1, 'deep hero gets the normal steal raise to 25 (v1.8.164)');
+    })();
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

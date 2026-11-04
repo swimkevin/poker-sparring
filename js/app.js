@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.163';
+  var APP_VERSION = '1.8.164';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1471,7 +1471,7 @@
 
   function coachShortStack(c) {
     if (gameMode !== 'tourney' || table.street !== 'preflop') return null;
-    var effBB = effStackBB(c.vIdx);
+    var effBB = table.bb > 0 ? c.hero.stack / table.bb : 99;
     if (effBB > 12) return null;
     var fmt = c.fmt;
     var pos = PF_POS_MAP[c.posName] || 'MP';
