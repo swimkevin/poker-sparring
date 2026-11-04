@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.160';
+  var APP_VERSION = '1.8.161';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1864,16 +1864,11 @@
           : ' — dry board, few draws: bet small to keep worse hands calling');
         var vulnNote = '';
         if ((hc === 'trips' || hc === 'twopair') && vuln.paired)
-          vulnNote = (hc === 'trips'
-            ? ' — three of a kind is strong, but a full house beats it, and the paired board makes full houses possible'
-            : ' — two pair is strong, but a full house beats it, and the paired board makes full houses possible') +
-            '. If raised big, slow down — a big raise here usually means the full house';
+          vulnNote = ' — a full house beats it. If raised big, slow down — that usually means the full house';
         else if ((hc === 'overpair' || hc === 'toppair') && vuln.flush)
-          vulnNote = ' — a flush beats you, and three cards to a flush are out there' +
-            '. If raised big, slow down — a big raise here usually means the flush';
+          vulnNote = ' — a flush beats you. If raised big, slow down — that usually means the flush';
         else if ((hc === 'overpair' || hc === 'toppair') && vuln.straight)
-          vulnNote = ' — a straight beats you, and four cards to a straight are out there' +
-            '. If raised big, slow down — a big raise here usually means the straight';
+          vulnNote = ' — a straight beats you. If raised big, slow down — that usually means the straight';
         var valueMath = '. Pot ' + fmt(pot) + ', bet ' + fmt(betSize) + '. ' +
           (frac >= 0.5
           ? (table.street === 'river'

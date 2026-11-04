@@ -160,6 +160,8 @@ var SPOTS = [
     street: 'turn', potBefore: 400, heroStack: 2000, nLive: 4, expect: 'check' },
   { name: 'trips-paired-dry', kind: 'leading', hero: [C(4, 1), C(9, 0)], board: TURN_TRIPS,
     street: 'turn', potBefore: 400, heroStack: 2000, nLive: 2, expect: 'bet', expectSize: 268 },
+  { name: 'tone-multiway-trips', kind: 'leading', hero: [C(4, 1), C(9, 0)], board: TURN_TRIPS,
+    street: 'turn', potBefore: 342, heroStack: 2000, nLive: 4, expect: 'bet', maxMsgLen: 400 },
   { name: 'small-dry-value', kind: 'leading', hero: [C(13, 1), C(13, 0)], board: Q725,
     street: 'turn', potBefore: 400, heroStack: 2000, nLive: 2, expect: 'bet', expectSize: 100 },
   { name: 'kevin-river-nathan-7', kind: 'facing-exact', villain: 'nathan',
@@ -256,6 +258,9 @@ setTimeout(function () {
       else if (!allowed) problems.push('bet ratio ' + ratio.toFixed(2) + 'x pot exceeds guardrail');
       if (spot.expectSize != null && size !== spot.expectSize)
         problems.push('expected size ' + spot.expectSize + ', got ' + size);
+      if (spot.maxMsgLen != null && strip(v.msg).length > spot.maxMsgLen)
+        problems.push('message ' + strip(v.msg).length + ' chars exceeds ' +
+          spot.maxMsgLen + ' tone budget');
       evNote = 'size ' + size + ' (' + (ratio == null ? '?' : ratio.toFixed(2)) + 'x pot)';
     }
     if (spot.kind === 'facing-exact') {

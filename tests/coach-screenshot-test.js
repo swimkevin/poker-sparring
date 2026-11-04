@@ -218,6 +218,17 @@ setTimeout(function () {
     'twopair paired message names the full-house danger (v1.8.142)');
   ok(twoPair.txt.indexOf('slow down') !== -1,
     'twopair paired message gives the fold-to-a-raise plan (v1.8.142)');
+  var toneTable = buildValueSpot([{ r: 4, s: 1 }, { r: 9, s: 0 }], pairedDry, 342, 2000, 4, 'turn');
+  H.setTable(toneTable);
+  H.setHandRec(null);
+  H.setDecisions([{ street: 'preflop', advice: 'fold', strength: 'strong', lesson: 'x', action: 'fold', followed: true }]);
+  var vTone = w.coachVerdict();
+  var txtTone = strip(vTone.html);
+  var msgTone = strip(vTone.msg);
+  console.log('  multiway paired-board tone spot says: ' + txtTone.slice(0, 220));
+  ok(vTone.advice === 'bet', 'multiway paired-board tone spot advice is bet (got ' + vTone.advice + ')');
+  ok(msgTone.length <= 400, 'multiway paired-board value message fits the tone budget (got ' + msgTone.length + ' chars, v1.8.161)');
+  ok(txtTone.length < 500, 'full multiway paired-board panel stays under the eval 500-char tone limit (got ' + txtTone.length + ', v1.8.161)');
   var dryRiver = [{ r: 2, s: 0 }, { r: 5, s: 1 }, { r: 8, s: 2 }, { r: 11, s: 3 }, { r: 13, s: 0 }];
   var riverDry = valueVerdict([{ r: 14, s: 2 }, { r: 14, s: 3 }], dryRiver, 400, 2000, 2, 'river');
   console.log('  river dry value says: ' + riverDry.txt.slice(0, 220));

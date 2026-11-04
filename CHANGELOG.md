@@ -1,3 +1,21 @@
+## [1.8.161] — Value-bet messages stop repeating the board danger
+
+The daily coach eval flagged two value-bet messages at 513 and 521
+characters, over its 500-char tone limit. The cause was stacking: the
+value branch explained the board danger twice — once in the sizing
+reason ("paired board: a full house beats you, so get value now") and
+again in a full vulnerability note ("three of a kind is strong, but a
+full house beats it, and the paired board makes full houses
+possible..."). The vulnerability notes are now one short clause each
+("a full house beats it. If raised big, slow down — that usually
+means the full house", same pattern for flush and straight boards),
+keeping the danger name and the fold-to-a-raise plan while cutting
+about 95 characters. The flagged shape — multiway trips on a paired
+board — now renders at 334 characters for the message, 423 for the
+full panel. The solver lab gains a tone budget for leading spots
+(`maxMsgLen`): the new multiway-trips spot fails at 426 characters
+pre-fix and passes post-fix.
+
 ## [1.8.160] — Solver lab now fails on gross EV errors, not just wrong actions
 
 The lab's Monte Carlo facing figures were report-only by design:
