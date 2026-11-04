@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.161';
+  var APP_VERSION = '1.8.162';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1839,14 +1839,14 @@
         var heroStack = hero.stack;
         var sprLine;
         var multiwayShoveBan = multiway && table.street !== 'river' && hc !== 'nut' && sprV > 1.5;
-        if (commit === 'commit' && !multiwayShoveBan && betSize < heroStack * 0.7) {
+        if (commit === 'commit' && !multiwayShoveBan && betSize < heroStack * 0.7 && table.street !== 'river') {
           betSize = heroStack;
           sprLine = ' The pot is already as big as your stack — a normal bet would leave almost nothing behind, so get it all in now.';
           return mkVerdict('bet', 'strong',
             '<b>All-in</b> (' + fmt(betSize) + ').' + sprLine + rangeNote,
             'When the pot is already about as big as your stack, a normal bet leaves almost nothing for later streets, so shoving now loses nothing.');
         }
-        sprLine = (commit === 'commit' && !multiwayShoveBan)
+        sprLine = (commit === 'commit' && !multiwayShoveBan && betSize >= heroStack * 0.7)
           ? ' The pot is already nearly as big as your stack, so this bet puts almost everything in anyway.'
           : '';
         var fracLabel = frac >= 0.7 ? '¾' : (frac >= 0.6 ? '⅔' : (frac >= 0.45 ? '½' : (frac >= 0.3 ? '⅓' : '¼')));

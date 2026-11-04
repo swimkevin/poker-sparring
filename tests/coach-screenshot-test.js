@@ -236,6 +236,13 @@ setTimeout(function () {
   ok(riverDry.size === 200, 'river dry value bets 1/2 pot, not 1/4 — no draws left to price (got ' + riverDry.size + ', v1.8.153)');
   ok(riverDry.txt.indexOf('last street') !== -1,
     'river dry value message names the last street (v1.8.153)');
+  var riverSpr = valueVerdict([{ r: 12, s: 1 }, { r: 13, s: 0 }],
+    [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }],
+    100, 140, 2, 'river');
+  console.log('  river SPR 1.4 value says: ' + riverSpr.txt.slice(0, 220));
+  ok(riverSpr.v.advice === 'bet', 'river SPR 1.4 value advice is bet (got ' + riverSpr.v.advice + ')');
+  ok(riverSpr.size === 67, 'river SPR 1.4 value bets 2/3 pot, not the whole stack (got ' + riverSpr.size + ', v1.8.162)');
+  ok(riverSpr.txt.indexOf('All-in') === -1, 'river SPR 1.4 value never shoves: no later streets left to protect (v1.8.162)');
   var wetRiver = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
   var riverWet = valueVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], wetRiver, 400, 2000, 2, 'river');
   console.log('  river wet value says: ' + riverWet.txt.slice(0, 200));

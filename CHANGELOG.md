@@ -1,3 +1,20 @@
+## [1.8.162] — River value hands bet the fraction, never commit-shove
+
+On the river, a strong hand at SPR 1.4 was told to go all-in (140
+into a 100 pot) because the pot was "nearly as big as the stack".
+That reasoning only works with streets left: a normal bet leaves
+almost nothing behind for later streets, so shoving loses nothing.
+On the river there are no later streets — a shove only folds the
+worse hands the value bet targets, which the coach's own river
+value text already says ("a shove would fold those hands out"). The
+commitment shove now skips the river entirely, so the same spot
+bets 2/3 pot (67) instead. The "puts almost everything in anyway"
+line is also gated on the bet actually being most of the stack, so
+a small river fraction bet no longer carries it. The low-SPR
+shove on earlier streets is unchanged, and the solver lab gains a
+river SPR 1.4 value spot that fails pre-fix (All-in 140) and passes
+post-fix (bet 67).
+
 ## [1.8.161] — Value-bet messages stop repeating the board danger
 
 The daily coach eval flagged two value-bet messages at 513 and 521
