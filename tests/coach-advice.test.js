@@ -172,9 +172,9 @@ setTimeout(function () {
       [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
        { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }], 3, 30, 90);
     ok(pf3bet.advice === 'call', 'facing-3bet medium pair in position calls (got ' + pf3bet.advice + ')');
-    ok(stripAdvice(pf3bet.html).indexOf('Pay 90 to win 210') !== -1 &&
+    ok(stripAdvice(pf3bet.html).indexOf('Pay 90 to win 120') !== -1 &&
       stripAdvice(pf3bet.html).indexOf('need 43%') !== -1,
-      'facing-3bet call states pot-odds math: Pay 90 to win 210, need 43% (v1.8.159)');
+      'facing-3bet call states pot-odds math: Pay 90 to win 120, need 43% (v1.8.159, prize figure unified v1.8.165)');
 
     // Facing-4bet shove states the amount (v1.8.163).
     var pf4bet = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 270,

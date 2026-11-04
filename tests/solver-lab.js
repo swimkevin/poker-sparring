@@ -234,6 +234,14 @@ var SPOTS = [
     hero: [C(8, 2), C(6, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)], street: 'turn',
     potBefore: 500, bet: 300, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 900,
     timeline: betTimeline('turn', 300, 500) },
+  { name: 'preflop-prize-figure', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ],
+    expectWord: 'Pay 90 to win 120' },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',

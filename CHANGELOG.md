@@ -1,3 +1,16 @@
+## [1.8.165] — One pot-odds convention: the prize is the pot before your call
+
+Preflop pot-odds lines quoted the pot AFTER the call ("Pay 90 to
+win 210"), while postflop lines and the river veto quote the pot
+before it ("calling 669 to win 1,556" — the pot total in Kevin's
+hand). The preflop figure overstated the prize by exactly the call
+amount, so a player cross-checking streets saw two different
+conventions. Both preflop lines (facing-3bet calls, facing-open
+calls) now quote the pot total, matching postflop and the veto;
+the need percentage is unchanged and was already correct. The
+solver lab gains its first preflop spot, pinning the unified
+figure on a facing-3bet medium-pair call.
+
 ## [1.8.164] — Short-stack branch keys on the hero's stack, not the effective stack
 
 The tournament short-stack branch ("shove or fold") keyed on the

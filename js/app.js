@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.164';
+  var APP_VERSION = '1.8.165';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1560,7 +1560,7 @@
     if (spot === 'facing-3bet') {
       var effBB3 = effStackBB(vIdx);
       var need3 = toCall / (pot + toCall);
-      var math3 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — need <b>' + pct(need3) + '</b> to break even.';
+      var math3 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — need <b>' + pct(need3) + '</b> to break even.';
       if (tier === 1) {
         if (legal.canRaise) {
           var fourTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 2.3)));
@@ -1698,7 +1698,7 @@
       ((V && villainBluffy(V.archetype) > 0.55) ? 0.05 : 0);
 
     var handDesc = c.nmHtml + (suited ? ' suited' : '');
-    var mathLine = 'Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot + toCall) + '</b> — you need to win <b>' +
+    var mathLine = 'Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — you need to win <b>' +
       pct(need) + '</b> of the time' + (rp > 0 ? ' (a bit more in tournaments)' : '') + '. ' +
       handDesc + ' wins about <b>' + pct(adjEq) + '</b> here. ';
     if (adjEq > threshold + 0.03)
