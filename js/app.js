@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.165';
+  var APP_VERSION = '1.8.166';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1480,6 +1480,10 @@
     var tier = c.tier;
     var shoveTo = Math.min(c.legal.maxRaiseTo, table.players[0].stack + (table.players[0].bet || 0));
     function shoveVerdict(why, lesson) {
+      if (!c.legal.canRaise)
+        return mkVerdict('call', 'strong',
+          'Short stack (' + Math.round(effBB) + 'bb) — you can\'t raise, so with ' + c.nmHtml + ', <b>call</b> it off.',
+          lesson);
       return mkVerdict('raise', 'strong',
         'Short stack (' + Math.round(effBB) + 'bb) — it\'s <b>shove or fold</b>. ' + why +
         ' <b>Shove</b> ' + fmt(shoveTo) + '.',
@@ -1531,6 +1535,14 @@
 
     var steal = isStealSpot();
     if (steal) {
+      if (!legal.canRaise)
+        return tier <= 2
+          ? mkVerdict('call', 'strong',
+            'You only have ' + fmt(hero.stack) + ' left — with ' + c.nmHtml + ', <b>call</b> it off.',
+            'With almost no chips left, premiums still go in — everything else folds.')
+          : mkVerdict('fold', 'strong',
+            '<b>Fold</b> — you can\'t raise to steal with only ' + fmt(hero.stack) + ' left.',
+            'No raise means no steal — save the chips for a real hand.');
       var folders = steal.targets.filter(function (p) { return villainFoldy(p.archetype) > 0.5; });
       var stealTo = Math.round(table.bb * 2.5);
       if (tier <= 2)
@@ -1612,6 +1624,14 @@
 
     var nRaises = preflopRaiseCount();
     if (nRaises === 0 && countLimpers() > 0) {
+      if (!legal.canRaise)
+        return tier <= 2
+          ? mkVerdict('call', 'strong',
+            'Limpers are weak, and you only have ' + fmt(hero.stack) + ' left — with ' + c.nmHtml + ', <b>call</b> it off.',
+            'Premiums go in even when you can\'t raise — limpers rarely have much.')
+          : mkVerdict('fold', 'strong',
+            '<b>Fold</b> — you can\'t raise the limpers with only ' + fmt(hero.stack) + ' left.',
+            'No raise means no isolation — wait for a real hand.');
       var isoTo = table.bb * 4;
       if (tier <= 2)
         return mkVerdict('raise', 'strong',

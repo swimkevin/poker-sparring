@@ -218,6 +218,44 @@ setTimeout(function () {
       ok(txtSs.indexOf('25') !== -1, 'deep hero gets the normal steal raise to 25 (v1.8.164)');
     })();
 
+    // Coach never advises raise when raise is illegal (v1.8.166).
+    (function () {
+      function illegalTable(heroStack, vBet, currentBet, timeline, mode) {
+        var s = d.createElement('script');
+        s.textContent = [
+          'window.__ilTable = new PokerTable({ players: [',
+          '  { name: "hero", isHero: true }, { name: "V", archetype: ARCHETYPES.filter(function (a) { return a.id === "rock"; })[0] }, { name: "S" },',
+          '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+          '], sb: 5, bb: 10, startingStack: 2000 });',
+          'var t = window.__ilTable;',
+          't.button = 0; t.street = "preflop"; t.currentBet = ' + currentBet + '; t.pot = 0; t.sbIdx = 1; t.bbIdx = 2;',
+          't.players[0].hole = [{ r: 14, s: 0 }, { r: 14, s: 1 }];',
+          't.players[0].stack = ' + heroStack + '; t.players[0].bet = 0;',
+          't.players[1].stack = 2000; t.players[1].bet = ' + vBet + ';',
+          't.players[2].stack = 2000; t.players[2].bet = 10;',
+          't.community = [];',
+          'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+        ].join('\n');
+        d.head.appendChild(s);
+        var t = w.__ilTable;
+        H.setTable(t);
+        H.setHandRec({ timeline: timeline });
+        H.setDecisions([]);
+        if (mode) H.setGameMode(mode);
+        var v = w.coachVerdict();
+        if (mode) H.setGameMode('cash');
+        return v;
+      }
+      var vSteal = illegalTable(10, 5, 10, []);
+      ok(vSteal.advice === 'call', 'steal spot with 10 chips facing 10 advice is call, not an illegal raise (got ' + vSteal.advice + ', v1.8.166)');
+      var vLimp = illegalTable(10, 10, 10,
+        [{ t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 25 }]);
+      ok(vLimp.advice === 'call', 'limpers spot with 10 chips facing 10 advice is call, not an illegal raise (got ' + vLimp.advice + ', v1.8.166)');
+      var vShove = illegalTable(50, 100, 100,
+        [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 115 }], 'tourney');
+      ok(vShove.advice === 'call', 'short hero facing a shove advice is call, not an illegal raise (got ' + vShove.advice + ', v1.8.166)');
+    })();
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

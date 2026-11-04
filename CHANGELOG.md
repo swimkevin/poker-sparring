@@ -1,3 +1,15 @@
+## [1.8.166] — Coach never advises raise when raise is illegal
+
+The daily eval caught a preflop "raise" advised with toCall 10,
+canRaise false — a hero down to 10 chips being told to steal-raise
+to 25. The steal and limpers branches never checked legality: both
+now return a call for premiums (the last chips still go in ahead)
+and a fold otherwise when no raise is possible. The same hole
+existed in the tournament shove branch — a short hero facing a
+shove was told to "shove" when only call/fold exist — so the
+shove verdict now calls it off instead. Every other raise line
+already checked canRaise.
+
 ## [1.8.165] — One pot-odds convention: the prize is the pot before your call
 
 Preflop pot-odds lines quoted the pot AFTER the call ("Pay 90 to
