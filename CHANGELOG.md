@@ -1,3 +1,26 @@
+## [1.8.168] — Multiway means three or more players in the pot
+
+`isMultiway()` required three live opponents (four or more players
+total), so a three-player pot — hero plus two opponents — was treated
+as heads-up everywhere it mattered: the shared-runout dilution sim
+never ran, the threshold and reverse-implied-odds adjustments never
+applied, and semi-bluffs and thin value bets were allowed as if only
+one player had to fold. The equity overstatement was large: Ace-King
+high on a queen-high turn quoted 53% against a lag's bet in a
+three-way pot, where the true shared-runout equity against both
+opponents is about 22% — a fold at a 30% price that the coach called.
+The river-veto already treated two opponents as multiway
+(`nOpp > 1`), so the facing-bet math disagreed with the veto about
+what multiway means. New: multiway is two or more live opponents, so
+every multiway adjustment (dilution sim, threshold, reverse implied
+odds, bluff bans, value floor, commitment) applies to three-way pots,
+and the multiway note shows from three players up. The lab gains two
+three-way dilution spots (a flush-draw call and the Ace-King fold).
+
+Verified: the three-way sweep that found this now shows no dilution
+misses — the Ace-King turn spot quotes 24% (was 53%) and folds; the
+four-way dilution spots are unchanged.
+
 ## [1.8.167] — Air is priced against the betting range, not the bluff rate
 
 The v1.8.150 air cap said: with no pair, you only win when the villain

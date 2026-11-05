@@ -552,5 +552,15 @@ console.log('\n48. v1.8.153: geometric sizing part 2 — river value floor (no d
     'value branch floors river value bets at half pot');
 }
 
+console.log('\n49. v1.8.168: multiway means three or more players in the pot');
+{
+  ok(/function isMultiway\(\) \{\s*return liveOpponents\(\)\.length >= 2;/.test(src),
+    'isMultiway counts two live opponents as multiway');
+  ok(src.indexOf('if (n >= 3) return') !== -1,
+    'the multiway note shows for three-way pots');
+  ok(src.indexOf('liveOpponents().length >= 3') === -1,
+    'no three-opponent multiway threshold remains');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

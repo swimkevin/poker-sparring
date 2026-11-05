@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.167';
+  var APP_VERSION = '1.8.168';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -909,7 +909,7 @@
     return hole.length === 2 && hole[0].s === hole[1].s;
   }
   function isMultiway() {
-    return liveOpponents().length >= 3;
+    return liveOpponents().length >= 2;
   }
 
   function pickVillain() {
@@ -1429,7 +1429,7 @@
   function multiwayNote() {
     if (table.street !== 'preflop') {
       var n = table.livePlayers().length;
-      if (n >= 4) return ' <span class="coach-multi">👥 ' + n + '-way pot — bluffs rarely work multiway; bet only for value.</span>';
+      if (n >= 3) return ' <span class="coach-multi">👥 ' + n + '-way pot — bluffs rarely work multiway; bet only for value.</span>';
       return '';
     }
     var limps = countLimpers();
