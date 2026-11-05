@@ -568,5 +568,19 @@ console.log('\n50. v1.8.169: the bluffer lean never overrides diluted multiway e
     'the bluffer-lean call is gated off when the equity was multiway-diluted');
 }
 
+console.log('\n51. v1.8.170: facing-3bet calls respect pot odds');
+{
+  ok(src.indexOf('var adjEq3 = eq3 + credit3 - debit3;') !== -1,
+    'the facing-3bet branch prices equity against the villain\'s 3-bet range');
+  ok(src.indexOf('estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, threeTier || 3)), 500)') !== -1,
+    'the 3-bet equity uses 500 sims so the gate is not flipped by 150-sim noise');
+  ok(src.indexOf('villainStubborn: stubborn3, inPosition: inPos }) * 0.5;') !== -1,
+    'the 3-bet implied-odds credit is halved: a 3-bettor\'s tight range pays off less and dominates more');
+  ok(src.indexOf('(adjEq3 > need3 || setMine2)') !== -1,
+    'tier-2 calls need the equity or the 15x set-mining depth, not just position');
+  ok(src.indexOf('tier <= 4 && inPos && effBB3 >= 30 && adjEq3 > need3') !== -1,
+    'playable-hand 3-bet calls are gated on the equity clearing the price');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.169';
+  var APP_VERSION = '1.8.170';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1573,6 +1573,14 @@
       var effBB3 = effStackBB(vIdx);
       var need3 = toCall / (pot + toCall);
       var math3 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — need <b>' + pct(need3) + '</b> to break even.';
+      var threeTier = (V && V.archetype && V.archetype.threeBetTier) || 3;
+      var eq3 = estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, threeTier || 3)), 500);
+      var suited3 = isSuited(hero.hole);
+      var stubborn3 = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
+      var tight3 = V ? villainTighty(V.archetype) : 0.4;
+      var credit3 = impliedCredit({ draw: suited3 && tier <= 4, smallPair: false, effStackBB: effBB3, villainStubborn: stubborn3, inPosition: inPos }) * 0.5;
+      var debit3 = (tier === 3 && !suited3 && tight3 > 0.6) ? 0.05 : 0;
+      var adjEq3 = eq3 + credit3 - debit3;
       if (tier === 1) {
         if (legal.canRaise) {
           var fourTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 2.3)));
@@ -1584,12 +1592,15 @@
           'They went all-in. With ' + c.nmHtml + ', <b>call</b> — your hand is usually ahead here.',
           'Never fold QQ or better to a single all-in: they often have worse hands.');
       }
-      if (tier === 2)
-        return mkVerdict(inPos && effBB3 >= 40 ? 'call' : 'fold', inPos && effBB3 >= 40 ? 'marginal' : 'strong',
-          inPos && effBB3 >= 40
+      if (tier === 2) {
+        var setMine2 = hero.hole[0].r === hero.hole[1].r && toCall * 15 <= effStackChips(vIdx);
+        var call2 = inPos && effBB3 >= 40 && (adjEq3 > need3 || setMine2);
+        return mkVerdict(call2 ? 'call' : 'fold', call2 ? 'marginal' : 'strong',
+          call2
             ? '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re deep. Fold to more heat.' + math3
-            : '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a re-raise' + (inPos ? '' : ' out of position') + '.',
+            : '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a re-raise' + (inPos ? '' : ' out of position') + '.' + (inPos && effBB3 >= 40 ? math3 : ''),
           'Medium pairs and broadways shrink fast against re-raises — call only deep and in position.');
+      }
       if (isSmallPair(hero.hole)) {
         if (toCall * 15 <= effStackChips(vIdx))
           return mkVerdict('call', 'marginal',
@@ -1599,12 +1610,12 @@
           '<b>Fold</b> — too shallow to chase a set against a re-raise. The implied odds aren\'t there.',
           'Folding small pairs to re-raises when shallow is disciplined, not weak.');
       }
-      if (tier <= 4 && inPos && effBB3 >= 30)
+      if (tier <= 4 && inPos && effBB3 >= 30 && adjEq3 > need3)
         return mkVerdict('call', 'marginal',
           '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.' + math3,
           'Calling re-raises in position with playable hands is fine when deep.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.',
+        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.' + (tier <= 4 && inPos && effBB3 >= 30 ? math3 : ''),
         'Fold hands like AJo and KQo to re-raises: when called, you\'re usually dominated.');
     }
 

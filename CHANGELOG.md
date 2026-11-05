@@ -1,3 +1,22 @@
+## [1.8.170] — Facing-3bet calls respect pot odds
+
+The facing-3bet branch called medium pairs and playable hands in
+position whenever the stacks were deep — it never looked at the price.
+So JJ called a rock's 3-bet to 200 needing 41% with ~25% equity, and
+AQo, KQs, 76s, JTs and A5s all called 3-bets needing 35–41% with
+20–26% equity. New: the branch prices the hand against the villain's
+3-bet range (500-sim equity, halved implied-odds credit — a 3-bettor's
+tight range pays off less and dominates more than an opener's) and
+calls only when that clears the need. Tier-2 pairs keep their
+set-mining escape hatch: JJ still calls a 3-bet to 90, where 15x the
+call sits behind, and folds the 3-bet to 200, where it does not. The
+lab gains three preflop spots pinning the fold, the fold, and the
+control call.
+
+Verified: the facing-3bet sweep that found this now reports 2 gross
+flags across 540 spots (was 30) — both are the small-pair-vs-wide-range
+case fixed in the next iteration.
+
 ## [1.8.169] — The bluffer lean never overrides diluted multiway equity
 
 The postflop "call lighter vs a heavy bluffer" branch lets the coach

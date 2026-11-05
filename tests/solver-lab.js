@@ -258,6 +258,28 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
     ],
     expectWord: 'Pay 90 to win 120' },
+  { name: '3bet-jj-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
+    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
+    ],
+    expectWord: 'Pay 200 to win 230' },
+  { name: '3bet-aqo-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
+    ] },
+  { name: '3bet-jts-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(11, 2), C(10, 2)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',
