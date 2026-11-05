@@ -83,6 +83,51 @@ function estimateEquityVsRange(hole, maxTier, iters) {
   return score / iters;
 }
 
+function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
+  iters = iters || 150;
+  var known = {};
+  hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var pool = [];
+  for (var i = 0; i < rest.length; i++)
+    for (var j = i + 1; j < rest.length; j++) {
+      var h = [rest[i], rest[j]];
+      var made = evaluate7(h.concat(community)).cat >= 1;
+      if (made === wantMade) pool.push(h);
+    }
+  if (!pool.length) return null;
+  var boardNeed = 5 - community.length;
+  var score = 0;
+  for (var k = 0; k < iters; k++) {
+    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vknown = {};
+    vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
+    hole.concat(community).forEach(function (c) { vknown[_key(c)] = 1; });
+    var deck = [];
+    for (var s2 = 0; s2 < 4; s2++)
+      for (var r2 = 2; r2 <= 14; r2++)
+        if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
+    for (var d = 0; d < boardNeed; d++) {
+      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
+    }
+    var board = community.concat(deck.slice(0, boardNeed));
+    var myScore = evaluate7(hole.concat(board)).score;
+    var opScore = evaluate7(vh.concat(board)).score;
+    if (myScore > opScore) score += 1;
+    else if (myScore === opScore) score += 0.5;
+  }
+  return score / iters;
+}
+function estimateEquityVsMadeRange(hole, community, iters) {
+  return estimateEquityVsBoardClass(hole, community, iters, true);
+}
+function estimateEquityVsAirRange(hole, community, iters) {
+  return estimateEquityVsBoardClass(hole, community, iters, false);
+}
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
@@ -508,6 +553,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
+    estimateEquityVsMadeRange: estimateEquityVsMadeRange,
+    estimateEquityVsAirRange: estimateEquityVsAirRange,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
     estimateEquityVsMadePoolMulti: estimateEquityVsMadePoolMulti,

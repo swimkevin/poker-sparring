@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.166';
+  var APP_VERSION = '1.8.167';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2029,10 +2029,15 @@
     var bCredit = (hc === 'air' || hc === 'secondpair' || hc === 'weakpair')
       ? blockerCredit(hero.hole, table.community) : 0;
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
-    var airCapped = false;
-    if (hc === 'air' && adjEq > bluffy + 0.05) {
-      adjEq = bluffy + 0.05;
-      airCapped = true;
+    var airPriced = false;
+    if (hc === 'air' && !diluted && !narrowedByCall) {
+      var eqMade = estimateEquityVsMadeRange(hero.hole, table.community, 300);
+      var eqAir = estimateEquityVsAirRange(hero.hole, table.community, 300);
+      if (eqMade != null && eqAir != null) {
+        adjEq = Math.max(0, Math.min(1, (1 - bluffy) * eqMade + bluffy * eqAir));
+        if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
+        airPriced = true;
+      }
     }
 
     var veto = riverMonsterVeto(c);
@@ -2135,6 +2140,7 @@
       : 'simulated 150× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     if (diluted) eqSource = eqSource.replace('150×', '300×') + ', beating everyone still in';
+    if (airPriced) eqSource = 'simulated 300× vs the hands ' + vName + ' bets — made hands and bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' +
@@ -2144,7 +2150,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (airCapped ? ' With no pair, you only win when ' + vName + ' is bluffing.' : '');
+      (airPriced ? ' With no pair, that counts improving and the times ' + vName + ' is bluffing.' : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."

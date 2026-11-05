@@ -1,3 +1,32 @@
+## [1.8.167] — Air is priced against the betting range, not the bluff rate
+
+The v1.8.150 air cap said: with no pair, you only win when the villain
+is bluffing, so equity is capped at the villain's bluff frequency plus
+0.05. That premise is false for overcard air: Ace-King high on a
+queen-high turn beats the weak pairs in a tight player's betting range
+about 12% of the time by improving — the bluff rate (2% for a trapper
+like Nathan) is not the ceiling, it is one component. The cap folded a
++EV call (50 into 500 needs 8%; the hand wins about 12%) and quoted a
+false 7% equity figure for every air hand facing a bet. New: for air
+hands, equity is a mixture over the betting range — (1 − bluff rate) ×
+equity vs made hands plus bluff rate × equity vs air, each simulated
+300× on shared runouts. Two new equity helpers
+(`estimateEquityVsMadeRange`, `estimateEquityVsAirRange`) sample the
+villain's made and unpaired hands on the current board. The price is
+skipped when the range was narrowed by an earlier big call (there the
+villain's bet is value, not bluffs, so the narrowed-range sim stands),
+and multiway pots keep the shared-runout dilution sim instead. The
+message now names the pricing ("simulated 300× vs the hands he bets —
+made hands and bluffs").
+
+Verified: Ace-King high vs Nathan's 25-into-500 turn bet now calls at
+about 12% vs a 5% price, the same hand vs a 150 bet still folds at
+about 12% vs a 23% price, and the narrowed-range spot (villain called
+a big bet, then bets) still folds — the mixture does not override a
+narrowed value range. The old air-cap lab spot is replaced by the two
+new spots; the trap test pins the call at a tiny price and the fold at
+a real price.
+
 ## [1.8.166] — Coach never advises raise when raise is illegal
 
 The daily eval caught a preflop "raise" advised with toCall 10,

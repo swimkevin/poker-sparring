@@ -517,10 +517,18 @@ console.log('\n44. v1.8.149: preflop-to-postflop range consistency — an earlie
     'narrowed message explains the earlier big call');
 }
 
-console.log('\n45. v1.8.150: bluff-catch thresholds keyed to villain bluff frequency');
+console.log('\n45. v1.8.167: air priced vs the betting range, not the bluff rate');
 {
-  ok(src.indexOf('airCapped') !== -1,
-    'facing math caps air equity by the villain bluff frequency');
+  ok(src.indexOf('airPriced') !== -1,
+    'facing math prices air against the betting range (made hands + bluffs)');
+  ok(equitySrc.indexOf('estimateEquityVsMadeRange') !== -1,
+    'equity helper prices air vs the villain made range');
+  ok(equitySrc.indexOf('estimateEquityVsAirRange') !== -1,
+    'equity helper prices air vs the villain air range');
+  ok(src.indexOf('airCapped') === -1,
+    'the bluff-rate cap is gone from the coach');
+  ok(src.indexOf('!narrowedByCall') !== -1,
+    'the betting-range price skips narrowed ranges (a big earlier call means value, not bluffs)');
 }
 
 console.log('\n46. v1.8.151: tourney risk premium — the veto call respects tournament pressure');

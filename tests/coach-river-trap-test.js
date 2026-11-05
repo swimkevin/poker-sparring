@@ -176,11 +176,16 @@ setTimeout(function () {
   ok(strip(narrowed.html).indexOf('called a big bet earlier') !== -1,
     'narrowed message names the earlier big call (v1.8.149)');
   var airTop = [{ r: 14, s: 0 }, { r: 13, s: 1 }];
-  var airCap = setupFacing('nathan', airTop, dryBoard, 2, 500, 50);
+  var airCap = setupFacing('nathan', airTop, dryBoard, 2, 500, 150);
   console.log('  air-cap says: ' + strip(airCap.html).slice(0, 220));
-  ok(airCap.advice === 'fold', 'air vs a near-never bluffer folds even at a small price (got ' + airCap.advice + ', v1.8.150)');
-  ok(strip(airCap.html).indexOf('only win when') !== -1,
-    'air-cap message names the bluff-catch logic (v1.8.150)');
+  ok(airCap.advice === 'fold', 'air vs a near-never bluffer folds at a real price (got ' + airCap.advice + ', v1.8.167)');
+  ok(strip(airCap.html).indexOf('made hands and bluffs') !== -1,
+    'air message prices the betting range, not the bluff rate (v1.8.167)');
+  var airCall = setupFacing('nathan', airTop, dryBoard, 2, 500, 25);
+  console.log('  air-call says: ' + strip(airCall.html).slice(0, 220));
+  ok(airCall.advice === 'call', 'same air calls at a tiny price — overcard equity beats the price (got ' + airCall.advice + ', v1.8.167)');
+  ok(strip(airCall.html).indexOf('made hands and bluffs') !== -1,
+    'air call message prices the betting range (v1.8.167)');
   var pairedDrawBoard = [{ r: 12, s: 2 }, { r: 12, s: 1 }, { r: 7, s: 2 }, { r: 5, s: 3 }];
   var nutDraw = [{ r: 14, s: 2 }, { r: 2, s: 2 }];
   var pairedDraw = setupFacing('rock', nutDraw, pairedDrawBoard, 4, 500, 350);
