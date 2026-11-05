@@ -582,5 +582,15 @@ console.log('\n51. v1.8.170: facing-3bet calls respect pot odds');
     'playable-hand 3-bet calls are gated on the equity clearing the price');
 }
 
+console.log('\n52. v1.8.171: small pairs call when ahead of a wide range');
+{
+  ok(src.indexOf('if (adjEq3 > need3)') !== -1,
+    'the facing-3bet small-pair branch calls when the pair is ahead, not only when set-mining pays');
+  ok(src.indexOf('if (adjEq > threshold)') !== -1,
+    'the facing-open small-pair branch calls when the pair clears the price');
+  ok(src.indexOf('var vOpenTier') < src.indexOf('Set-mining needs about 15'),
+    'the facing-open equity is computed before the small-pair branch so the pair can use it');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

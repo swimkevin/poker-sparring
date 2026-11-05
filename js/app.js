@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.170';
+  var APP_VERSION = '1.8.171';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1606,6 +1606,10 @@
           return mkVerdict('call', 'marginal',
             '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math3,
             'You can call re-raises with small pairs only when ~15× the call sits behind.');
+        if (adjEq3 > need3)
+          return mkVerdict('call', 'marginal',
+            '<b>Call</b> — ' + c.nmHtml + ' wins about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s wide re-raise range, so the price is right even without a set.' + math3,
+            'Small pairs win unimproved against wide ranges — don\'t fold a favorite just because the set-mining math fails.');
         return mkVerdict('fold', 'strong',
           '<b>Fold</b> — too shallow to chase a set against a re-raise. The implied odds aren\'t there.',
           'Folding small pairs to re-raises when shallow is disciplined, not weak.');
@@ -1694,25 +1698,6 @@
         'Re-raise premiums for value: 3× in position, 4× out of position.');
     }
 
-    if (isSmallPair(hero.hole)) {
-      if (toCall * 15 <= effStackChips(vIdx) && effStackBB(vIdx) >= 12)
-        return mkVerdict('call', 'marginal',
-          'Call <b>' + fmt(toCall) + '</b> — hunting three of a kind: ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
-          'Set-mining needs about 15× the call behind: you miss the set most flops.');
-      return mkVerdict('fold', 'strong',
-        '<b>Fold</b> the small pair — only ' + Math.round(effStackBB(vIdx)) + 'bb deep, not enough behind to get paid on the rare set.',
-        'Don\'t chase sets short-stacked: the math only works with deep money behind.');
-    }
-
-    var hasAce = hero.hole.some(function (x) { return x.r === 14; });
-    if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
-        villainFoldy(V.archetype) > 0.5 && !multiway) {
-      var bluffTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (inPos ? 3 : 4))));
-      return mkVerdict('raise', 'marginal',
-        'Mix in a <b>bluff re-raise</b> to ~<b>' + fmt(bluffTo) + '</b> (' + (inPos ? 3 : 4) + '× their open) sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
-        'Only bluff re-raise when they fold a lot — never into multiple players.');
-    }
-
     var vOpenTier = (V && V.archetype && V.archetype.openTier) || 3;
     var eq = rangeAwareEquityPreflop(hero.hole, vOpenTier);
     var effBB = effStackBB(vIdx);
@@ -1732,6 +1717,30 @@
     var mathLine = 'Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — you need to win <b>' +
       pct(need) + '</b> of the time' + (rp > 0 ? ' (a bit more in tournaments)' : '') + '. ' +
       handDesc + ' wins about <b>' + pct(adjEq) + '</b> here. ';
+
+    if (isSmallPair(hero.hole)) {
+      if (toCall * 15 <= effStackChips(vIdx) && effStackBB(vIdx) >= 12)
+        return mkVerdict('call', 'marginal',
+          'Call <b>' + fmt(toCall) + '</b> — hunting three of a kind: ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
+          'Set-mining needs about 15× the call behind: you miss the set most flops.');
+      if (adjEq > threshold)
+        return mkVerdict('call', 'marginal',
+          mathLine + 'The math says <b>call</b> — the pair is ahead of ' + vName + '\'s wide range, so you don\'t need the set.',
+          'Small pairs win unimproved against wide ranges — don\'t fold a favorite just because the set-mining math fails.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> the small pair — only ' + Math.round(effStackBB(vIdx)) + 'bb deep, not enough behind to get paid on the rare set.',
+        'Don\'t chase sets short-stacked: the math only works with deep money behind.');
+    }
+
+    var hasAce = hero.hole.some(function (x) { return x.r === 14; });
+    if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
+        villainFoldy(V.archetype) > 0.5 && !multiway) {
+      var bluffTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (inPos ? 3 : 4))));
+      return mkVerdict('raise', 'marginal',
+        'Mix in a <b>bluff re-raise</b> to ~<b>' + fmt(bluffTo) + '</b> (' + (inPos ? 3 : 4) + '× their open) sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
+        'Only bluff re-raise when they fold a lot — never into multiple players.');
+    }
+
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
         'Call when you win often enough to cover the price — the most important poker math skill.');

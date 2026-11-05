@@ -280,6 +280,19 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
     ] },
+  { name: '3bet-99-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(9, 1), C(9, 0)], board: [], street: 'preflop',
+    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
+    ] },
+  { name: 'open-55-ahead', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(5, 1), C(5, 0)], board: [], street: 'preflop',
+    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 200, pot: 215 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',

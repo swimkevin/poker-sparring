@@ -1,3 +1,22 @@
+## [1.8.171] — Small pairs call when ahead of a wide range
+
+The 15x set-mining rule was the only way a small pair could continue
+facing a raise — so 99 folded to a maniac's 3-bet to 200 despite 67%
+equity against the maniac's wide range at a 41% price, and 55 folded
+to a maniac's 20bb open despite being a favorite. A pair that is ahead
+unimproved does not need the set. New: in both the facing-3bet and
+facing-open small-pair branches, the pair also calls when its equity
+against the villain's range clears the price. The 15x rule stays for
+tight ranges, where the pair is behind unimproved and only the set
+pays. The facing-open branch now computes its equity before the
+small-pair branch (it used to return before the equity was ever
+calculated), so the pair can actually use it. The lab gains a 3-bet
+spot and an open spot pinning the calls.
+
+Verified: all 18 spot-checks across the previously flagged 3-bet hands
+now match (99 vs maniac calls; KQs, 76s, JTs, A5s, JJ, AQo vs tight
+3-bets still fold).
+
 ## [1.8.170] — Facing-3bet calls respect pot odds
 
 The facing-3bet branch called medium pairs and playable hands in
