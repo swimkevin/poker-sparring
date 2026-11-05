@@ -562,5 +562,11 @@ console.log('\n49. v1.8.168: multiway means three or more players in the pot');
     'no three-opponent multiway threshold remains');
 }
 
+console.log('\n50. v1.8.169: the bluffer lean never overrides diluted multiway equity');
+{
+  ok(src.indexOf('!narrowedByCall && !diluted && adjEq > threshold - 0.10') !== -1,
+    'the bluffer-lean call is gated off when the equity was multiway-diluted');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -1,3 +1,22 @@
+## [1.8.169] — The bluffer lean never overrides diluted multiway equity
+
+The postflop "call lighter vs a heavy bluffer" branch lets the coach
+call up to 10 points below the pot-odds threshold when the villain
+bluffs a lot. That is a heads-up adjustment: it assumes the only
+question is whether the bettor is bluffing. In a multiway pot the
+equity is already diluted by the shared-runout sim (you must beat
+everyone still in), so the lean double-counts the bluff factor on top
+of a number that already prices it — Ace-King high in a three-way pot
+quoted 24% against a maniac's bet and called a 30% price; a weak pair
+quoted 23% and called the same price. New: the lean branch is gated
+off whenever the equity came from the multiway dilution sim. The
+heads-up lean is unchanged (no probe found a heads-up lean error), and
+the strong-call branch is untouched. The lab gains a three-way
+maniac spot that folds.
+
+Verified: the multiway sweep that found this now reports zero gross
+flags across 576 spots (was 11).
+
 ## [1.8.168] — Multiway means three or more players in the pot
 
 `isMultiway()` required three live opponents (four or more players
