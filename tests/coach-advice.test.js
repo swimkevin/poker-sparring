@@ -37,7 +37,7 @@ function ok(cond, name) {
 function stripAdvice(html) {
   return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
-function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2) {
+function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, heroStack, villainStack) {
   var s = d.createElement('script');
   var arch = villainId
     ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
@@ -50,8 +50,8 @@ function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2) 
     'var t = window.__pfTable;',
     't.button = 0; t.street = "preflop"; t.currentBet = ' + open + '; t.pot = 0; t.sbIdx = 1; t.bbIdx = 2;',
     't.players[0].hole = ' + JSON.stringify(hero) + ';',
-    't.players[0].stack = 2000; t.players[0].bet = 0;',
-    't.players[1].stack = 2000; t.players[1].bet = ' + bet1 + ';',
+    't.players[0].stack = ' + (heroStack == null ? 2000 : heroStack) + '; t.players[0].bet = 0;',
+    't.players[1].stack = ' + (villainStack == null ? 2000 : villainStack) + '; t.players[1].bet = ' + bet1 + ';',
     't.players[2].stack = 2000; t.players[2].bet = ' + bet2 + ';',
     't.community = [];',
     'for (var i = ' + liveCount + '; i < 8; i++) t.players[i].folded = true;'
@@ -185,6 +185,29 @@ setTimeout(function () {
     ok(pf4bet.advice === 'raise', 'facing-4bet premium advice is raise (got ' + pf4bet.advice + ')');
     ok(stripAdvice(pf4bet.html).indexOf('2,000') !== -1,
       'facing-4bet shove states the all-in amount 2,000 (v1.8.163)');
+
+    // Big opens are priced against the strong range, not the open range (v1.8.172).
+    // A shove or a 6x+ open from a tight player is a tier-1 range, not a tier-2 open.
+    var pfShoveQQ = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 2000,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 2000, pot: 15 }], 2, 2000, 0, 2000, 0);
+    ok(!pfShoveQQ.error, 'open-shove verdict has no error' + (pfShoveQQ.error ? ' (' + pfShoveQQ.error + ')' : ''));
+    ok(pfShoveQQ.advice === 'fold', 'Rock open-shove, QQ folds (got ' + pfShoveQQ.advice + ')');
+    ok(stripAdvice(pfShoveQQ.html).indexOf('need to win 50%') !== -1,
+      'open-shove fold states the 50% price');
+    var pfShoveManiac = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'maniac', 2000,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 2000, pot: 15 }], 2, 2000, 0, 2000, 0);
+    ok(pfShoveManiac.advice === 'call', 'Maniac open-shove, QQ still calls (got ' + pfShoveManiac.advice + ')');
+    var pfBigQQ = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 100,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 15 }], 2, 100, 0, 2000, 1900);
+    ok(pfBigQQ.advice === 'fold', 'Rock 10x open, QQ folds (got ' + pfBigQQ.advice + ')');
+    var pfBigAA = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 100,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 15 }], 2, 100, 0, 2000, 1900);
+    ok(pfBigAA.advice === 'raise', 'Rock 10x open, AA still re-raises (got ' + pfBigAA.advice + ')');
+    ok(stripAdvice(pfBigAA.html).indexOf('to ~ 300') !== -1,
+      'AA vs 10x open states the exact size to ~300');
+    var pfSmallQQ = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 30,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 15 }], 2, 30, 0, 2000, 1970);
+    ok(pfSmallQQ.advice === 'raise', 'Rock 3x open, QQ still re-raises (got ' + pfSmallQQ.advice + ')');
 
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {

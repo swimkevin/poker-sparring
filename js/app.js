@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.171';
+  var APP_VERSION = '1.8.172';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1688,18 +1688,12 @@
         'The worst hands lose money even when the math looks close — they\'re hard to play and often dominated.');
     }
 
-    if (tier <= 2 && legal.canRaise) {
-      var mult = inPos ? 3 : 4;
-      var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * mult)));
-      return mkVerdict('raise', 'strong',
-        '<b>Re-raise</b> ' + c.nmHtml + ' to ~<b>' + fmt(three) + '</b> (' + mult + '× their open' +
-        (inPos ? ') — you have position' : ') — out of position, size up to charge them') +
-        '. You\'re usually ahead, so build the pot now.',
-        'Re-raise premiums for value: 3× in position, 4× out of position.');
-    }
-
-    var vOpenTier = (V && V.archetype && V.archetype.openTier) || 3;
-    var eq = rangeAwareEquityPreflop(hero.hole, vOpenTier);
+    var villainAllIn = !!(V && V.stack <= 0);
+    var bigOpen = villainAllIn || open >= table.bb * 6;
+    var priceTier = bigOpen
+      ? ((V && V.archetype && V.archetype.threeBetTier) || 3)
+      : ((V && V.archetype && V.archetype.openTier) || 3);
+    var eq = rangeAwareEquityPreflop(hero.hole, priceTier);
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
     var credit = impliedCredit({
@@ -1712,6 +1706,16 @@
     var rp = tourneyRiskPremium(effBB);
     var threshold = need + (multiway ? 0.04 : 0) + rp -
       ((V && villainBluffy(V.archetype) > 0.55) ? 0.05 : 0);
+
+    if (tier <= 2 && legal.canRaise && !villainAllIn && (!bigOpen || adjEq > 0.5)) {
+      var mult = inPos ? 3 : 4;
+      var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * mult)));
+      return mkVerdict('raise', 'strong',
+        '<b>Re-raise</b> ' + c.nmHtml + ' to ~<b>' + fmt(three) + '</b> (' + mult + '× their open' +
+        (inPos ? ') — you have position' : ') — out of position, size up to charge them') +
+        '. You\'re usually ahead, so build the pot now.',
+        'Re-raise premiums for value: 3× in position, 4× out of position.');
+    }
 
     var handDesc = c.nmHtml + (suited ? ' suited' : '');
     var mathLine = 'Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — you need to win <b>' +

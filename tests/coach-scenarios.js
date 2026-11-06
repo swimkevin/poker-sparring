@@ -588,8 +588,20 @@ console.log('\n52. v1.8.171: small pairs call when ahead of a wide range');
     'the facing-3bet small-pair branch calls when the pair is ahead, not only when set-mining pays');
   ok(src.indexOf('if (adjEq > threshold)') !== -1,
     'the facing-open small-pair branch calls when the pair clears the price');
-  ok(src.indexOf('var vOpenTier') < src.indexOf('Set-mining needs about 15'),
+  ok(src.indexOf('var priceTier') < src.indexOf('Set-mining needs about 15'),
     'the facing-open equity is computed before the small-pair branch so the pair can use it');
+}
+
+console.log('\n53. v1.8.172: big opens are priced against the strong range');
+{
+  ok(src.indexOf('var bigOpen = villainAllIn || open >= table.bb * 6;') !== -1,
+    'a 6x+ open or an all-in open counts as a big open');
+  ok(src.indexOf('var priceTier = bigOpen') !== -1,
+    'a big open prices the villain 3-bet tier, not the open tier');
+  ok(src.indexOf('!villainAllIn && (!bigOpen || adjEq > 0.5)') !== -1,
+    'premiums only 3-bet a big open when ahead of the strong range, never into an all-in');
+  ok(src.indexOf('var villainAllIn = !!(V && V.stack <= 0);') !== -1,
+    'an all-in villain is detected from a zero stack after the shove');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

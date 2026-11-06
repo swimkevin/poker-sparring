@@ -293,6 +293,30 @@ var SPOTS = [
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 200, pot: 215 }
     ] },
+  { name: 'open-shove-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 2, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 3015 }
+    ] },
+  { name: 'open-shove-maniac-qq-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 2, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 3015 }
+    ] },
+  { name: 'open-10x-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 100, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 115 }
+    ] },
+  { name: 'open-10x-rock-aa-raise', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 100, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'raise',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 115 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',

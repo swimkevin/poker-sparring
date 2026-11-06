@@ -1,3 +1,19 @@
+## [1.8.172] — A big open is a strong range, not an open range
+
+The facing-open branch priced every open against the villain's generic
+open range, ignoring the size of the open. So QQ called a tight player's
+300bb shove at a 50% price while winning about 28% against the tier-1
+range a shove actually represents (about −1,300 chips of EV), and
+re-raised a 10x open for value into the same range. Worse, a 20bb shove
+got a "re-raise to 600" — a raise into a player who is all-in and cannot
+fold. New: an open of 6x the blind or more, or any open from a player
+left with no stack, is priced against the villain's 3-bet (strong) range
+instead of the open range; premiums only 3-bet a big open when ahead of
+that strong range (AA still re-raises a 10x open, QQ folds it), and the
+coach never advises a raise into an all-in villain. A wide shover is
+unaffected: QQ still calls the maniac's shove at about 76%. The lab gains
+four spots pinning the folds, the maniac call, and the AA re-raise.
+
 ## [1.8.171] — Small pairs call when ahead of a wide range
 
 The 15x set-mining rule was the only way a small pair could continue
