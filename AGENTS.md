@@ -131,3 +131,146 @@ first; this file is the 30-second version.
   The v1.8.116 `overflow-y: auto` on `#online-view.online-scroll` died because
   the v1.8.117 `:has()` rule sets `overflow: visible` at higher specificity
   (3,2,0 vs 2,1,0) under the same `.online-scroll` condition.
+- Backup-restore version trap (v1.8.156–157, 2026-11-03): restoring a
+  file from a pre-bump backup silently reverts its version identity
+  (APP_VERSION went back to 1.8.155 while version.txt said 1.8.156) —
+  the v1.8.154 lesson in reverse. After ANY restore/copy from a
+  backup, re-verify version identity (APP_VERSION vs version.txt)
+  before testing or pushing. Prefer rebuilding the iteration's
+  edits onto the current tree over wholesale file restores.
+- push.py file-arg form (v1.8.156, 2026-11-03): each file arg must be
+  `repo-path:local-path` (e.g. `js/app.js:js/app.js`); bare paths
+  fail with ValueError. The loop body's shorthand omits the colons.
+- CI tests timing (2026-11-03): the tests workflow took up to ~20
+  min to go green on some commits, longer than the ~10 min local
+  suite. Do not conclude a run is dropped before ~20 min; re-check
+  rather than retriggering.
+- Eval tone is msg-internal stacking (v1.8.161, 2026-11-04): the
+  v1.8.113 budget gate covered stage/multiway extras, but the
+  value-bet message itself stacked why + vulnerability note +
+  sizing math + tail past the eval's 500-char limit. The lab now
+  has a `maxMsgLen` budget for leading spots; a value message
+  must fit 400 chars so the full panel stays under 500.
+- River commitment inversion (v1.8.162, 2026-11-04): SPR
+  commitment is a multi-street concept — on the river there are
+  no later streets, so a commit-shove only folds the worse hands
+  the value bet targets. `sprVerdict`'s river commitAt of 1.5 was
+  the trap; the shove branch now skips the river entirely.
+- Hero-stack vs effective stack (v1.8.164, 2026-11-04): the
+  tourney short-stack branch keyed on the effective stack, so a
+  deep hero facing a short villain got shove-or-fold advice for
+  hero's whole stack. Push/fold charts are hero-stack charts;
+  key the branch on hero's stack. Hero-short behavior is
+  unchanged (hero was the minimum there anyway).
+- Pot-odds prize convention (v1.8.165, 2026-11-04): preflop
+  quoted pot+toCall while postflop and the veto quote potTotal.
+  One convention now: the prize is the pot before your call,
+  matching Kevin's own "call 669 to win 1,556" framing. The lab
+  gains its first preflop spot pinning the figure.
+- Lab gross-check scope (2026-11-04): do NOT extend seeded
+  gross checks to bypass/narrowed/air-cap spots — those decisions
+  rest on non-range factors (overbet rule, narrowed-by-call,
+  air cap) that an openTier sim misjudges and would false-fail.
+  Gross checks belong only where the range sim is the decision
+  basis.
+- Probe hand-class fidelity (2026-11-04): a probe that calls AK
+  on a Q-high board "top pair" is measuring air — verify every
+  probe hand with `handClass` before trusting numbers (extends
+  v1.8.114). Keep jsdom probes lean with an explicit
+  `process.exit`: full verdict sweeps with equity sims take 10+
+  minutes; the solver-lab harness is the fast path.
+- Pin sizes from definitions, not intuition (2026-11-04): a
+  river test first expected 50, but `boardTexture` correctly
+  calls 5-7-9 wet (three ranks in a straight window), so the
+  value bet is 67. Read the sizing function before pinning a
+  size.
+- Braced-block syntax (2026-11-04): converting a single-return
+  `if` into a braced block needs the closing brace — run
+  `node --check` after any structural edit before the test run.
+- Unguarded raise advice (v1.8.166, 2026-11-04): the eval
+  flagged a preflop "raise" with canRaise false — a 10-chip hero
+  told to steal-raise to 25. The steal and limpers branches
+  never checked `legal.canRaise`, and the tourney shove branch
+  told a short hero facing a shove to "shove" when only
+  call/fold exist. Rule: every raise advice must be guarded by
+  canRaise; when it is not available, premiums call it off and
+  everything else folds. The 'open' branch is safe (toCall 0
+  with posted blinds means canRaise is stack > 0), and all
+  postflop raise lines already checked.
+- Probe pot-odds need (2026-11-05): the correct need is
+  `toCall / (potTotal + toCall)`, NOT `bet / (pot + bet)`.
+  The engine convention is `t.pot` excludes current-street
+  bets (they live in `player.bet`); `potTotal() = pot +
+  sum(player bets)`. A probe that puts bets into `t.pot`
+  double-counts the pot. Also `mkVerdict` returns
+  `{advice, ...}` — the field is `advice`, not `action`.
+- Probe reference noise (2026-11-05): a probe's SEEDED
+  reference equity is itself one Monte Carlo draw. A flag
+  near the threshold can be probe noise, not a coach bug:
+  measure the call rate over repeated runs (3/20 calls at a
+  2-point deficit = noise; 17/20 = systematic). Monte Carlo
+  sims must match the asserted gap — the 3-bet equity gate
+  needed 500 sims because 150-sim noise flipped borderline
+  calls, and the implied-odds credit is calibrated for
+  facing-opens, not 3-bets: it is halved for 3-bet pots
+  (tighter range, lower SPR, more reverse implied odds).
+- Branches that return before the equity (2026-11-05): the
+  facing-open small-pair branch returned before `adjEq` was
+  computed, so a small pair could never get an equity-based
+  call. When adding an equity condition to a branch, verify
+  the equity is computed BEFORE the branch, not after it.
+- Edit-tool duplicate matches (2026-11-05): when old_text
+  matches twice, the edit replaces the FIRST occurrence — a
+  move-then-delete sequence clobbered the just-inserted block.
+  Always include enough surrounding context to make the
+  match unique.
+- /tmp is wiped by restarts (2026-11-05): probe files in
+  /tmp vanished mid-run. Keep run-critical probes under the
+  repo (`hidden_files/`) or be ready to recreate them.
+- CI tests timing (2026-11-05): the tests workflow took
+  ~35 min on one commit (v1.8.167). Do not conclude a run is
+  dropped before ~35 min; re-check rather than retriggering.
+- Close-band lab spots flake on 150-sim noise (v1.8.176, 2026-11-06):
+  open-55-ahead flipped about 1 run in 10 because 55's edge over the call
+  threshold was ~1 sigma on 150 sims. Keep lab assertions at least 3 sigma
+  from the close-band edge — e.g. kill the implied-odds credit with a
+  shallow stack, as the bluff-3bet spot does at 10bb. Facing-open equity
+  now uses 500 sims like the 3-bet branch, for the same reason.
+- Service-restart loss, second sighting (v1.8.174, 2026-11-06): a restart
+  killed the full suite mid-run with no trace; the log file showed the
+  stall and the suite was re-run from scratch. If a backgrounded suite's
+  log stops advancing and no process is alive, re-run — never trust the
+  partial log as green.
+- Jargon literals in coach copy (v1.8.175, 2026-11-06): the scenario test
+  bans the literals '3-bet' and '4-bet' anywhere in app.js. A lesson that
+  said "3-bet shoves" failed the build — say "re-raise shoves" instead.
+- Push-list completeness, second sighting (v1.8.177/178, 2026-11-06): the
+  177 push omitted js/app.js because its logic was unchanged — but the bump
+  had touched its APP_VERSION, so live served 1.8.176 against version.txt
+  1.8.177 and CI failed. The push list is ALWAYS the changed files PLUS
+  all six bump-touched files (version.txt, app.js, package.json, sw.js,
+  index.html, README.md), even on a test-only repair. Verify the list
+  against the bump output file by file before pushing.
+- Push-list check, automated (v1.8.179, 2026-11-06): the manual
+  file-by-file check failed twice, so it is now a script —
+  `node hidden_files/verify-push-list.js <x.y.z> <repo-path>...` checks
+  version identity across all six bump files, requires all six in the
+  push list, and diffs the working tree against the `origin/main` tip
+  to catch any omitted changed file. It exits nonzero listing exactly
+  what is missing. Run it before EVERY push.py call; a failed check
+  blocks the push. Verified: passes a complete list, fails when
+  js/app.js is omitted, fails on version drift.
+- Postflop facing sims (v1.8.179, 2026-11-06): the preflop branches moved
+  to 500 sims in v1.8.176, but the postflop facing branch still ran 150 —
+  and a probe caught the same flip: second pair vs a big bet quoted
+  32–49% over 20 identical runs and flip-flopped call/fold 2/20. All
+  three facing equity calls now run 500 sims (probe repeats 20/20 call).
+  Rule: every equity estimate that feeds a call/fold boundary runs 500
+  sims; 150 is only for report-only figures.
+- Probe spots must carry the board (v1.8.179, 2026-11-06): a flip probe
+  omitted `board` from its spots, so `t.community` was undefined and
+  `handClass` threw on every run — all null advice, which looked like a
+  coach failure. The earlier raise probe never caught it because preflop
+  spots never touch the community. When a probe returns null advice,
+  print `v.error` first and check the probe setup before concluding
+  anything about the app (extends the v1.8.111/113 probe-fidelity rules).

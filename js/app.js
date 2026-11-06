@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.178';
+  var APP_VERSION = '1.8.179';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2037,10 +2037,10 @@
     }
     var singleRange = !!rangeEqTier || !!vTier;
     var eq2 = rangeEqTier
-      ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 150)
+      ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 500)
       : vTier
-      ? estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 150)
-      : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 150);
+      ? estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)
+      : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
 
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
@@ -2173,12 +2173,12 @@
     var strongAdj = rangeAdjust > 0.005;
 
     var eqSource = rangeEqTier
-      ? 'simulated 150× vs ' + vName + '\'s strong range'
+      ? 'simulated 500× vs ' + vName + '\'s strong range'
       : vTier
-      ? 'simulated 150× vs the kinds of hands ' + vName + ' plays'
-      : 'simulated 150× vs random hands — only a rough guide, since we have no read on his range yet' +
+      ? 'simulated 500× vs the kinds of hands ' + vName + ' plays'
+      : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
-    if (diluted) eqSource = eqSource.replace('150×', '300×') + ', beating everyone still in';
+    if (diluted) eqSource = eqSource.replace('500×', '300×') + ', beating everyone still in';
     if (airPriced) eqSource = 'simulated 300× vs the hands ' + vName + ' bets — made hands and bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +

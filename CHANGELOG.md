@@ -1,3 +1,14 @@
+## [1.8.179] — Postflop facing equity runs 500 sims, not 150
+
+The postflop facing-bet branch still estimated equity on 150 Monte Carlo
+sims while the preflop branches had moved to 500 (v1.8.176) — and a probe
+caught the same failure mode: second pair against a big bet from a tight
+player quoted 32–49% over 20 identical runs and flip-flopped call/fold
+2 times in 20. Same spot, same cards, different advice. All three facing
+equity calls now run 500 sims; the probe repeats 20/20 call with a
+narrower 38–49% band, and the lab gains a `facing-2ndpair-rock-call`
+spot. The message now says "simulated 500×" to match.
+
 ## [1.8.178] — Repair: the 1.8.177 push missed js/app.js
 
 The v1.8.177 push listed every changed file except js/app.js, which the

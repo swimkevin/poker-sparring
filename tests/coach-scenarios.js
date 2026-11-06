@@ -242,14 +242,14 @@ console.log('\n20. Honest equity vs strong ranges (v1.8.71, v1.8.99)');
   // number the advice is based on — no inflated figure, no fudge factor.
   ok(src.includes("s strong range'"), 'range named in the math line vs strong ranges');
   ok(src.includes('to break even'), 'break-even explained in plain words');
-  ok(src.includes("'simulated 150× vs ' + vName + '\\'s strong range'") ||
-     src.includes("simulated 150× vs ' + vName + '"), 'equity source names the strong range');
+  ok(src.includes("'simulated 500× vs ' + vName + '\\'s strong range'") ||
+     src.includes("simulated 500× vs ' + vName + '"), 'equity source names the strong range');
 }
 
 console.log('\n21. Win-% estimation explained (v1.8.71)');
 {
   // Kevin: explain how the "you win X%" is calculated, beginner-friendly.
-  ok(src.includes('simulated 150× vs random hands'), 'Monte Carlo explained');
+  ok(src.includes('simulated 500× vs random hands'), 'Monte Carlo explained');
   ok(!src.includes('lowered for their strength'), 'no more fudge-factor wording');
 }
 
@@ -451,8 +451,12 @@ console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call'
 {
   ok(src.indexOf('var vTier = (V && V.archetype && V.archetype.openTier) || 0;') !== -1,
     'facing math falls back to the villain archetype openTier range');
-  ok(src.indexOf('simulated 150× vs the kinds of hands ') !== -1,
+  ok(src.indexOf('simulated 500× vs the kinds of hands ') !== -1,
     'archetype-range source wording names the kinds of hands he plays');
+  ok(src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 500)') !== -1 &&
+     src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)') !== -1 &&
+     src.indexOf('estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500)') !== -1,
+    'postflop facing equity runs 500 sims, not 150: 150-sim noise flipped borderline calls 2/20 runs');
   ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 300)') !== -1,
     'multiway facing equity is a shared-runout sim across all live opponents');
   ok(src.indexOf('beating everyone still in') !== -1,
