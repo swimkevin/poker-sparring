@@ -361,6 +361,60 @@ setTimeout(function () {
       ok(vShove.advice === 'call', 'short hero facing a shove advice is call, not an illegal raise (got ' + vShove.advice + ', v1.8.166)');
     })();
 
+    // Leak tracker uses range equity, not random-hand equity (v1.8.181):
+    // random equity hid bad calls against tight ranges (second pair is ~64%
+    // vs a random hand but ~21% vs Rock's strong range) and flagged correct
+    // folds to tight players as weak. The tracker now prices the villain's
+    // range the same way the coach does.
+    (function () {
+      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action) {
+        var s = d.createElement('script');
+        var arch = villainId
+          ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
+          : 'null';
+        s.textContent = [
+          'window.__lkTable = new PokerTable({ players: [',
+          '  { name: "hero", isHero: true }, { name: "V", archetype: ' + arch + ' }, { name: "S" },',
+          '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+          '], sb: 5, bb: 10, startingStack: 2000 });',
+          'var t = window.__lkTable;',
+          't.button = 0; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
+          't.players[0].hole = ' + JSON.stringify(hero) + ';',
+          't.players[0].stack = 2000; t.players[0].bet = 0;',
+          't.players[1].stack = 2000; t.players[1].bet = ' + villainBet + ';',
+          't.community = ' + JSON.stringify(board) + ';',
+          'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+        ].join('\n');
+        d.head.appendChild(s);
+        var t = w.__lkTable;
+        H.setTable(t);
+        H.setHandRec({ timeline: timeline });
+        H.setDecisions([]);
+        return H.detectLeak(action);
+      }
+      var Q725 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+      var leakBad = postflopLeak([{ r: 11, s: 0 }, { r: 9, s: 1 }], 'rock', Q725, 'turn', 200, 150, 150,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 150, pot: 350 }], 'call');
+      ok(leakBad && leakBad.type === 'bad-chase',
+        'J9 overcards calling Rock\'s turn bet flags bad-chase (range eq ~6% vs 30% need; random eq ~30% hid it)');
+      var Q7259 = Q725.concat([{ r: 9, s: 1 }]);
+      // Alice opens the tightest range (openTier 1), so her capped small bet
+      // prices second pair at ~22% vs a 25% need: folding is correct, no flag.
+      // Rock opens tier 2, so the same fold against him IS a weak fold.
+      var leakWeakAlice = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'alice', Q7259, 'river', 150, 50, 50,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
+      ok(!leakWeakAlice,
+        'folding second pair to Alice\'s small river bet is NOT a weak fold (range eq ~22%; random eq ~62% used to flag it)');
+      var leakWeakRock = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', Q7259, 'river', 150, 50, 50,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
+      ok(leakWeakRock && leakWeakRock.type === 'weak-fold',
+        'folding second pair to Rock\'s small river bet still flags weak-fold (range eq ~39% vs 25% need)');
+      var leakWeakManiac = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'maniac', Q7259, 'river', 150, 50, 50,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
+      ok(leakWeakManiac && leakWeakManiac.type === 'weak-fold',
+        'folding second pair to a Maniac\'s small river bet still flags weak-fold (range eq ~60%)');
+    })();
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

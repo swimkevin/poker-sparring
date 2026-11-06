@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.180';
+  var APP_VERSION = '1.8.181';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -841,7 +841,19 @@
         }
         return null;
       }
-      var eq = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 120);
+      var V = pickVillain();
+      var rangeTier = 0;
+      if (V) {
+        var vRange = estimateVillainRange(table.players.indexOf(V));
+        var vTight = villainTighty(V.archetype);
+        var vBluffy = villainBluffy(V.archetype);
+        if (vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) rangeTier = 2;
+        else if (vRange.label === 'strong') rangeTier = 3;
+        else rangeTier = (V.archetype && V.archetype.openTier) || 0;
+      }
+      var eq = rangeTier
+        ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 500)
+        : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
         if (eq < need - 0.12) {
@@ -1313,6 +1325,7 @@
     };
     window.__coachTestHooks = {
       recap: coachRecap,
+      detectLeak: detectLeak,
       setDecisions: function (ds) { coachDecisions = ds; },
       setTable: function (t) { table = t; },
       setGameMode: function (m) { gameMode = m; },

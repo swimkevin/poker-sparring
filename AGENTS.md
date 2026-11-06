@@ -283,3 +283,16 @@ first; this file is the 30-second version.
   position-independent (it never depended on position, only on the
   `inPos` gate around it). The lab harness now takes `spot.button`
   (default 0) so out-of-position spots can be pinned.
+- Leak tracker prices the villain's range (v1.8.181, 2026-11-06):
+  `detectLeak` used 120-sim random-hand equity for its bad-chase /
+  weak-fold flags — the banned pattern, in the last place that still
+  had it. Measured: J9 overcards calling Rock's big turn bet showed
+  ~30% vs a random hand (no flag) but ~6% vs his strong range; second
+  pair folding to Alice's small river bet showed ~62% vs a random hand
+  (false weak-fold flag) but ~22% vs her tight range. The tracker now
+  mirrors the coach's facing-branch tier logic (range from the hand
+  timeline, 500 sims) with a 500-sim random fallback. Note the tier
+  fallback is the villain's `openTier`, not `threeBetTier` — Rock opens
+  tier 2, so the same fold against him IS a weak fold (39% vs 25%
+  need); Alice opens tier 1 (22%). `detectLeak` is now exposed in
+  `__coachTestHooks` so the flags are directly testable.

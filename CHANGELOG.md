@@ -1,3 +1,20 @@
+## [1.8.181] — The leak tracker now prices the villain's range, not a random hand
+
+The leak tracker still estimated equity against random hands — the exact
+pattern Kevin banned for facing bets. It showed up as two opposite
+failures, measured on the turn and river: Jack-nine overcards calling
+Rock's big turn bet looked fine (about 30% vs a random hand, above the
+28% bad-chase bar) while winning only about 6% against his strong range,
+so a real bad chase was never flagged; and folding second pair to Alice's
+small river bet was flagged a weak fold (about 62% vs a random hand)
+while winning only about 22% against her tight range, so a correct fold
+was flagged. The tracker now mirrors the coach's facing-branch tier
+logic — the villain's betting range from the hand timeline, priced at
+500 sims — with a random-hand fallback that also runs 500 sims. Three
+regression tests pin it: the bad chase flags, the Alice fold does not,
+and the same fold against a Maniac still flags (about 60%). The coach's
+own advice is unchanged; only the post-hand leak labels got honest.
+
 ## [1.8.180] — Out of position, a re-raise call needs a big edge
 
 The facing-re-raise branches required position for any equity-based
