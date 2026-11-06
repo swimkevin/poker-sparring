@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.173';
+  var APP_VERSION = '1.8.174';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1647,25 +1647,26 @@
           : mkVerdict('fold', 'strong',
             '<b>Fold</b> — you can\'t raise the limpers with only ' + fmt(hero.stack) + ' left.',
             'No raise means no isolation — wait for a real hand.');
-      var isoTo = table.bb * 4;
+      var isoMult = 3 + countLimpers();
+      var isoTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult));
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
-          c.nmHtml + ' — limpers are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to isolate one of them and play for stacks.',
+          c.nmHtml + ' — limpers are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate one of them and play for stacks.',
           'Isolate limpers with premiums: raise big, play heads-up, stack them.');
       if (tier <= 3 && inPos)
         return mkVerdict('raise', 'marginal',
-          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to isolate — limpers rarely have much, and you have position.',
+          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — limpers rarely have much, and you have position.',
           'Attack limpers from late position; they fold or play bloated pots out of position.');
 
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to punish the limpers — ' + countLimpers() + ' limpers means ' +
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to punish the limpers — ' + countLimpers() + ' limpers means ' +
           UI.fmt(table.potTotal()) + ' of dead money. Or call behind; both are fine. Mix in the raise sometimes.',
           'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
 
       if (countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (4× the blind) to attack the dead money — ' + countLimpers() + ' limpers means ' +
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to attack the dead money — ' + countLimpers() + ' limpers means ' +
           UI.fmt(table.potTotal()) + ' sitting there. Take it down now or isolate one player. Or fold; both are fine.',
           'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — folding is fine too.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)

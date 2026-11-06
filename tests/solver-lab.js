@@ -319,7 +319,7 @@ var SPOTS = [
     ] },
   { name: 'bluff-3bet-big-open-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(5, 0)], board: [], street: 'preflop',
-    potBefore: 15, bet: 80, heroStack: 3000, villainStack: 2920, nLive: 2, expect: 'fold',
+    potBefore: 15, bet: 80, heroStack: 100, villainStack: 1920, nLive: 2, expect: 'fold',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 80, pot: 95 }
     ] },
@@ -328,6 +328,20 @@ var SPOTS = [
     potBefore: 15, bet: 30, heroStack: 3000, villainStack: 2970, nLive: 2, expect: 'raise',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'iso-3-limpers-60', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
+    potBefore: 45, bet: 10, heroStack: 2000, nLive: 4, expect: 'raise', expectWord: 'to ~ 60',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 10, pot: 35 }
+    ] },
+  { name: 'iso-1-limper-40', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
+    potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, expect: 'raise', expectWord: 'to ~ 40',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }
     ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',

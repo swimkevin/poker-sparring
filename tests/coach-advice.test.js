@@ -211,10 +211,29 @@ setTimeout(function () {
 
     // No bluff 3-bet into a big open (v1.8.173): an 8x open is a strong range
     // with little left to fold, and 240 risked to win 95 needs folds it will not get.
+    // Hero is 10bb here on purpose: the implied-odds credit is 0 at 10bb, so the
+    // fold is deterministic instead of a close-band coin flip on 150-sim noise.
     var pfBluffBig = preflopVerdict([{ r: 14, s: 0 }, { r: 5, s: 0 }], 'rock', 80,
-      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 80, pot: 15 }], 2, 80, 0, 2000, 1920);
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 80, pot: 15 }], 2, 80, 0, 100, 1920);
     ok(!pfBluffBig.error, 'bluff vs big open verdict has no error' + (pfBluffBig.error ? ' (' + pfBluffBig.error + ')' : ''));
     ok(pfBluffBig.advice === 'fold', 'Rock 8x open, A5s folds instead of bluff 3-betting (got ' + pfBluffBig.advice + ')');
+
+    // Iso raises scale with the limper count: 3bb + 1bb per limper (v1.8.174).
+    var limp3 = [1, 2, 3].map(function (p) {
+      return { t: 'action', street: 'preflop', player: p, action: 'call', bet: 10, pot: 15 };
+    });
+    var pfIso3 = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 10, limp3, 8, 10, 10);
+    ok(!pfIso3.error, 'iso verdict has no error' + (pfIso3.error ? ' (' + pfIso3.error + ')' : ''));
+    ok(pfIso3.advice === 'raise', '3 limpers, AA iso-raises (got ' + pfIso3.advice + ')');
+    ok(stripAdvice(pfIso3.html).indexOf('to ~ 60') !== -1,
+      'iso vs 3 limpers sizes 3bb + 1bb per limper = 60');
+    ok(stripAdvice(pfIso3.html).indexOf('(6× the blind)') !== -1,
+      'iso message states the 6x multiple');
+    var pfIso1 = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 10,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }], 8, 10, 0);
+    ok(pfIso1.advice === 'raise', '1 limper, AA iso-raises (got ' + pfIso1.advice + ')');
+    ok(stripAdvice(pfIso1.html).indexOf('to ~ 40') !== -1,
+      'iso vs 1 limper is still 40 (3bb + 1bb)');
 
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {

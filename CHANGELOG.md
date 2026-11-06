@@ -1,3 +1,13 @@
+## [1.8.174] — Iso raises scale with the limper count
+
+The iso-raise was a flat 4× the blind no matter how many limpers were
+in the pot — so with three limpers and 45 of dead money, AA raised to 40
+and gave every limper a cheap flop. Standard sizing is 3× the blind plus
+1× per limper. New: the iso is 3bb + 1bb per limper (40 with one limper,
+unchanged; 60 with three), clamped to the legal raise range, and the
+message states the multiple. The lab gains a 3-limper spot pinning 60 and
+a 1-limper control pinning 40.
+
 ## [1.8.173] — No bluff 3-bet into a big open
 
 The suited-ace bluff 3-bet fired whenever the villain folds a lot, no
