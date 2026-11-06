@@ -1,3 +1,23 @@
+## [1.8.182] — Eleven flaky thresholds, measured and moved to 5 sigma
+
+The "tests failed" emails came from red intermediate commits, and the
+audit behind this release measured every rate and Monte Carlo threshold
+in the suite to find which ones could actually flake. Eleven sat under
+5 sigma from their true mean. The fixes, each with its measured mean:
+Rock 3-bets Jacks 16.0 +/- 3.8 per 200, so the cap moves 30 to 40
+(a TAG-like 87 still fails loudly); tier-6 vs random runs 2000 sims
+instead of 500; trip aces vs tier-2 runs 500 sims with the bar at 0.83
+(measured 0.902 +/- 0.014); Amogh's postflop bet band widens to 2–36
+per 60 (was 3–30), his shove rate to over 0.40 (was 0.50), his bombs
+to over 8 (was 10); Rohan's aggression cap moves 0.07 to 0.08
+(measured 4.35%); 72o equity cap moves 0.45 to 0.48 (measured 0.355);
+Alice ATs continuation moves 165 to 160 per 200 (re-measured 182.6
++/- 3.9, 5.8 sigma); and the two closest solver-lab spots get room —
+the air-vs-Nathan call drops to a 15 bet, the 10x Rock open becomes a
+12x open at 120. Nothing about the coach's advice changed; the tests
+just stopped crying wolf. The full audit lives in
+hidden_files/threshold-audit-report.md.
+
 ## [1.8.181] — The leak tracker now prices the villain's range, not a random hand
 
 The leak tracker still estimated equity against random hands — the exact

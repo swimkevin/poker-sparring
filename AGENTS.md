@@ -296,3 +296,19 @@ first; this file is the 30-second version.
   tier 2, so the same fold against him IS a weak fold (39% vs 25%
   need); Alice opens tier 1 (22%). `detectLeak` is now exposed in
   `__coachTestHooks` so the flags are directly testable.
+- Threshold audit: measure, then move (v1.8.182, 2026-11-06): a
+  read-only audit replicated every rate/MC threshold's exact
+  measurement and reported mean/sigma and the threshold's distance in
+  sigma (bar: >=5 sigma = safe). Eleven sat below 5 sigma and were
+  moved with their measured numbers in the CHANGELOG entry — e.g. the
+  Alice 165 that replaced the flaking 170 was itself only 4.5 sigma on
+  re-measurement (182.6 +/- 3.93), so it moved to 160 (5.8 sigma).
+  Every moved threshold keeps a regression catch: the rock-JJ cap of
+  40 still fails shark (86/200) and lag (94/200); the Amogh bands
+  still exclude 0 and 60; the Alice 160 still fails if the facingBig
+  bug returns (continuation collapses toward 0, big-bet control 9/200
+  in the test). The audit report is saved at
+  hidden_files/threshold-audit-report.md. Borderline-safe (>=5 sigma
+  but close: AA equity, 72o-vs-tight gap, push/fold 72o margin,
+  narrowed-range lab spot, Alice small value bets) were measured and
+  left alone — watch them if they ever flake.

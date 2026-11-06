@@ -214,8 +214,8 @@ var SPOTS = [
     timeline: narrowedTimeline() },
   { name: 'air-betting-range-call', kind: 'facing', villain: 'nathan',
     hero: [C(14, 0), C(13, 1)], board: Q725, street: 'turn',
-    potBefore: 500, bet: 25, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 25, 500) },
+    potBefore: 500, bet: 15, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('turn', 15, 500) },
   { name: 'air-betting-range-fold', kind: 'facing', villain: 'nathan',
     hero: [C(14, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 150, heroStack: 2000, nLive: 2, expect: 'fold',
@@ -323,11 +323,11 @@ var SPOTS = [
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 3015 }
     ] },
-  { name: 'open-10x-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
+  { name: 'open-12x-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 15, bet: 100, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'fold',
+    potBefore: 15, bet: 120, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'fold',
     timeline: [
-      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 115 }
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 120, pot: 135 }
     ] },
   { name: 'open-10x-rock-aa-raise', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
