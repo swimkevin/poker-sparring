@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.172';
+  var APP_VERSION = '1.8.173';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1738,7 +1738,7 @@
 
     var hasAce = hero.hole.some(function (x) { return x.r === 14; });
     if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
-        villainFoldy(V.archetype) > 0.5 && !multiway) {
+        villainFoldy(V.archetype) > 0.5 && !multiway && !bigOpen) {
       var bluffTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (inPos ? 3 : 4))));
       return mkVerdict('raise', 'marginal',
         'Mix in a <b>bluff re-raise</b> to ~<b>' + fmt(bluffTo) + '</b> (' + (inPos ? 3 : 4) + '× their open) sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',

@@ -604,5 +604,11 @@ console.log('\n53. v1.8.172: big opens are priced against the strong range');
     'an all-in villain is detected from a zero stack after the shove');
 }
 
+console.log('\n54. v1.8.173: no bluff 3-bet into a big open');
+{
+  ok(src.indexOf('villainFoldy(V.archetype) > 0.5 && !multiway && !bigOpen') !== -1,
+    'the suited-ace bluff 3-bet is gated off when the open is big');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

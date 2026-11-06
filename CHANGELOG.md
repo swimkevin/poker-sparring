@@ -1,3 +1,14 @@
+## [1.8.173] — No bluff 3-bet into a big open
+
+The suited-ace bluff 3-bet fired whenever the villain folds a lot, no
+matter the size of the open — so A5s bluff-raised to 240 against Rock's
+8x open, risking 240 to win 95 against a range with almost nothing left
+to fold. A bluff needs about 72% folds to break even there, and an 8x
+opener has already defined a strong range. New: the bluff 3-bet is gated
+off for big opens (6x the blind or more, including shoves), the same
+threshold v1.8.172 uses for pricing. A 3x open is unaffected: A5s still
+bluff-raises to 90 there. The lab gains a fold spot and a control spot.
+
 ## [1.8.172] — A big open is a strong range, not an open range
 
 The facing-open branch priced every open against the villain's generic

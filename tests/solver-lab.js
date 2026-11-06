@@ -317,6 +317,18 @@ var SPOTS = [
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 115 }
     ] },
+  { name: 'bluff-3bet-big-open-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(5, 0)], board: [], street: 'preflop',
+    potBefore: 15, bet: 80, heroStack: 3000, villainStack: 2920, nLive: 2, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 80, pot: 95 }
+    ] },
+  { name: 'bluff-3bet-small-open-raise', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(5, 0)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 3000, villainStack: 2970, nLive: 2, expect: 'raise',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',

@@ -209,6 +209,13 @@ setTimeout(function () {
       [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 15 }], 2, 30, 0, 2000, 1970);
     ok(pfSmallQQ.advice === 'raise', 'Rock 3x open, QQ still re-raises (got ' + pfSmallQQ.advice + ')');
 
+    // No bluff 3-bet into a big open (v1.8.173): an 8x open is a strong range
+    // with little left to fold, and 240 risked to win 95 needs folds it will not get.
+    var pfBluffBig = preflopVerdict([{ r: 14, s: 0 }, { r: 5, s: 0 }], 'rock', 80,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 80, pot: 15 }], 2, 80, 0, 2000, 1920);
+    ok(!pfBluffBig.error, 'bluff vs big open verdict has no error' + (pfBluffBig.error ? ' (' + pfBluffBig.error + ')' : ''));
+    ok(pfBluffBig.advice === 'fold', 'Rock 8x open, A5s folds instead of bluff 3-betting (got ' + pfBluffBig.advice + ')');
+
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {
       var s = d.createElement('script');
