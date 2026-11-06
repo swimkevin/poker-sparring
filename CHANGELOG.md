@@ -1,3 +1,14 @@
+## [1.8.178] — Repair: the 1.8.177 push missed js/app.js
+
+The v1.8.177 push listed every changed file except js/app.js, which the
+version bump had also touched — so the live site served version.txt
+1.8.177 against APP_VERSION 1.8.176 and the sw-test failed on CI. This
+release pushes the complete file set at a new version so the cache
+busters invalidate cleanly. No coach logic changed. Lesson recorded:
+the push list is the changed files plus ALL six files the bump touches
+(version.txt, app.js, package.json, sw.js, index.html, README.md) —
+"unchanged logic" does not mean "untouched by the bump".
+
 ## [1.8.177] — CI repair: Alice defense threshold was flaking on noise
 
 The v1.8.176 CI run failed on alice-defense-test: ATs continued 168/200
