@@ -580,9 +580,13 @@ console.log('\n51. v1.8.170: facing-3bet calls respect pot odds');
     'the 3-bet equity uses 500 sims so the gate is not flipped by 150-sim noise');
   ok(src.indexOf('villainStubborn: stubborn3, inPosition: inPos }) * 0.5;') !== -1,
     'the 3-bet implied-odds credit is halved: a 3-bettor\'s tight range pays off less and dominates more');
-  ok(src.indexOf('(adjEq3 > need3 || setMine2)') !== -1,
+  // v1.8.180 widened both gates below: out of position, a 3-bet call needs
+  // the equity to clear the price by 10 points, not just any edge.
+  ok(src.indexOf('var oopEdge2 = !inPos && adjEq3 > need3 + 0.10;') !== -1 &&
+     src.indexOf('var eqCall2 = (inPos && adjEq3 > need3) || oopEdge2;') !== -1 &&
+     src.indexOf('var call2 = effBB3 >= 40 && (setMine2 || eqCall2);') !== -1,
     'tier-2 calls need the equity or the 15x set-mining depth, not just position');
-  ok(src.indexOf('tier <= 4 && inPos && effBB3 >= 30 && adjEq3 > need3') !== -1,
+  ok(src.indexOf('tier <= 4 && effBB3 >= 30 && ((inPos && adjEq3 > need3) || (!inPos && adjEq3 > need3 + 0.10))') !== -1,
     'playable-hand 3-bet calls are gated on the equity clearing the price');
 }
 

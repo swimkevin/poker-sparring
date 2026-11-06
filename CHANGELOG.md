@@ -1,3 +1,18 @@
+## [1.8.180] — Out of position, a re-raise call needs a big edge
+
+The facing-re-raise branches required position for any equity-based
+call — so Jacks against a Maniac's re-raise folded out of position at
+a 31% price while winning about 74% against his wide range, and the
+identical hand called in position. Position is worth something, but not
+43 points of equity. Now the call is allowed out of position when the
+equity clears the price by 10 points (the position discount); a small
+edge still folds, and a tight re-raiser still folds everything (Jacks
+vs Rock: about 25%). The 15x set-mining escape is unchanged and
+position-independent. The message says plainly when the call is made
+out of position on a big edge, and set-mining calls now say so instead
+of claiming the hand "flops well". Lab gains two out-of-position spots
+(call vs Maniac, fold vs Rock).
+
 ## [1.8.179] — Postflop facing equity runs 500 sims, not 150
 
 The postflop facing-bet branch still estimated equity on 150 Monte Carlo

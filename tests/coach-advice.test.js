@@ -37,7 +37,8 @@ function ok(cond, name) {
 function stripAdvice(html) {
   return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
-function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, heroStack, villainStack) {
+function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, heroStack, villainStack, button) {
+  var btn = button == null ? 0 : button;
   var s = d.createElement('script');
   var arch = villainId
     ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
@@ -48,7 +49,7 @@ function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, 
     '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
     '], sb: 5, bb: 10, startingStack: 2000 });',
     'var t = window.__pfTable;',
-    't.button = 0; t.street = "preflop"; t.currentBet = ' + open + '; t.pot = 0; t.sbIdx = 1; t.bbIdx = 2;',
+    't.button = ' + btn + '; t.street = "preflop"; t.currentBet = ' + open + '; t.pot = 0; t.sbIdx = ' + ((btn + 1) % 8) + '; t.bbIdx = ' + ((btn + 2) % 8) + ';',
     't.players[0].hole = ' + JSON.stringify(hero) + ';',
     't.players[0].stack = ' + (heroStack == null ? 2000 : heroStack) + '; t.players[0].bet = 0;',
     't.players[1].stack = ' + (villainStack == null ? 2000 : villainStack) + '; t.players[1].bet = ' + bet1 + ';',
@@ -175,6 +176,22 @@ setTimeout(function () {
     ok(stripAdvice(pf3bet.html).indexOf('Pay 90 to win 120') !== -1 &&
       stripAdvice(pf3bet.html).indexOf('need 43%') !== -1,
       'facing-3bet call states pot-odds math: Pay 90 to win 120, need 43% (v1.8.159, prize figure unified v1.8.165)');
+
+    // Out of position, a re-raise call needs a big edge, not just any edge (v1.8.180):
+    // JJ vs a Maniac 3-bet is a 74% favorite at a 47% price out of position, so it
+    // calls; the identical hand vs Rock (about 25%) still folds. The 15x set-mine
+    // escape is off here (200 x 15 > 2000 behind), so the call pins the equity path.
+    var pfOopJJ = preflopVerdict([{ r: 11, s: 1 }, { r: 11, s: 0 }], 'maniac', 200,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }], 2, 30, 200, 2000, 2000, 5);
+    ok(!pfOopJJ.error, 'OOP 3-bet verdict has no error' + (pfOopJJ.error ? ' (' + pfOopJJ.error + ')' : ''));
+    ok(pfOopJJ.advice === 'call', 'OOP JJ vs Maniac 3-bet calls on a big edge (got ' + pfOopJJ.advice + ')');
+    ok(stripAdvice(pfOopJJ.html).indexOf('out of position') !== -1,
+      'OOP equity call says so in plain words');
+    var pfOopJJRock = preflopVerdict([{ r: 11, s: 1 }, { r: 11, s: 0 }], 'rock', 200,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }], 2, 30, 200, 2000, 2000, 5);
+    ok(pfOopJJRock.advice === 'fold', 'OOP JJ vs Rock 3-bet still folds (got ' + pfOopJJRock.advice + ')');
 
     // Facing-4bet shove states the amount (v1.8.163).
     var pf4bet = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 270,

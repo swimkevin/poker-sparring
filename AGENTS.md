@@ -274,3 +274,12 @@ first; this file is the 30-second version.
   spots never touch the community. When a probe returns null advice,
   print `v.error` first and check the probe setup before concluding
   anything about the app (extends the v1.8.111/113 probe-fidelity rules).
+- Out-of-position re-raise calls need a 10-point edge (v1.8.180,
+  2026-11-06): the tier-2 and tier<=4 facing-re-raise branches required
+  `inPos` for any equity-based call, so JJ vs a Maniac re-raise folded
+  out of position at 74% equity vs a 31% price. Position is a discount
+  on realized equity, not a veto: out of position the call now needs
+  equity above need + 0.10. The set-mine escape stays
+  position-independent (it never depended on position, only on the
+  `inPos` gate around it). The lab harness now takes `spot.button`
+  (default 0) so out-of-position spots can be pinned.
