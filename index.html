@@ -12,8 +12,8 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Poker Sparring — Practice vs AI Opponents">
 <meta name="twitter:description" content="Free, no-signup Texas Hold'em practice app: spar against offline AI opponents modeled on real player types, or host a private online table with friends.">
-<link rel="stylesheet" href="css/style.css?v=1.8.184">
-<link rel="stylesheet" href="css/online.css?v=1.8.184">
+<link rel="stylesheet" href="css/style.css?v=1.8.185">
+<link rel="stylesheet" href="css/online.css?v=1.8.185">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -79,7 +79,7 @@
       <h2>2 · Opponents at the table</h2>
       <div class="count-row">
         <button id="opp-minus" class="stepper" aria-label="Fewer opponents">−</button>
-        <div class="count-display"><span id="opp-count">3</span><span class="count-label">opponents</span></div>
+        <div class="count-display"><span id="opp-count">7</span><span class="count-label">opponents</span></div>
         <button id="opp-plus" class="stepper" aria-label="More opponents">+</button>
       </div>
       <p class="hint">Tap a bot below to swap them in or out.</p>
@@ -258,7 +258,7 @@
       <h2>Stack over time (big blinds)</h2>
       <canvas id="sparkline" width="640" height="160"></canvas>
       <h2>Record vs archetypes</h2>
-      <p class="hint">Hands you've actually played against each bot style — who you're beating and who's beating you.</p>
+      <p class="hint">Hands played with each bot style at the table — not head-to-head results.</p>
       <div id="arch-table"></div>
       <h2>Recent hands</h2>
       <div id="history-list" class="history"></div>
@@ -311,7 +311,7 @@
         <div class="rule-item"><b>4. Bet your strong hands.</b> Checking monsters to "trap" usually wins less. Make worse hands pay.</div>
         <div class="rule-item"><b>5. Respect big bets.</b> Most players don't bluff big. When someone fires a huge bet, they usually have it.</div>
         <div class="rule-item"><b>6. Know the pot odds.</b> Only chase a draw if the pot is paying you enough to hit it. The coach shows this math every hand.</div>
-        <div class="rule-item"><b>7. Watch your opponents.</b> Who plays every hand? Who only bets with monsters? Adjust — the Table reads in the Coach tab tell you.</div>
+        <div class="rule-item"><b>7. Watch your opponents.</b> Who plays every hand? Who only bets with monsters? Adjust — the Table reads in the Coach panel (Coach tab on mobile) tell you.</div>
         <div class="rule-item"><b>8. Manage your stack.</b> Don't risk your whole roll on one hand. If you bust, rebuy and keep learning — that's what practice is for.</div>
       </div>
       <h2>Essential reading</h2>
@@ -327,20 +327,20 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.184"></script>
-<script src="js/evaluator.js?v=1.8.184"></script>
-<script src="js/equity.js?v=1.8.184"></script>
-<script src="js/engine.js?v=1.8.184"></script>
-<script src="js/bots.js?v=1.8.184"></script>
-<script src="js/names.js?v=1.8.184"></script>
-<script src="js/pushfold.js?v=1.8.184"></script>
-<script src="js/stats.js?v=1.8.184"></script>
-<script src="js/replay.js?v=1.8.184"></script>
-<script src="js/room-server.js?v=1.8.184"></script>
-<script src="js/netplay.js?v=1.8.184"></script>
-<script src="js/ui.js?v=1.8.184"></script>
-<script src="js/online.js?v=1.8.184"></script>
-<script src="js/app.js?v=1.8.184"></script>
+<script src="js/cards.js?v=1.8.185"></script>
+<script src="js/evaluator.js?v=1.8.185"></script>
+<script src="js/equity.js?v=1.8.185"></script>
+<script src="js/engine.js?v=1.8.185"></script>
+<script src="js/bots.js?v=1.8.185"></script>
+<script src="js/names.js?v=1.8.185"></script>
+<script src="js/pushfold.js?v=1.8.185"></script>
+<script src="js/stats.js?v=1.8.185"></script>
+<script src="js/replay.js?v=1.8.185"></script>
+<script src="js/room-server.js?v=1.8.185"></script>
+<script src="js/netplay.js?v=1.8.185"></script>
+<script src="js/ui.js?v=1.8.185"></script>
+<script src="js/online.js?v=1.8.185"></script>
+<script src="js/app.js?v=1.8.185"></script>
 
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="Hand history">

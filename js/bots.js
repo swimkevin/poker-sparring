@@ -8,7 +8,7 @@ var ARCHETYPES = [
   {
     id: 'alice', name: 'Alice', emoji: '👩',
     tagline: 'The vault. Never bluffs, never pays you off light.',
-    desc: 'Super-safe: folds almost every starting hand that is not genuinely good and never bluffs. But when Alice has something, her sizing is deliberately unpredictable — sometimes a small feeler, sometimes a huge overbet. Disciplined enough to fold when beat, yet she almost always calls with two pair or better. Very hard to win money from.',
+    desc: 'Super-safe: folds almost every starting hand that is not genuinely good and never bluffs. But when Alice has something, her sizing is deliberately unpredictable — sometimes a small feeler, sometimes a huge bet, bigger than the pot. Disciplined enough to fold when beat, yet she almost always calls with two pair or better. Very hard to win money from.',
     beat: 'Steal her blinds relentlessly — she folds everything marginal. When Alice bets or raises, believe her: she has it. Never try to bluff her; just take the small pots she gives you.',
     openTier: 1, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.35, bluff: 0, stubborn: 0.85, pushTier: 2, callPushTier: 1, limp: 0.05,
@@ -18,7 +18,7 @@ var ARCHETYPES = [
   {
     id: 'donald', name: 'Donald', emoji: '🦆',
     tagline: 'Tight but sticky. Folds a lot preflop, and folds air to big bets — but never a pair.',
-    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls down light, semi-bluffs draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.97).',
+    desc: 'Tighter than Rohan preflop — only plays real hands. But once Donald is in a pot, he does not like to fold: calls with weak hands, bluffs with draws often, and bombs big like Amogh when ahead but vulnerable (top pair+ on wet boards) instead of value betting small (v1.8.97).',
     beat: 'Steal his blinds — he folds preflop a lot. But once he calls, be ready: he will not go away, and his bets often mean a draw going for it.',
     openTier: 2, openTierLate: 3, callTier: 3, threeBetTier: 2,
     aggression: 0.45, bluff: 0.5, stubborn: 0.90, pushTier: 3, callPushTier: 2, limp: 0.15,
@@ -48,7 +48,7 @@ var ARCHETYPES = [
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
     tagline: 'Bombs every pot the moment he likes his hand.',
-    desc: 'Big-bet sizer: fires huge 1.5x-2.5x pot overbets with strong hands to take down pots, and shoves all-in with monsters (QQ+/AKs). But he plays it more normal now: pairs usually check down to see the river, and he only bluff-shoves with a real draw (semi-bluff), never pure air (v1.8.97).',
+    desc: 'Big-bet sizer: fires huge bets, bigger than the pot, with strong hands to take down pots, and shoves all-in with the very best starting hands (big pairs and ace-king). But he plays it more normal now: pairs usually check down to see the river, and he only shoves all-in as a bluff with a real draw, never with nothing (v1.8.97).',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
@@ -103,7 +103,7 @@ var ARCHETYPES = [
   },
   {
     id: 'pro', name: 'Pro', modes: ['tourney'], emoji: '⏱️',
-    tagline: 'Tournament TAG. Tight early, lethal with 20 big blinds.',
+    tagline: 'Tournament tight-aggressive. Tight early, lethal with 20 big blinds.',
     desc: 'Tournament tight-aggressive (Harrington-style): folds ~85% of hands, but re-raises relentlessly with the top of the range and shoves short stacks with correct push/fold math. Never spews, never tilts much — the player type that actually cashes.',
     beat: 'Steal his blinds early when stacks are deep. Never pay off a shove without a real hand — his all-in range is brutally strong.',
     openTier: 3, openTierLate: 4, callTier: 3, threeBetTier: 2,
@@ -123,7 +123,7 @@ var ARCHETYPES = [
   {
     id: 'bully', name: 'Bully', modes: ['tourney'], emoji: '💪',
     tagline: 'Big stack bully. Your tournament life is his poker chip.',
-    desc: 'Chip-leader pressure: when Bully has the big stack, he opens ~35% of hands and re-raises light — medium stacks can\'t call without risking their tournament. Backs down against other big stacks, but feasts on anyone protecting a cash. The ICM nightmare from every final table.',
+    desc: 'Chip-leader pressure: when Bully has the big stack, he opens ~35% of hands and re-raises light — medium stacks can\'t call without risking their tournament. Backs down against other big stacks, but feasts on anyone protecting a cash. The big-stack bully from every final table.',
     beat: 'Wait for a real hand and trap — he bets into everything. Don\'t bluff into the chip leader; let him hang himself.',
     openTier: 4, openTierLate: 5, callTier: 3, threeBetTier: 3,
     aggression: 0.85, bluff: 0.30, stubborn: 0.60, pushTier: 4, callPushTier: 3, limp: 0.10,

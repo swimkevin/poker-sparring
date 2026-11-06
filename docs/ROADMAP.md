@@ -57,7 +57,7 @@ See [`CHANGELOG.md`](../CHANGELOG.md) for the full release history (100+ version
 1. `npm test` green (full chain, bare exit code, grep for FAIL).
 2. `npm run livetest` — 10/10 hands, 0 issues, 0 JS errors.
 3. Fresh browser: play 3+ hands in cash mode (hero fold / call / raise / all-in).
-4. Push/fold trainer: answer 5 spots, check feedback sanity.
+4. Push/fold trainer (flag-gated: open with `?flags=pushFoldTrainer` first): answer 5 spots, check feedback sanity.
 5. Stats tab: verify bb/100, leak tracker, per-archetype records.
-6. Bots tab: create a custom bot with `<b>` in the name — must render escaped.
+6. Bots tab (flag-gated: open with `?flags=customBots` first): create a custom bot with `<b>` in the name — must render escaped.
 7. Bump version everywhere, push to `main`, verify the live site updated (~2 min).

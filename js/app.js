@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.184';
+  var APP_VERSION = '1.8.185';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1386,7 +1386,7 @@
       var winMsg;
       if (good) winMsg = 'Well played — ' + good.lesson + ' Everyone folded. 🎉';
       else if (isSemi) winMsg = 'Nice semi-bluff! 🎉 Your draw + aggression took it down.';
-      else if (isIso) winMsg = 'Nice iso-raise! 🎉 You punished the limpers and took the dead money.';
+      else if (isIso) winMsg = 'Nice raise! 🎉 You attacked the players who just called and took down the pot.';
       else winMsg = 'Nice aggression! 🎉 Everyone folded — you took it down.';
       lines.push({ kind: 'good', text: winMsg });
     } else if (won && !good && bad) {
@@ -1448,7 +1448,7 @@
     var limps = countLimpers();
 
     if (limps >= 3 && table.currentBet <= table.bb)
-      return ' <span class="coach-multi">👥 ' + limps + ' limpers in the pot (' + UI.fmt(table.potTotal()) + ' dead money) — great spot to raise and take it down.</span>';
+      return ' <span class="coach-multi">👥 ' + limps + ' players just called (' + UI.fmt(table.potTotal()) + ' extra money in the pot) — great spot to raise and take it down.</span>';
     return '';
   }
 
@@ -1637,10 +1637,10 @@
             'You can call re-raises with small pairs only when ~15× the call sits behind.');
         if (adjEq3 > need3)
           return mkVerdict('call', 'marginal',
-            '<b>Call</b> — ' + c.nmHtml + ' wins about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s wide re-raise range, so the price is right even without a set.' + math3,
-            'Small pairs win unimproved against wide ranges — don\'t fold a favorite just because the set-mining math fails.');
+            '<b>Call</b> — ' + c.nmHtml + ' wins about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s wide re-raise range, so the price is right even without three of a kind.' + math3,
+            'Small pairs win unimproved against wide ranges — don\'t fold a favorite just because you won\'t always hit three of a kind.');
         return mkVerdict('fold', 'strong',
-          '<b>Fold</b> — too shallow to chase a set against a re-raise. The implied odds aren\'t there.',
+          '<b>Fold</b> — too shallow to chase three of a kind against a re-raise. You won\'t win enough later when you hit to make this call worth it.',
           'Folding small pairs to re-raises when shallow is disciplined, not weak.');
       }
       if (tier <= 4 && effBB3 >= 30 && ((inPos && adjEq3 > need3) || (!inPos && adjEq3 > need3 + 0.10)))
@@ -1683,40 +1683,40 @@
       if (!legal.canRaise)
         return tier <= 2
           ? mkVerdict('call', 'strong',
-            'Limpers are weak, and you only have ' + fmt(hero.stack) + ' left — with ' + c.nmHtml + ', <b>call</b> it off.',
-            'Premiums go in even when you can\'t raise — limpers rarely have much.')
+            'Players who just called are weak, and you only have ' + fmt(hero.stack) + ' left — with ' + c.nmHtml + ', <b>call</b> it off.',
+            'Premiums go in even when you can\'t raise — players who just called rarely have much.')
           : mkVerdict('fold', 'strong',
-            '<b>Fold</b> — you can\'t raise the limpers with only ' + fmt(hero.stack) + ' left.',
+            '<b>Fold</b> — you can\'t raise over the players who just called with only ' + fmt(hero.stack) + ' left.',
             'No raise means no isolation — wait for a real hand.');
       var isoMult = 3 + countLimpers();
       var isoTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult));
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
-          c.nmHtml + ' — limpers are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate one of them and play for stacks.',
-          'Isolate limpers with premiums: raise big, play heads-up, stack them.');
+          c.nmHtml + ' — players who just called are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate one of them and play for stacks.',
+          'Isolate players who just called with premiums: raise big, play heads-up, stack them.');
       if (tier <= 3 && inPos)
         return mkVerdict('raise', 'marginal',
-          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — limpers rarely have much, and you have position.',
-          'Attack limpers from late position; they fold or play bloated pots out of position.');
+          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — players who just called rarely have much, and you have position.',
+          'Attack players who just called from late position; they fold or play big pots out of position.');
 
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to punish the limpers — ' + countLimpers() + ' limpers means ' +
-          UI.fmt(table.potTotal()) + ' of dead money. Or call behind; both are fine. Mix in the raise sometimes.',
-          'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to punish the players who just called — ' + countLimpers() + ' of them means ' +
+          UI.fmt(table.potTotal()) + ' sitting in the pot. Or call behind; both are fine. Mix in the raise sometimes.',
+          'Raising over players who just called is a profitable option: the extra money in the pot plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
 
       if (countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to attack the dead money — ' + countLimpers() + ' limpers means ' +
-          UI.fmt(table.potTotal()) + ' sitting there. Take it down now or isolate one player. Or fold; both are fine.',
-          'Iso-raising limpers is a profitable option: dead money plus position makes it winning long-term, but don\'t feel forced — folding is fine too.');
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to attack the extra money in the pot — ' + countLimpers() + ' players just called, so ' +
+          UI.fmt(table.potTotal()) + ' is sitting there. Take it down now or isolate one player. Or fold; both are fine.',
+          'Raising over players who just called is a profitable option: the extra money in the pot plus position makes it winning long-term, but don\'t feel forced — folding is fine too.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
         return mkVerdict('call', 'marginal',
-          '<b>Call</b> behind — speculative hand, deep stacks, great implied odds if you crack a limper.',
+          '<b>Call</b> behind — speculative hand, deep stacks, and a great payoff later if you hit a big hand.',
           'Calling behind with speculative hands in position is fine when stacks are deep.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — don\'t limp behind with ' + c.nmHtml + '. Wait for a real hand.',
-        'Limping behind with weak hands is a slow leak — fold and stay disciplined.');
+        '<b>Fold</b> — don\'t just call behind with ' + c.nmHtml + '. Wait for a real hand.',
+        'Calling behind with weak hands is a slow leak — fold and stay disciplined.');
     }
 
     var open = table.currentBet;
@@ -1768,14 +1768,14 @@
       if (toCall * 15 <= effStackChips(vIdx) && effStackBB(vIdx) >= 12)
         return mkVerdict('call', 'marginal',
           'Call <b>' + fmt(toCall) + '</b> — hunting three of a kind: ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
-          'Set-mining needs about 15× the call behind: you miss the set most flops.');
+          'Chasing three of a kind needs about 15× the call behind: you miss most flops.');
       if (adjEq > threshold)
         return mkVerdict('call', 'marginal',
-          mathLine + 'The math says <b>call</b> — the pair is ahead of ' + vName + '\'s wide range, so you don\'t need the set.',
-          'Small pairs win unimproved against wide ranges — don\'t fold a favorite just because the set-mining math fails.');
+          mathLine + 'The math says <b>call</b> — the pair is ahead of ' + vName + '\'s wide range, so you don\'t need three of a kind.',
+          'Small pairs win unimproved against wide ranges — don\'t fold a favorite just because you won\'t always hit three of a kind.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> the small pair — only ' + Math.round(effStackBB(vIdx)) + 'bb deep, not enough behind to get paid on the rare set.',
-        'Don\'t chase sets short-stacked: the math only works with deep money behind.');
+        '<b>Fold</b> the small pair — only ' + Math.round(effStackBB(vIdx)) + 'bb deep, not enough behind to get paid on the rare three of a kind.',
+        'Don\'t chase three of a kind short-stacked: the math only works with deep money behind.');
     }
 
     var hasAce = hero.hole.some(function (x) { return x.r === 14; });
@@ -2230,7 +2230,7 @@
         'Against heavy bluffers, call lighter: their range holds more air than usual.');
     if (debit > 0 && adjEq <= threshold)
       return mkVerdict('fold', 'strong',
-        mathLine + 'Math says <b>fold</b> — and even hitting might not win (reverse implied odds).' + bluffCatchNote,
+        mathLine + 'Math says <b>fold</b> — and even hitting might not win: you could make your hand and still lose to a better one.' + bluffCatchNote,
         'Non-nut draws against tight ranges are trap hands: hitting can still lose.');
     return mkVerdict('fold', adjEq > threshold - 0.06 ? 'marginal' : 'strong',
       mathLine + 'Math says <b>fold</b>.' + bluffCatchNote,

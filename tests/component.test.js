@@ -114,7 +114,7 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
 (function () {
   UI.renderLearn();
   var terms = document.querySelectorAll('#glossary details.gloss-card');
-  ok(terms.length === 29, '29 glossary accordions rendered, got ' + terms.length);
+  ok(terms.length === 37, '37 glossary accordions rendered, got ' + terms.length);
   var allClosed = Array.prototype.every.call(terms, function (d) { return !d.open; });
   ok(allClosed, 'glossary terms start collapsed (less text at once)');
   var first = terms[0].querySelector('summary.gloss-term');

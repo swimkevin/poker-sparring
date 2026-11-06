@@ -340,3 +340,19 @@ first; this file is the 30-second version.
   manufacture an edge. The 500-sim rule now covers every boundary
   equity estimate in the coach and leak tracker; 150/300 survive only
   for report-only figures.
+- Grounding: plain language is test-enforced (v1.8.185, 2026-11-06):
+  the jargon test only scanned coach-verdict literals and four exploit
+  phrases, so jargon lived in the recap, exploit lines, bot descs, and
+  tooltips uncaught. It now scans coach/recap phrases whole-file
+  (case-sensitive on purpose — the code identifier countLimpers() must
+  not trip the lowercase 'limpers' entry), bot taglines/descs
+  whole-file, and the STAT_INFO tooltips (scoped — TAG is allowed in
+  the glossary itself). All 14 archetypes have exploit lines; the dead
+  grinder/bubble/swimkev keys are deleted. Watch the trap: the old
+  §6 check looked for a 'swimkev:' exploit key, but swimkev's
+  archetype id is lag — deleting the dead key required fixing the
+  check to ['alice', 'rohan', 'lag']. The component test pins the
+  glossary count (29 -> 37 when 8 terms were added) — update the pin
+  when the glossary grows. README's "2,000+ assertions" verified
+  against the 1.8.183 run: 5,188 passed, 0 failed (a lower bound —
+  only suites printing "N passed" are counted).

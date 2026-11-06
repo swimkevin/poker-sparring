@@ -1,3 +1,29 @@
+## [1.8.185] — Plain language everywhere a beginner reads
+
+A fresh-eyes pass against the app's original goal — a fun, simple way
+to get better at poker and discover how your friends play — found the
+coach speaking a dialect beginners don't. The coach, recap, leak
+notes, bot descriptions, and stats tooltips now say everything in
+plain words: "iso-raise", "limpers", "dead money", "implied odds",
+"reverse implied odds", "chase a set", and "set-mining" are gone from
+every message the player reads, replaced with what they mean ("raise
+over the players who just called", "chase three of a kind", "you won't
+win enough later when you hit"). All 14 bots now have their own
+specific exploit line (pro, nit, bully, and gambler were falling back
+to generic lines), and three dead exploit keys (grinder, bubble, and a
+duplicate swimkev) are deleted. The Learn glossary gains the eight
+terms the coach used to assume: limp, set, dead money, capped range,
+overbet, air, the nuts, bluff-catch. The Stats hint stops misreading a
+table-presence count as head-to-head ("Hands played with each bot style
+at the table — not head-to-head results"), Learn rule 7 says "Coach
+panel (Coach tab on mobile)" because desktop has no Coach tab, the
+stale mobile-screenshot TODO leaves the README, and the ROADMAP
+playtest checklist notes which modes are flag-gated. The jargon test
+now scans recap lines, exploit lines, bot copy, and stats tooltips —
+not just coach verdicts — so the plain language stays plain. The
+README's "2,000+ test assertions" was also verified, not just asserted:
+the 1.8.183 suite run passed 5,188 assertions with zero failures.
+
 ## [1.8.184] — Air pricing runs 500 sims, like every other facing branch
 
 The last 300-sim estimate in the facing branch was the air mixture:

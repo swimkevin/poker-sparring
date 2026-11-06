@@ -67,7 +67,15 @@ var UI = (function () {
     ['Draw', 'An unfinished hand needing one more card — flush draws, straight draws. Strong draws are often favorites over one pair.'],
     ['Push/Fold', 'Short-stack strategy (under ~13 big blinds): either shove all-in or fold. No calling, no small raises — the math demands it.'],
     ['ICM', 'Independent Chip Model: in tournaments, chips have diminishing value — survival near payouts matters more than accumulating.'],
-    ['Bubble', 'The last spot before prize money. Medium stacks play terrified here; big stacks should attack relentlessly.']
+    ['Bubble', 'The last spot before prize money. Medium stacks play terrified here; big stacks should attack relentlessly.'],
+    ['Limp / Limper', 'Calling the big blind instead of raising — the weakest way to enter a pot. A limper does it a lot; strong players raise over them.'],
+    ['Set', 'Three of a kind made with a pocket pair — you hold 7-7 and a 7 hits the board. A hidden monster: hard to spot, huge payoffs.'],
+    ['Dead Money', 'Chips in the pot from players who already folded or just called weakly — free money for whoever wins the pot.'],
+    ['Capped Range', 'A hand range with no monsters in it — someone who just called probably doesn\'t have aces. You can pressure a capped range.'],
+    ['Overbet', 'A bet bigger than the pot. Usually a very strong hand or a big bluff — rarely anything in between.'],
+    ['Air', 'A hand with no pair, no draw, nothing — pure bluffing material.'],
+    ['The Nuts', 'The best possible hand on the current board. If you have the nuts, you cannot lose the hand.'],
+    ['Bluff-Catch', 'Calling a bet with a medium hand, hoping the bettor is bluffing. Only works against players who bluff enough.']
   ];
 
   function renderLearn() {
@@ -783,8 +791,8 @@ var UI = (function () {
     'Win %': 'Hands won ÷ hands played. Short-term luck dominates this one; bb/100 measures skill better.',
     'bb / 100': 'Big blinds won per 100 hands = (profit in BB ÷ hands) × 100. The standard poker win-rate; 0–5 is solid. Needs 20+ hands to mean anything.',
     'VPIP %': 'Voluntarily Put money In Pot: % of hands you played preflop by calling or raising (posted blinds don\'t count). ~15% is tight, ~25% standard, 40%+ loose.',
-    'PFR %': 'Pre-Flop Raise: % of hands you raised preflop. The VPIP–PFR gap measures passivity — TAG players keep it small.',
-    'Aggr. factor': 'Aggression Factor = (postflop bets + raises) ÷ postflop calls. Under 1 is passive, 1.5–3 is solid TAG, 3+ is maniac territory.',
+    'PFR %': 'Pre-Flop Raise: % of hands you raised preflop. The VPIP–PFR gap measures passivity — tight-aggressive players keep it small.',
+    'Aggr. factor': 'Aggression Factor = (postflop bets + raises) ÷ postflop calls. Under 1 is passive, 1.5–3 is solid tight-aggressive play, 3+ is maniac territory.',
     'Biggest pot': 'The largest pot you\'ve won, shown in chips.'
   };
   function closeStatTips() {

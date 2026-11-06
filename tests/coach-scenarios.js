@@ -81,10 +81,34 @@ console.log('\n5. Jargon-free coach');
     }
   });
   // Also check equity.js exploit lines
-  const badExploit = ['3-bet strong hands', 'never float light', 'tournament TAG', 'solid TAG'];
+  const badExploit = ['3-bet strong hands', 'never float light', 'tournament TAG', 'solid TAG',
+    'bluff-catch', 'overbet', 'folds air', 'call light'];
   badExploit.forEach(j => {
     if (equitySrc.includes(j)) foundJargon.push('equity.js: ' + j);
   });
+  // Coach/recap phrases that only ever occur in user-visible strings, never
+  // in code identifiers — a whole-file scan is safe for these (v1.8.185).
+  // Case-sensitive on purpose: the code identifier countLimpers() must not
+  // trip the lowercase 'limpers' entry, so capital variants are listed.
+  const badCoachPhrases = ['iso-raise', 'Iso-raising', 'limpers', 'dead money',
+    'implied odds', 'reverse implied odds', 'chase a set', 'set-mining',
+    'Set-mining', 'limp behind', 'Limping behind'];
+  badCoachPhrases.forEach(j => {
+    if (src.includes(j)) foundJargon.push('app.js: ' + j);
+  });
+  // Bot taglines/descs are beginner-facing copy: scan the whole file — the
+  // banned terms occur nowhere in bots.js code, only in copy (v1.8.185).
+  const botsSrc = require('fs').readFileSync('js/bots.js', 'utf8');
+  const badBotCopy = ['TAG', 'ICM', 'QQ+/AKs', 'overbet', 'pure air', 'bluff-shoves', 'semi-bluff'];
+  badBotCopy.forEach(j => {
+    if (botsSrc.includes(j)) foundJargon.push('bots.js: ' + j);
+  });
+  // Stats tooltips are the explanation layer: they must not need a glossary
+  // lookup themselves. Scope to STAT_INFO — TAG is defined in the glossary
+  // elsewhere in ui.js and that use is allowed (v1.8.185).
+  const uiSrc = require('fs').readFileSync('js/ui.js', 'utf8');
+  const statInfo = (uiSrc.match(/var STAT_INFO = \{[\s\S]*?\n  \};/) || [''])[0];
+  if (statInfo.includes('TAG')) foundJargon.push('ui.js STAT_INFO: TAG');
   ok(foundJargon.length === 0, 'no jargon in coach messages' + (foundJargon.length ? ' (found: ' + foundJargon.join(', ') + ')' : ''));
 }
 
@@ -93,9 +117,9 @@ console.log('\n6. Friend bot archetypes have exploit lines');
   // v1.8.75: opponentReads uses exploitLine() directly; friend-bot lines
   // live in EXPLOIT_LINES (js/equity.js).
   const eqSrc = require('fs').readFileSync('js/equity.js', 'utf8');
-  const reads = ['alice', 'rohan', 'swimkev'];
+  const reads = ['alice', 'rohan', 'lag'];
   const missing = reads.filter(id => !eqSrc.includes(id + ':'));
-  ok(missing.length === 0, 'all friend bots have exploit lines' + (missing.length ? ' (missing: ' + missing.join(', ') + ')' : ''));
+  ok(missing.length === 0, 'all friend bots have exploit lines' + (missing.length ? ' (missing: ' + missing.join(', ') + ')' : '') + ' (swimkev\'s archetype id is lag)');
 }
 
 console.log('\n7. Debug mode and test hooks (v1.8.64 hardening)');
@@ -128,7 +152,7 @@ console.log('\n9. Iso-raise option for 2+ limpers in late/middle (v1.8.71)');
   // iso-raise as an option instead of a bare fold.
   ok(src.includes("countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position')"),
     'iso-raise branch covers 2+ limpers in button/cutoff/middle');
-  ok(src.includes('attack the dead money'), 'iso-raise message mentions dead money');
+  ok(src.includes('attack the extra money in the pot'), 'iso-raise message mentions the extra money in the pot');
 }
 
 console.log('\n10. No single-villain read in limped multiway pots (v1.8.71)');
@@ -596,10 +620,10 @@ console.log('\n51. v1.8.170: facing-3bet calls respect pot odds');
 console.log('\n52. v1.8.171: small pairs call when ahead of a wide range');
 {
   ok(src.indexOf('if (adjEq3 > need3)') !== -1,
-    'the facing-3bet small-pair branch calls when the pair is ahead, not only when set-mining pays');
+    'the facing-3bet small-pair branch calls when the pair is ahead, not only when three-of-a-kind math pays');
   ok(src.indexOf('if (adjEq > threshold)') !== -1,
     'the facing-open small-pair branch calls when the pair clears the price');
-  ok(src.indexOf('var priceTier') < src.indexOf('Set-mining needs about 15'),
+  ok(src.indexOf('var priceTier') < src.indexOf('Chasing three of a kind needs about 15'),
     'the facing-open equity is computed before the small-pair branch so the pair can use it');
 }
 

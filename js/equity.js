@@ -525,19 +525,20 @@ function villainBluffy(archetype) {
 }
 
 var EXPLOIT_LINES = {
-  lag: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
-  rohan: 'loose-passive — plays lots of hands, rarely raises. Value bet big; he calls with pairs but folds air, and bluffs sometimes so don\'t auto-fold to his bets',
-  amogh: 'straightforward — bombs pots with real hands. Let him bet into you, don\'t bluff-catch light',
+  lag: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call with a weak hand',
+  rohan: 'loose-passive — plays lots of hands, rarely raises. Value bet big; he calls with pairs but folds when he has nothing, and bluffs sometimes so don\'t auto-fold to his bets',
+  amogh: 'straightforward — bombs pots with real hands. Let him bet into you, don\'t call his big bets hoping he\'s bluffing',
   nathan: 'trap player — never raises before the river. Value bet relentlessly, believe his river bet',
-  grinder: 'tight-aggressive — steal blinds deep, never pay off a shove light',
-  bubble: 'folds everything but the nuts — rob his blinds, believe his shoves',
   shark: 'solid all-around — stay balanced, steal when he shows weakness',
   station: 'calling station — calls down with anything. Value bet big, never bluff',
   maniac: 'maniac — raises everything. Trap strong hands, call down lighter, never bluff',
   rock: 'rock — only plays monsters. Steal his blinds, fold when he bets',
   alice: 'never bluffs — believe every bet, steal her blinds relentlessly',
-  swimkev: 'loose-aggressive, plays lots of hands with pressure — re-raise your strong hands, never call light',
-  donald: 'tight but sticky — folds preflop, never folds postflop. His bets are often draws or big overbets when ahead; steal his blinds, don\'t try to push him off'
+  donald: 'tight but sticky — folds preflop, never folds postflop. His bets are often draws, or bets bigger than the pot when ahead; steal his blinds, don\'t try to push him off',
+  pro: 'tournament pro — plays few hands but re-raises the best ones hard. Take his blinds, never bluff into his re-raise',
+  nit: 'extreme tight — folds almost everything. Take his blinds constantly, fold the moment he bets',
+  bully: 'big-stack bully — pushes medium stacks around but backs down to other big stacks. Stand up to him with a real hand',
+  gambler: 'super-aggressive — bluffs every street and plays lots of hands. Call down lighter with any decent hand, never bluff him'
 };
 function exploitLine(archetype) {
   var a = archetype || {};
