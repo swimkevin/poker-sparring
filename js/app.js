@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.175';
+  var APP_VERSION = '1.8.176';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1234,7 +1234,7 @@
   }
 
   function rangeAwareEquityPreflop(hole, maxTier) {
-    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 150);
+    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 500);
   }
 
   function mkVerdict(advice, strength, msg, lesson) {
@@ -1630,11 +1630,21 @@
     if (spot === 'facing-4bet+') {
       if (tier === 1) {
         var shoveTo = Math.min(legal.maxRaiseTo, hero.stack + (hero.bet || 0));
-        return mkVerdict(legal.canRaise ? 'raise' : 'call', 'strong',
-          legal.canRaise
-            ? 'They re-raised again. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> ' + fmt(shoveTo) + ' or call it off.'
-            : 'They shoved. With ' + c.nmHtml + ', <b>call</b> — folding a premium to one shove burns money.',
-          'Against a second re-raise only the very best hands continue — everything else folds.');
+        if (legal.canRaise)
+          return mkVerdict('raise', 'strong',
+            'They re-raised again. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> ' + fmt(shoveTo) + ' or call it off.',
+            'Against a second re-raise only the very best hands continue — everything else folds.');
+        var fourTier = (V && V.archetype && V.archetype.threeBetTier) || 3;
+        var eq4 = estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, fourTier || 3)), 500);
+        var need4 = toCall / (pot + toCall);
+        var math4 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — need <b>' + pct(need4) + '</b> to break even.';
+        if (eq4 > need4)
+          return mkVerdict('call', 'strong',
+            'They shoved. With ' + c.nmHtml + ', <b>call</b> — you win about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
+            'Against a second re-raise only the very best hands continue — and yours clears the price.');
+        return mkVerdict('fold', 'strong',
+          'They shoved. With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
+          'A second re-raise shove is almost always the nuts — even a premium folds when the math says so.');
       }
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — a second re-raise at these stakes is almost always the nuts.',

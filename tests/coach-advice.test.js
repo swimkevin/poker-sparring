@@ -255,6 +255,25 @@ setTimeout(function () {
     ok(stripAdvice(pf3Ctl.html).indexOf('to ~ 207') !== -1,
       'QQ 4-bet states the exact size to ~207 (2.3x the 3-bet)');
 
+    // Facing a 4-bet shove, premiums are priced, not auto-called (v1.8.176).
+    // QQ is ~28% vs Rock's strong range at a 48% price; AA is ~80%.
+    var shove4Tl = [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 435 }
+    ];
+    var pf4ShoveQQ = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 3000, shove4Tl, 3, 3000, 300, 3000, 0);
+    ok(!pf4ShoveQQ.error, '4-bet shove verdict has no error' + (pf4ShoveQQ.error ? ' (' + pf4ShoveQQ.error + ')' : ''));
+    ok(pf4ShoveQQ.advice === 'fold', 'Rock 4-bet shove, QQ folds (got ' + pf4ShoveQQ.advice + ')');
+    var pf4ShoveAA = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 3000, shove4Tl, 3, 3000, 300, 3000, 0);
+    ok(pf4ShoveAA.advice === 'call', 'Rock 4-bet shove, AA calls (got ' + pf4ShoveAA.advice + ')');
+    var pf4Ctl = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 300,
+      shove4Tl.slice(0, 3), 3, 300, 300, 2700, 2700);
+    ok(pf4Ctl.advice === 'raise', 'Rock 4-bet to 300, QQ still shoves (got ' + pf4Ctl.advice + ')');
+    ok(stripAdvice(pf4Ctl.html).indexOf('2,700') !== -1,
+      'QQ 4-bet shove states the all-in amount 2,700');
+
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {
       var s = d.createElement('script');

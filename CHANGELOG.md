@@ -1,3 +1,17 @@
+## [1.8.176] — Premiums are priced, not auto-called, against a 4-bet shove
+
+The facing-4bet branch auto-called every tier-1 hand when it could not
+raise — so QQ called a tight player's 4-bet shove at a 45% price while
+winning about 28% against the strong range a second re-raise represents.
+New: when the second re-raise is an all-in, the premium calls only when
+its equity against the villain's strong range clears the price — AA
+(about 80%) calls, QQ folds, and a normal 4-bet is unaffected: QQ still
+shoves 2,700 over a 4-bet to 300. The lab gains a fold spot, a call spot,
+and a 4-bet control. Also in this release: the facing-open equity now
+uses 500 sims like the 3-bet and 4-bet branches — the old 150-sim draw
+flipped the open-55-ahead lab spot about one run in ten, since 55's edge
+over the call threshold was barely one standard deviation.
+
 ## [1.8.175] — Premiums are priced, not auto-called, against a 3-bet shove
 
 The facing-3bet branch auto-called every tier-1 hand when it could not
