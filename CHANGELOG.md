@@ -1,3 +1,19 @@
+## [1.8.184] — Air pricing runs 500 sims, like every other facing branch
+
+The last 300-sim estimate in the facing branch was the air mixture:
+when the hero holds no pair, the coach prices the villain's betting
+range as a blend of made hands and bluffs, and both halves ran 300
+samples. A probe showed the noise directly — AKo against Nathan's
+60-into-500 turn bet quoted 8–17% over 20 identical runs and flipped
+call/fold 11/9. Both halves now run 500 and the message says so; the
+same probe quotes 10–14% (a 4-point band, not 9). The spot's true edge
+is only about a point, so it still flips sometimes — the fix narrows
+the noise, it doesn't manufacture an edge that isn't there. A new lab
+spot pins an air call at a 30 bet, where the margin is comfortable.
+With this, every equity estimate that feeds a call/fold boundary in the
+coach, the leak tracker, and the facing branches runs 500 sims; 150 and
+300 survive only for report-only figures.
+
 ## [1.8.183] — Multiway facing equity runs 500 sims; two CI flakes fixed
 
 Two red CI runs in a row, two different causes. First, the river-trap

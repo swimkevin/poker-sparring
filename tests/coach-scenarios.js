@@ -525,6 +525,9 @@ console.log('\n45. v1.8.167: air priced vs the betting range, not the bluff rate
 {
   ok(src.indexOf('airPriced') !== -1,
     'facing math prices air against the betting range (made hands + bluffs)');
+  ok(src.indexOf('estimateEquityVsMadeRange(hero.hole, table.community, 500)') !== -1 &&
+     src.indexOf('estimateEquityVsAirRange(hero.hole, table.community, 500)') !== -1,
+    'air pricing runs 500 sims, not 300: 300-sim noise flipped borderline air calls (v1.8.184)');
   ok(equitySrc.indexOf('estimateEquityVsMadeRange') !== -1,
     'equity helper prices air vs the villain made range');
   ok(equitySrc.indexOf('estimateEquityVsAirRange') !== -1,

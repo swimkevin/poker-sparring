@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.183';
+  var APP_VERSION = '1.8.184';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2097,8 +2097,8 @@
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
     var airPriced = false;
     if (hc === 'air' && !diluted && !narrowedByCall) {
-      var eqMade = estimateEquityVsMadeRange(hero.hole, table.community, 300);
-      var eqAir = estimateEquityVsAirRange(hero.hole, table.community, 300);
+      var eqMade = estimateEquityVsMadeRange(hero.hole, table.community, 500);
+      var eqAir = estimateEquityVsAirRange(hero.hole, table.community, 500);
       if (eqMade != null && eqAir != null) {
         adjEq = Math.max(0, Math.min(1, (1 - bluffy) * eqMade + bluffy * eqAir));
         if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
@@ -2206,7 +2206,7 @@
       : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     if (diluted) eqSource = eqSource + ', beating everyone still in';
-    if (airPriced) eqSource = 'simulated 300× vs the hands ' + vName + ' bets — made hands and bluffs';
+    if (airPriced) eqSource = 'simulated 500× vs the hands ' + vName + ' bets — made hands and bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' +

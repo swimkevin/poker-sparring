@@ -331,3 +331,12 @@ first; this file is the 30-second version.
   (240s) so a slow-but-progressing hand passes and a genuine stall
   still fails. The instrumented probe with per-tick logging is kept at
   hidden_files/flagged-probe.js for the next diagnosis if it recurs.
+- Air pricing sims to 500 (v1.8.184, 2026-11-06): the air mixture
+  (made-hands vs bluffs blend for no-pair hands) was the last facing
+  estimate at 300 sims. Probe: AKo vs Nathan's 60-into-500 turn bet
+  quoted 8-17% over 20 runs and flipped 11/9; at 500 sims it quotes
+  10-14%. Same honest limit as v1.8.183: the spot's true edge is
+  ~1 point, so it still flips — 500 sims narrows noise, it doesn't
+  manufacture an edge. The 500-sim rule now covers every boundary
+  equity estimate in the coach and leak tracker; 150/300 survive only
+  for report-only figures.
