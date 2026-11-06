@@ -620,5 +620,15 @@ console.log('\n55. v1.8.174: iso raises scale with the limper count');
     'the iso size is clamped to the legal raise range');
 }
 
+console.log('\n56. v1.8.175: facing a 3-bet shove, premiums are priced');
+{
+  ok(src.indexOf('QQ is a favorite against opens, an underdog against re-raise shoves') !== -1,
+    'the 3-bet-shove fold lesson names the range flip');
+  ok(src.indexOf('Never fold QQ or better to a single all-in') === -1,
+    'the old auto-call lesson for premiums vs a shove is gone');
+  ok(src.indexOf('if (adjEq3 > need3)') !== -1,
+    'the tier-1 shove call is gated on the equity clearing the price');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

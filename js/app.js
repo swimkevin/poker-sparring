@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.174';
+  var APP_VERSION = '1.8.175';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1588,9 +1588,13 @@
             'They <b>re-raised</b> in front of you. With ' + c.nmHtml + ', <b>raise again</b> to ~<b>' + fmt(fourTo) + '</b> — build the pot while you\'re likely ahead.',
             'Facing a re-raise with a premium: raise again for value, about 2.3× their raise.');
         }
-        return mkVerdict('call', 'strong',
-          'They went all-in. With ' + c.nmHtml + ', <b>call</b> — your hand is usually ahead here.',
-          'Never fold QQ or better to a single all-in: they often have worse hands.');
+        if (adjEq3 > need3)
+          return mkVerdict('call', 'strong',
+            'They went all-in. With ' + c.nmHtml + ', <b>call</b> — you win about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s re-raise range.' + math3,
+            'Call an all-in re-raise with a premium when the price is right — the range is strong, so the math decides.');
+        return mkVerdict('fold', 'strong',
+          'They went all-in. With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s re-raise range.' + math3,
+          'Folding a premium to an all-in re-raise is right when the range crushes you — QQ is a favorite against opens, an underdog against re-raise shoves.');
       }
       if (tier === 2) {
         var setMine2 = hero.hole[0].r === hero.hole[1].r && toCall * 15 <= effStackChips(vIdx);

@@ -1,3 +1,16 @@
+## [1.8.175] — Premiums are priced, not auto-called, against a 3-bet shove
+
+The facing-3bet branch auto-called every tier-1 hand when it could not
+re-raise — so QQ called a tight player's 3-bet shove at a 50% price while
+winning about 28% against the tier-1 range a shove represents (about
+−1,250 chips of EV), and AKs called at about 37%. The lesson even told
+the player never to fold QQ or better to a single all-in. New: when the
+re-raise is an all-in, the premium calls only when its equity against the
+3-bet range clears the price — AA (about 80%) and KK (about 52%) still
+call, QQ and AKs fold, and a wide shover's QQ still calls at about 78%.
+A normal 3-bet is unaffected: QQ still 4-bets to 207. The lab gains a
+fold spot, a call spot, and a 4-bet control.
+
 ## [1.8.174] — Iso raises scale with the limper count
 
 The iso-raise was a flat 4× the blind no matter how many limpers were

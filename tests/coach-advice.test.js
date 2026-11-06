@@ -235,6 +235,26 @@ setTimeout(function () {
     ok(stripAdvice(pfIso1.html).indexOf('to ~ 40') !== -1,
       'iso vs 1 limper is still 40 (3bb + 1bb)');
 
+    // Facing a 3-bet shove, premiums are priced, not auto-called (v1.8.175).
+    // QQ is ~28% vs Rock's tier-1 3-bet range at a 50% price; AA is ~80%.
+    var shove3Tl = [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 45 }
+    ];
+    var pf3ShoveQQ = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 3000, shove3Tl, 3, 3000, 30, 3000, 0);
+    ok(!pf3ShoveQQ.error, '3-bet shove verdict has no error' + (pf3ShoveQQ.error ? ' (' + pf3ShoveQQ.error + ')' : ''));
+    ok(pf3ShoveQQ.advice === 'fold', 'Rock 3-bet shove, QQ folds (got ' + pf3ShoveQQ.advice + ')');
+    ok(stripAdvice(pf3ShoveQQ.html).indexOf('need 50%') !== -1,
+      '3-bet shove fold states the 50% price');
+    var pf3ShoveAA = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 3000, shove3Tl, 3, 3000, 30, 3000, 0);
+    ok(pf3ShoveAA.advice === 'call', 'Rock 3-bet shove, AA calls (got ' + pf3ShoveAA.advice + ')');
+    var pf3Ctl = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 90,
+      [{ t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 }], 3, 90, 30, 2000, 1910);
+    ok(pf3Ctl.advice === 'raise', 'Rock 3-bet to 90, QQ still 4-bets (got ' + pf3Ctl.advice + ')');
+    ok(stripAdvice(pf3Ctl.html).indexOf('to ~ 207') !== -1,
+      'QQ 4-bet states the exact size to ~207 (2.3x the 3-bet)');
+
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {
       var s = d.createElement('script');
