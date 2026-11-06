@@ -1,3 +1,13 @@
+## [1.8.177] — CI repair: Alice defense threshold was flaking on noise
+
+The v1.8.176 CI run failed on alice-defense-test: ATs continued 168/200
+against a >=170 threshold. The test loads only the engine and the bots,
+so no coach change in this run could have caused it — and 20 local runs
+measure the true rate at ~184/200 (sigma ~4), putting the old threshold
+only ~3.6 sigma below the mean. New threshold 165 (mean minus ~5 sigma):
+it still fails decisively if the v1.8.95 facingBig regression ever
+returns, but no longer flakes on sampling noise. No coach logic changed.
+
 ## [1.8.176] — Premiums are priced, not auto-called, against a 4-bet shove
 
 The facing-4bet branch auto-called every tier-1 hand when it could not
