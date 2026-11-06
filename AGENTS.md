@@ -141,6 +141,16 @@ first; this file is the 30-second version.
 - push.py file-arg form (v1.8.156, 2026-11-03): each file arg must be
   `repo-path:local-path` (e.g. `js/app.js:js/app.js`); bare paths
   fail with ValueError. The loop body's shorthand omits the colons.
+- push.py full invocation (v1.8.187, 2026-11-06): the four leading
+  args are mandatory — `push.py <owner> <repo> <branch> <message>
+  <repo-path:local-path> ...` (e.g. `push.py swimkevin poker-sparring
+  main "v1.8.187: ..." "js/app.js:/home/hatch/workspace/poker-sparring/js/app.js"`).
+  Calling it with only file pairs 404s on the refs lookup (the first
+  pair is read as the owner) and nothing lands, so it is safe to
+  retry with the full form. Retry with
+  PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin on
+  ModuleNotFoundError. Double-check typed paths — a typo in a local
+  path fails the whole push with FileNotFoundError before any commit.
 - CI tests timing (2026-11-03): the tests workflow took up to ~20
   min to go green on some commits, longer than the ~10 min local
   suite. Do not conclude a run is dropped before ~20 min; re-check

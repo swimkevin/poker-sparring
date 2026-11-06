@@ -1,3 +1,12 @@
+## [1.8.187] — Loop docs: the full push.py invocation, written down
+
+The exact push.py call — owner, repo, branch, message, then
+`repo-path:local-path` pairs — was only in the connector doc, not in
+the repo's own loop notes. An invocation with only file pairs 404s on
+the refs lookup (the first pair is read as the owner) and lands
+nothing; the full form is now recorded in AGENTS.md so the next
+session doesn't re-derive it.
+
 ## [1.8.186] — The coach taps you on the shoulder on mobile
 
 On mobile the coach lived behind a tab with no signal: new advice
