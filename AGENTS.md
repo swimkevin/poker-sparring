@@ -312,3 +312,22 @@ first; this file is the 30-second version.
   but close: AA equity, 72o-vs-tight gap, push/fold 72o margin,
   narrowed-range lab spot, Alice small value bets) were measured and
   left alone — watch them if they ever flake.
+- Multiway facing sims to 500 (v1.8.183, 2026-11-06): the multiway
+  diluted equity was the last facing-branch estimate still at 300 sims
+  (everything else moved to 500 in v1.8.176/179), and it flaked the
+  river-trap control on CI — the nut draw's diluted equity (31-40%)
+  sat ~2 points above the 29% price, folding ~1 run in 20. The sims
+  go to 500 and the control spot is re-margined to a 200 bet (22%
+  price, 20/20 calls, equity 34-40%). Honest limit: a probe spot whose
+  true edge is only ~1.5 points (second pair multiway vs a 100 bet)
+  still flips ~25% of the time at 500 sims — no sim count fixes a
+  1.5-point edge; the fix narrows noise for mid-edge spots and the
+  CI failure itself was fixed by the spot margin, not the sims.
+- Flagged-modes timeout is CI-only (v1.8.183, 2026-11-06): stage 2
+  (one heads-up hand) took >120s on CI once while 23 local runs all
+  finish in 22-25s. No stall reproduces: the equity paths are bounded
+  (fixed iteration counts, no rejection sampling) and a leak flag only
+  writes a log line, never a modal. The tick budget widens 300 to 600
+  (240s) so a slow-but-progressing hand passes and a genuine stall
+  still fails. The instrumented probe with per-tick logging is kept at
+  hidden_files/flagged-probe.js for the next diagnosis if it recurs.

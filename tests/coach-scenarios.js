@@ -457,8 +457,8 @@ console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call'
      src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)') !== -1 &&
      src.indexOf('estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500)') !== -1,
     'postflop facing equity runs 500 sims, not 150: 150-sim noise flipped borderline calls 2/20 runs');
-  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 300)') !== -1,
-    'multiway facing equity is a shared-runout sim across all live opponents');
+  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 500)') !== -1,
+    'multiway facing equity runs 500 sims, not 300: 300-sim noise flipped borderline multiway calls (v1.8.183)');
   ok(src.indexOf('beating everyone still in') !== -1,
     'diluted message says everyone still in must lose');
   ok(src.indexOf('nonNutDraw:') !== -1 && src.indexOf('vulnerableMade:') !== -1,
@@ -507,7 +507,7 @@ console.log('\n43. v1.8.148: multiway dilution — shared-runout sim replaces th
 {
   ok(equitySrc.indexOf('function estimateEquityVsRanges(hole, community, tiers, iters)') !== -1,
     'equity layer exposes a shared-runout multi-opponent sim');
-  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 300)') !== -1,
+  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 500)') !== -1,
     'facing math uses the multi sim for multiway single-range spots');
   ok(src.indexOf('adjEq = Math.pow(adjEq, nOpp)') === -1,
     'power-rule dilution is gone from the facing math');

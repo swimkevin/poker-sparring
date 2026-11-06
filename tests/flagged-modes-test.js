@@ -100,7 +100,11 @@ var iv = setInterval(function () {
         stage = 3;
       }
     }
-    if (ticks > 300) { ok(false, 'timed out in stage ' + stage); stage = 3; }
+    // Budget is 600 ticks (240s), not 300: the heads-up hand runs ~23s
+    // locally but stage 2 once took >120s on CI (v1.8.181) with no stall
+    // reproduced in 23 local runs — a slow-but-progressing hand must pass,
+    // while a genuine stall still times out here.
+    if (ticks > 600) { ok(false, 'timed out in stage ' + stage); stage = 3; }
     if (stage === 3) {
       clearInterval(iv);
       console.log(fails === 0 ? 'FLAGGED MODES TEST PASSED' : 'FLAGGED MODES TEST: ' + fails + ' FAILURES');

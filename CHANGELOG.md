@@ -1,3 +1,21 @@
+## [1.8.183] — Multiway facing equity runs 500 sims; two CI flakes fixed
+
+Two red CI runs in a row, two different causes. First, the river-trap
+test flaked on CI (v1.8.182): the nut-draw control on an unpaired board
+folds about 1 run in 20 — its multiway diluted equity (31–40%) sits
+about 2 points above the 29% price, and the multiway sim still ran 300
+samples while every other facing branch runs 500. The multiway sim now
+runs 500, and the control spot is re-margined to a 200 bet (22% price,
+equity 34–40%, 20/20 calls) so the test no longer rests on a coin flip;
+the paired-board fold is unchanged at 20/20. Second, the flagged-modes
+test timed out in stage 2 on CI (v1.8.181): the heads-up hand took over
+120 seconds on the runner while 23 local runs all finish in 22–25
+seconds, and no stall reproduces locally — the equity paths are bounded
+(the range sims run a fixed iteration count, a leak flag only writes a
+log line). The tick budget widens from 300 to 600 (240 seconds), so a
+slow-but-progressing hand passes while a genuine stall still fails.
+A new lab spot pins a multiway top-pair call.
+
 ## [1.8.182] — Eleven flaky thresholds, measured and moved to 5 sigma
 
 The "tests failed" emails came from red intermediate commits, and the

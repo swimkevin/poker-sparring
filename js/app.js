@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.182';
+  var APP_VERSION = '1.8.183';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2089,7 +2089,7 @@
       var nOpp = Math.min(3, table.livePlayers().length - 1);
       var tiers = [rangeEqTier || vTier];
       for (var o = 1; o < nOpp; o++) tiers.push(0);
-      adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 300) + credit - debit));
+      adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 500) + credit - debit));
       diluted = true;
     }
     var bCredit = (hc === 'air' || hc === 'secondpair' || hc === 'weakpair')
@@ -2205,7 +2205,7 @@
       ? 'simulated 500× vs the kinds of hands ' + vName + ' plays'
       : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
-    if (diluted) eqSource = eqSource.replace('500×', '300×') + ', beating everyone still in';
+    if (diluted) eqSource = eqSource + ', beating everyone still in';
     if (airPriced) eqSource = 'simulated 300× vs the hands ' + vName + ' bets — made hands and bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +

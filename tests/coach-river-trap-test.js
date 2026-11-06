@@ -155,8 +155,8 @@ setTimeout(function () {
   ok(fdMw.advice === 'call', 'dilution multiway calls under the true shared-runout sim (got ' + fdMw.advice + ', v1.8.148)');
   ok(strip(fdMw.html).indexOf('beating everyone still in') !== -1,
     'dilution multiway message says everyone still in must lose (v1.8.141)');
-  ok(strip(fdMw.html).indexOf('300×') !== -1,
-    'dilution multiway message names the 300-sample multi sim (v1.8.148)');
+  ok(strip(fdMw.html).indexOf('500×') !== -1,
+    'dilution multiway message names the 500-sample multi sim (v1.8.148, 500 sims v1.8.183)');
   var weakPair = [{ r: 2, s: 1 }, { r: 13, s: 0 }];
   var fdMwFold = setupFacing('lag', weakPair, [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 4, 500, 400);
   console.log('  dilution multiway weak-pair says: ' + strip(fdMwFold.html).slice(0, 200));
@@ -196,7 +196,11 @@ setTimeout(function () {
   ok(strip(pairedDraw.html).indexOf('beating everyone still in') !== -1,
     'paired draw is simulated multiway like a real draw (v1.8.152)');
   var unpairedDrawBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 3, s: 0 }, { r: 5, s: 3 }];
-  var pairedDrawControl = setupFacing('rock', nutDraw, unpairedDrawBoard, 4, 500, 350);
+  // Control price is 200, not 350: at 350 the multiway diluted equity of
+  // the draw (31-40%) sits ~2 points above the 29% price and the spot
+  // flips to fold ~1 run in 20 on 300-sim noise (flaked on CI, v1.8.182).
+  // At 200 the price is 22% and the call clears it by ~8 points.
+  var pairedDrawControl = setupFacing('rock', nutDraw, unpairedDrawBoard, 4, 500, 200);
   console.log('  paired-draw control says: ' + strip(pairedDrawControl.html).slice(0, 200));
   ok(pairedDrawControl.advice === 'call', 'same nut draw on an unpaired board still calls (got ' + pairedDrawControl.advice + ', v1.8.152)');
   var airCapControl = setupFacing('lag', airTop, dryBoard, 2, 500, 50);
