@@ -43,8 +43,56 @@ setTimeout(function () {
   setTimeout(function () {
     var tip2 = t2.d.getElementById('coach-tip');
     check(tip2.innerHTML.indexOf('coach-intro-ok') === -1, 'second session does not re-show the intro');
-    if (failures) { console.log(failures + ' intro failures'); }
-    else { console.log('COACH INTRO TEST PASSED'); }
-    process.exit(failures ? 1 : 0);
+    runMobileScenario();
   }, 1200);
 }, 1200);
+
+function waitFor(fn, timeoutMs, done) {
+  var start = Date.now();
+  var iv = setInterval(function () {
+    if (fn() || Date.now() - start > timeoutMs) { clearInterval(iv); done(fn()); }
+  }, 400);
+}
+
+function runMobileScenario() {
+  var t3 = boot();
+  t3.w.matchMedia = function (q) {
+    return { matches: q.indexOf('900px') !== -1, media: q,
+      addEventListener: function () {}, removeEventListener: function () {} };
+  };
+  t3.w.localStorage.clear();
+  var quick3 = t3.d.getElementById('btn-quick');
+  check(!!quick3, 'mobile: quick deal button exists');
+  quick3.click();
+  setTimeout(function () {
+    var tip3 = t3.d.getElementById('coach-tip');
+    var coachTab = t3.d.querySelector('.mtab[data-tab="coach"]');
+    check(!tip3.hidden && tip3.innerHTML.indexOf('coach-intro-ok') !== -1, 'mobile: first session shows coach intro');
+    check(!!coachTab && coachTab.classList.contains('has-new'), 'mobile: Coach tab carries a new-advice dot while the intro is waiting');
+    waitFor(function () { return tip3.innerHTML.indexOf('coach-intro-ok') === -1; }, 25000, function (verdictArrived) {
+      check(verdictArrived, 'mobile: a hero turn replaced the intro with a verdict (a hero action happened)');
+      check(t3.w.localStorage.getItem('ps_coach_intro_seen') !== '1', 'mobile: intro is NOT marked seen when the Coach panel was never opened');
+      check(coachTab.classList.contains('has-new'), 'mobile: dot is still there after the verdict, until the tab is opened');
+      coachTab.click();
+      check(!coachTab.classList.contains('has-new'), 'mobile: opening the Coach tab clears the dot');
+      check(t3.w.localStorage.getItem('ps_coach_intro_seen') === '1', 'mobile: opening the Coach tab marks the intro seen (the player found the coach)');
+      runDesktopScenario();
+    });
+  }, 1200);
+}
+
+function runDesktopScenario() {
+  var t4 = boot();
+  t4.w.localStorage.clear();
+  t4.d.getElementById('btn-quick').click();
+  setTimeout(function () {
+    var tip4 = t4.d.getElementById('coach-tip');
+    waitFor(function () { return tip4.innerHTML.indexOf('coach-intro-ok') === -1; }, 25000, function (verdictArrived) {
+      check(verdictArrived, 'desktop: a hero turn replaced the intro with a verdict');
+      check(t4.w.localStorage.getItem('ps_coach_intro_seen') === '1', 'desktop: intro IS marked seen at the first hero action (side panel is visible)');
+      if (failures) { console.log(failures + ' intro failures'); }
+      else { console.log('COACH INTRO TEST PASSED'); }
+      process.exit(failures ? 1 : 0);
+    });
+  }, 1200);
+}

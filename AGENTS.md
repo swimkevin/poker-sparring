@@ -356,3 +356,14 @@ first; this file is the 30-second version.
   when the glossary grows. README's "2,000+ assertions" verified
   against the 1.8.183 run: 5,188 passed, 0 failed (a lower bound —
   only suites printing "N passed" are counted).
+- Mobile first-run (v1.8.186, 2026-11-06): the coach-intro "seen"
+  flag was marked at the first hero action even on mobile, where the
+  intro renders into a side panel the phone never shows. It is now
+  gated on visibility — desktop marks seen at the first hero action
+  (side panel visible), mobile only when the Coach panel is open or
+  the player opens the Coach tab (UI.markCoachIntroSeen, exposed by
+  app.js). A gold dot on the Coach tab signals new advice; coachTip
+  adds it unless the coach panel is already open. Test with a
+  matchMedia stub (jsdom's returns matches:false); the mobile
+  scenario polls for the verdict replacing the intro so the
+  "hero action happened" premise is proven, not assumed.

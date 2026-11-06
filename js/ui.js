@@ -572,6 +572,10 @@ var UI = (function () {
     if (!html) { c.hidden = true; return; }
     c.hidden = false;
     c.innerHTML = '<div class="coach-head">Coach</div>' + html;
+    var panel = document.getElementById('mobile-panel');
+    var coachOpen = panel && !panel.hidden && document.querySelector('.mtab.active[data-tab="coach"]');
+    var ct = document.querySelector('.mtab[data-tab="coach"]');
+    if (ct && !coachOpen) ct.classList.add('has-new');
   }
 
   function highlightWin(table, results) {
@@ -1475,7 +1479,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
 
     var isActive = btn.classList.contains('active') && !panel.hidden && tab !== 'table';
     if (tab === 'table' || isActive) { closePanel(); return; }
-    if (tab === 'coach') { openPanel('coach', '💡 Coach', fillCoach); return; }
+    if (tab === 'coach') {
+      btn.classList.remove('has-new');
+      if (UI.markCoachIntroSeen) UI.markCoachIntroSeen();
+      openPanel('coach', '💡 Coach', fillCoach); return;
+    }
     if (tab === 'history') { openPanel('history', '📖 Hand history', fillHistory); return; }
     if (tab === 'chat') { openPanel('chat', '💬 Table chat', fillChat); return; }
     if (tab === 'menu') { openPanel('menu', '☰ Menu', fillMenu); return; }

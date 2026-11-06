@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.185';
+  var APP_VERSION = '1.8.186';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -13,6 +13,15 @@
   function markCoachIntroSeen() {
     try { localStorage.setItem(COACH_INTRO_KEY, '1'); } catch (e) { quiet(e); }
   }
+  function coachIntroVisible() {
+    try {
+      var mobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+      if (!mobile) return true;
+      var mp = document.getElementById('mobile-panel');
+      return !!(mp && !mp.hidden && document.querySelector('.mtab.active[data-tab="coach"]'));
+    } catch (e) { quiet(e); return true; }
+  }
+  try { if (typeof UI !== 'undefined') UI.markCoachIntroSeen = markCoachIntroSeen; } catch (e) { quiet(e); }
   function maybeCoachIntro() {
     if (coachIntroSeen()) return;
     UI.coachTip('New here? This is your <b>coach</b> — it explains every spot in plain English before you act. ' +
@@ -314,7 +323,7 @@
       enableHeroControls();
       setTurnStatus('Your turn — action is on you.', true);
       var vd = coachVerdict();
-      markCoachIntroSeen();
+      if (coachIntroVisible()) markCoachIntroSeen();
       UI.coachTip(vd.html);
 
       pendingAdvice = vd.advice ? {

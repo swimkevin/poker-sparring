@@ -1,3 +1,19 @@
+## [1.8.186] — The coach taps you on the shoulder on mobile
+
+On mobile the coach lived behind a tab with no signal: new advice
+arrived silently, and the first-run intro was written into a side
+panel a phone never shows, then marked "seen" at the first hero
+action whether the player ever saw it or not. Now a gold dot appears
+on the Coach tab the moment new advice (or the intro) arrives, and it
+stays until the tab is opened. The intro also stops pretending it was
+seen: on a phone it keeps coming back at each hand start, with the
+dot, until the player opens the Coach tab or taps "Got it" — opening
+the tab counts as finding the coach. Desktop is unchanged: the side
+panel is visible, so the intro is still marked seen at the first hero
+action. The coach-intro test covers both paths, including a
+break-injection check (disabling the dot fails exactly the two
+dot assertions).
+
 ## [1.8.185] — Plain language everywhere a beginner reads
 
 A fresh-eyes pass against the app's original goal — a fun, simple way
