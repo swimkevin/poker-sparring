@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.191';
+  var APP_VERSION = '1.8.193';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -861,7 +861,7 @@
         else rangeTier = (V.archetype && V.archetype.openTier) || 0;
       }
       var eq = rangeTier
-        ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 500)
+        ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 2000)
         : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
@@ -876,7 +876,8 @@
           'Checked the river with a monster (' + hole + ')',
           'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');
       }
-      if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > 0.35) {
+      var needFold = legal.callAmount / (pot + legal.callAmount);
+      if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > needFold + 0.10) {
         return base('weak-fold', 'Folding too often',
           'Folded to a small bet of ' + UI.fmt(legal.toCall),
           'That was a tiny bet — you don\'t need a great hand to call it. If you always fold to small bets, other players will keep bluffing you.');
@@ -1255,7 +1256,7 @@
   }
 
   function rangeAwareEquityPreflop(hole, maxTier) {
-    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 2000);
+    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 5000);
   }
 
   function mkVerdict(advice, strength, msg, lesson) {
@@ -1965,9 +1966,11 @@
         var betSize = Math.max(1, Math.round(pot * frac));
 
         var heroStack = hero.stack;
+        if (betSize > heroStack) betSize = heroStack;
         var sprLine;
         var multiwayShoveBan = multiway && table.street !== 'river' && hc !== 'nut' && sprV > 1.5;
-        if (commit === 'commit' && !multiwayShoveBan && betSize < heroStack * 0.7 && table.street !== 'river') {
+        if (commit === 'commit' && !multiwayShoveBan &&
+            (betSize >= heroStack || (betSize < heroStack * 0.7 && table.street !== 'river'))) {
           betSize = heroStack;
           sprLine = ' The pot is already as big as your stack — a normal bet would leave almost nothing behind, so get it all in now.';
           return mkVerdict('bet', 'strong',
@@ -2022,9 +2025,11 @@
           return mkVerdict('check', 'marginal',
             'Just a gutshot — <b>check</b>. One way to win isn\'t enough to bet on.',
             '');
-        var halfBet = Math.max(1, Math.round(pot / 2));
+        var halfBet = Math.min(hero.stack, Math.max(1, Math.round(pot / 2)));
         return mkVerdict('bet', hc === 'draw-strong' ? 'strong' : 'marginal',
-          '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit. Needs only <b>' +
+          (halfBet >= hero.stack
+            ? '<b>All-in</b> (' + fmt(halfBet) + ') — semi-bluff: two ways to win: they fold now, or you hit. Needs only <b>'
+            : '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit. Needs only <b>') +
           pct(bluffBE(halfBet, pot)) + '</b> folds to break even.' + rangeNote,
           'Betting a strong draw is smart: you win if they fold now, or if you hit your hand.');
       }
@@ -2032,9 +2037,11 @@
       if (hc === 'secondpair' && canBet) {
         var scare2 = scareCardRank();
         if (!multiway && (inPos || scare2 || foldy > 0.5)) {
-          var b3 = Math.max(1, Math.round(pot / 2));
+          var b3 = Math.min(hero.stack, Math.max(1, Math.round(pot / 2)));
           return mkVerdict('bet', 'marginal',
-            '<b>Bet</b> ~½ pot (' + fmt(b3) + ') — ' + handClassName(hc) +
+            (b3 >= hero.stack
+              ? '<b>All-in</b> (' + fmt(b3) + ') — '
+              : '<b>Bet</b> ~½ pot (' + fmt(b3) + ') — ') + handClassName(hc) +
             ' is usually best here. Worse pairs call, draws pay to chase, and you charge overcards.' + rangeNote,
             'Bet second pair for thin value and protection — but keep the pot small.');
         }
@@ -2067,9 +2074,11 @@
           if (foldy > 0.55) why.push(vName + ' overfolds');
           if (heroFlushBlocker()) why.push('you block their best flush');
           if (checkedAround) why.push('everyone checked to you');
-          var b2 = Math.max(1, Math.round(pot / 2));
+          var b2 = Math.min(hero.stack, Math.max(1, Math.round(pot / 2)));
           return mkVerdict('bet', 'marginal',
-            '<b>Bluff</b> ~½ pot (' + fmt(b2) + ') — needs <b>' + pct(bluffBE(b2, pot)) + '</b> folds (' + why.join(', ') +
+            (b2 >= hero.stack
+              ? '<b>All-in</b> (' + fmt(b2) + ') — bluff: needs <b>'
+              : '<b>Bluff</b> ~½ pot (' + fmt(b2) + ') — needs <b>') + pct(bluffBE(b2, pot)) + '</b> folds (' + why.join(', ') +
             ').' + rangeNote,
             'Bluff with a story — position, a scare card, or a folder — never just because. Mix bluffs in, or your value bets never get paid.');
         }

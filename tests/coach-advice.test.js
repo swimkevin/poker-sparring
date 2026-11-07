@@ -332,38 +332,36 @@ setTimeout(function () {
     ok(stripAdvice(pf4CtlManiac.html).indexOf('2,700') !== -1,
       'QQ 4-bet shove states the all-in amount 2,700');
 
-    // v1.8.191: facing-open equity runs 2000 sims. T9s vs Alice's 6x open
-    // sits ~2 points below the in-position close-call lean, so at 500 sims
-    // it flip-flopped call/fold 5 times in 20 identical runs; at 2000 sims
-    // it folds 19-20 times in 20. The cap is 2, not 0: the true edge is
-    // ~2 points, so a rare Monte Carlo draw still lands on call.
-    var t9sCalls = 0;
-    for (var t9sRun = 0; t9sRun < 20; t9sRun++) {
-      var t9sV = (function () {
-        var s = d.createElement('script');
-        s.textContent = [
-          'window.__t9sTable = new PokerTable({ players: [',
-          '  { name: "hero", isHero: true }, { name: "V", archetype: ARCHETYPES.filter(function (a) { return a.id === "alice"; })[0] },',
-          '  { name: "B" }, { name: "C" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
-          '], sb: 5, bb: 10, startingStack: 3000 });',
-          'var t = window.__t9sTable;',
-          't.button = 0; t.street = "preflop"; t.currentBet = 60; t.pot = 15;',
-          't.players[0].hole = [{ r: 10, s: 0 }, { r: 9, s: 0 }];',
-          't.players[0].stack = 2000; t.players[0].bet = 0;',
-          't.players[1].stack = 2000; t.players[1].bet = 60;',
-          't.community = [];',
-          'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
-        ].join('\n');
-        d.head.appendChild(s);
-        var t = w.__t9sTable;
-        w.__coachTestHooks.setTable(t);
-        w.__coachTestHooks.setHandRec({ timeline: [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 60, pot: 75 }] });
-        w.__coachTestHooks.setDecisions([]);
-        return w.coachVerdict();
-      })();
-      if (t9sV.advice === 'call') t9sCalls++;
-    }
-    ok(t9sCalls <= 2, 'T9s vs Alice 6x open is stable: ' + t9sCalls + '/20 calls (v1.8.191)');
+    // v1.8.192: a leading bet is never advised above the hero's stack.
+    // Trips on a paired board at SPR 0.5 used to advise a 1,340 bet with
+    // a 1,000 stack; now it says all-in for 1,000.
+    var lowSprV = (function () {
+      var s = d.createElement('script');
+      s.textContent = [
+        'window.__lowSprTable = new PokerTable({ players: [',
+        '  { name: "hero", isHero: true }, { name: "V", archetype: ARCHETYPES.filter(function (a) { return a.id === "rock"; })[0] },',
+        '  { name: "B" }, { name: "C" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+        '], sb: 5, bb: 10, startingStack: 3000 });',
+        'var t = window.__lowSprTable;',
+        't.button = 0; t.street = "turn"; t.currentBet = 0; t.pot = 2000;',
+        't.players[0].hole = [{ r: 4, s: 1 }, { r: 9, s: 0 }];',
+        't.players[0].stack = 1000; t.players[0].bet = 0;',
+        't.players[1].stack = 1000; t.players[1].bet = 0;',
+        't.community = [{ r: 7, s: 1 }, { r: 4, s: 0 }, { r: 12, s: 1 }, { r: 4, s: 3 }];',
+        'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+      ].join('\n');
+      d.head.appendChild(s);
+      var t = w.__lowSprTable;
+      w.__coachTestHooks.setTable(t);
+      w.__coachTestHooks.setHandRec({ timeline: [] });
+      w.__coachTestHooks.setDecisions([]);
+      return w.coachVerdict();
+    })();
+    ok(lowSprV.advice === 'bet', 'trips at SPR 0.5 still bets for value (got ' + lowSprV.advice + ')');
+    ok(stripAdvice(lowSprV.html).indexOf('All-in (1,000)') !== -1,
+      'trips at SPR 0.5 says all-in for the 1,000 stack, not a fraction-of-pot bet above it');
+    ok(stripAdvice(lowSprV.html).indexOf('1,340') === -1,
+      'trips at SPR 0.5 never advises the impossible 1,340 bet (v1.8.192)');
 
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {
@@ -473,8 +471,9 @@ setTimeout(function () {
         'J9 overcards calling Rock\'s turn bet flags bad-chase (range eq ~6% vs 30% need; random eq ~30% hid it)');
       var Q7259 = Q725.concat([{ r: 9, s: 1 }]);
       // Alice opens the tightest range (openTier 1), so her capped small bet
-      // prices second pair at ~22% vs a 25% need: folding is correct, no flag.
-      // Rock opens tier 2, so the same fold against him IS a weak fold.
+      // prices second pair at ~22% vs a 20% need: below the need + 10 flag
+      // line (30%), so folding is correct, no flag. Rock opens tier 2, so
+      // the same fold against him IS a weak fold (eq ~38%).
       var leakWeakAlice = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'alice', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(!leakWeakAlice,
@@ -482,7 +481,7 @@ setTimeout(function () {
       var leakWeakRock = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(leakWeakRock && leakWeakRock.type === 'weak-fold',
-        'folding second pair to Rock\'s small river bet still flags weak-fold (range eq ~39% vs 25% need)');
+        'folding second pair to Rock\'s small river bet still flags weak-fold (range eq ~38% vs 20% need, flags above need + 10)');
       var leakWeakManiac = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'maniac', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(leakWeakManiac && leakWeakManiac.type === 'weak-fold',

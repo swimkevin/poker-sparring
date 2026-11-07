@@ -197,6 +197,15 @@ first; this file is the 30-second version.
 - Braced-block syntax (2026-11-04): converting a single-return
   `if` into a braced block needs the closing brace — run
   `node --check` after any structural edit before the test run.
+- Leading bet amounts need a stack clamp too (v1.8.192, 2026-11-07): the
+  facing branches all clamp raise sizes to `legal.maxRaiseTo`, but the
+  leading branch computed fraction-of-pot bets with no clamp — trips at
+  SPR 0.5 was advised a 1,340 bet from a 1,000 stack, and the three
+  half-pot bets (semi-bluff, second pair, bluff) advised 1,500 from 1,000
+  at SPR 0.33. Rule: every advised bet amount is clamped to the hero's
+  stack, and when the clamped amount IS the whole stack the message says
+  all-in, not a fraction-of-pot label. The v1.8.166 canRaise guard covers
+  raises; this covers leading bets.
 - Unguarded raise advice (v1.8.166, 2026-11-04): the eval
   flagged a preflop "raise" with canRaise false — a 10-chip hero
   told to steal-raise to 25. The steal and limpers branches
@@ -270,14 +279,19 @@ first; this file is the 30-second version.
   what is missing. Run it before EVERY push.py call; a failed check
   blocks the push. Verified: passes a complete list, fails when
   js/app.js is omitted, fails on version drift.
-- Facing-open sims to 2000 (v1.8.191, 2026-11-07): the facing-open branch
+- Facing-open sims to 5000 (v1.8.191-192, 2026-11-07): the facing-open branch
   has TWO nearby boundaries (the strong-call price and the in-position
   close-call lean 5 points below it), so 500-sim noise (~2 points) flipped
   the lean on borderline suited hands — T9s vs Alice's 6x open called 5/20
-  identical runs. At 2000 sims the same three spots call 1/60. Exception
-  to the 500-sim rule, not a new rule: the other facing branches have a
-  single boundary and stay at 500. A 20-run stability test pins the T9s
-  spot (at most 2 calls in 20); it fails on 500-sim code.
+  identical runs. At 2000 sims it still flipped ~12% and at 5000 sims ~5%,
+  because the spot sits ~1 point from the lean boundary — the honest-limit
+  zone, where no sim count stabilizes it. Exception to the 500-sim rule,
+  not a new rule: the other facing branches have a single boundary and
+  stay at 500. Lesson: never gate a ~1-point-edge spot with a binary
+  run-count test — v1.8.191's 20-run stability test (at most 2 calls in
+  20) flaked on CI and locally at a ~8-14% rate, and failed the 191 CI
+  run. Pin the sim count literally in the scenario test instead; measure
+  flip rates with a probe, don't assert on them in the suite.
 - Postflop facing sims (v1.8.179, 2026-11-06): the preflop branches moved
   to 500 sims in v1.8.176, but the postflop facing branch still ran 150 —
   and a probe caught the same flip: second pair vs a big bet quoted
@@ -385,3 +399,54 @@ first; this file is the 30-second version.
   matchMedia stub (jsdom's returns matches:false); the mobile
   scenario polls for the verdict replacing the intro so the
   "hero action happened" premise is proven, not assumed.
+- CI diagnosis: ONE stable tool (v1.8.193, 2026-11-07): every CI
+  failure in Nov spawned a brand-new one-off script (ci-logs.py,
+  ci-logs2.py, ci-logs3.py, ci-steps.py, ci-checkruns.py,
+  ci-annotations.py, ci-jobs.py) and every novel exec command
+  triggered a FRESH permission card for Kevin — that is the prompt
+  spam he reported ("keeps asking for permission to read daily
+  improvement.txt": there is no such file; the cards were exec
+  approvals for new CI-log scripts from the scheduled task).
+  `hidden_files/ci-diagnose.py` is now the only CI tool, with
+  subcommands check/jobs/steps/checks/logs; the loop must use ONLY
+  it. HARD RULE: never write a new *.py/*.js investigation script
+  per failure; never run a novel inline heredoc exec to fetch CI
+  logs; reuse the stable helper or plain API calls with no new
+  files. If the helper is broken, fix the helper itself. Two
+  breakages found while consolidating: ci-annotations.py 404d —
+  `/actions/jobs/{id}/checks` is not a real endpoint (check-runs
+  live under `/commits/{sha}/check-runs`); and the logs endpoint
+  does NOT always return a zip — it 302-redirects to a blob host
+  and the body is sometimes a plain-text log, so assuming zip
+  crashes the parse (and the auth header must be stripped on the
+  redirect or the blob store 401s). The helper handles both
+  formats and saves the raw bytes.
+- NEVER read, open, or edit the cron definition (v1.8.193,
+  2026-11-07): loop workers must never touch
+  `~/workspace/cron.d/` or any cron definition file — the Phase 5
+  "update THESE instructions" line kept sending workers to read
+  the loop's own definition, which is the other suspect for the
+  "read daily improvement" prompts (the cron file is literally
+  named poker-coach-daily-improvement). Lessons go ONLY to
+  `~/memory/YYYY-MM-DD.md` and repo AGENTS.md; the main agent
+  applies cron-body edits. HARD RULE, no exceptions.
+- Weak-fold flag is priced, not fixed (v1.8.193, 2026-11-07):
+  the 1.8.189 CI failure was the Rock weak-fold test — measured
+  88/100 flags at 500 sims because the fixed 0.35 line sat only
+  1.47 sigma above the spot's true equity (0.379 +/- 0.020). The
+  flag now fires when equity clears need + 0.10 (the same eq-vs-
+  need math the coach uses everywhere; the old fixed line was the
+  only place that didn't price the bet) and the leak-tracker's
+  range estimate runs 2000 sims: Rock 100/100 flags, Alice 0/100,
+  Maniac 100/100. The scenario test pins the rule literally
+  (`eq > needFold + 0.10` present, `eq > 0.35` absent). The
+  1.8.191 CI failure was the T9s run-count test (4/20 calls, same
+  on CI and locally); the 1.8.192 worker already resolved it per
+  the recorded lesson — run-count test removed, sim count pinned
+  literally at 5000 in the scenario test (and the 1.8.192
+  CHANGELOG entry does document the bump — the earlier claim that
+  it was undocumented was wrong; the entry's second paragraph
+  covers it). Note the 1.8.192 full-suite log is stale evidence:
+  it was run before the test removal, so its T9s FAIL does not
+  describe the shipped tree. Re-measured 2026-11-07: T9s calls
+  3/200 verdicts at 5000 sims (p = 1.5%).

@@ -673,8 +673,16 @@ console.log('\n57. v1.8.176: facing a 4-bet shove, premiums are priced');
     'the old auto-call line for premiums vs a 4-bet shove is gone');
   ok(src.indexOf('if (eq4 > need4)') !== -1,
     'the tier-1 4-bet-shove call is gated on the equity clearing the price');
-  ok(src.indexOf('return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 2000);') !== -1,
-    'facing-open equity uses 2000 sims: two nearby boundaries (strong call and the in-position lean) flip borderline calls on 500-sim noise (v1.8.191)');
+  ok(src.indexOf('return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 5000);') !== -1,
+    'facing-open equity uses 5000 sims: two nearby boundaries (strong call and the in-position lean) flip borderline calls on 500-sim noise (v1.8.192)');
+}
+
+console.log('\n58. v1.8.193: the weak-fold flag is priced against the pot odds');
+{
+  ok(src.indexOf('eq > needFold + 0.10') !== -1,
+    'the weak-fold flag fires when equity clears need + 10, not a fixed 35%: the fixed line sat 1.5 sigma from the Rock spot and flaked CI 1.8.189 (v1.8.193)');
+  ok(src.indexOf('eq > 0.35') === -1,
+    'the old fixed 35% weak-fold line is gone');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
