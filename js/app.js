@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.190';
+  var APP_VERSION = '1.8.191';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1255,7 +1255,7 @@
   }
 
   function rangeAwareEquityPreflop(hole, maxTier) {
-    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 500);
+    return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 2000);
   }
 
   function mkVerdict(advice, strength, msg, lesson) {

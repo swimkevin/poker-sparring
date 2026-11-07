@@ -270,6 +270,14 @@ first; this file is the 30-second version.
   what is missing. Run it before EVERY push.py call; a failed check
   blocks the push. Verified: passes a complete list, fails when
   js/app.js is omitted, fails on version drift.
+- Facing-open sims to 2000 (v1.8.191, 2026-11-07): the facing-open branch
+  has TWO nearby boundaries (the strong-call price and the in-position
+  close-call lean 5 points below it), so 500-sim noise (~2 points) flipped
+  the lean on borderline suited hands — T9s vs Alice's 6x open called 5/20
+  identical runs. At 2000 sims the same three spots call 1/60. Exception
+  to the 500-sim rule, not a new rule: the other facing branches have a
+  single boundary and stay at 500. A 20-run stability test pins the T9s
+  spot (at most 2 calls in 20); it fails on 500-sim code.
 - Postflop facing sims (v1.8.179, 2026-11-06): the preflop branches moved
   to 500 sims in v1.8.176, but the postflop facing branch still ran 150 —
   and a probe caught the same flip: second pair vs a big bet quoted

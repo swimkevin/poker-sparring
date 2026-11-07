@@ -332,6 +332,39 @@ setTimeout(function () {
     ok(stripAdvice(pf4CtlManiac.html).indexOf('2,700') !== -1,
       'QQ 4-bet shove states the all-in amount 2,700');
 
+    // v1.8.191: facing-open equity runs 2000 sims. T9s vs Alice's 6x open
+    // sits ~2 points below the in-position close-call lean, so at 500 sims
+    // it flip-flopped call/fold 5 times in 20 identical runs; at 2000 sims
+    // it folds 19-20 times in 20. The cap is 2, not 0: the true edge is
+    // ~2 points, so a rare Monte Carlo draw still lands on call.
+    var t9sCalls = 0;
+    for (var t9sRun = 0; t9sRun < 20; t9sRun++) {
+      var t9sV = (function () {
+        var s = d.createElement('script');
+        s.textContent = [
+          'window.__t9sTable = new PokerTable({ players: [',
+          '  { name: "hero", isHero: true }, { name: "V", archetype: ARCHETYPES.filter(function (a) { return a.id === "alice"; })[0] },',
+          '  { name: "B" }, { name: "C" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+          '], sb: 5, bb: 10, startingStack: 3000 });',
+          'var t = window.__t9sTable;',
+          't.button = 0; t.street = "preflop"; t.currentBet = 60; t.pot = 15;',
+          't.players[0].hole = [{ r: 10, s: 0 }, { r: 9, s: 0 }];',
+          't.players[0].stack = 2000; t.players[0].bet = 0;',
+          't.players[1].stack = 2000; t.players[1].bet = 60;',
+          't.community = [];',
+          'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+        ].join('\n');
+        d.head.appendChild(s);
+        var t = w.__t9sTable;
+        w.__coachTestHooks.setTable(t);
+        w.__coachTestHooks.setHandRec({ timeline: [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 60, pot: 75 }] });
+        w.__coachTestHooks.setDecisions([]);
+        return w.coachVerdict();
+      })();
+      if (t9sV.advice === 'call') t9sCalls++;
+    }
+    ok(t9sCalls <= 2, 'T9s vs Alice 6x open is stable: ' + t9sCalls + '/20 calls (v1.8.191)');
+
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).
     (function () {
       var s = d.createElement('script');

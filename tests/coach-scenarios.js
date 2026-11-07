@@ -673,8 +673,8 @@ console.log('\n57. v1.8.176: facing a 4-bet shove, premiums are priced');
     'the old auto-call line for premiums vs a 4-bet shove is gone');
   ok(src.indexOf('if (eq4 > need4)') !== -1,
     'the tier-1 4-bet-shove call is gated on the equity clearing the price');
-  ok(src.indexOf('return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 500);') !== -1,
-    'facing-open equity uses 500 sims like the 3-bet branch, so borderline calls stop flipping on 150-sim noise');
+  ok(src.indexOf('return estimateEquityVsRange(hole, Math.min(6, Math.max(1, maxTier || 3)), 2000);') !== -1,
+    'facing-open equity uses 2000 sims: two nearby boundaries (strong call and the in-position lean) flip borderline calls on 500-sim noise (v1.8.191)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
