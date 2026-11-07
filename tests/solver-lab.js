@@ -167,11 +167,11 @@ var SPOTS = [
   { name: 'kevin-river-nathan-7', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_7, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 2, expect: 'fold',
-    timeline: riverTimeline(266, 355, 669, 887), exactPool: true },
+    timeline: riverTimeline(266, 355, 669, 887), exactPool: true, maxMsgLen: 420 },
   { name: 'kevin-river-nathan-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 2, expect: 'call',
-    timeline: riverTimeline(266, 355, 669, 887), exactPool: true },
+    timeline: riverTimeline(266, 355, 669, 887), exactPool: true, maxMsgLen: 420 },
   { name: 'bypass-overbet', kind: 'facing', villain: 'rock',
     hero: [C(13, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 1000, heroStack: 1200, nLive: 2, expect: 'fold',
@@ -513,6 +513,9 @@ setTimeout(function () {
         '% | EV(call) ' + evCall.toFixed(0) + ' | coach EV ' + evCoach.toFixed(0) +
         ' | loss ' + loss.toFixed(0);
       if (loss > 0) problems.push('exact EV loss ' + loss.toFixed(0));
+      if (spot.maxMsgLen != null && strip(v.msg).length > spot.maxMsgLen)
+        problems.push('message ' + strip(v.msg).length + ' chars exceeds ' +
+          spot.maxMsgLen + ' tone budget');
     }
     if (spot.kind === 'facing-raise') {
       var rm = /to ~\s*([\d,]+)/.exec(msg);

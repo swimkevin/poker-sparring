@@ -89,6 +89,8 @@ setTimeout(function () {
     'nathan 7-river message names the narrowed range (Seven, Four, strong Queen)');
   ok(t1.indexOf('bluff') !== -1, 'nathan 7-river message names the non-bluffer profile');
   ok(t1.indexOf('97%') === -1, 'nathan 7-river message never quotes the vs-random 97%');
+  ok(strip(v1.msg).length <= 420,
+    'nathan 7-river veto message fits the 420-char tone budget (got ' + strip(v1.msg).length + ', v1.8.189)');
 
   var v2 = setup('alice', 7, 2, 266, 355, 669, 887, 669);
   console.log('  alice 7-river says: ' + strip(v2.html).slice(0, 120));

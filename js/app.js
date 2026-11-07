@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.188';
+  var APP_VERSION = '1.8.189';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2161,7 +2161,7 @@
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
         narrowDesc + '. The river ' + riverRank + ' completes the hands he called with, and ' + vName +
-        ' almost never bluffs — this is his first big bet of the hand, and from him that is a monster far more often than a bluff. ' +
+        ' almost never bluffs. ' +
         'Against the hands he would play this way you win only about ' + pct(veto.eq) +
         ' of the time' + vetoMultiNote + ', but calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
         '. The math says <b>fold</b>.' + rangeNote,
