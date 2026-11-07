@@ -203,6 +203,42 @@ setTimeout(function () {
     ok(stripAdvice(pf4bet.html).indexOf('2,000') !== -1,
       'facing-4bet shove states the all-in amount 2,000 (v1.8.163)');
 
+    // Facing a second re-raise, every tier is priced, not auto-played (v1.8.188):
+    // a premium shoves only when its equity clears the shove break-even
+    // (QQ vs Rock's tight range is ~29% vs a ~49% break-even, so it folds
+    // instead of shoving into the nuts), and strong hands call a wide
+    // re-raiser instead of auto-folding (AKo vs Maniac is ~63% at a 43% price).
+    var pf4betQQrock = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 270,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 270, pot: 405 }], 3, 270, 90);
+    ok(pf4betQQrock.advice === 'fold', 'QQ vs Rock second re-raise folds instead of shoving into a tight range (got ' + pf4betQQrock.advice + ')');
+    var pf4betAKmaniac = preflopVerdict([{ r: 14, s: 0 }, { r: 13, s: 1 }], 'maniac', 270,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 270, pot: 405 }], 3, 270, 90);
+    ok(pf4betAKmaniac.advice === 'call', 'AKo vs Maniac second re-raise calls on a big edge (got ' + pf4betAKmaniac.advice + ')');
+    var pf4betJJmaniac = preflopVerdict([{ r: 11, s: 0 }, { r: 11, s: 1 }], 'maniac', 270,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 270, pot: 405 }], 3, 270, 90);
+    ok(pf4betJJmaniac.advice === 'call', 'JJ vs Maniac second re-raise calls on a big edge (got ' + pf4betJJmaniac.advice + ')');
+    var pf4betAQrock = preflopVerdict([{ r: 14, s: 0 }, { r: 12, s: 1 }], 'rock', 270,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 270, pot: 405 }], 3, 270, 90);
+    ok(pf4betAQrock.advice === 'fold', 'AQo vs Rock second re-raise still folds (got ' + pf4betAQrock.advice + ')');
+    var pf4betShoveAKmaniac = preflopVerdict([{ r: 14, s: 0 }, { r: 13, s: 1 }], 'maniac', 2000,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 2000, pot: 2135 }], 2, 2000, 90, 2000, 0);
+    ok(pf4betShoveAKmaniac.advice === 'call', 'AKo vs Maniac second re-raise shove calls when the equity clears the price (got ' + pf4betShoveAKmaniac.advice + ')');
+    var pf4betShoveAKrock = preflopVerdict([{ r: 14, s: 0 }, { r: 13, s: 1 }], 'rock', 2000,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 },
+       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 2000, pot: 2135 }], 2, 2000, 90, 2000, 0);
+    ok(pf4betShoveAKrock.advice === 'fold', 'AKo vs Rock second re-raise shove still folds (got ' + pf4betShoveAKrock.advice + ')');
+
     // Big opens are priced against the strong range, not the open range (v1.8.172).
     // A shove or a 6x+ open from a tight player is a tier-1 range, not a tier-2 open.
     var pfShoveQQ = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 2000,
@@ -285,10 +321,15 @@ setTimeout(function () {
     ok(pf4ShoveQQ.advice === 'fold', 'Rock 4-bet shove, QQ folds (got ' + pf4ShoveQQ.advice + ')');
     var pf4ShoveAA = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 3000, shove4Tl, 3, 3000, 300, 3000, 0);
     ok(pf4ShoveAA.advice === 'call', 'Rock 4-bet shove, AA calls (got ' + pf4ShoveAA.advice + ')');
+    // v1.8.188: the non-all-in 4-bet is priced too — QQ no longer shoves into
+    // Rock's tight range (it folds), but still shoves over a wide re-raiser.
     var pf4Ctl = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'rock', 300,
       shove4Tl.slice(0, 3), 3, 300, 300, 2700, 2700);
-    ok(pf4Ctl.advice === 'raise', 'Rock 4-bet to 300, QQ still shoves (got ' + pf4Ctl.advice + ')');
-    ok(stripAdvice(pf4Ctl.html).indexOf('2,700') !== -1,
+    ok(pf4Ctl.advice === 'fold', 'Rock 4-bet to 300, QQ folds instead of shoving into a tight range (got ' + pf4Ctl.advice + ')');
+    var pf4CtlManiac = preflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'maniac', 300,
+      shove4Tl.slice(0, 3), 3, 300, 300, 2700, 2700);
+    ok(pf4CtlManiac.advice === 'raise', 'Maniac 4-bet to 300, QQ still shoves (got ' + pf4CtlManiac.advice + ')');
+    ok(stripAdvice(pf4CtlManiac.html).indexOf('2,700') !== -1,
       'QQ 4-bet shove states the all-in amount 2,700');
 
     // Short-stack branch keys on the hero's stack, not the effective stack (v1.8.164).

@@ -1,3 +1,7 @@
+## [1.8.188] — Second re-raises are priced, not auto-played
+
+Facing a second re-raise, the coach auto-shoved every premium and auto-folded everything else — and both defaults were wrong at the edges. A probe priced both against the villain's own re-raise range (their 3-bet tier, 500 sims): QQ shoving over Rock's 4-bet to 300 is ~29% against his tight range while the shove needs ~47% to break even even if he never folds — about 700 chips worse than folding. And JJ folds to a Maniac's 4-bet at ~72% equity against a 25% price, a 47-point edge thrown away; AKo, AQs, TT, AQo and 99 fold the same way. Now the premium shoves only when its equity clears the shove break-even (priced as if the villain calls with his whole range — a conservative bar, since any folds only help), otherwise it falls through to the same call/fold pricing as an all-in re-raise; strong hands (tier 2–4) call when their equity clears the price (10 points more out of position, 30bb or deeper, with the pair set-mining escape kept), and call an all-in re-raise on pure equity. Tight re-raisers still fold everything: AKo vs Rock is ~35% at a 43% price. The lab gains six spots (a priced fold, two wide-range calls, a wide-range shove, an all-in call and an all-in fold) and the old '4bet-rock-qq-raise' spot becomes a fold — it was pinning the bug.
+
 ## [1.8.187] — Loop docs: the full push.py invocation, written down
 
 The exact push.py call — owner, repo, branch, message, then

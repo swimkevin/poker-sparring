@@ -408,9 +408,59 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 435 }
     ] },
-  { name: '4bet-rock-qq-raise', kind: 'facing-preflop', villain: 'rock',
+  { name: '4bet-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 300, heroStack: 2700, villainStack: 2700, nLive: 3, expect: 'raise',
+    potBefore: 300, bet: 600, heroStack: 2700, villainStack: 2700, nLive: 3, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 600, pot: 735 }
+    ] },
+  { name: '4bet-maniac-ako-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
+    ] },
+  { name: '4bet-maniac-jj-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
+    ] },
+  { name: '4bet-maniac-qq-raise', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'raise',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
+    ] },
+  { name: '4bet-shove-maniac-ako-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 2000, heroStack: 2000, villainStack: 0, nLive: 3, expect: 'call',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 2000, pot: 435 }
+    ] },
+  { name: '4bet-shove-rock-ako-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 2000, heroStack: 2000, villainStack: 0, nLive: 3, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 2000, pot: 435 }
+    ] },
+  { name: '4bet-rock-aqo-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'fold',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },

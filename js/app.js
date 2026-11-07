@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.187';
+  var APP_VERSION = '1.8.188';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1664,23 +1664,54 @@
     }
 
     if (spot === 'facing-4bet+') {
+      var fourTier = (V && V.archetype && V.archetype.threeBetTier) || 3;
+      var eq4 = estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, fourTier || 3)), 500);
+      var need4 = toCall / (pot + toCall);
+      var math4 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — need <b>' + pct(need4) + '</b> to break even.';
       if (tier === 1) {
         var shoveTo = Math.min(legal.maxRaiseTo, hero.stack + (hero.bet || 0));
-        if (legal.canRaise)
-          return mkVerdict('raise', 'strong',
-            'They re-raised again. With ' + c.nmHtml + ' you\'re committed — <b>shove</b> ' + fmt(shoveTo) + ' or call it off.',
-            'Against a second re-raise only the very best hands continue — everything else folds.');
-        var fourTier = (V && V.archetype && V.archetype.threeBetTier) || 3;
-        var eq4 = estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, fourTier || 3)), 500);
-        var need4 = toCall / (pot + toCall);
-        var math4 = ' Pay <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — need <b>' + pct(need4) + '</b> to break even.';
+        if (legal.canRaise) {
+          var heroTotal = hero.stack + (hero.bet || 0);
+          var villainCall = Math.max(0, Math.min(V ? V.stack : 0, heroTotal - table.currentBet));
+          var shovePot = pot + (heroTotal - (hero.bet || 0)) + villainCall;
+          if (eq4 > heroTotal / Math.max(1, shovePot))
+            return mkVerdict('raise', 'strong',
+              'They re-raised again. With ' + c.nmHtml + ', <b>shove</b> ' + fmt(shoveTo) + ' — you win about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range, so get it in while you\'re ahead.',
+              'Against a second re-raise, only shove a premium when the math says you\'re ahead — a shove into a range that crushes you just pays them off.');
+        }
         if (eq4 > need4)
           return mkVerdict('call', 'strong',
-            'They shoved. With ' + c.nmHtml + ', <b>call</b> — you win about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
+            (legal.canRaise ? 'They re-raised again. ' : 'They shoved. ') + 'With ' + c.nmHtml + ', <b>call</b> — you win about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
             'Against a second re-raise only the very best hands continue — and yours clears the price.');
         return mkVerdict('fold', 'strong',
-          'They shoved. With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
+          (legal.canRaise ? 'They re-raised again. ' : 'They shoved. ') + 'With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
           'A second re-raise shove is almost always the nuts — even a premium folds when the math says so.');
+      }
+      if (tier <= 4) {
+        if (!legal.canRaise) {
+          if (eq4 > need4)
+            return mkVerdict('call', 'strong',
+              'They shoved. With ' + c.nmHtml + ', <b>call</b> — you win about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
+              'A second re-raise shove is usually strong, but yours clears the price — call.');
+          return mkVerdict('fold', 'strong',
+            'They shoved. With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range.' + math4,
+            'A second re-raise shove is almost always the nuts — fold unless the math says you\'re ahead.');
+        }
+        var effBB4 = effStackBB(vIdx);
+        var setMine4 = hero.hole[0].r === hero.hole[1].r && toCall * 15 <= effStackChips(vIdx);
+        var eqCall4 = (inPos && eq4 > need4) || (!inPos && eq4 > need4 + 0.10);
+        if (effBB4 >= 30 && (setMine4 || eqCall4)) {
+          if (setMine4 && !eqCall4)
+            return mkVerdict('call', 'marginal',
+              '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math4,
+              'You can call re-raises with pairs only when ~15× the call sits behind.');
+          return mkVerdict('call', 'marginal',
+            (inPos ? '<b>Call</b> in position — ' : '<b>Call</b> — ') + c.nmHtml + ' is a big favorite against ' + vName + '\'s wide re-raise range (about <b>' + pct(eq4) + '</b> vs <b>' + pct(need4) + '</b> needed), so the price is right' + (inPos ? '' : ' even out of position') + '. Fold to more heat.' + math4,
+            'Out of position, only call a re-raise when you\'re a big favorite — a small edge isn\'t enough when you\'ll be guessing on every street.');
+        }
+        return mkVerdict('fold', 'strong',
+          '<b>Fold</b> — ' + c.nmHtml + ' wins only about <b>' + pct(eq4) + '</b> against ' + vName + '\'s re-raise range, and calling ' + fmt(toCall) + ' needs <b>' + pct(need4) + '</b>.' + math4,
+          'A second re-raise is usually strong — call only when the math says you\'re ahead.');
       }
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — a second re-raise at these stakes is almost always the nuts.',
