@@ -97,7 +97,7 @@ function sizeOf(msg) {
   return m ? parseInt(m[1].replace(/,/g, ''), 10) : null;
 }
 function pctOf(msg) {
-  var m = /You win about (\d+)%/.exec(msg);
+  var m = /You win about (\d+)%/.exec(msg) || /wins about (\d+)%/.exec(msg);
   return m ? parseInt(m[1], 10) / 100 : null;
 }
 function seededGrossEq(spot) {
@@ -111,8 +111,13 @@ function seededGrossEq(spot) {
   var arch = spot.villain
     ? w.ARCHETYPES.filter(function (a) { return a.id === spot.villain; })[0]
     : null;
+  var tier = (arch && (spot.grossWhich === 'threeBet' ? arch.threeBetTier : arch.openTier)) || 3;
   var tiers = [];
-  for (var o = 0; o < (spot.nLive || 2) - 1; o++) tiers.push(o === 0 ? ((arch && arch.openTier) || 3) : 0);
+  if (spot.kind === 'facing-preflop') {
+    tiers = [tier];
+  } else {
+    for (var o = 0; o < (spot.nLive || 2) - 1; o++) tiers.push(o === 0 ? tier : 0);
+  }
   var realRandom = Math.random;
   Math.random = rnd;
   var eq;
@@ -272,7 +277,7 @@ var SPOTS = [
     expectWord: 'Pay 90 to win 120' },
   { name: '3bet-jj-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
-    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
@@ -280,60 +285,60 @@ var SPOTS = [
     expectWord: 'Pay 200 to win 230' },
   { name: '3bet-aqo-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
     ] },
   { name: '3bet-jts-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(11, 2), C(10, 2)], board: [], street: 'preflop',
-    potBefore: 30, bet: 90, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 30, bet: 90, heroStack: 2000, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
     ] },
   { name: '3bet-99-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(9, 1), C(9, 0)], board: [], street: 'preflop',
-    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
     ] },
   { name: '3bet-oop-jj-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
-    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'call', button: 5,
+    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet', button: 5,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
     ] },
   { name: '3bet-oop-jj-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
-    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold', button: 5,
+    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet', button: 5,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
     ] },
   { name: 'open-55-ahead', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(5, 1), C(5, 0)], board: [], street: 'preflop',
-    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 15, bet: 200, heroStack: 2000, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 200, pot: 215 }
     ] },
   { name: 'open-shove-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 15, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 2, expect: 'fold',
+    potBefore: 15, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 3015 }
     ] },
   { name: 'open-shove-maniac-qq-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 15, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 2, expect: 'call',
+    potBefore: 15, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 3015 }
     ] },
   { name: 'open-12x-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 15, bet: 120, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'fold',
+    potBefore: 15, bet: 120, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 120, pot: 135 }
     ] },
@@ -371,14 +376,14 @@ var SPOTS = [
     ] },
   { name: '3bet-shove-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 30, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'fold',
+    potBefore: 30, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 45 }
     ] },
   { name: '3bet-shove-rock-aa-call', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
-    potBefore: 30, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'call',
+    potBefore: 30, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 3000, pot: 45 }
@@ -392,7 +397,7 @@ var SPOTS = [
     ] },
   { name: '4bet-shove-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'fold',
+    potBefore: 300, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -401,7 +406,7 @@ var SPOTS = [
     ] },
   { name: '4bet-shove-rock-aa-call', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'call',
+    potBefore: 300, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -410,7 +415,7 @@ var SPOTS = [
     ] },
   { name: '4bet-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 600, heroStack: 2700, villainStack: 2700, nLive: 3, expect: 'fold',
+    potBefore: 300, bet: 600, heroStack: 2700, villainStack: 2700, nLive: 3, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -418,7 +423,7 @@ var SPOTS = [
     ] },
   { name: '4bet-maniac-ako-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -426,7 +431,7 @@ var SPOTS = [
     ] },
   { name: '4bet-maniac-jj-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -442,7 +447,7 @@ var SPOTS = [
     ] },
   { name: '4bet-shove-maniac-ako-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 2000, heroStack: 2000, villainStack: 0, nLive: 3, expect: 'call',
+    potBefore: 300, bet: 2000, heroStack: 2000, villainStack: 0, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -451,7 +456,7 @@ var SPOTS = [
     ] },
   { name: '4bet-shove-rock-ako-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 2000, heroStack: 2000, villainStack: 0, nLive: 3, expect: 'fold',
+    potBefore: 300, bet: 2000, heroStack: 2000, villainStack: 0, nLive: 3, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -460,7 +465,7 @@ var SPOTS = [
     ] },
   { name: '4bet-rock-aqo-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'fold',
+    potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
@@ -525,7 +530,7 @@ setTimeout(function () {
         problems.push('expected raise to ' + spot.expectRaiseTo + ', got ' + gotTo);
       evNote = 'raise to ' + gotTo;
     }
-    if (spot.kind === 'facing') {
+    if (spot.kind === 'facing' || spot.kind === 'facing-preflop') {
       var pct = pctOf(msg);
       var potF = spot.potBefore + spot.bet;
       var needF = spot.bet / (potF + spot.bet);
