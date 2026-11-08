@@ -715,5 +715,15 @@ console.log('\n61. v1.8.196: squeeze sizing adds 1x per caller in front');
     'the 3-bet lesson states the caller rule, not just the base multiple (v1.8.196)');
 }
 
+console.log('\n62. v1.8.197: raise the near-nuts for value vs a station trapper\'s small bet');
+{
+  ok(src.indexOf('var trapperValue = passiveTrapper && foldy <= 0.25 && adjEq >= 0.90;') !== -1,
+    'the trapper block lifts only when the villain is a station (folds little) and the coach equity crushes his range: trips vs Nathan raise, overpair at 82% still calls (v1.8.197)');
+  ok(src.indexOf("(!passiveTrapper || trapperValue)") !== -1,
+    'the small-bet raise branch takes the value-raise path for a station trapper (v1.8.197)');
+  ok(src.indexOf('he calls down with worse hands') !== -1,
+    'the trapper value-raise message says why: he calls down with worse, not "take it away" (v1.8.197)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

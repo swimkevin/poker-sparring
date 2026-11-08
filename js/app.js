@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.196';
+  var APP_VERSION = '1.8.197';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2226,10 +2226,15 @@
         'When the pot is nearly as big as your stack and your hand is strong, folding saves almost nothing — call.');
 
     var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
+    var trapperValue = passiveTrapper && foldy <= 0.25 && adjEq >= 0.90;
     if (tell && tell.unit === 'pot') {
-      if (tell.size === 'small' && legal.canRaise && !multiway && !passiveTrapper &&
+      if (tell.size === 'small' && legal.canRaise && !multiway && (!passiveTrapper || trapperValue) &&
           (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
         var tinyTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
+        if (trapperValue)
+          return mkVerdict('raise', 'strong',
+            'That\'s a small bet from ' + vName + ' — and with ' + handClassName(hc) + ' you\'re ahead of almost everything he bets. <b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> for value: he calls down with worse hands.' + rangeNote,
+            'Against a player who calls everything, raise your near-nuts for value — he pays you off with worse hands.');
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> (~3× their bet) and take it away.' + rangeNote,
           'Small bets often mean weakness: attack them.');
