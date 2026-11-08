@@ -467,7 +467,9 @@ console.log('\n36. v1.8.140: facing-bet bypass narrowing');
     'bypass requires short SPR, nut/overpair only');
   ok(src.indexOf('toCall <= 0.5 * pot && !polarStrong)') !== -1,
     'bypass requires a non-huge call and a non-polarized villain');
-  ok(src.indexOf("if (tell && tell.unit === 'pot' && tell.size === 'overbet' && tight > 0.6") !== -1,
+  var tightIdx = src.indexOf("var tightBigBet = tell && tell.unit === 'pot' && tight > 0.6");
+  var bypassIdx = src.indexOf("if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&");
+  ok(tightIdx !== -1 && bypassIdx !== -1 && tightIdx < bypassIdx,
     'tight-overbet fold is checked before the bypass');
 }
 
@@ -691,6 +693,14 @@ console.log('\n59. v1.8.194: the lean call needs a real bluffer, not just a wide
     'the lean call fires only when the villain actually bluffs a lot: a wide range alone already gets its discount in the threshold, and the message claims bluffing (v1.8.194)');
   ok(src.indexOf("(bluffy > 0.5 || range.label === 'wide')") === -1,
     'no wide-range arm on the lean call: it called a gutshot and ace-high into Rock (bluff 0.02) on a false "bluffs a lot" (v1.8.194)');
+}
+
+console.log('\n60. v1.8.195: a tight player\'s pot-sized river bet folds one pair');
+{
+  ok(src.indexOf("(table.street === 'river' && tell.size === 'large' && onePairOrLess)") !== -1,
+    'the tight-player big-bet guard extends to pot-sized river bets against one pair or less: top pair quoted 58% vs a loose tier pool but Rock\'s pot range is value-heavy (v1.8.195)');
+  ok(src.indexOf("var onePairOrLess = hc === 'toppair' || hc === 'secondpair' || hc === 'weakpair' ||") !== -1,
+    'the river extension is scoped to one pair or less: trips still call (94% in the lab) and the turn multiway top-pair call is untouched (v1.8.195)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

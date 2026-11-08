@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.194';
+  var APP_VERSION = '1.8.195';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2193,11 +2193,18 @@
         'Tournament poker: near pay jumps, a marginal chip call can lose money even when it wins chips — fold the close ones.');
     }
 
-    if (tell && tell.unit === 'pot' && tell.size === 'overbet' && tight > 0.6 && hc !== 'nut' &&
-        !(V && V.archetype && V.archetype.wideOverbet))
+    var onePairOrLess = hc === 'toppair' || hc === 'secondpair' || hc === 'weakpair' ||
+      hc === 'air' || hc === 'draw-weak';
+    var tightBigBet = tell && tell.unit === 'pot' && tight > 0.6 && hc !== 'nut' &&
+      !(V && V.archetype && V.archetype.wideOverbet) &&
+      (tell.size === 'overbet' ||
+        (table.street === 'river' && tell.size === 'large' && onePairOrLess));
+    if (tightBigBet)
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — an overbet from a tight player is almost always the nuts. Don\'t pay it off.' + rangeNote,
-        'Respect overbets from tight players: it\'s the nuts far more often than a bluff.');
+        '<b>Fold</b> — ' + (tell.size === 'overbet'
+          ? 'an overbet from a tight player is almost always the nuts. Don\'t pay it off.'
+          : 'a pot-sized bet from a tight player on the river is almost always a better hand. Don\'t pay it off.') + rangeNote,
+        'Respect big bets from tight players: it\'s a better hand far more often than a bluff.');
 
     if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&
         toCall <= 0.5 * pot && !polarStrong)
