@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.193';
+  var APP_VERSION = '1.8.194';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2273,7 +2273,7 @@
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
         'Calling when you win often enough is how winning poker works.');
-    if ((bluffy > 0.5 || range.label === 'wide') && !narrowedByCall && !diluted && adjEq > threshold - 0.10)
+    if (bluffy > 0.5 && !narrowedByCall && !diluted && adjEq > threshold - 0.10)
       return mkVerdict('call', 'marginal',
         mathLine + 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.',
         'Against heavy bluffers, call lighter: their range holds more air than usual.');

@@ -685,5 +685,13 @@ console.log('\n58. v1.8.193: the weak-fold flag is priced against the pot odds')
     'the old fixed 35% weak-fold line is gone');
 }
 
+console.log('\n59. v1.8.194: the lean call needs a real bluffer, not just a wide range');
+{
+  ok(src.indexOf("if (bluffy > 0.5 && !narrowedByCall && !diluted && adjEq > threshold - 0.10)") !== -1,
+    'the lean call fires only when the villain actually bluffs a lot: a wide range alone already gets its discount in the threshold, and the message claims bluffing (v1.8.194)');
+  ok(src.indexOf("(bluffy > 0.5 || range.label === 'wide')") === -1,
+    'no wide-range arm on the lean call: it called a gutshot and ace-high into Rock (bluff 0.02) on a false "bluffs a lot" (v1.8.194)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
