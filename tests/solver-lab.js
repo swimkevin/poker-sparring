@@ -289,6 +289,19 @@ var SPOTS = [
     hero: [C(8, 2), C(6, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)], street: 'turn',
     potBefore: 500, bet: 300, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 900,
     timeline: betTimeline('turn', 300, 500) },
+  { name: 'squeeze-aks-1-caller', kind: 'facing-raise', villain: 'rock',
+    hero: [C(14, 1), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 45, bet: 30, heroStack: 2000, nLive: 3, expect: 'raise', expectRaiseTo: 120,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 30, pot: 75 }
+    ] },
+  { name: 'squeeze-aks-no-caller', kind: 'facing-raise', villain: 'rock',
+    hero: [C(14, 1), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 90,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
   { name: 'preflop-prize-figure', kind: 'facing-preflop', villain: 'rock',
     hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
     potBefore: 30, bet: 90, heroStack: 2000, nLive: 2, expect: 'call',

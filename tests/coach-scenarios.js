@@ -703,5 +703,17 @@ console.log('\n60. v1.8.195: a tight player\'s pot-sized river bet folds one pai
     'the river extension is scoped to one pair or less: trips still call (94% in the lab) and the turn multiway top-pair call is untouched (v1.8.195)');
 }
 
+console.log('\n61. v1.8.196: squeeze sizing adds 1x per caller in front');
+{
+  ok(src.indexOf('function countCallersAfterOpen()') !== -1,
+    'a caller counter counts preflop calls after the open (v1.8.196)');
+  ok(src.indexOf("if (t.action === 'call' && raised) n++;") !== -1,
+    'the caller counter only counts calls made after a raise exists (v1.8.196)');
+  ok(src.indexOf('Math.round(open * (mult + callers))') !== -1,
+    'the value 3-bet is 3x/4x the open plus 1x per caller: AKs squeezed to 120 with one caller, 90 without (v1.8.196)');
+  ok(src.indexOf('plus 1× per caller in front') !== -1,
+    'the 3-bet lesson states the caller rule, not just the base multiple (v1.8.196)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

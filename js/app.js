@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.195';
+  var APP_VERSION = '1.8.196';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1226,6 +1226,16 @@
     return n;
   }
 
+  function countCallersAfterOpen() {
+    var n = 0, raised = false;
+    if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.street !== 'preflop') return;
+      if (t.action === 'raise' || t.action === 'bet') raised = true;
+      if (t.action === 'call' && raised) n++;
+    });
+    return n;
+  }
+
   function isNutFlushDraw(hole, community) {
     var suits = [0, 0, 0, 0];
     hole.concat(community).forEach(function (c) { suits[c.s]++; });
@@ -1792,12 +1802,14 @@
 
     if (tier <= 2 && legal.canRaise && !villainAllIn && (!bigOpen || adjEq > 0.5)) {
       var mult = inPos ? 3 : 4;
-      var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * mult)));
+      var callers = countCallersAfterOpen();
+      var three = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (mult + callers))));
       return mkVerdict('raise', 'strong',
         '<b>Re-raise</b> ' + c.nmHtml + ' to ~<b>' + fmt(three) + '</b> (' + mult + '× their open' +
+        (callers ? ' + 1× per caller' : '') +
         (inPos ? ') — you have position' : ') — out of position, size up to charge them') +
         '. You\'re usually ahead, so build the pot now.',
-        'Re-raise premiums for value: 3× in position, 4× out of position.');
+        'Re-raise premiums for value: 3× in position, 4× out of position, plus 1× per caller in front.');
     }
 
     var handDesc = c.nmHtml + (suited ? ' suited' : '');
