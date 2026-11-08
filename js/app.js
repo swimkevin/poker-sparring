@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.197';
+  var APP_VERSION = '1.8.198';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2256,7 +2256,8 @@
         '<b>Raise for value</b> to ~<b>' + fmt(nutTo) + '</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.' + rangeNote,
         'With the near-nuts, raise: every street you don\'t build the pot costs money.');
     }
-    if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway) {
+    if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&
+        range.label !== 'strong' && range.label !== 'polarized') {
       var drawTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
       return mkVerdict('raise', 'marginal',
         '<b>Raise</b> sometimes to ~<b>' + fmt(drawTo) + '</b> (~3× their bet): you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +

@@ -64,7 +64,7 @@ console.log('\n3. handClass: board pair ≠ hero pair (v1.8.62 fix)');
 console.log('\n4. No multiway semi-bluffs (v1.8.62 fix)');
 {
   // Should check multiway before suggesting semi-bluff
-  ok(/\(hc === 'draw-strong' \|\| hc === 'draw'\) && legal\.canRaise && foldy > 0\.4 && !multiway\)/.test(src),
+  ok(/\(hc === 'draw-strong' \|\| hc === 'draw'\) && legal\.canRaise && foldy > 0\.4 && !multiway &&/.test(src),
      'semi-bluff raise requires !multiway');
 }
 
@@ -723,6 +723,14 @@ console.log('\n62. v1.8.197: raise the near-nuts for value vs a station trapper\
     'the small-bet raise branch takes the value-raise path for a station trapper (v1.8.197)');
   ok(src.indexOf('he calls down with worse hands') !== -1,
     'the trapper value-raise message says why: he calls down with worse, not "take it away" (v1.8.197)');
+}
+
+console.log('\n63. v1.8.198: no semi-bluff raise into a range that just showed strength');
+{
+  ok(src.indexOf("range.label !== 'strong' && range.label !== 'polarized') {") !== -1,
+    'the draw semi-bluff raise skips strong/polarized ranges: Rock folds top pair 0/200 to a raise after betting 3/4 pot, so the generic foldy (0.8) is pure fiction there (v1.8.198)');
+  ok(src.indexOf("if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&") !== -1,
+    'the draw-raise branch still fires on wide/capped ranges: the wide-range draw still raises to 900 in the lab (v1.8.198)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
