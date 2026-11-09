@@ -439,7 +439,7 @@ setTimeout(function () {
     // folds to tight players as weak. The tracker now prices the villain's
     // range the same way the coach does.
     (function () {
-      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action) {
+      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action, callerBet) {
         var s = d.createElement('script');
         var arch = villainId
           ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
@@ -455,9 +455,14 @@ setTimeout(function () {
           't.players[0].stack = 2000; t.players[0].bet = 0;',
           't.players[1].stack = 2000; t.players[1].bet = ' + villainBet + ';',
           't.community = ' + JSON.stringify(board) + ';',
-          'for (var i = 2; i < 8; i++) t.players[i].folded = true;'
+          'for (var i = ' + (callerBet ? 3 : 2) + '; i < 8; i++) t.players[i].folded = true;'
         ].join('\n');
         d.head.appendChild(s);
+        if (callerBet) {
+          var s2 = d.createElement('script');
+          s2.textContent = 'window.__lkTable.players[2].bet = ' + callerBet + ';';
+          d.head.appendChild(s2);
+        }
         var t = w.__lkTable;
         H.setTable(t);
         H.setHandRec({ timeline: timeline });
@@ -486,6 +491,19 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(leakWeakManiac && leakWeakManiac.type === 'weak-fold',
         'folding second pair to a Maniac\'s small river bet still flags weak-fold (range eq ~60%)');
+      // Leak tracker dilutes multiway equity (v1.8.200): the same weak-pair
+      // fold against LAG's 250-into-500 turn bet flags weak-fold heads-up
+      // (range eq ~55% vs a 35% line) but NOT with a caller ahead (true
+      // multiway eq ~25% vs a 30% line) — the fold is correct there.
+      var leakWeakMulti = postflopLeak([{ r: 9, s: 1 }, { r: 5, s: 0 }], 'lag', Q725, 'turn', 500, 250, 250,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 },
+         { t: 'action', street: 'turn', player: 2, action: 'call', bet: 250, pot: 1000 }], 'fold', 250);
+      ok(!leakWeakMulti,
+        'folding weak pair to LAG 250 + caller ahead is NOT a weak fold (multiway eq ~25% vs need + 10 = 30%)');
+      var leakWeakHeadsUp = postflopLeak([{ r: 9, s: 1 }, { r: 5, s: 0 }], 'lag', Q725, 'turn', 500, 250, 250,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 'fold');
+      ok(leakWeakHeadsUp && leakWeakHeadsUp.type === 'weak-fold',
+        'the same weak-pair fold heads-up still flags weak-fold (range eq ~55% vs need + 10 = 35%)');
     })();
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });

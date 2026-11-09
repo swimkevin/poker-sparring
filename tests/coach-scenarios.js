@@ -743,5 +743,14 @@ console.log('\n64. v1.8.199: callers ahead get a calling range in the multiway d
     'betCallAhead is the counter, not a second copy of the timeline walk (v1.8.199)');
 }
 
+console.log('\n65. v1.8.200: the leak tracker dilutes multiway equity');
+{
+  ok(src.indexOf('if (rangeTier && liveOpponents().length >= 2) {') !== -1,
+    'the leak tracker prices multiway spots against every live opponent, not just the bettor: folding weak pair to LAG 250 + caller ahead is not a weak fold (25% vs a 30% line), though heads-up it is (55%) (v1.8.200)');
+  ok(src.indexOf('var tiersL = [rangeTier];') !== -1 &&
+     src.indexOf('for (var oL = 1; oL < nOppL; oL++) tiersL.push(oL <= callersAheadL ? 3 : 0);') !== -1,
+    'the tracker uses the same caller-ahead tier-3 model as the coach dilution (v1.8.199), not a second random-hand model (v1.8.200)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.199';
+  var APP_VERSION = '1.8.200';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -860,9 +860,18 @@
         else if (vRange.label === 'strong') rangeTier = 3;
         else rangeTier = (V.archetype && V.archetype.openTier) || 0;
       }
-      var eq = rangeTier
-        ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 2000)
-        : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
+      var eq;
+      if (rangeTier && liveOpponents().length >= 2) {
+        var nOppL = Math.min(3, table.livePlayers().length - 1);
+        var tiersL = [rangeTier];
+        var callersAheadL = countCallersAhead();
+        for (var oL = 1; oL < nOppL; oL++) tiersL.push(oL <= callersAheadL ? 3 : 0);
+        eq = estimateEquityVsRanges(hero.hole, table.community, tiersL, 2000);
+      } else if (rangeTier) {
+        eq = estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 2000);
+      } else {
+        eq = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
+      }
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
         if (eq < need - 0.12) {

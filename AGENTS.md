@@ -532,3 +532,13 @@ first; this file is the 30-second version.
   and quoted 87%) breaks the spot — verify the hand class
   after any board change, same as the v1.8.114 probe-board
   rule.
+- The leak tracker prices the same hand the same way
+  (v1.8.200, 2026-11-09): detectLeak used heads-up range
+  equity even multiway, so it flagged correct multiway folds
+  as weak folds (weak pair vs LAG 250 + caller: 55% heads-up
+  vs 25% multiway truth, line 30%). It now dilutes with the
+  same caller-ahead tier-3 model as the coach. The bad-chase
+  flag gets the same dilution for free (more flags multiway,
+  the correct direction). Injection-check discipline: the new
+  multiway test was verified to fail with the dilution
+  disabled (85 passed, 1 failed) before shipping.
