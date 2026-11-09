@@ -542,3 +542,16 @@ first; this file is the 30-second version.
   the correct direction). Injection-check discipline: the new
   multiway test was verified to fail with the dilution
   disabled (85 passed, 1 failed) before shipping.
+- Reshoves are priced, not charted (v1.8.201, 2026-11-09):
+  the short-stack branch reshoved tier 2-3 hands over ANY
+  open at <=12bb, never looking at the opener — AJ/AQ/JJ/TT
+  over Rock's open are all losing (32/38/46/39% vs a 47%
+  break-even, no fold equity since Rock calls every reshove).
+  Tier 2-3 hands now need equity above the no-fold-equity
+  break-even + 0.03 (5000 sims), priced against the open tier
+  for a normal open and the 3-bet tier for a big open or a
+  re-raise. Tier 1 stays auto-shove; AKs shoves, AKo folds
+  (47% vs a 49.5% bar — exactly break-even is a fold). The
+  AKo lab spot caught a tier mistake: AKo is tier 2, not
+  tier 1 (only AKs is tier 1) — the first version of the spot
+  expected a shove and failed, which is the lab working.

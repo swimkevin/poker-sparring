@@ -752,5 +752,17 @@ console.log('\n65. v1.8.200: the leak tracker dilutes multiway equity');
     'the tracker uses the same caller-ahead tier-3 model as the coach dilution (v1.8.199), not a second random-hand model (v1.8.200)');
 }
 
+console.log('\n66. v1.8.201: short-stack reshoves are priced against the opener\'s range');
+{
+  ok(src.indexOf('var eqV = estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, priceTierV || 3)), 5000);') !== -1,
+    'the reshove equity runs 5000 sims against the opener\'s range, like the facing-open branch: AJ vs Rock is 32% and AQ 38% against a 47% break-even (v1.8.201)');
+  ok(src.indexOf('if (eqV > breakEvenV + 0.03)') !== -1,
+    'tier 2-3 hands reshove only when equity clears the no-fold-equity break-even by 3 points, the same margin as the strong-call rule: JJ at 46-47% folds, AKo at 47% folds, AJ vs LAG at 53% shoves (v1.8.201)');
+  ok(src.indexOf("var priceTierV = spot === 'facing-open'") !== -1 &&
+     src.indexOf('? (table.currentBet >= table.bb * 6 ? threeTierV : openTierV)') !== -1 &&
+     src.indexOf(': threeTierV;') !== -1,
+    'the reshove prices the raiser\'s actual range: the open tier for a normal open, the 3-bet tier for a big open or a re-raise (v1.8.201)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

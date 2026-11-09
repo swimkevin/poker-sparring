@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.200';
+  var APP_VERSION = '1.8.201';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1549,9 +1549,25 @@
     if (tier === 1)
       return shoveVerdict(c.nmHtml + ' is always a shove here.',
         'Your best hands never fold when short — go all-in. You might win right away if they fold, or win at showdown.');
-    if (tier <= Math.min(3, shoveTier))
-      return shoveVerdict(c.nmHtml + ' is strong enough to reshove ' + Math.round(effBB) + 'bb.',
-        'When short, go all-in with strong hands instead of just calling — you win extra when they fold.');
+    if (tier <= Math.min(3, shoveTier)) {
+      var V = c.V, hero = c.hero, pot = c.pot;
+      var openTierV = (V && V.archetype && V.archetype.openTier) || 3;
+      var threeTierV = (V && V.archetype && V.archetype.threeBetTier) || 3;
+      var priceTierV = spot === 'facing-open'
+        ? (table.currentBet >= table.bb * 6 ? threeTierV : openTierV)
+        : threeTierV;
+      var eqV = estimateEquityVsRange(hero.hole, Math.min(6, Math.max(1, priceTierV || 3)), 5000);
+      var heroTotalV = hero.stack + (hero.bet || 0);
+      var villainCallV = Math.max(0, Math.min(V ? V.stack : 0, heroTotalV - table.currentBet));
+      var shovePotV = pot + (heroTotalV - (hero.bet || 0)) + villainCallV;
+      var breakEvenV = heroTotalV / Math.max(1, shovePotV);
+      if (eqV > breakEvenV + 0.03)
+        return shoveVerdict(c.nmHtml + ' is strong enough to reshove ' + Math.round(effBB) + 'bb.',
+          'When short, go all-in with strong hands instead of just calling — you win extra when they fold.');
+      return mkVerdict('fold', 'strong',
+        '<b>Fold</b> — ' + c.nmHtml + ' wins only about <b>' + pct(eqV) + '</b> against ' + c.vName + '\'s range, but a reshove needs <b>' + pct(breakEvenV) + '</b> to break even. Wait for a better spot.',
+        'A reshove into a tight range needs the math, not just a strong hand — the range decides.');
+    }
     return mkVerdict('fold', 'strong',
       '<b>Fold</b> — ' + c.nmHtml + ' can\'t call a raise at ' + Math.round(effBB) +
       'bb (no postflop play left), and it\'s not a reshove.',

@@ -566,6 +566,48 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
     ] },
+  { name: 'reshove-aj-rock-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(11, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 3000, nLive: 2, expect: 'fold',
+    mode: 'tourney', button: 1, grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'reshove-aq-rock-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 3000, nLive: 2, expect: 'fold',
+    mode: 'tourney', button: 1, grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'reshove-jj-rock-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 3000, nLive: 2, expect: 'fold',
+    mode: 'tourney', button: 1, grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'reshove-aj-lag-shove', kind: 'facing-preflop', villain: 'lag',
+    hero: [C(14, 0), C(11, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 3000, nLive: 2, expect: 'raise',
+    mode: 'tourney', button: 1,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'reshove-ak-rock-shove', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(13, 0)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 3000, nLive: 2, expect: 'raise',
+    mode: 'tourney', button: 1,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'reshove-ako-rock-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 3000, nLive: 2, expect: 'fold',
+    mode: 'tourney', button: 1, grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',
