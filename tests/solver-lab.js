@@ -84,6 +84,13 @@ function runSpot(spot) {
     spot.board, spot.nLive || 2, spot.button);
   d.head.appendChild(s);
   var t = w.__labTable;
+  var sawAggro = false;
+  (spot.timeline || []).forEach(function (te) {
+    if (te.street !== spot.street) return;
+    if (te.action === 'bet' || te.action === 'raise') sawAggro = true;
+    else if (te.action === 'call' && sawAggro && te.player !== 0)
+      t.players[te.player].bet = te.bet || spot.bet || 0;
+  });
   w.__coachTestHooks.setTable(t);
   w.__coachTestHooks.setHandRec({ timeline: spot.timeline || [] });
   w.__coachTestHooks.setDecisions([]);
@@ -99,6 +106,26 @@ function sizeOf(msg) {
 function pctOf(msg) {
   var m = /You win about (\d+)%/.exec(msg) || /wins about (\d+)%/.exec(msg);
   return m ? parseInt(m[1], 10) / 100 : null;
+}
+function countCallersAheadSpot(spot) {
+  var n = 0, sawAggro = false, seen = {};
+  (spot.timeline || []).forEach(function (te) {
+    if (te.street !== spot.street) return;
+    if (te.action === 'bet' || te.action === 'raise') sawAggro = true;
+    else if (te.action === 'call' && sawAggro && te.player !== 0 && !seen[te.player]) {
+      seen[te.player] = true; n++;
+    }
+  });
+  return n;
+}
+function callAheadTotal(spot) {
+  var total = 0, sawAggro = false;
+  (spot.timeline || []).forEach(function (te) {
+    if (te.street !== spot.street) return;
+    if (te.action === 'bet' || te.action === 'raise') sawAggro = true;
+    else if (te.action === 'call' && sawAggro && te.player !== 0) total += te.bet || 0;
+  });
+  return total;
 }
 function seededGrossEq(spot) {
   var h = 0;
@@ -116,7 +143,9 @@ function seededGrossEq(spot) {
   if (spot.kind === 'facing-preflop') {
     tiers = [tier];
   } else {
-    for (var o = 0; o < (spot.nLive || 2) - 1; o++) tiers.push(o === 0 ? tier : 0);
+    var callersAhead = countCallersAheadSpot(spot);
+    for (var o = 0; o < (spot.nLive || 2) - 1; o++)
+      tiers.push(o === 0 ? tier : (o <= callersAhead ? 3 : 0));
   }
   var realRandom = Math.random;
   Math.random = rnd;
@@ -235,6 +264,27 @@ var SPOTS = [
     hero: [C(12, 0), C(8, 1)], board: Q725, street: 'turn',
     potBefore: 100, bet: 100, heroStack: 2000, nLive: 3, expect: 'call',
     timeline: betTimeline('turn', 100, 100) },
+  { name: 'secondpair-rock400-caller-fold', kind: 'facing', villain: 'rock',
+    hero: [C(8, 0), C(7, 0)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 400, heroStack: 2000, nLive: 3, expect: 'fold', grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 400, pot: 900 },
+      { t: 'action', street: 'turn', player: 2, action: 'call', bet: 400, pot: 1300 }
+    ] },
+  { name: 'weakpair-rock300-caller-fold', kind: 'facing', villain: 'rock',
+    hero: [C(5, 0), C(9, 1)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(3, 2)], street: 'river',
+    potBefore: 500, bet: 300, heroStack: 2000, nLive: 3, expect: 'fold', grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 800 },
+      { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }
+    ] },
+  { name: 'toppair-caller-ahead-call', kind: 'facing', villain: 'lag',
+    hero: [C(13, 1), C(12, 0)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 200, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 700 },
+      { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200, pot: 900 }
+    ] },
   { name: 'trapper-small-bet', kind: 'facing', villain: 'nathan',
     hero: [C(13, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
@@ -577,7 +627,7 @@ setTimeout(function () {
     }
     if (spot.kind === 'facing' || spot.kind === 'facing-preflop') {
       var pct = pctOf(msg);
-      var potF = spot.potBefore + spot.bet;
+      var potF = spot.potBefore + spot.bet + callAheadTotal(spot);
       var needF = spot.bet / (potF + spot.bet);
       evNote = pct == null ? 'no equity figure in message'
         : 'coach-implied eq ' + Math.round(pct * 100) + '% vs need ' + Math.round(needF * 100) +

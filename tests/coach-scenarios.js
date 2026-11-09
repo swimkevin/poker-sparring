@@ -733,5 +733,15 @@ console.log('\n63. v1.8.198: no semi-bluff raise into a range that just showed s
     'the draw-raise branch still fires on wide/capped ranges: the wide-range draw still raises to 900 in the lab (v1.8.198)');
 }
 
+console.log('\n64. v1.8.199: callers ahead get a calling range in the multiway dilution');
+{
+  ok(src.indexOf('function countCallersAhead()') !== -1,
+    'a caller counter counts distinct players who called ahead on this street (v1.8.199)');
+  ok(src.indexOf('for (var o = 1; o < nOpp; o++) tiers.push(o <= callersAhead ? 3 : 0);') !== -1,
+    'the multiway dilution gives each caller ahead a tier-3 calling range, not a random hand: second pair vs Rock 400 + caller folds at 19% vs a 24% price, not the 32% the random model quoted (v1.8.199)');
+  ok(src.indexOf('return countCallersAhead() > 0;') !== -1,
+    'betCallAhead is the counter, not a second copy of the timeline walk (v1.8.199)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

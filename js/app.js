@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.198';
+  var APP_VERSION = '1.8.199';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1206,13 +1206,17 @@
   }
 
   function betCallAhead() {
-    var sawAggro = false, sawCall = false;
+    return countCallersAhead() > 0;
+  }
+
+  function countCallersAhead() {
+    var callers = {}, n = 0, sawAggro = false;
     if (handRec && handRec.timeline) handRec.timeline.forEach(function (t) {
       if (t.t !== 'action' || t.street !== table.street || t.player === 0) return;
       if (t.action === 'bet' || t.action === 'raise') sawAggro = true;
-      else if (t.action === 'call' && sawAggro) sawCall = true;
+      else if (t.action === 'call' && sawAggro && !callers[t.player]) { callers[t.player] = true; n++; }
     });
-    return sawAggro && sawCall;
+    return n;
   }
 
   function countLimpers() {
@@ -2149,7 +2153,8 @@
     if (multiway && singleRange) {
       var nOpp = Math.min(3, table.livePlayers().length - 1);
       var tiers = [rangeEqTier || vTier];
-      for (var o = 1; o < nOpp; o++) tiers.push(0);
+      var callersAhead = countCallersAhead();
+      for (var o = 1; o < nOpp; o++) tiers.push(o <= callersAhead ? 3 : 0);
       adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 500) + credit - debit));
       diluted = true;
     }

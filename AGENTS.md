@@ -450,3 +450,85 @@ first; this file is the 30-second version.
   it was run before the test removal, so its T9s FAIL does not
   describe the shipped tree. Re-measured 2026-11-07: T9s calls
   3/200 verdicts at 5000 sims (p = 1.5%).
+- Lean call needs a real bluffer (v1.8.194, 2026-11-08): the
+  lean-call branch fired on a 'wide' range label OR high bluff
+  frequency, but a wide range is not a bluffing range — the
+  looseness is already priced into the call threshold (a 6-point
+  discount), so the extra 10-point lean window double-counted it
+  and the message ("bluffs a lot") was false for Rock (bluff
+  0.02). The branch now requires bluffy > 0.5. The two probe
+  spots (gutshot and ace-high into Rock's half-pot turn bet)
+  fold at 14%/10% vs a 25% price.
+- Tight-player pot-sized river bet (v1.8.195, 2026-11-08): the
+  tier-3 range pool overstates equity vs a tight player's big
+  bet (top pair quoted 59% vs Rock's pot range, true ~25%).
+  The overbet guard now also folds one pair or less to a
+  pot-sized ('large', 0.8-1.2x) river bet from a tight player.
+  Scoped river-only and one-pair-or-less on purpose: an
+  injection run with the guard turn-scoped failed the
+  multiway top-pair call the lab pins, and trips still call
+  (94%). The guard's refactor into `tightBigBet` broke the
+  v1.8.140 scenario test's literal assertion — refactoring a
+  guarded condition means updating the pattern assertion to
+  the new shape, same intent (v1.8.198's draw-raise edit did
+  the same to the v1.8.62 multiway assertion). The full suite
+  catches both; that is the gate working.
+- Squeeze sizing (v1.8.196, 2026-11-08): a value 3-bet with
+  callers in front must add 1x the open per caller (AKs: 120
+  with one caller, 90 without) — the same "plus 1x per
+  limper" logic the iso-raise already uses. New helper
+  `countCallersAfterOpen` mirrors `countLimpers` with the
+  raised flag flipped.
+- Trapper value raise (v1.8.197, 2026-11-08): the v1.8.146
+  passive-trapper block assumes the trapper folds worse hands
+  to a raise. Nathan is a station (stubborn 0.9), so a raise
+  with a crushing hand is pure value — the block now lifts
+  when the villain folds little (foldy <= 0.25) AND the
+  coach equity crushes his range (adjEq >= 0.90), with its
+  own "for value" message. Overpair at 82% still calls, so
+  the v1.8.146 behavior is intact. Only Nathan qualifies as
+  a passive trapper (Rohan bluffs 0.68).
+- Profile rates are not in-hand rates (v1.8.198, 2026-11-08):
+  Rock's generic foldy is 0.8 (1 - stubborn), but measured
+  0/200 folds of top pair to a 3x raise after betting 3/4
+  pot — the semi-bluff raise's fold equity was fiction, worth
+  ~160 chips less than calling. The draw-raise branch now
+  skips strong/polarized ranges. Measure the fold rate in the
+  actual spot before trusting a semi-bluff; the probe is kept
+  at hidden_files/rock-fold-probe.js. Injection-check
+  discipline: a sed pattern spanning two lines silently
+  no-ops — verify the injected tree actually fails the lab
+  before trusting the check.
+- Stale backlog verified 2026-11-08: the river veto IS
+  multiway-diluted already (estimateEquityVsMadePoolMulti,
+  shipped v1.8.156-160) and facing-raise advice DOES state
+  explicit sizes in every main message (only lesson lines
+  state bare multiples) — both backlog items are closed,
+  not open.
+- Probe-board fidelity (2026-11-08): exact made-pool equity
+  for trip Queens on an unpaired board is only 0.43 — the 16
+  straight combos dominate the made pool. The made pool
+  conditions on "villain has trips+", which understates a hand
+  that beats the villain's whole betting range (mostly
+  one-pair hands). Use the coach's own adjEq vs the full
+  range for "crushes the range" gates, not the made pool
+  alone.
+- Callers ahead are a range, not random hands (v1.8.199,
+  2026-11-09): the multiway dilution modeled every non-bettor
+  as a random hand (tier 0), but a player who called the bet
+  has a calling range — second pair vs Rock's 400 + caller
+  quoted 32% (true 19%), weak pair 24% (true 18%). Callers
+  ahead now get tier 3 in the dilution; players who have not
+  acted stay tier 0. The +0.05 call-ahead threshold bump stays
+  (it prices the players still to act behind, not the caller).
+  The lab's gross check mirrors the coach: tier 3 for callers
+  ahead, and its pot includes their bets (runSpot now applies
+  current-street calls to the table, so potTotal is right).
+  Lab-spot margin rule, re-learned: the turn weak-pair spot
+  flipped 1/40 runs (quoted equity 1.6 points under the
+  strong-call bar) — moving it to the river, where the
+  under-bluffed prior adds 3 points, took it to 0/40. A river
+  card that pairs the hero (the first river 9 made two pair
+  and quoted 87%) breaks the spot — verify the hand class
+  after any board change, same as the v1.8.114 probe-board
+  rule.
