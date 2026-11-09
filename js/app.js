@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.201';
+  var APP_VERSION = '1.8.202';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1815,7 +1815,12 @@
     var priceTier = bigOpen
       ? ((V && V.archetype && V.archetype.threeBetTier) || 3)
       : ((V && V.archetype && V.archetype.openTier) || 3);
-    var eq = rangeAwareEquityPreflop(hero.hole, priceTier);
+    var callersPre = countCallersAfterOpen();
+    var callTiers = [priceTier];
+    for (var ci = 0; ci < callersPre; ci++) callTiers.push(4);
+    var eq = callersPre > 0
+      ? estimateEquityVsRanges(hero.hole, [], callTiers, 5000)
+      : rangeAwareEquityPreflop(hero.hole, priceTier);
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;
     var credit = impliedCredit({

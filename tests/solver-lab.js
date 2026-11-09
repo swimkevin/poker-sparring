@@ -142,6 +142,7 @@ function seededGrossEq(spot) {
   var tiers = [];
   if (spot.kind === 'facing-preflop') {
     tiers = [tier];
+    for (var i = 0; i < countCallersAheadSpot(spot); i++) tiers.push(4);
   } else {
     var callersAhead = countCallersAheadSpot(spot);
     for (var o = 0; o < (spot.nLive || 2) - 1; o++)
@@ -565,6 +566,33 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
+    ] },
+  { name: 'ato-rock-2callers-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(10, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 2000, villainStack: 3000, nLive: 4, expect: 'fold',
+    grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 30, pot: 75 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 30, pot: 105 }
+    ] },
+  { name: 'kqo-rock-2callers-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(13, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 2000, villainStack: 3000, nLive: 4, expect: 'fold',
+    grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 30, pot: 75 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 30, pot: 105 }
+    ] },
+  { name: 'jts-lag-2callers-call', kind: 'facing-preflop', villain: 'lag',
+    hero: [C(11, 0), C(10, 0)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 2000, villainStack: 3000, nLive: 4, expect: 'call',
+    grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 30, pot: 75 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 30, pot: 105 }
     ] },
   { name: 'reshove-aj-rock-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(11, 1)], board: [], street: 'preflop',

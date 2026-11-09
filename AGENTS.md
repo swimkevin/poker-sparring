@@ -555,3 +555,16 @@ first; this file is the 30-second version.
   AKo lab spot caught a tier mistake: AKo is tier 2, not
   tier 1 (only AKs is tier 1) — the first version of the spot
   expected a shove and failed, which is the lab working.
+- Preflop facing-open dilution (v1.8.202, 2026-11-09): the
+  v1.8.199 fix was postflop-only — preflop, a facing-open
+  call was priced heads-up with only a flat +0.04 threshold
+  bump. ATo vs Rock + 2 callers quoted 28% and called (true
+  15%, EV about -10); KQo the same (25% vs 17%). The call
+  now prices equity multiway against the opener plus tier 4
+  per caller (5000 sims); the +0.04 bump stays because it
+  prices players still to act behind, not the callers in.
+  The lab's gross check mirrors it (tier 4 per caller in
+  the facing-preflop branch). Same-bug-three-places lesson:
+  postflop dilution, the leak tracker, and preflop
+  facing-open each priced one opponent and patched the rest
+  with a constant — a constant cannot replace equity.

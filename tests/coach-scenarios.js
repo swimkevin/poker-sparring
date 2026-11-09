@@ -764,5 +764,15 @@ console.log('\n66. v1.8.201: short-stack reshoves are priced against the opener\
     'the reshove prices the raiser\'s actual range: the open tier for a normal open, the 3-bet tier for a big open or a re-raise (v1.8.201)');
 }
 
+console.log('\n67. v1.8.202: preflop facing-open equity dilutes for callers in front');
+{
+  ok(src.indexOf('var callersPre = countCallersAfterOpen();') !== -1 &&
+     src.indexOf('for (var ci = 0; ci < callersPre; ci++) callTiers.push(4);') !== -1 &&
+     src.indexOf('? estimateEquityVsRanges(hero.hole, [], callTiers, 5000)') !== -1,
+    'with callers in front, the facing-open call prices equity multiway against the opener plus one tier-4 range per caller, at 5000 sims: ATo vs Rock + 2 callers is 15%, not 28% (v1.8.202)');
+  ok(src.indexOf('var threshold = need + (multiway ? 0.04 : 0) + rp -') !== -1,
+    'the +0.04 multiway threshold bump stays — it prices the players still to act behind, while the dilution prices the callers already in (v1.8.202)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
