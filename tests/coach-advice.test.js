@@ -157,12 +157,15 @@ setTimeout(function () {
     })();
 
     // Preflop raise advice states exact chip amounts (v1.8.158).
-    var pfBluff = preflopVerdict([{ r: 14, s: 0 }, { r: 5, s: 0 }], 'rock', 30,
-      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }], 2, 30, 10);
+    var pfBluff = preflopVerdict([{ r: 14, s: 0 }, { r: 5, s: 0 }], 'maniac', 30,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }], 2, 30, 10, 2000, 470);
     ok(!pfBluff.error, 'bluff re-raise verdict has no error' + (pfBluff.error ? ' (' + pfBluff.error + ')' : ''));
     ok(pfBluff.advice === 'raise', 'bluff re-raise advice is raise (got ' + pfBluff.advice + ')');
     ok(stripAdvice(pfBluff.html).indexOf('to ~ 90') !== -1,
       'bluff re-raise states the exact size to ~90 (3x open in position, v1.8.158)');
+    var pfRock = preflopVerdict([{ r: 14, s: 0 }, { r: 5, s: 0 }], 'rock', 30,
+      [{ t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }], 2, 30, 10);
+    ok(pfRock.advice !== 'raise', 'no bluff re-raise into Rock deep — his range never folds to a small 3-bet (v1.8.203)');
     var pfSteal = preflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], 'rock', 10, [], 3, 5, 10);
     ok(pfSteal.advice === 'raise', 'steal advice is raise (got ' + pfSteal.advice + ')');
     ok(stripAdvice(pfSteal.html).indexOf('to ~ 25') !== -1,

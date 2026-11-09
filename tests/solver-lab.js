@@ -450,9 +450,17 @@ var SPOTS = [
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 80, pot: 95 }
     ] },
-  { name: 'bluff-3bet-small-open-raise', kind: 'facing-preflop', villain: 'rock',
+  { name: 'bluff-3bet-rock-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(5, 0)], board: [], street: 'preflop',
-    potBefore: 15, bet: 30, heroStack: 3000, villainStack: 2970, nLive: 2, expect: 'raise',
+    potBefore: 15, bet: 30, heroStack: 100, villainStack: 2970, nLive: 2, expect: 'fold',
+    grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
+    ] },
+  { name: 'bluff-3bet-maniac-shallow-raise', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(5, 0)], board: [], street: 'preflop',
+    potBefore: 15, bet: 30, heroStack: 3000, villainStack: 470, nLive: 2, expect: 'raise',
+    expectWord: 'short stack',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
     ] },

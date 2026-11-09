@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.202';
+  var APP_VERSION = '1.8.203';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1866,12 +1866,15 @@
     }
 
     var hasAce = hero.hole.some(function (x) { return x.r === 14; });
+    var openTierV = (V && V.archetype && V.archetype.openTier) || 3;
+    var vTotal = V ? (V.stack + (V.bet || 0)) : 0;
+    var bluffTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (inPos ? 3 : 4))));
+    var pressured = vTotal > 0 && (bluffTo - open) / vTotal >= 0.12;
     if (tier >= 4 && hasAce && suited && legal.canRaise && V &&
-        villainFoldy(V.archetype) > 0.5 && !multiway && !bigOpen) {
-      var bluffTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(open * (inPos ? 3 : 4))));
+        openTierV >= 4 && pressured && !multiway && !bigOpen) {
       return mkVerdict('raise', 'marginal',
-        'Mix in a <b>bluff re-raise</b> to ~<b>' + fmt(bluffTo) + '</b> (' + (inPos ? 3 : 4) + '× their open) sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' folds too much.',
-        'Only bluff re-raise when they fold a lot — never into multiple players.');
+        'Mix in a <b>bluff re-raise</b> to ~<b>' + fmt(bluffTo) + '</b> (' + (inPos ? 3 : 4) + '× their open) sometimes: your ace makes aces and ace-king less likely for them, and ' + vName + ' plays lots of hands with a short stack, so this raise pressures the weak ones to fold.',
+        'Only bluff re-raise against wide ranges with short stacks — a deep player with a strong range never folds to it.');
     }
 
     if (adjEq > threshold + 0.03)

@@ -641,10 +641,12 @@ console.log('\n53. v1.8.172: big opens are priced against the strong range');
     'an all-in villain is detected from a zero stack after the shove');
 }
 
-console.log('\n54. v1.8.173: no bluff 3-bet into a big open');
+console.log('\n54. v1.8.173/203: the bluff 3-bet needs a wide range and a pressured stack');
 {
-  ok(src.indexOf('villainFoldy(V.archetype) > 0.5 && !multiway && !bigOpen') !== -1,
-    'the suited-ace bluff 3-bet is gated off when the open is big');
+  ok(src.indexOf('openTierV >= 4 && pressured && !multiway && !bigOpen') !== -1,
+    'the suited-ace bluff 3-bet fires only against a wide opener whose stack the raise pressures — the old generic foldy gate let it fire into Rock, who folds 0/200 to it deep (v1.8.203)');
+  ok(src.indexOf('var pressured = vTotal > 0 && (bluffTo - open) / vTotal >= 0.12;') !== -1,
+    'the pressure line is the engine\'s own expensive-call threshold (call cost at least 12% of the villain\'s stack), where bots start folding (v1.8.203)');
 }
 
 console.log('\n55. v1.8.174: iso raises scale with the limper count');
@@ -772,6 +774,13 @@ console.log('\n67. v1.8.202: preflop facing-open equity dilutes for callers in f
     'with callers in front, the facing-open call prices equity multiway against the opener plus one tier-4 range per caller, at 5000 sims: ATo vs Rock + 2 callers is 15%, not 28% (v1.8.202)');
   ok(src.indexOf('var threshold = need + (multiway ? 0.04 : 0) + rp -') !== -1,
     'the +0.04 multiway threshold bump stays — it prices the players still to act behind, while the dilution prices the callers already in (v1.8.202)');
+}
+
+console.log('\n68. v1.8.203: the bluff 3-bet message says why it folds them');
+{
+  ok(src.indexOf('pressures the weak ones to fold') !== -1 &&
+     src.indexOf('plays lots of hands with a short stack') !== -1,
+    'the bluff message names the real mechanism (wide range + short stack), not the false "folds too much" claim (v1.8.203)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

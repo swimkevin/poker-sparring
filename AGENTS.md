@@ -568,3 +568,20 @@ first; this file is the 30-second version.
   postflop dilution, the leak tracker, and preflop
   facing-open each priced one opponent and patched the rest
   with a constant — a constant cannot replace equity.
+- A trait is not a prediction (v1.8.203, 2026-11-09): the
+  suited-ace bluff 3-bet fired on villainFoldy > 0.5, but
+  foldiness does not predict folding to a small 3-bet —
+  Rock folds 0/1200 across his opening range deep (and LAG
+  and Pro 0/200 each), because the call is cheap and the
+  whole range is priced in; EV about -52 chips vs Rock.
+  The branch now needs two gates that DO predict folds in
+  the engine: opener wide (openTier >= 4) AND the raise
+  pressures the stack (call cost >= 12% of villain total —
+  the engine's expensive-call line). Shallow, Maniac's 72o
+  folds 197/200 and LAG folds 15-21% of weak hands. The old
+  lab spot pinning the bug was renamed to a fold (hero
+  stack 100, so no implied-odds credit muddies the pin —
+  A5s vs Rock deep sits 1 point from the call bar); the new
+  Maniac-shallow spot pins the raise. Message updated:
+  "folds too much" was false; the new wording names the
+  mechanism.
