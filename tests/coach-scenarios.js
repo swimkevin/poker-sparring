@@ -815,5 +815,17 @@ console.log('\n71. v1.8.207: an all-in re-raise is priced, not folded on stack d
     'small pairs keep their own branch (its set-mine math plus equity fallback already prices all-ins), so the guard does not double-handle them (v1.8.207)');
 }
 
+console.log('\n72. v1.8.208: a facing raise that is the whole stack says all-in');
+{
+  ok(src.indexOf('var nutAllIn = nutTo >= legal.maxRaiseTo;') !== -1 &&
+     src.indexOf('var drawAllIn = drawTo >= legal.maxRaiseTo;') !== -1 &&
+     src.indexOf('var tinyAllIn = tinyTo >= legal.maxRaiseTo;') !== -1,
+    'all three facing-raise branches (nuts, draw, small bet) detect when the clamped raise equals the whole stack (v1.8.208)');
+  ok(src.indexOf("'<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about 3× their bet.") !== -1 &&
+     src.indexOf("'<b>All-in</b> to ~<b>' + fmt(drawTo) + '</b> — your whole stack, about 3× their bet:") !== -1 &&
+     src.indexOf("'<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack, about 3× their bet — and take it away.'") !== -1,
+    'an all-in facing raise says all-in with the amount still parseable ("to ~X"), instead of the fraction-of-pot label — the same rule the leading bets got in v1.8.192 (v1.8.208)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.207';
+  var APP_VERSION = '1.8.208';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2301,12 +2301,19 @@
       if (tell.size === 'small' && legal.canRaise && !multiway && !strongShown && (!passiveTrapper || trapperValue) &&
           (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
         var tinyTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
+        var tinyAllIn = tinyTo >= legal.maxRaiseTo;
         if (trapperValue)
           return mkVerdict('raise', 'strong',
-            'That\'s a small bet from ' + vName + ' — and with ' + handClassName(hc) + ' you\'re ahead of almost everything he bets. <b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> for value: he calls down with worse hands.' + rangeNote,
+            'That\'s a small bet from ' + vName + ' — and with ' + handClassName(hc) + ' you\'re ahead of almost everything he bets. ' +
+            (tinyAllIn
+              ? '<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack — for value: he calls down with worse hands.'
+              : '<b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> for value: he calls down with worse hands.') + rangeNote,
             'Against a player who calls everything, raise your near-nuts for value — he pays you off with worse hands.');
         return mkVerdict('raise', 'marginal',
-          'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. <b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> (~3× their bet) and take it away.' + rangeNote,
+          'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. ' +
+          (tinyAllIn
+            ? '<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack, about 3× their bet — and take it away.'
+            : '<b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> (~3× their bet) and take it away.') + rangeNote,
           'Small bets often mean weakness: attack them.');
       }
     }
@@ -2322,16 +2329,22 @@
 
     if (hc === 'nut' && legal.canRaise) {
       var nutTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
+      var nutAllIn = nutTo >= legal.maxRaiseTo;
       return mkVerdict('raise', 'strong',
-        '<b>Raise for value</b> to ~<b>' + fmt(nutTo) + '</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.' + rangeNote,
+        (nutAllIn
+          ? '<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about 3× their bet. Charge the draws and worse hands now, don\'t slow-play.'
+          : '<b>Raise for value</b> to ~<b>' + fmt(nutTo) + '</b> (~3× their bet) — charge the draws and worse hands now, don\'t slow-play.') + rangeNote,
         'With the near-nuts, raise: every street you don\'t build the pot costs money.');
     }
     if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&
         range.label !== 'strong' && range.label !== 'polarized') {
       var drawTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
+      var drawAllIn = drawTo >= legal.maxRaiseTo;
       return mkVerdict('raise', 'marginal',
-        '<b>Raise</b> sometimes to ~<b>' + fmt(drawTo) + '</b> (~3× their bet): you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +
-        fmt(toCall) + '.' + rangeNote,
+        (drawAllIn
+          ? '<b>All-in</b> to ~<b>' + fmt(drawTo) + '</b> — your whole stack, about 3× their bet: you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' + fmt(toCall) + '.'
+          : '<b>Raise</b> sometimes to ~<b>' + fmt(drawTo) + '</b> (~3× their bet): you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +
+          fmt(toCall) + '.') + rangeNote,
         '');
     }
 
