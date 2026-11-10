@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.205';
+  var APP_VERSION = '1.8.206';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1774,10 +1774,13 @@
         return mkVerdict('raise', 'strong',
           c.nmHtml + ' — players who just called are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate one of them and play for stacks.',
           'Isolate players who just called with premiums: raise big, play heads-up, stack them.');
-      if (tier <= 3 && inPos)
+      if (tier <= 3 && (inPos || countLimpers() === 1))
         return mkVerdict('raise', 'marginal',
-          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — players who just called rarely have much, and you have position.',
-          'Attack players who just called from late position; they fold or play big pots out of position.');
+          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — ' +
+          (inPos ? 'players who just called rarely have much, and you have position.'
+            : 'one player who just called rarely has much, and your hand is ahead of their range.'),
+          inPos ? 'Attack players who just called from late position; they fold or play big pots out of position.'
+            : 'Isolate a single player who just called: their range is weak, and a raise takes the pot down or plays heads-up against it.');
 
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',

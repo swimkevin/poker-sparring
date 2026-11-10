@@ -797,5 +797,13 @@ console.log('\n69. v1.8.205: a small bet after shown strength is not a weak bet'
     'the small-bet raise skips a villain who showed strength: top pair vs Rock\'s small turn bet after his big flop bet calls on the math (62% vs a 10% price) instead of raising into a range that folds 0/1200 pairs — while the capped-range raise and the wide-player raise still fire (v1.8.205)');
 }
 
+console.log('\n70. v1.8.206: a playable hand isolates one player who just called, from any seat');
+{
+  ok(src.indexOf('if (tier <= 3 && (inPos || countLimpers() === 1))') !== -1,
+    'the tier-3 isolate branch fires in position or against a single player who just called: AQo in middle position vs one limper raises to 40 instead of folding, while 2+ limpers out of position still go through the late/middle branches (v1.8.206)');
+  ok(src.indexOf('one player who just called rarely has much, and your hand is ahead of their range.') !== -1,
+    'the out-of-position isolate message says why it works (one weak range, ahead of it), not "you have position" (v1.8.206)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

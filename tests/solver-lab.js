@@ -674,6 +674,12 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
       { t: 'action', street: 'flop', player: 1, action: 'bet', bet: 25, pot: 125 }
     ] },
+  { name: 'iso-aqo-1limper-oop-raise', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, button: 3, expect: 'raise', expectWord: 'to ~ 40',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',
