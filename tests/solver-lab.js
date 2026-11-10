@@ -142,7 +142,7 @@ function seededGrossEq(spot) {
   var tiers = [];
   if (spot.kind === 'facing-preflop') {
     tiers = [tier];
-    for (var i = 0; i < countCallersAheadSpot(spot); i++) tiers.push(4);
+    for (var j = 0; j < countCallersAheadSpot(spot); j++) tiers.push(4);
   } else {
     var callersAhead = countCallersAheadSpot(spot);
     for (var o = 0; o < (spot.nLive || 2) - 1; o++)
