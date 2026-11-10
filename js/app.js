@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.206';
+  var APP_VERSION = '1.8.207';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1657,6 +1657,15 @@
         return mkVerdict('fold', 'strong',
           'They went all-in. With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s re-raise range.' + math3,
           'Folding a premium to an all-in re-raise is right when the range crushes you — QQ is a favorite against opens, an underdog against re-raise shoves.');
+      }
+      if (!legal.canRaise && tier >= 2 && tier <= 4 && !isSmallPair(hero.hole)) {
+        if (eq3 > need3)
+          return mkVerdict('call', 'strong',
+            'They went all-in. With ' + c.nmHtml + ', <b>call</b> — you win about <b>' + pct(eq3) + '</b> against ' + vName + '\'s re-raise range.' + math3,
+            'Call an all-in re-raise when the price is right — with no chips behind to play for, only the equity against their range matters.');
+        return mkVerdict('fold', 'strong',
+          'They went all-in. With ' + c.nmHtml + ', <b>fold</b> — you win only about <b>' + pct(eq3) + '</b> against ' + vName + '\'s re-raise range.' + math3,
+          'Folding to an all-in re-raise is right when the range crushes you — the math decides.');
       }
       if (tier === 2) {
         var setMine2 = hero.hole[0].r === hero.hole[1].r && toCall * 15 <= effStackChips(vIdx);

@@ -805,5 +805,15 @@ console.log('\n70. v1.8.206: a playable hand isolates one player who just called
     'the out-of-position isolate message says why it works (one weak range, ahead of it), not "you have position" (v1.8.206)');
 }
 
+console.log('\n71. v1.8.207: an all-in re-raise is priced, not folded on stack depth');
+{
+  ok(src.indexOf('if (!legal.canRaise && tier >= 2 && tier <= 4 && !isSmallPair(hero.hole)) {') !== -1,
+    'facing a re-raise with no raise left (villain all-in), tier 2-4 hands are priced on raw equity against the re-raise range: JJ vs a Maniac shove calls at 74% vs a 50% price, AQs at 63%, JJ vs Rock still folds at 28% (v1.8.207)');
+  ok(src.indexOf("if (eq3 > need3)") !== -1,
+    'the all-in call uses the raw 500-sim equity, not the implied-odds-adjusted figure — there are no implied odds when the villain is already all-in, the same rule the second-re-raise branch uses (v1.8.207)');
+  ok(src.indexOf("!isSmallPair(hero.hole)") !== -1,
+    'small pairs keep their own branch (its set-mine math plus equity fallback already prices all-ins), so the guard does not double-handle them (v1.8.207)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
