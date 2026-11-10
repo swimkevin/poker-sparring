@@ -783,5 +783,19 @@ console.log('\n68. v1.8.203: the bluff 3-bet message says why it folds them');
     'the bluff message names the real mechanism (wide range + short stack), not the false "folds too much" claim (v1.8.203)');
 }
 
+console.log('\n69. v1.8.205: a small bet after shown strength is not a weak bet');
+{
+  ok(src.indexOf('function villainShowedStrength(vIdx)') !== -1,
+    'villainShowedStrength scans the timeline for strength shown before this street (v1.8.205)');
+  ok(src.indexOf('if (size / Math.max(1, pot - size) >= 0.7) shown = true;') !== -1,
+    'a big postflop bet on an earlier street (0.7x pot or more, the same line the range label uses for strong) counts as shown strength (v1.8.205)');
+  ok(src.indexOf('if (t.street === \'preflop\') {') !== -1 &&
+     src.indexOf('if (tight > 0.6) shown = true;') !== -1,
+    'a preflop raise from a tight player also counts: his range is premiums even before any postflop bet (v1.8.205)');
+  ok(src.indexOf('var strongShown = villainShowedStrength(vIdx);') !== -1 &&
+     src.indexOf('!strongShown && (!passiveTrapper || trapperValue)') !== -1,
+    'the small-bet raise skips a villain who showed strength: top pair vs Rock\'s small turn bet after his big flop bet calls on the math (62% vs a 10% price) instead of raising into a range that folds 0/1200 pairs — while the capped-range raise and the wide-player raise still fire (v1.8.205)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

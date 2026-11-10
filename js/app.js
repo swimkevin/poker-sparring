@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.204';
+  var APP_VERSION = '1.8.205';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1907,6 +1907,25 @@
     return called;
   }
 
+  function villainShowedStrength(vIdx) {
+    if (!handRec || !handRec.timeline) return false;
+    var V = table.players[vIdx];
+    var tight = V ? villainTighty(V.archetype) : 0.4;
+    var shown = false;
+    handRec.timeline.forEach(function (t) {
+      if (t.t !== 'action' || t.player !== vIdx) return;
+      if (t.action !== 'bet' && t.action !== 'raise') return;
+      if (t.street === table.street) return;
+      if (t.street === 'preflop') {
+        if (tight > 0.6) shown = true;
+        return;
+      }
+      var size = t.bet || t.amount || 0, pot = t.pot || 1;
+      if (size / Math.max(1, pot - size) >= 0.7) shown = true;
+    });
+    return shown;
+  }
+
   function villainFirstRiverAggro(vIdx) {
     if (!handRec || !handRec.timeline) return false;
     var early = false, river = false;
@@ -2265,8 +2284,9 @@
 
     var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
     var trapperValue = passiveTrapper && foldy <= 0.25 && adjEq >= 0.90;
+    var strongShown = villainShowedStrength(vIdx);
     if (tell && tell.unit === 'pot') {
-      if (tell.size === 'small' && legal.canRaise && !multiway && (!passiveTrapper || trapperValue) &&
+      if (tell.size === 'small' && legal.canRaise && !multiway && !strongShown && (!passiveTrapper || trapperValue) &&
           (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
         var tinyTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
         if (trapperValue)

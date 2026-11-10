@@ -644,6 +644,36 @@ var SPOTS = [
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
     ] },
+  { name: 'smallbet-strong-rock-call', kind: 'facing', villain: 'rock',
+    hero: [C(12, 0), C(11, 1)], board: Q725, street: 'turn',
+    potBefore: 800, bet: 100, heroStack: 2000, nLive: 2, expect: 'call',
+    grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'flop', player: 1, action: 'bet', bet: 350, pot: 800 },
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 900 }
+    ] },
+  { name: 'smallbet-capped-rock-raise', kind: 'facing-raise', villain: 'rock',
+    hero: [C(12, 0), C(11, 1)], board: Q725, street: 'turn',
+    potBefore: 800, bet: 100, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 300,
+    timeline: [
+      { t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 },
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 900 }
+    ] },
+  { name: 'smallbet-tight-preflop-raise-call', kind: 'facing', villain: 'rock',
+    hero: [C(12, 0), C(11, 1)], board: [C(12, 2), C(7, 1), C(2, 0)], street: 'flop',
+    potBefore: 100, bet: 25, heroStack: 2000, nLive: 2, expect: 'call',
+    grossCheck: true,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'flop', player: 1, action: 'bet', bet: 25, pot: 125 }
+    ] },
+  { name: 'smallbet-wide-preflop-raise-raise', kind: 'facing-raise', villain: 'lag',
+    hero: [C(12, 0), C(11, 1)], board: [C(12, 2), C(7, 1), C(2, 0)], street: 'flop',
+    potBefore: 100, bet: 25, heroStack: 2000, nLive: 2, expect: 'raise', expectRaiseTo: 75,
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'flop', player: 1, action: 'bet', bet: 25, pot: 125 }
+    ] },
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',
