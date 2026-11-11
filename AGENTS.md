@@ -778,3 +778,34 @@ first; this file is the 30-second version.
   single-line pattern misses multi-line CSS blocks —
   the shorthand that kills the reserve was found by
   reading the block, not by grepping `padding-bottom`.
+- Emergency rollback to the device-proven version
+  (v1.8.214, 2026-11-12): Kevin reported the app stuck
+  on dark mode and not dealing after the 212/213
+  revert. Diagnosis found no code break: live files
+  byte-match the tip, version identity exact, livetest
+  10/10, full suite 0 FAIL lines, the 212 revert
+  restored 210's code files exactly, and 213 changed
+  only 4 lines. The symptoms match a phone still
+  rendering stale 211 assets exactly — 211 hides the
+  topbar, which holds the theme toggle, so that page
+  has no way out of dark mode. Rollback target is the
+  last version Kevin himself verified on his phone
+  (1.8.208, Nov 11 showdown played through), NOT the
+  last version that looks right on paper (210 was
+  never played on-device). The 209 bot retune and 210
+  two-winners fix ride out temporarily and return in
+  small verified steps once 214 is confirmed on the
+  phone. Two mechanics learned: (1) never blanket-sed
+  a version string across the repo — `sed s/1.8.208/
+  1.8.214/g` rewrote historical references in
+  AGENTS.md, CHANGELOG.md, and a test comment; bump
+  version strings only in the six bump files, and
+  check the rest by hand. (2) A backgrounded suite
+  can die with the wrapper shell before the NPM_EXIT
+  echo (service-restart pattern, fourth sighting) —
+  the stage evidence (every suite printing pass, 0
+  FAIL lines, final stage re-run directly exiting 0)
+  still stands, but the exit code must be re-captured
+  by re-running; never report a suite green on stage
+  output alone without saying the exit capture was
+  lost.

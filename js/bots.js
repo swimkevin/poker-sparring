@@ -48,7 +48,7 @@ var ARCHETYPES = [
   {
     id: 'amogh', name: 'Amogh', emoji: '🚀',
     tagline: 'Bombs every pot the moment he likes his hand.',
-    desc: 'Big-bet sizer: fires huge bets, bigger than the pot, with strong hands to take down pots, and sometimes shoves all-in with the very best starting hands (big pairs and ace-king). But he plays it more normal now: pairs usually check down to see the river, and he only shoves all-in as a bluff with a real draw, never with nothing (v1.8.97).',
+    desc: 'Big-bet sizer: fires huge bets, bigger than the pot, with strong hands to take down pots, and shoves all-in with the very best starting hands (big pairs and ace-king). But he plays it more normal now: pairs usually check down to see the river, and he only shoves all-in as a bluff with a real draw, never with nothing (v1.8.97).',
     beat: 'Wait for a real hand and let the big bets come to you. Do not try to bluff-catch light — his range is strong when the money goes in.',
     openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
     aggression: 1.0, bluff: 0.15, stubborn: 0.7, pushTier: 3, callPushTier: 2, limp: 0.05,
@@ -125,7 +125,7 @@ var ARCHETYPES = [
     tagline: 'Big stack bully. Your tournament life is his poker chip.',
     desc: 'Chip-leader pressure: when Bully has the big stack, he opens ~35% of hands and re-raises light — medium stacks can\'t call without risking their tournament. Backs down against other big stacks, but feasts on anyone protecting a cash. The big-stack bully from every final table.',
     beat: 'Wait for a real hand and trap — he bets into everything. Don\'t bluff into the chip leader; let him hang himself.',
-    openTier: 4, openTierLate: 5, callTier: 4, threeBetTier: 3,
+    openTier: 4, openTierLate: 5, callTier: 3, threeBetTier: 3,
     aggression: 0.85, bluff: 0.30, stubborn: 0.60, pushTier: 4, callPushTier: 3, limp: 0.10,
     tiltProne: 0.50, rebuy: 0.70,
     friendly: true,
@@ -231,7 +231,7 @@ function botDecide(table, p) {
   if (mv && A.neverRaise && (mv.a === 'bet' || mv.a === 'raise') &&
       !(A.riverTrap && table.street === 'river') &&
       !(mv.bluff && A.bluffThrough && Math.random() < A.bluffThrough) &&
-      !(A.monsterThrough && madeStrength(p.hole, table.community) > 0.60 && Math.random() < 0.7)) {
+      !(A.monsterThrough && madeStrength(p.hole, table.community) > 0.78)) {
     var legal = table.legalActions(p.idx);
     mv = legal.canCheck ? { a: 'check' } : { a: 'call' };
   }
@@ -259,6 +259,7 @@ function botPreflop(table, p, A) {
   var tier = holeTier(p.hole);
   var isPair = p.hole[0].r === p.hole[1].r;
 
+  var rawTier = tier;
   var r0 = Math.random();
   if (r0 < 0.08 && tier > 2 && !isPair) tier = Math.min(6, tier + 1);
   else if (r0 < 0.14) tier = Math.max(1, tier - 1);
@@ -277,10 +278,8 @@ function botPreflop(table, p, A) {
     return q !== p && !q.folded && !q.sittingOut && q.idx !== table.bbIdx && q.totalBet >= table.bb;
   }).length;
 
-  if (A.id === 'amogh' && tier <= 1 && legal.canRaise) {
-    if (Math.random() < 0.55) return { a: 'raise', amount: legal.maxRaiseTo };
-    var toA = clampRaise(table, p, legal, table.bb * (2.5 + limpers));
-    if (toA != null) return { a: 'raise', amount: toA };
+  if (A.id === 'amogh' && tier <= 1 && legal.canRaise && (raised ? Math.random() < 0.7 : true)) {
+    return { a: 'raise', amount: legal.maxRaiseTo };
   }
 
   if (A.id === 'lag' && tier <= 4) {
@@ -289,7 +288,7 @@ function botPreflop(table, p, A) {
       if (isoTo != null) { p._isoHand = table.handNo; return { a: 'raise', amount: isoTo }; }
     }
 
-    if (raised && tier >= 3 && table.currentBet < table.bb * 7 && toCall > 0 && toCall < (p.stack + p.bet) * 0.4 && Math.random() < 0.8) {
+    if (raised && tier >= 3 && toCall > 0 && toCall < (p.stack + p.bet) * 0.4 && Math.random() < 0.8) {
       return { a: 'call' };
     }
   }
@@ -303,32 +302,17 @@ function botPreflop(table, p, A) {
       }
       return { a: 'check' };
     }
-    if (table.livePlayers().length <= 2 && toCall <= table.bb) {
-      if (tier <= openTier && legal.canRaise && Math.random() >= (A.limp || 0)) {
-        var toHU = clampRaise(table, p, legal, table.bb * 2.5);
-        if (toHU != null) return { a: 'raise', amount: toHU };
-      }
-      return { a: 'call' };
-    }
     if (tier <= openTier && legal.canRaise) {
-      var topP = 1;
-      if (tier === openTier && openTier >= 5) topP = openTier === 6 ? 0.3 : 0.55;
-      if (Math.random() < topP) {
-        if (Math.random() < (A.limp || 0)) return { a: 'call' };
-        var toOpen = clampRaise(table, p, legal, table.bb * (2.5 + limpers));
-        if (toOpen != null) return { a: 'raise', amount: toOpen };
-      }
+      if (Math.random() < (A.limp || 0)) return { a: 'call' };
+      var toOpen = clampRaise(table, p, legal, table.bb * (2.5 + limpers));
+      if (toOpen != null) return { a: 'raise', amount: toOpen };
     }
-    if (tier <= A.callTier + 1) {
-      var limpP;
-      if (tier === 6) {
-        limpP = 0.05 + 0.1 * (A.limp || 0) + (pos >= 0.75 ? 0.05 : 0);
-      } else {
-        limpP = 0.3 + 0.45 * (A.limp || 0) + (pos >= 0.75 ? 0.2 : 0) -
-          0.06 * (tier - openTier) + (limpers > 0 ? 0.15 : 0);
-        limpP = Math.max(0.05, Math.min(0.9, limpP));
-      }
-      if (Math.random() < limpP) return { a: 'call' };
+
+    if (tier <= A.callTier + 1 && (limpers > 0 || (A.limp || 0) > 0.5)) return { a: 'call' };
+
+    if (toCall > 0 && toCall <= table.bb) {
+      var wide = (A.aggression || 0) >= 0.8 ? 6 : A.callTier + 1;
+      if (tier <= wide) return { a: 'call' };
     }
     return { a: 'fold' };
   }
@@ -354,22 +338,14 @@ function botPreflop(table, p, A) {
     }
     if (tier <= A.callTier && (need < 0.30 || Math.random() < A.stubborn * 0.5)) return { a: 'call' };
 
-    if (tier <= 3 && need < 0.45 && Math.random() < (need < 0.35 ? 0.9 : 0.45)) return { a: 'call' };
+    if (isPair && toCall < p.stack) return { a: 'call' };
 
-    if (isPair && need < 0.30 && toCall < p.stack) return { a: 'call' };
-
-    if (isPair || p.hole[0].s === p.hole[1].s) {
-      var sdBig = stackDiscount(p, toCall, A);
-      if (A.callTier >= 4 && tier <= 4 && sdBig > 0.15 && need < 0.42 && pos >= 0.5 && Math.random() < 0.5) return { a: 'call' };
-    }
+    var sdBig = stackDiscount(p, toCall, A);
+    if (tier <= A.callTier + 1 && sdBig > 0.3 && need < 0.45) return { a: 'call' };
     return { a: 'fold' };
   }
 
-  var threeP = 0.15 + A.aggression * 0.35 + (tier <= 1 ? 0.35 : 0);
-  if (tier === 3) threeP *= 0.7;
-  else if (tier === 4) threeP *= 0.45;
-  else if (tier >= 5) threeP *= 0.25;
-  if (tier <= A.threeBetTier && Math.random() < threeP && legal.canRaise) {
+  if (tier <= A.threeBetTier && Math.random() < 0.15 + A.aggression * 0.35 + (tier <= 1 ? 0.35 : 0) && legal.canRaise) {
     var to3 = clampRaise(table, p, legal, table.currentBet * 3 + (pos >= 0.75 ? 0 : table.bb));
     if (to3 != null) return { a: 'raise', amount: to3 };
   }
@@ -379,25 +355,17 @@ function botPreflop(table, p, A) {
   var callLine = A.callTier + (pos >= 0.75 ? 1 : 0) - (pos >= 0.3 && pos < 0.55 ? 1 : 0);
   callLine = Math.max(1, callLine);
 
-  if (isPair && toCall < p.stack) return { a: 'call' };
-
-  if (tier === 3 && need < 0.45) {
-    var contP = (A.callTier >= 3 ? 0.85 : 0.55) + (pos >= 0.75 ? 0.1 : 0);
-    if (Math.random() < Math.min(0.95, contP)) return { a: 'call' };
-  }
-
   var sd = stackDiscount(p, toCall, A);
-  var specHand = isPair || p.hole[0].s === p.hole[1].s;
-  if (sd > 0.3 && specHand && tier <= callLine + 1 && need < 0.42 && pos >= 0.3 && Math.random() < 0.6) return { a: 'call' };
+  if (sd > 0 && rawTier <= 5 && tier <= callLine + Math.round(sd * 3) && need < 0.45) return { a: 'call' };
   if (tier <= callLine && (need < 0.33 || tier <= 2 || Math.random() < (A.callTier / 12)))
     return { a: 'call' };
 
-  if (table.currentBet <= table.bb * 2.5 && tier <= callLine + 1 && need < 0.42 &&
-      (tier <= callLine || Math.random() < 0.5))
+  if (table.currentBet <= table.bb * 2.5 && tier <= callLine + 1 && need < 0.42)
     return { a: 'call' };
 
   if (need < 0.12 && tier <= 5) return { a: 'call' };
 
+  if (isPair && toCall < p.stack) return { a: 'call' };
   return { a: 'fold' };
 }
 
@@ -463,7 +431,6 @@ function botPostflop(table, p, A) {
   function betSized(frac) {
 
     if (A.friendly) frac = Math.min(1.2, frac * 1.25);
-    frac = frac * (0.85 + Math.random() * 0.3);
     var to = clampRaise(table, p, legal, pot * frac);
     if (to == null) return { a: 'check' };
     if (to >= legal.maxRaiseTo * 0.97) return { a: table.currentBet === 0 ? 'bet' : 'raise', amount: legal.maxRaiseTo };
@@ -472,21 +439,9 @@ function botPostflop(table, p, A) {
 
   if (toCall === 0) {
     var betLine = 0.62 - A.aggression * 0.22 + (street === 'river' ? 0.04 : 0);
-    var ld = detectDraws(p.hole, table.community);
-    var hasDraw = ld.flushDraw || ld.oesd;
-    var hasGut = !hasDraw && ld.gutshot;
-    if (ms > 0.74) return betSized(0.65 + A.aggression * 0.25);
-    if (ms >= 0.55 && eq > betLine) return betSized(0.5 + A.aggression * 0.25);
-    if ((hasDraw || hasGut) && ms < 0.55) {
-      var semiP = hasDraw ? 0.25 + A.aggression * 0.35 : 0.12 + A.aggression * 0.2;
-      if (Math.random() < semiP) { var smv = betSized(0.55 + Math.random() * 0.2); smv.bluff = true; return smv; }
-      return { a: 'check' };
-    }
-    if (ms >= 0.40 && ms < 0.55 && eq > betLine) {
-      if (Math.random() < 0.45 + A.aggression * 0.25) return betSized(0.4 + Math.random() * 0.2);
-      return { a: 'check' };
-    }
-    var bluffP = A.bluff * (liveOpp === 1 ? 0.22 + A.bluff * 0.25 : 0.10) * (street === 'river' ? 1 : 0.55);
+
+    if (eq > betLine || ms > 0.74) return betSized(0.5 + A.aggression * 0.25);
+    var bluffP = A.bluff * (liveOpp === 1 ? 0.22 : 0.10) * (street === 'river' ? 1 : 0.55);
     if (Math.random() < bluffP && ms < 0.55) { var bmv = betSized(0.65); bmv.bluff = true; return bmv; }
     return { a: 'check' };
   }
@@ -507,16 +462,13 @@ function botPostflop(table, p, A) {
     return { a: 'raise', amount: legal.maxRaiseTo };
   }
   var margin = (0.5 - A.stubborn) * 0.12 + (street === 'river' ? 0.03 : 0);
-  if (liveOpp > 1 && ms < 0.45 && A.id !== 'station') margin += 0.08;
 
-  margin -= Math.min(0.12, stackDiscount(p, toCall, A) * 0.25);
+  margin -= stackDiscount(p, toCall, A) * 0.25;
   if (eq > need + margin) {
-    var raiseP = ms > 0.55 ? A.aggression * 0.55 : A.aggression * 0.22;
-    if (eq > 0.74 && Math.random() < raiseP && legal.canRaise) {
+    if (eq > 0.74 && Math.random() < A.aggression * 0.55 && legal.canRaise) {
       var to = clampRaise(table, p, legal, (pot + toCall) * (0.7 + Math.random() * 0.5));
       if (to != null) return { a: 'raise', amount: to };
     }
-    if (ms < 0.45 && !draws.flushDraw && !draws.oesd && eq < need + 0.18 && Math.random() < 0.25) return { a: 'fold' };
     return { a: 'call' };
   }
 
@@ -537,8 +489,6 @@ function amoghPostflop(table, p, A, legal, toCall, pot, eq, ms, street, liveOpp)
     var wantsBet = eq > betLine || ms > 0.74;
     var d = detectDraws(p.hole, table.community);
     var hasDraw = d.flushDraw || d.oesd;
-
-    if (hasDraw && ms < 0.55 && Math.random() < 0.35) return { a: 'check' };
 
     if (ms >= 0.3 && ms <= 0.6 && street !== 'river' && !hasDraw &&
         Math.random() < 0.7) {
@@ -602,7 +552,7 @@ function donaldPostflop(table, p, A, legal, toCall, pot, eq, ms, street) {
         if (rs[i + 2] - rs[i] <= 4) { wet = true; break; }
       }
     }
-    if (wet && street !== 'river' && Math.random() < 0.7) {
+    if (wet && Math.random() < 0.7) {
       var over = clampRaise(table, p, legal, pot * (1.5 + Math.random() * 0.8));
       if (over != null) {
         if (over >= legal.maxRaiseTo * 0.97) return shove();
@@ -621,8 +571,6 @@ function alicePostflop(table, p, A, legal, toCall, pot, eq, ms) {
   }
   if (toCall === 0) {
     if (!hasIt && eq < 0.62) return { a: 'check' };
-    if (!hasIt && ms < 0.40 && Math.random() < 0.65) return { a: 'check' };
-    if (!hasIt && ms >= 0.40 && Math.random() < 0.4) return { a: 'check' };
     if (!legal.canBet && !legal.canRaise) return { a: 'check' };
     if (monster && Math.random() < 0.30) return shove();
 

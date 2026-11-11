@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.213';
+  var APP_VERSION = '1.8.214';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -441,17 +441,8 @@
     (e.revealed || []).forEach(function (r) { revealed[r.idx] = true; });
     var winnerIdx = [];
     e.winners.forEach(function (w) {
-      if (w.uncalled) return;
       (w.winners || [w.idx]).forEach(function (i) { if (winnerIdx.indexOf(i) === -1) winnerIdx.push(i); });
     });
-    var contestedTotal = 0;
-    e.winners.forEach(function (w) { if (!w.uncalled) contestedTotal += w.amount; });
-    if (!winnerIdx.length) {
-      e.winners.forEach(function (w) {
-        (w.winners || [w.idx]).forEach(function (i) { if (winnerIdx.indexOf(i) === -1) winnerIdx.push(i); });
-      });
-      contestedTotal = e.pot;
-    }
 
     var bits = [];
     e.winners.forEach(function (w) {
@@ -471,7 +462,7 @@
 
       title = '🏆 You win ' + UI.fmt(UI.handWinAmount(e)) + '!';
     } else {
-      title = '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(contestedTotal);
+      title = '😤 ' + winnerIdx.map(function (i) { return table.players[i].isHero ? 'You' : table.players[i].name; }).join(' & ') + ' take' + (winnerIdx.length > 1 ? '' : 's') + ' ' + UI.fmt(e.pot);
     }
     UI.winnerBanner('<div class="wtitle">' + title + '</div><div class="wsub">' + bits.join('<br>') + '</div>');
     UI.log('<span class="hl-win">' + bits.join(' · ') + '</span>');
@@ -1370,7 +1361,6 @@
       detectLeak: detectLeak,
       setDecisions: function (ds) { coachDecisions = ds; },
       setTable: function (t) { table = t; },
-      emitEvent: function (e) { onTableEvent(e); },
       setGameMode: function (m) { gameMode = m; },
       setHandRec: function (r) { handRec = r; },
       adviceFollowed: adviceFollowed,

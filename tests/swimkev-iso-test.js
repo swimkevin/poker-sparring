@@ -1,10 +1,5 @@
 // swimkev iso identity (v1.8.96, Kevin): A9s behind limpers = big iso-raise
 // (pressure + range info), never a limp-fold; facing an iso he continues.
-// Scenario 2 recalibrated (ws3): the old code continued 400/400 because
-// the friendly x1.8 stackDiscount multiplier pushed the facing-big
-// auto-call branch over its threshold for a 9x raise; the fixed code
-// continues about 34% (137/400) — a real human folds A9s to a 9x iso most
-// of the time. Band 90-185 over N=400 sits many sigma from that rate.
 var path = require('path');
 var js = function (f) { return require(path.join(__dirname, '..', 'js', f)); };
 var EN = js('engine.js'), BOTS = js('bots.js');
@@ -37,19 +32,17 @@ function faceIsoScenario() {
   t.currentBet = 90;
   return { t: t, k: k };
 }
-var iso = 0, isoBig = 0, cont = 0, N = 40, N2 = 400;
+var iso = 0, isoBig = 0, cont = 0, N = 40;
 for (var i = 0; i < N; i++) {
   var s1 = isoScenario();
   var mv1 = BOTS.botDecide(s1.t, s1.k);
   if (mv1 && mv1.a === 'raise') { iso++; if (mv1.amount >= 60) isoBig++; }
-}
-for (var j = 0; j < N2; j++) {
   var s2 = faceIsoScenario();
   var mv2 = BOTS.botDecide(s2.t, s2.k);
   if (mv2 && mv2.a !== 'fold') cont++;
 }
 console.log('swimkev A9s behind limpers: iso-raised ' + iso + '/' + N + ' (big >=60: ' + isoBig + ')');
-console.log('swimkev A9s facing iso 90: continued ' + cont + '/' + N2);
-var ok = iso >= 28 && isoBig >= 24 && cont >= 90 && cont <= 185;
+console.log('swimkev A9s facing iso 90: continued ' + cont + '/' + N);
+var ok = iso >= 28 && isoBig >= 24 && cont >= 26;
 console.log(ok ? 'SWIMKEV TEST PASSED' : 'SWIMKEV TEST FAILED');
 process.exit(ok ? 0 : 1);

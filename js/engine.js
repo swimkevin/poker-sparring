@@ -287,11 +287,11 @@ class PokerTable {
       }
       if (pot.eligible.length === 0) {
 
-        self.players.forEach(function (p, idx) {
+        self.players.forEach(function (p, pi) {
           var slice = Math.min(p.totalBet, pot.level) - Math.min(p.totalBet, pot.prev);
           if (slice > 0) {
             p.stack += slice;
-            results.push({ potIndex: pi, amount: slice, winners: [idx], uncalled: true, refunded: true, hand: null });
+            results.push({ potIndex: pi, amount: slice, winners: [pi], uncalled: true, refunded: true, hand: null });
           }
         });
         return;
