@@ -809,3 +809,12 @@ first; this file is the 30-second version.
   by re-running; never report a suite green on stage
   output alone without saying the exit capture was
   lost.
+- Card fix re-applied on the rollback (v1.8.215,
+  2026-11-12): the v1.8.213 seat nudge + mobile
+  opacity fix, re-applied unchanged onto the v1.8.214
+  (v1.8.208) tree — two seat lines, two CSS lines,
+  the same 9 component assertions (header re-pointed
+  at 215/208). The fix is layout-independent of the
+  209/210 changes, so it ports cleanly; the test
+  pins the fixed hero bar against the 211 in-flow
+  regression on the 208 layout too.

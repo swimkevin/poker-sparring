@@ -965,6 +965,9 @@ label { font-weight: 600; }
 
   #screen-table { padding-bottom: 200px; }
 
+  #screen-table .seat.folded { opacity: 0.75; }
+  #screen-table .card.card-dim { opacity: 0.55; }
+
   :root { --m-tabbar: calc(58px + env(safe-area-inset-bottom, 0px)); }
   .mobile-tabs {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;

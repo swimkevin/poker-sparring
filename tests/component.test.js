@@ -977,3 +977,32 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   });
   ok(stale === 0, 'all index.html cache-busters are ?v=' + vt);
 })();
+
+// ---------- mobile bottom-seat cards clear the action panel (v1.8.215) ----------
+// Kevin's iPhone on the v1.8.208 layout: the bottom-ring seats' hole cards
+// sat at the panel edge, the bottom ~30% hidden behind the fixed hero bar,
+// and folded cards ghosted at 0.45 x 0.35 = 0.16 effective opacity. The fix
+// moves only the two bottom-ring seats up (y 45 -> 40) and raises folded /
+// dimmed opacity on mobile. The 200px bottom reserve stays dead (killed by
+// the padding: 0.5rem shorthand) and is deliberately NOT restored:
+// shrinking the felt bunches the ring, which is the v1.8.211 look.
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  var uiSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'ui.js'), 'utf8');
+  ok(/{ x: 22, y: 40 }/.test(uiSrc), 'bottom-left ring seat sits higher (y 40, was 45)');
+  ok(/{ x: 78, y: 40 }/.test(uiSrc), 'bottom-right ring seat sits higher (y 40, was 45)');
+  ok(/{ x: 12, y: 29 }/.test(uiSrc) && /{ x: 88, y: 29 }/.test(uiSrc),
+    'mid ring seats unmoved (y 29)');
+  var m = css.match(/#screen-table \.hero-bar\s*\{[^}]*\}/);
+  var heroBar = m ? m[0] : '';
+  ok(/position:\s*fixed/.test(heroBar), 'mobile hero bar is still fixed (208 layout, not 211 in-flow)');
+  ok(/bottom:\s*var\(--m-tabbar\)/.test(heroBar), 'mobile hero bar still offsets by the tab-bar height');
+  ok(/#screen-table \.seat\.folded\s*\{[^}]*opacity:\s*0\.75/.test(css),
+    'mobile folded seats stay readable (opacity 0.75)');
+  ok(/#screen-table \.card\.card-dim\s*\{[^}]*opacity:\s*0\.55/.test(css),
+    'mobile dimmed cards stay readable (opacity 0.55)');
+  ok(/\.seat\.folded\s*\{\s*opacity:\s*0\.45/.test(css),
+    'desktop folded-seat opacity is untouched (0.45)');
+  ok(/\.card\.card-dim\s*\{\s*opacity:\s*0\.35/.test(css),
+    'desktop dimmed-card opacity is untouched (0.35)');
+})();
