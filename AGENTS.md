@@ -754,3 +754,27 @@ first; this file is the 30-second version.
   delete, and deleting locally first makes
   verify-push-list.js fail (it diffs against the tip
   and demands the deleted file in the push list).
+- Bottom-seat cards clear the panel with a seat nudge,
+  not a reserve restore (v1.8.213, 2026-11-11, Kevin
+  iPhone on the restored 210 layout): measured on the
+  screenshot, the bottom-ring cards' centers sit at ~464
+  CSS px against the panel top at ~474, so the bottom
+  ~30% of each 48px card is covered. Root cause is the
+  dead 200px reserve — the `#screen-table { padding:
+  0.5rem; }` shorthand (later 900px block) resets
+  padding-bottom to 8px, so the felt runs ~200px too
+  tall. Restoring the reserve is the WRONG fix: it
+  shrinks the felt and bunches the ring (the 211 look
+  Kevin rejected). The fix moves only the two
+  bottom-ring seats up in mobilePos (y 45 -> 40, ~40px
+  on a phone felt) and raises folded/dimmed opacity on
+  mobile only (0.75 / 0.55, from the 0.45 x 0.35 double
+  -dim). Test-first: the new component assertions fail
+  exactly 4 checks on the unfixed tree (2 seat
+  positions, 2 mobile opacities) and pass after. Lesson:
+  when a layout reserve is dead, restoring it changes
+  every percentage that assumed the tall container —
+  move the content instead. Also: a grep for a
+  single-line pattern misses multi-line CSS blocks —
+  the shorthand that kills the reserve was found by
+  reading the block, not by grepping `padding-bottom`.
