@@ -676,6 +676,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 [data-theme="light"] .seat.to-act { border-color: var(--gold); }
 [data-theme="light"] .seat.winner { border-color: var(--green); }
 [data-theme="light"] .seat .pact { color: #9aa39b; }
+[data-theme="light"] .seat .pstack { color: #d4af37; }
 [data-theme="light"] .winner-banner { color: #e8edf3; }
 [data-theme="light"] .winner-banner .wsub { color: #a8b0a0; }
 
@@ -1703,4 +1704,24 @@ label { font-weight: 600; }
     position: static;
     transform: none;
   }
+}
+
+@media (max-width: 900px) and (max-height: 899px) {
+  #screen-table .hero-bar {
+    padding: 0.3rem 0.5rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.2rem;
+  }
+  #screen-table .hero-bar .ctl { flex: 1 1 22%; }
+  #screen-table #hero-cards .card { width: 32px; height: 44px; }
+  #screen-table .hero-meta {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: baseline;
+  }
+  #screen-table .community .card { width: 32px; height: 46px; }
+}
+
+@media (max-width: 900px) {
+  [data-theme="light"] #screen-table .seat.folded { opacity: 0.85; }
 }

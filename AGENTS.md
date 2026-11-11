@@ -861,3 +861,24 @@ first; this file is the 30-second version.
   panel boundary (compact the hero bar under 900px
   height) + folded-seat label contrast in light
   theme.
+- Short-screen hero-bar compaction (v1.8.217, 2026-11-12, round 2 of the
+  mobile polish): under 900px height the bar compacts (one-row controls at
+  22% each, hero cards 32x44, hero-meta on one line, tighter padding;
+  panel top vh-316 -> vh-257) and the community cards shrink 38x54 ->
+  32x46, clearing the hero at 390x844 (+24px, was -35px) and 375x812
+  (+9px, was -51px) and the board-Donald touch (+5px at 390, was -10px;
+  375 a 0.7px corner graze, was -16px). The geometry suite reads the CSS
+  for the compaction block and only models the compact panel when it is
+  present, so it fails 4 checks on the pre-fix tree; the community row's
+  top edge is fixed by the pot (boardTop+39), the shrink eats from the
+  bottom edge only. Two planned levers were killed by measurement: the
+  turn-status is ALREADY display:none on mobile (line ~1565), so hiding
+  it saves nothing, and moving the board 32% -> 30% pushes the pot 4px
+  into swimkev's seat at 390px, so the board stays at 32%. The mobile
+  bet label needed no fix either: it is already hardcoded bright blue
+  (#7db8ff) — only the light-theme stack colour (dark gold #8a6d1f on the
+  dark seat) and the folded opacity (0.85, light theme, mobile only)
+  were real. Edit-tool lesson, second sighting: an old_text that ends
+  mid-branch leaves the original branch body behind and duplicates it —
+  include the whole branch (or the whole function) in the match, and run
+  node --check after any structural test edit before the suite.

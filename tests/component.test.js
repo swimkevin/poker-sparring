@@ -1011,5 +1011,21 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     'desktop dimmed-card opacity is untouched (0.35)');
 })();
 
+// ---------- folded-seat labels stay readable in light theme (v1.8.217) ----------
+// The seat background stays dark in both themes, but light theme redefines
+// --gold to a dark brown (#8a6d1f), so the stack text inside a seat is
+// dark-on-dark, worst on a folded seat at 0.75 opacity. The mobile bet
+// label is already bright blue (#7db8ff), so only the stack colour and the
+// folded opacity need a light-theme override.
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  ok(/\[data-theme="light"\] \.seat \.pstack\s*\{\s*color:\s*#d4af37;/.test(css),
+    'light-theme seat stack uses bright gold (readable on the dark seat)');
+  ok(/\[data-theme="light"\] #screen-table \.seat\.folded\s*\{\s*opacity:\s*0\.85;/.test(css),
+    'light-theme folded seats dim less on mobile (opacity 0.85)');
+  ok(/@media \(max-width: 900px\) \{\s*\[data-theme="light"\] #screen-table \.seat\.folded/.test(css),
+    'light-theme folded opacity is mobile-scoped (desktop 0.45 untouched)');
+})();
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 process.exit(fail ? 1 : 0);
