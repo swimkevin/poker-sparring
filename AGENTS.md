@@ -728,3 +728,38 @@ first; this file is the 30-second version.
   the true rate — a bot retune moves test thresholds
   too, so re-measure the pinned rates after any
   retune.
+- Bottom seats clipped by the fixed hero bar (v1.8.211,
+  2026-11-11, Kevin iPhone): Alice's and Shark's hole
+  cards were half-hidden behind the fixed action panel.
+  The hero bar was position:fixed over a 100dvh felt,
+  and the padding-bottom:200px reserve that was supposed
+  to stop that had been killed by a later padding
+  shorthand on #screen-table. The v1.8.38 percentage
+  tune only moved things inside the too-tall felt. Fix
+  (mobile only): hero bar position:static so the felt
+  ends where the bar begins; topbar hidden on the table
+  screen (removes the ~48px header offset); #screen-
+  table padding reserves var(--m-tabbar); table-layout
+  top padding 2.25rem so the felt starts below the
+  Hand # pill. Folded-card contrast: .seat.folded 0.45
+  times .card.card-dim 0.35 = 0.16 effective — now
+  0.75 / 0.55 on mobile. The online table has the same
+  bug class (fixed 380px felt, bottom seat at y=92%,
+  hardcoded bottom:64px hero bar) — not fixed here.
+- New suites must be wired into the chain + counts
+  (v1.8.211, 2026-11-11): adding a test file alone
+  never runs it — the chain is the package.json test
+  script, and docs-freshness-test parses it and pins
+  the count in README (2 mentions), ROADMAP,
+  ARCHITECTURE, TESTING (2), AI-WORKFLOW. A 39th suite
+  needs the chain edit AND every "38 suites" bumped.
+- Fold-realism section C re-margined (v1.8.211,
+  2026-11-11): the v1.8.209 bot retune moved top-pair
+  continue from ~100% to ~94% for all six bots in the
+  spot, so the >=35/40 bar sat ~1.5 sigma below the
+  mean and flaked (station 33/40 in the 211 suite run;
+  rock passed at exactly 35). Measured N=1000 each:
+  93.6-95.3%; bar moved to >=29 (mean-5sd is 29.7-31.4
+  across the six). A bot retune moves test thresholds
+  too — re-measure every pinned rate after a retune,
+  not just the one that flaked.

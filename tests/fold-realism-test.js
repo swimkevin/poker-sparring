@@ -68,9 +68,17 @@ ok(sNothing >= 35, 'station folds absolute nothing into a big raise (' + sNothin
   ok(f >= 35, id + ' folds air HU vs a 1/2-pot bet (' + f + '/' + N + ')');
 });
 // C) No over-tightening: pairs continue, draws continue (incl. shark/pro).
+// v1.8.211: the v1.8.209 retune moved top-pair continue from ~100% to
+// ~94% for all six bots here (mixed-fold on weak hands, price-sensitive
+// facing), so the old >=35 bar sat ~1.5 sigma below the mean and flaked
+// (station 33/40 in the 211 suite run; rock passed at exactly 35).
+// Measured N=1000 each: donald 95.3%, lag 94.0%, amogh 94.3%, shark
+// 94.7%, station 93.6%, rock 93.9% — mean-5sd per 40 runs is 29.7-31.4,
+// so >=29 is >=5 sigma below the mean for all six while still catching
+// gross over-tightening (a bot folding top pair 30%+ of the time fails).
 ['donald', 'lag', 'amogh', 'shark', 'station', 'rock'].forEach(function (id) {
   var c = N - foldRate(id, PAIR, BOARD_AIR, 4, 130, 100, N);
-  ok(c >= 35, id + ' continues with top pair (' + c + '/' + N + ')');
+  ok(c >= 29, id + ' continues with top pair (' + c + '/' + N + ')');
 });
 ['shark', 'pro'].forEach(function (id) {
   var c = N - foldRate(id, FD, BOARD_FD, 4, 130, 100, N);
