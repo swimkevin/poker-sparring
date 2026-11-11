@@ -52,8 +52,12 @@ var FD = [C(14, 0), C(5, 0)];                       // As 5c: nut flush draw
   ok(f >= 35, id + ' folds air to a big bet multiway (' + f + '/' + N + ')');
 });
 // B) Station keeps its character vs mere air, but folds absolute nothing.
-var sAir = foldRate('station', AIR, BOARD_AIR, 4, 130, 100, N);
-ok(sAir <= 15, 'station still calls with overcard air (' + (N - sAir) + '/' + N + ' continue)');
+// The air spot is N=200: station's true continue rate is 70.7% (measured
+// over 1000 trials), so the old N=40 / folds<=15 threshold sat ~1 sigma
+// from the mean and flaked; folds<=90 over 200 is ~4.9 sigma above the
+// true fold rate of 29.3%.
+var sAir = foldRate('station', AIR, BOARD_AIR, 4, 130, 100, 200);
+ok(sAir <= 90, 'station still calls with overcard air (' + (200 - sAir) + '/200 continue)');
 var sNothing = foldRate('station', NOTHING, BOARD_NOTHING, 2, 100, 120, N); // need ~0.35
 ok(sNothing >= 35, 'station folds absolute nothing into a big raise (' + sNothing + '/' + N + ')');
 // B2) Heads-up vs exactly 1/2 pot with air: also folds (need = 0.25:

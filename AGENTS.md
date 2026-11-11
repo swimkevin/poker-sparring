@@ -585,3 +585,116 @@ first; this file is the 30-second version.
   Maniac-shallow spot pins the raise. Message updated:
   "folds too much" was false; the new wording names the
   mechanism.
+- A small bet after shown strength is not a weak bet
+  (v1.8.205, 2026-11-10): the small-bet raise branch read
+  every small bet as a marginal hand begging for a cheap
+  showdown — even after the villain bet 3/4 pot on the
+  flop, so the verdict contradicted its own range read in
+  one message. Measured: Rock folds 0/200 to the raise
+  with every pair (AQ, KQ, QJ, Q9, sets, middle pair) and
+  only folds pure air — the raise never "takes it away"
+  from a hand that matters, and his opening range on that
+  board is overpairs, better-kicker top pair, and sets.
+  New `villainShowedStrength` timeline scan: a 0.7x-pot or
+  bigger bet on an earlier street, or a preflop raise from
+  a tight player, counts as shown strength and the raise
+  branch skips it (falls to the equity call). Scoped: the
+  capped-range raise still fires, a wide player's preflop
+  raise does not count as strength (LAG still gets
+  raised), and the never-raising trappers keep their value
+  raise. Probe kept at hidden_files/rock-smallbet-fold-
+  probe.js. Lesson: read the whole hand, not the last bet.
+- One weak range in front is a raise, not a fold
+  (v1.8.206, 2026-11-10): the tier-3 isolate branch fired
+  only in position, so AQo folded in middle position vs a
+  single player who just called — while 2+ limpers in the
+  same seat already raised through the late/middle branch.
+  The branch now also fires against exactly one limper
+  (`inPos || countLimpers() === 1`), with its own message
+  (no false "you have position"). Position against the
+  button is not position against the limper.
+- Stack-depth gates do not price all-ins (v1.8.207,
+  2026-11-10): facing an all-in re-raise, tier 2-4 hands
+  folded on the 40bb effective-stack gate — an all-in
+  villain has no stack, so the gate read zero. JJ folded
+  to a Maniac shove at 72% equity vs a 50% price, AQs at
+  64%. A guard between the premium and tier-2 branches now
+  prices it on raw equity when no raise is left
+  (`!legal.canRaise`, tier 2-4, not a small pair): call iff
+  eq3 > need3. Raw equity on purpose — implied-odds credit
+  and reverse-implied debit are postflop concepts, and the
+  second-re-raise branch prices its all-ins the same way.
+  Small pairs keep their own branch (equity fallback
+  already prices all-ins). Same hole class as v1.8.188,
+  one raise earlier.
+- A raise to your whole stack is an all-in (v1.8.208,
+  2026-11-10): the facing-raise branches (nuts, draw,
+  small bet) labeled a whole-stack raise "~3× their bet"
+  — the nuts with 1,200 facing a 400 bet, the draw raise
+  of 900 from 900. The leading bets got this fix in
+  v1.8.192; the facing branches never did. Each now checks
+  `raiseTo >= legal.maxRaiseTo` and says all-in with the
+  amount in the same "to ~X" shape, so the lab's size
+  check still parses it.
+- Push-path typo is a safe retry (v1.8.208, 2026-11-10):
+  a typo in the local-path half of a push.py pair
+  (`poker-sparsing`) fails the whole push with
+  FileNotFoundError BEFORE any commit lands, so correcting
+  the path and retrying is safe. But
+  verify-push-list.js only checks the repo-path half of
+  each pair and version identity — it cannot catch a
+  local-path typo. Double-check the typed local paths.
+- Service-restart loss, third sighting (v1.8.208,
+  2026-11-10): a runtime restart killed the full suite
+  mid-run at the unit-test soak stage with no exit line
+  and no live process; the hidden_files log showed the
+  stall and the suite was re-run from scratch (green).
+  Same as v1.8.174 — the log-file discipline is what
+  makes the loss visible instead of silent.
+- First-in is a mixed strategy, not auto-call (v1.8.209,
+  2026-11-11): five bots played 100% of hands first-in
+  (cheap-call branch aggression>=0.8 widened to tier 6
+  plus the callTier+1 limp branch). Top-tier hands now
+  raise with prob 0.55 (tier 5) / 0.30 (tier 6) instead
+  of always; limping is a probability band by tier/limp/
+  position. Measured N=2000/bot: lag 100 to 43.1% VPIP,
+  station 100 to 50.1%, maniac PFR 95.2 to 65.2%.
+  Ordering rock < shark < lag < station < maniac now
+  holds (7.3 < 25.8 < 43.1 < 50.1 < 70.5).
+- Facing raises are priced, not called on tier alone
+  (v1.8.209, 2026-11-11): stackDiscount let deep
+  stacks call anything (+3 tiers; friendly x1.8
+  multiplier pushed the facing-big branch over
+  threshold) — donald called Q9s/A2o vs 3x ~98%,
+  alice A5s 98.3%; lag auto-called 80% of ANY raise
+  with tier>=3 (AQo vs 7x 91%). The discount is now
+  capped to pairs/suited, tier<=callLine+1, need<0.42,
+  60% prob; lag's auto-call is gated to raises <7x;
+  3-bet probability is tier-scaled.
+- Postflop leading is a hand-class mixed strategy
+  (v1.8.209, 2026-11-11): everyone bet 100% with
+  top/second/weak pair when checked to at one fixed
+  size per bot; nut flush draws semi-bluffed 91-100%;
+  Rohan never led anything (monsterThrough 0.78 vs set
+  strength 0.66). Now monsters bet big, medium pairs
+  ~45-70%, draws semi-bluff ~25-60%, air bluffs at a
+  HU-scaled rate; sizes jitter +/-15%. Rohan
+  monsterThrough 0.78 to 0.60 at 0.7 prob (sets lead
+  ~64-70%); Nathan still traps at 0%.
+- Amogh shove discipline (v1.8.209, 2026-11-11): Amogh
+  shoved AA 95% facing a 3x open, 100% first-in (a
+  100bb shove vs a 3bb open). Premiums now shove 55%
+  (else a normal 2.5x raise, never flat/fold) and draws
+  check 35%; desc updated ("sometimes shoves").
+- Station-air band sat ~1 sigma from the truth
+  (v1.8.209, 2026-11-11): the fold-realism threshold
+  flaked because the true fold rate is 29.3% and the
+  old band sat ~1 sigma away. Moved to N=200/folds<=90
+  (~4.9 sigma). Measure first, bands many sigma away
+  (the v1.8.120 rule, re-learned).
+- /tmp does not survive restarts (v1.8.209, 2026-11-11):
+  a restart wiped a whole workstream's working copy,
+  probes, and patch mid-session; the fix was re-applied
+  from a recorded edit list (~/workspace/ws3-reapply.py).
+  Save patches and re-apply scripts under ~/workspace,
+  never only /tmp.
