@@ -918,17 +918,15 @@ label { font-weight: 600; }
   #screen-table {
     height: 100vh;
     height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
-    padding: 0.5rem 0.5rem var(--m-tabbar);
   }
   #screen-table[hidden] { display: none !important; }
-  body:has(#screen-table:not([hidden])) .topbar { display: none; }
   #screen-table .table-topbar { flex: 0 0 auto; padding: 0.4rem 0.5rem; }
   #screen-table .table-topbar .hand-info { font-size: 0.95rem; }
   #screen-table .table-topbar .blinds-info,
   #screen-table .table-topbar .last-result { font-size: 0.8rem; }
   #screen-table .table-layout {
     flex: 1 1 auto; min-height: 0; display: block; overflow: hidden;
-    padding: 2.25rem 0.4rem 0;
+    padding: 0 0.4rem;
   }
   #screen-table .felt-wrap { height: 100%; }
 
@@ -949,7 +947,7 @@ label { font-weight: 600; }
 
   #screen-table .hero-bar {
     flex: 0 0 auto;
-    position: static;
+    position: fixed; bottom: var(--m-tabbar); left: 0; right: 0; z-index: 60;
     margin: 0; border-radius: 14px 14px 0 0;
     padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
     box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
@@ -965,8 +963,7 @@ label { font-weight: 600; }
 
   #screen-table .hero-bar { gap: 0.8rem; }
 
-  #screen-table .seat.folded { opacity: 0.75; }
-  #screen-table .card.card-dim { opacity: 0.55; }
+  #screen-table { padding-bottom: 200px; }
 
   :root { --m-tabbar: calc(58px + env(safe-area-inset-bottom, 0px)); }
   .mobile-tabs {

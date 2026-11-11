@@ -486,8 +486,7 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 // The raise panel must be a fully-visible fixed dialog on phones: the old
 // top:50%-of-controls placement slid under the tab bar (z-index 100),
 // hiding Confirm/Cancel with no way out. The tab bar height and the
-// table-screen bottom padding reserve share one variable so no
-// gap/overlap seam shows.
+// hero-bar offset share one variable so no gap/overlap seam shows.
 (function () {
   var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
   // Find the mobile bet-panel rule (the last #screen-table .bet-panel block).
@@ -498,17 +497,13 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(/z-index:\s*150/.test(mobile), 'mobile bet panel sits above the tab bar (z-index 150)');
   ok(/width:\s*min\(340px,\s*92vw\)/.test(mobile), 'mobile bet panel fits narrow screens');
   ok(/max-height:\s*52dvh/.test(mobile), 'mobile bet panel never exceeds the viewport');
-  // One shared tab-bar height: the tab bar height and the table-screen
-  // bottom padding reserve match. (v1.8.211: the hero bar is in-flow now,
-  // so it no longer offsets by the tab-bar height itself.)
+  // One shared tab-bar height: hero-bar offset and tab bar height match.
   ok(/--m-tabbar:\s*calc\(58px \+ env\(safe-area-inset-bottom/.test(css),
     '--m-tabbar accounts for the iPhone home-indicator area');
   ok(/\.mobile-tabs\s*\{[^}]*height:\s*var\(--m-tabbar\)/.test(css),
     'tab bar uses the shared height');
-  ok(/#screen-table \.hero-bar\s*\{[^}]*position:\s*static/.test(css),
-    'hero bar is in-flow on mobile (felt ends where the bar begins)');
-  ok(/#screen-table\s*\{[^}]*padding:\s*0\.5rem 0\.5rem var\(--m-tabbar\)/.test(css),
-    'table screen reserves the tab-bar height in its own padding');
+  ok(/#screen-table \.hero-bar\s*\{[^}]*bottom:\s*var\(--m-tabbar\)/.test(css),
+    'hero bar offset matches the tab bar height (no gap seam)');
 })();
 
 // ---------- hand end: results pause, bot reveal, hero show/muck ----------

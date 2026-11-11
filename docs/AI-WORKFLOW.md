@@ -49,7 +49,7 @@ code, write tests, run the suite, and report diffs.
 ## Verification
 
 Every agent change goes through the same gate: the full `npm test` suite
-(39 suites, 2,000+ assertions) **plus human diff review** before commit. Agents have been
+(38 suites, 2,000+ assertions) **plus human diff review** before commit. Agents have been
 observed catching real bugs this way — e.g. a smoke-test ordering flake the
 agent introduced was caught by the suite, diagnosed, and fixed with a
 regression guard in the same session.

@@ -728,38 +728,29 @@ first; this file is the 30-second version.
   the true rate — a bot retune moves test thresholds
   too, so re-measure the pinned rates after any
   retune.
-- Bottom seats clipped by the fixed hero bar (v1.8.211,
-  2026-11-11, Kevin iPhone): Alice's and Shark's hole
-  cards were half-hidden behind the fixed action panel.
-  The hero bar was position:fixed over a 100dvh felt,
-  and the padding-bottom:200px reserve that was supposed
-  to stop that had been killed by a later padding
-  shorthand on #screen-table. The v1.8.38 percentage
-  tune only moved things inside the too-tall felt. Fix
-  (mobile only): hero bar position:static so the felt
-  ends where the bar begins; topbar hidden on the table
-  screen (removes the ~48px header offset); #screen-
-  table padding reserves var(--m-tabbar); table-layout
-  top padding 2.25rem so the felt starts below the
-  Hand # pill. Folded-card contrast: .seat.folded 0.45
-  times .card.card-dim 0.35 = 0.16 effective — now
-  0.75 / 0.55 on mobile. The online table has the same
-  bug class (fixed 380px felt, bottom seat at y=92%,
-  hardcoded bottom:64px hero bar) — not fixed here.
-- New suites must be wired into the chain + counts
-  (v1.8.211, 2026-11-11): adding a test file alone
-  never runs it — the chain is the package.json test
-  script, and docs-freshness-test parses it and pins
-  the count in README (2 mentions), ROADMAP,
-  ARCHITECTURE, TESTING (2), AI-WORKFLOW. A 39th suite
-  needs the chain edit AND every "38 suites" bumped.
-- Fold-realism section C re-margined (v1.8.211,
-  2026-11-11): the v1.8.209 bot retune moved top-pair
-  continue from ~100% to ~94% for all six bots in the
-  spot, so the >=35/40 bar sat ~1.5 sigma below the
-  mean and flaked (station 33/40 in the 211 suite run;
-  rock passed at exactly 35). Measured N=1000 each:
-  93.6-95.3%; bar moved to >=29 (mean-5sd is 29.7-31.4
-  across the six). A bot retune moves test thresholds
-  too — re-measure every pinned rate after a retune,
-  not just the one that flaked.
+- Revert the v1.8.211 layout (v1.8.212, 2026-11-11, Kevin
+  iPhone "looks worse"): the in-flow hero bar shrank the felt
+  and the seat ring percentages assume a near-full-height
+  felt, so the seats bunched at the top with a huge empty
+  green below and the pot pill overlapping Rohan's seat.
+  Restored the v1.8.210 layout exactly (fixed hero bar,
+  visible topbar, 200px reserve, original folded-card
+  dimming). The v1.8.209 bot retune and v1.8.210
+  two-winners fix are untouched. KEPT from 211: the
+  fold-realism top-pair bar >=29 (test calibration for
+  the 209 retune, not visual — reverting it reintroduces
+  the station 33/40 flake). Correction to this entry's
+  first draft: the 211 diagnosis of the dead 200px reserve
+  was RIGHT — the `#screen-table { padding: 0.5rem; }`
+  shorthand (later 900px block) resets padding-bottom to
+  8px, so the felt runs ~200px too tall and the bottom
+  seats sit at the panel edge. Restoring the reserve is
+  still NOT the fix: it would shrink the felt and bunch
+  the ring (the 211 look). The card fix ships separately
+  in v1.8.213 as a seat nudge instead. Revert mechanics:
+  restore the good-SHA files via git archive, bump to a
+  NEW version, and delete a release-only test file with
+  github-delete.py AFTER the push — push.py cannot
+  delete, and deleting locally first makes
+  verify-push-list.js fail (it diffs against the tip
+  and demands the deleted file in the push list).
