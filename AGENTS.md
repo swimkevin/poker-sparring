@@ -698,3 +698,33 @@ first; this file is the 30-second version.
   from a recorded edit list (~/workspace/ws3-reapply.py).
   Save patches and re-apply scripts under ~/workspace,
   never only /tmp.
+- An uncalled take-back is not a win (v1.8.210,
+  2026-11-11, Kevin iPhone "2 people won"): hero bets
+  600 with QQ, a short villain is all-in for 100 with
+  AA and wins the only contested pot (200); hero's 500
+  overbet returns uncalled. The engine is correct — one
+  contested winner plus one uncalled entry — but the
+  banner read "Alice & You take 700". `onHandEnd`
+  built winnerIdx as the union over ALL e.winners
+  entries including uncalled take-backs, the one place
+  that didn't apply the uncalled filter everything else
+  already uses. That list feeds the banner title, the
+  gold seat rings, and the tilt wonSet. Fix: skip
+  w.uncalled when building winnerIdx (fallback to the
+  full union only if no pot was contested, so the title
+  can never render empty); title amount is the sum of
+  contested pots, not e.pot. Soak rate ~1% of showdowns.
+  Bonus: engine _showdown refund entries carried
+  potIndex 0 (inner forEach param shadowed the pot
+  index) — renamed pi to idx.
+- Rohan aggression threshold re-measured (v1.8.210,
+  2026-11-11): the v1.8.209 bot retune moved Rohan's
+  true aggression 3.9% to ~6.8% (sets now lead), so
+  the 8% bar sat ~2 sigma above the mean and flaked
+  (81/1003 = 8.07%). Measured 10x60-hand runs: mean
+  6.76% sd 0.57%; 600-hand run 6.35% (621/9780). Bar
+  moved to 10% (mean + 5 sigma ~ 9.6%). Same v1.8.182
+  discipline: measure first, threshold >=5 sigma above
+  the true rate — a bot retune moves test thresholds
+  too, so re-measure the pinned rates after any
+  retune.

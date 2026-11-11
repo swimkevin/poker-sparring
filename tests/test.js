@@ -323,6 +323,33 @@ function heroPolicy(table, idx) {
     'handEnd flags a lone by-fold winner');
 })();
 
+// ---------- engine: uncalled overbet is a take-back, not a second win (v1.8.210) ----------
+// Hero QQ bets 600, short villain AA is all-in for 100 and wins the only contested
+// pot (main, 200); hero's 500 overbet comes back uncalled. The engine must report
+// exactly one contested winner plus one uncalled entry, stacks 900/200.
+(function () {
+  var t = new EN.PokerTable({
+    players: [{ name: 'Hero', isHero: true }, { name: 'Alice' }],
+    sb: 5, bb: 10, startingStack: 1000
+  });
+  t.handNo = 1; t.handOver = false; t.button = 1; t.pot = 0;
+  t.community = hand('2d 7c 9h Jd Ks');
+  t.players[0].hole = hand('Qs Qh'); t.players[0].totalBet = 600; t.players[0].bet = 600; t.players[0].stack = 400;
+  t.players[1].hole = hand('As Ah'); t.players[1].totalBet = 100; t.players[1].bet = 100; t.players[1].stack = 0;
+  t._showdown();
+  ok(t.handOver, 'uncalled-overbet showdown ends the hand');
+  ok(t.players[0].stack === 900, 'hero gets 500 uncalled back (400+500), got ' + t.players[0].stack);
+  ok(t.players[1].stack === 200, 'villain wins main pot 200, got ' + t.players[1].stack);
+  var end = t.eventQueue.filter(function (e) { return e.t === 'handEnd'; })[0];
+  ok(end && end.winners.length === 2, 'handEnd reports 2 entries (1 contested + 1 uncalled)');
+  ok(end.winners[0].uncalled === false && end.winners[0].winners.join() === '1' &&
+     end.winners[0].amount === 200 && end.winners[0].hand === 'Pair of Aces',
+    'only contested winner is the villain, main pot 200');
+  ok(end.winners[1].uncalled === true && end.winners[1].winners.join() === '0' &&
+     end.winners[1].amount === 500, 'hero overbet reported as a 500 uncalled take-back');
+  ok(end.pot === 700, 'handEnd pot is the whole 700, got ' + end.pot);
+})();
+
 // ---------- engine: broke players are not live (showdown-crash regression) ----------
 // Cash games leave busted bots seated with 0 chips (not sittingOut). They hold no
 // cards and must not keep a hand alive: previously the engine ran such hands to a
@@ -389,8 +416,9 @@ function heroPolicy(table, idx) {
   ok(tot === 2000, 'chip conservation on refund, got ' + tot);
   var end = t.eventQueue.filter(function (e) { return e.t === 'handEnd'; })[0];
   ok(end && end.winners[1].refunded === true && end.winners[1].uncalled === true &&
-     end.winners[1].winners.join() === '0' && end.winners[1].amount === 33,
-    'refund recorded on handEnd as a per-player take-back');
+     end.winners[1].winners.join() === '0' && end.winners[1].amount === 33 &&
+     end.winners[1].potIndex === 1,
+    'refund recorded on handEnd as a per-player take-back from pot 1');
 })();
 
 // ---------- deterministic full hand through act() (rigged deck) ----------
@@ -583,6 +611,11 @@ function heroPolicy(table, idx) {
   // threshold must sit several sigma above the true rate: 7% on ~1080
   // decisions keeps the flake probability negligible while still catching a
   // real regression (e.g. 15% aggression fails loudly).
+  // v1.8.210: the v1.8.209 bot retune moved Rohan's true rate to ~6.8%
+  // (sets now lead), so the 8% bar sat ~2 sigma above the mean and flaked
+  // (81/1003 = 8.07% on a 2026-11-11 run). Re-measured: 10x60-hand runs
+  // mean 6.76% sd 0.57%, 600-hand run 6.35% (621/9780). Bar moves to 10%
+  // (mean + 5 sigma ~ 9.6%); 15% aggression still fails loudly.
   var rAggro = 0, rTried = 0;
   for (var k = 0; k < 60; k++) {
     var t = mkTable('rohan');
@@ -597,7 +630,7 @@ function heroPolicy(table, idx) {
   }
   ok(rTried > 200, 'rohan decisions sampled (' + rTried + ')');
   // v1.8.76: Rohan sometimes bluffs (15%) — allow rare aggressive actions
-  ok(rAggro / rTried < 0.08, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
+  ok(rAggro / rTried < 0.10, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
 
   // (b1) Amogh bombs tier-1 monsters (QQ+/AKs) preflop: shoves relentlessly
   // when facing a raise, and always raises (shove or big open) first-in.
