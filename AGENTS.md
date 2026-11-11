@@ -818,3 +818,46 @@ first; this file is the 30-second version.
   209/210 changes, so it ports cleanly; the test
   pins the fixed hero bar against the 211 in-flow
   regression on the 208 layout too.
+- Phone ring re-spaced on a true ellipse (v1.8.216,
+  2026-11-12, round 1 of the mobile polish): the
+  old hand-placed mobilePos bunched the left/right
+  pairs (Alice-Donald -14px, board-Alice -27px,
+  adjacent gaps -14..+41px). The ring is now an
+  even ellipse (ax 36.5, ay 22, centre 30%) in
+  `seatPos` only — no CSS, no hero-bar move, no
+  211 change. Two model corrections made the fix
+  possible: mobile seats are 72px wide (max-width
+  72px, border-box, final 900px block), NOT 102px,
+  and community cards are 38x54 (final cascade),
+  NOT 44x62 — the earlier "impossible at 390px"
+  conclusion was an artifact of the wrong sizes.
+  A CSS file with a dozen competing same-specificity
+  900px blocks must be read last-rule-wins: the
+  live value is the LAST block's, and the hero
+  cards measuring exactly 36x50 on the screenshot
+  proves the cascade reading (that is the final
+  block's value). The geometry harness is
+  `tests/seat-ring-geometry-test.js` (39 suites):
+  felt vw-29 x vh-211, seat 74x96 (showdown-tall,
+  the binding state), board (50%, 32%), panel top
+  vh-502 — it fails 13 checks on the unfixed tree.
+  The old `tests/test.js` seat check assumed a
+  440px-tall phone felt; the live felt is ~745px
+  (the dead 200px reserve), so it is re-calibrated
+  to 411x745. Pixel-component screenshot analysis
+  is unreliable at 3x downsample (JPEG + text
+  blending merges seats into the felt gradient and
+  splits them at glyphs) — use it only for coarse
+  anchors (felt top/height, pot centre, panel top)
+  and trust the cascade + the analytic harness for
+  sizes. Short-screen limits, pinned in the test:
+  390x844 has the river community touching
+  Donald/Nathan ~10px and the hero 35px under the
+  panel; 375x812 a 2px pair corner touch, hero
+  51px under; 375x667 is out of scope (visible
+  felt ~165px, no ring fits under a 224px action
+  bar — the hero bar still carries the hero, so
+  play is unaffected). Round 2 is the short-screen
+  panel boundary (compact the hero bar under 900px
+  height) + folded-seat label contrast in light
+  theme.

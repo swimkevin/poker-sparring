@@ -986,13 +986,17 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 // dimmed opacity on mobile. The 200px bottom reserve stays dead (killed by
 // the padding: 0.5rem shorthand) and is deliberately NOT restored:
 // shrinking the felt bunches the ring, which is the v1.8.211 look.
+// v1.8.216 supersedes the positions below: the whole ring is re-spaced on
+// an even ellipse (ax 36.5, ay 22, centre 30%), so the bottom/mid seats sit
+// at the ellipse points the geometry suite verifies clear the panel. The
+// hero-bar and opacity pins in this block still stand.
 (function () {
   var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
   var uiSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'ui.js'), 'utf8');
-  ok(/{ x: 22, y: 40 }/.test(uiSrc), 'bottom-left ring seat sits higher (y 40, was 45)');
-  ok(/{ x: 78, y: 40 }/.test(uiSrc), 'bottom-right ring seat sits higher (y 40, was 45)');
-  ok(/{ x: 12, y: 29 }/.test(uiSrc) && /{ x: 88, y: 29 }/.test(uiSrc),
-    'mid ring seats unmoved (y 29)');
+  ok(/{ x: 24.2, y: 45.6 }/.test(uiSrc), 'bottom-left ring seat on the ellipse (x 24.2, y 45.6)');
+  ok(/{ x: 75.8, y: 45.6 }/.test(uiSrc), 'bottom-right ring seat on the ellipse (x 75.8, y 45.6)');
+  ok(/{ x: 13.5, y: 30 }/.test(uiSrc) && /{ x: 86.5, y: 30 }/.test(uiSrc),
+    'mid ring seats on the ellipse (y 30)');
   var m = css.match(/#screen-table \.hero-bar\s*\{[^}]*\}/);
   var heroBar = m ? m[0] : '';
   ok(/position:\s*fixed/.test(heroBar), 'mobile hero bar is still fixed (208 layout, not 211 in-flow)');
@@ -1006,3 +1010,6 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(/\.card\.card-dim\s*\{\s*opacity:\s*0\.35/.test(css),
     'desktop dimmed-card opacity is untouched (0.35)');
 })();
+
+console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
+process.exit(fail ? 1 : 0);

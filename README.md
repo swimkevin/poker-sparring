@@ -22,8 +22,8 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.215) — iterative, tested releases, not one big bang
-- **2,000+ test assertions** across 38 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
+- **Daily tested releases** (v1.8.216) — iterative, tested releases, not one big bang
+- **2,000+ test assertions** across 39 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
 - **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff

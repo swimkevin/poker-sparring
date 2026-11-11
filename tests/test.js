@@ -1002,7 +1002,10 @@ function heroPolicy(table, idx) {
 
   // Seats are absolutely positioned with translate(-50%,-50%) and the felt has
   // overflow:hidden, so every seat rect must sit fully inside the felt.
-  // Geometries mirror css/style.css: desktop felt 460px tall, phone felt 440px.
+  // Geometries calibrated from Kevin's 440x956 iPhone screenshots (2026-11-12):
+  // phone felt 411x745 (the 200px bottom reserve is dead, so the felt runs
+  // near-full-height); seat 74x96 (max-width 72px + margin, 96 tall with
+  // hole cards shown). Desktop felt 460px tall per css/style.css.
   function checkSeats(viewportW, feltW, feltH, seatW, seatH, tag) {
     global.window.innerWidth = viewportW;
     for (var n = 2; n <= 9; n++) {
@@ -1017,7 +1020,7 @@ function heroPolicy(table, idx) {
     }
   }
   checkSeats(1280, 1100, 520, 100, 90, 'desktop');
-  checkSeats(390, 358, 440, 84, 112, 'phone');
+  checkSeats(440, 411, 745, 74, 96, 'phone');
 })();
 
 
