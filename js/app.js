@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.217';
+  var APP_VERSION = '1.8.218';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -312,7 +312,7 @@
     updateBlindsInfo();
     UI.log('— Hand #' + e.handNo + ' · blinds ' + UI.fmt(e.sb) + '/' + UI.fmt(e.bb) +
       (e.ante ? ' (ante ' + UI.fmt(e.ante) + ')' : '') + ' —', 'hl-pot');
-    UI.disableControls();
+    disableHeroControls();
     UI.renderTable(table, { acting: -1, button: table.button });
   }
 
@@ -335,6 +335,7 @@
       pumping = true;
       setTurnStatus('Waiting for ' + p.name + '…', false);
       UI.renderTable(table, { lastActions: lastActions, acting: e.player, button: table.button });
+      syncHeroControlLabels();
       if (botThinkTimer) clearTimeout(botThinkTimer);
       pendingBot = { player: p, idx: e.player };
       var botActNow = function () {
@@ -424,7 +425,7 @@
   }
 
   function onHandEnd(e) {
-    UI.disableControls();
+    disableHeroControls();
 
     var won = heroWon(e);
     var wonByFold = e.winners.some(function (w) {
@@ -593,7 +594,7 @@
     if (waitingForHero && hero && !hero.folded && hero.hole.length === 2) {
       try { table.act(0, 'fold'); } catch {  }
       waitingForHero = false;
-      UI.disableControls();
+      disableHeroControls();
       UI.coachTip(null);
     }
 
@@ -772,6 +773,26 @@
     $('blinds-info').textContent = t;
   }
 
+  function syncHeroControlLabels() {
+    if (!table) return;
+    var legal;
+    try { legal = table.legalActions(0); } catch (e) { return; }
+    var toCall = legal.toCall;
+    UI.setControls({
+      fold: false,
+      checkCall: toCall > 0
+        ? { label: 'Call ' + UI.fmt(legal.callAmount), enabled: false }
+        : { label: 'Check', enabled: false },
+      betRaise: { label: table.currentBet === 0 ? 'Bet' : 'Raise', enabled: false },
+      allin: { enabled: false }
+    });
+  }
+
+  function disableHeroControls() {
+    UI.disableControls();
+    syncHeroControlLabels();
+  }
+
   function enableHeroControls() {
     var legal = table.legalActions(0);
     var toCall = legal.toCall;
@@ -812,7 +833,7 @@
       recordLeak(leak);
       UI.log('🩹 <b>Leak spotted:</b> ' + UI.escapeHtml(leak.title) + ' — ' + UI.escapeHtml(leak.spot) + ' <span class="hl-leak-more">(see Stats → Leak tracker)</span>', 'hl-leak');
     }
-    UI.disableControls();
+    disableHeroControls();
     UI.coachTip(null);
     resumeFromHero();
 
