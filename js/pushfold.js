@@ -68,7 +68,7 @@ function evaluatePushFold(scn, action) {
   } else {
 
     var toCall = Math.min(scn.stackBB, scn.shover.stackBB);
-    var potAfter = scn.potBB + scn.shover.stackBB + toCall;
+    var potAfter = scn.potBB + toCall + toCall;
     var need = toCall / potAfter;
     var shoverTier = scn.shover.pushTier || 4;
     var rangeEq = estimateEquityVsRange(scn.heroHole, shoverTier, 400);
@@ -91,7 +91,7 @@ function evaluatePushFold(scn, action) {
 }
 
 function tierLabel(t) {
-  return { 1: '3%', 2: '8%', 3: '15%', 4: '25%', 5: '40%' }[t] || '?';
+  return { 1: '3%', 2: '8%', 3: '15%', 4: '25%', 5: '40%', 6: '65%' }[t] || '?';
 }
 function cardPairName(hole) {
   return hole.map(function (c) { return rankChar(c.r); }).join('') + (hole[0].s === hole[1].s ? 's' : 'o');

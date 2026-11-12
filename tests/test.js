@@ -495,6 +495,14 @@ function heroPolicy(table, idx) {
   ok(r3.right === (r3.rangeEquity > r3.need + 0.02),
     'verdict agrees with displayed range equity vs required equity');
 
+  // Deep-shover price (v1.8.224): the prize caps at the matched call — a
+  // 30bb shove against a 10bb hero is a 21.5bb prize, not 41.5bb.
+  var r5 = PF.evaluatePushFold(mkScn('As Ks', rock, 10, 30), 'call');
+  ok(Math.abs(r5.need - 10 / 21.5) < 0.005, '10bb vs 30bb shove needs 46.5%, got ' + (r5.need * 100).toFixed(1) + '%');
+  ok(r5.explain.indexOf('win 22bb') !== -1, 'explain quotes the matched prize (22bb)');
+  // Tier-6 shoving range (Maniac) labels its share instead of '?'.
+  ok(r3.explain.indexOf('top 65%') !== -1, 'maniac shove labels the top 65%');
+
   // Chart branch still works for first-in spots.
   var scn2 = { heroHole: hand('As Ah'), stackBB: 10, pos: 'BTN', nPlayers: 3, opponents: [{}, {}], facingShove: false, potBB: 1.5 };
   var r4 = PF.evaluatePushFold(scn2, 'shove');

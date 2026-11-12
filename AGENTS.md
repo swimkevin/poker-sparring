@@ -926,3 +926,11 @@ first; this file is the 30-second version.
   98/98 pass) plus mid-iteration state (spots added before their fix).
   All five of the day's lab runs on stable trees passed (95, 98, 101,
   104, 104 spots, 0 failures each, EV loss 0).
+- Push/fold prize caps at the matched call (v1.8.224, 2026-11-12): the
+  drill priced a call against the shover's FULL stack — a 30bb shove vs
+  a 10bb hero quoted a 41.5bb prize (need 24%) when the unmatched 20bb
+  returns and the true prize is 21.5bb (need 46.5%). Rule: the prize is
+  the pot plus the matched call from each side; an all-in shove's excess
+  is not money you can win. The tier-6 range label was '?' (Maniac) —
+  tier labels are cumulative shares, and the Maniac's own desc says
+  ~65%.
