@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.221';
+  var APP_VERSION = '1.8.222';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -905,6 +905,12 @@
         return base('missed-value', 'Missed value bet',
           'Checked the river with a monster (' + hole + ')',
           'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');
+      }
+      if (a === 'check' && street === 'river' && V && villainFoldy(V.archetype) < 0.25 &&
+          liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'secondpair') {
+        return base('missed-value', 'Missed value bet',
+          'Checked the river with second pair against ' + V.name,
+          'Second pair is usually best against a player who calls with any pair — a half-pot bet gets called by worse hands. Checking gives those chips away.');
       }
       var needFold = legal.callAmount / (pot + legal.callAmount);
       if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > needFold + 0.10) {

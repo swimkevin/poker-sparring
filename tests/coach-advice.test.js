@@ -507,6 +507,15 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 'fold');
       ok(leakWeakHeadsUp && leakWeakHeadsUp.type === 'weak-fold',
         'the same weak-pair fold heads-up still flags weak-fold (range eq ~55% vs need + 10 = 35%)');
+      // Leak tracker mirrors the v1.8.220 thin-value rule: checking second
+      // pair on the river against a Station is a missed value bet (the coach
+      // bets 1/2 pot there), but against LAG the coach checks too, so no flag.
+      var leakMissedThin = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'station', Q7259, 'river', 500, 0, 0, [], 'check');
+      ok(leakMissedThin && leakMissedThin.type === 'missed-value',
+        'checking second pair on the river vs a Station flags missed-value (coach bets 1/2 pot for thin value there)');
+      var leakMissedThinLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q7259, 'river', 500, 0, 0, [], 'check');
+      ok(!leakMissedThinLag,
+        'checking second pair on the river vs LAG is NOT a missed value (coach checks there too)');
     })();
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
