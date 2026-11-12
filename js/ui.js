@@ -376,7 +376,6 @@ var UI = (function () {
 
   function renderTable(table, opts) {
     opts = opts || {};
-    var handEnd = !!opts.handEnd;
     var n = table.players.length;
 
     setTextFx($('pot-display'), 'Pot: ' + fmt(table.potTotal()));
@@ -419,7 +418,7 @@ var UI = (function () {
         s.classList.remove('cards-up');
       } else {
 
-        var reveal = handEnd || (opts.revealed && opts.revealed[i]);
+        var reveal = opts.revealed && opts.revealed[i];
         if (reveal && !p.sittingOut && p.hole.length === 2) {
           syncCards(s.querySelector('.pcards'), p.hole, true, true);
           s.classList.add('cards-up');

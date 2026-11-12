@@ -48,6 +48,7 @@ h2 { font-size: 1.3rem; margin: 2em 0 0.8em; color: var(--gold); letter-spacing:
 .topbar-right { margin-left: auto; }
 .bankroll { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
 .bankroll.pos { color: var(--green); } .bankroll.neg { color: var(--red); }
+.bankroll-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.03em; }
 
 .screen { padding: 1.2rem; max-width: 1100px; margin: 0 auto; animation: view-in .22s ease backwards; }
 @keyframes view-in { from { opacity: 0; transform: translateY(8px); } }

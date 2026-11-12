@@ -67,6 +67,22 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     ok(found.holeWin >= 1 || found.boardWin === 5, 'winner hole cards lifted (' + found.holeWin + ')');
   }
   ok(errors.length === 0, 'no JS errors' + (errors.length ? ': ' + errors[0] : ''));
+
+  // Fold-win line carries the amount (v1.8.223): drive onHandEnd with a
+  // fabricated fold-win event for the live table and read the hero line.
+  var hasHook = w.__coachTestHooks && typeof w.__coachTestHooks.handEnd === 'function';
+  ok(hasHook, 'handEnd test hook is exposed');
+  if (hasHook) {
+    w.__coachTestHooks.setHandRec(null);
+    w.__coachTestHooks.handEnd({ t: 'handEnd', handNo: 999, winners: [{ idx: 0, amount: 55, byFold: true }], pot: 55, revealed: [] });
+    var foldLine = ($('hero-hand-desc') || {}).textContent || '';
+    ok(/You won 55/.test(foldLine) && /everyone else folded/.test(foldLine), 'fold-win line carries the amount (got "' + foldLine.slice(0, 60) + '")');
+    var mucked = d.querySelectorAll('#seats .seat.cards-up').length;
+    ok(mucked === 0, 'fold-win hand end shows no opponent cards (' + mucked + ' cards-up seats)');
+  }
+
+  // Bankroll chip carries a visible P/L label (v1.8.223, mobile has no hover).
+  ok(d.querySelector('.bankroll-label') && d.querySelector('.bankroll-label').textContent === 'P/L', 'bankroll chip carries a P/L label');
   console.log(fails === 0 ? 'WINNER HIGHLIGHT TEST PASSED' : 'WINNER HIGHLIGHT TEST FAILED');
   process.exit(fails ? 1 : 0);
 })().catch(function (e) { console.log('EXCEPTION: ' + e.message); process.exit(1); });

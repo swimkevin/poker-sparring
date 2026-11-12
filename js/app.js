@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.222';
+  var APP_VERSION = '1.8.223';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -475,7 +475,7 @@
         return table.players[i].isHero ? 'You' : table.players[i].name;
       }).join(' & ');
       if (mainWin.hand) winnerLine = '🏆 ' + mwNames + ' won with ' + mainWin.hand;
-      else if (mainWin.byFold) winnerLine = '🏆 ' + mwNames + ' won — everyone else folded';
+      else if (mainWin.byFold) winnerLine = '🏆 ' + mwNames + ' won ' + UI.fmt(mainWin.amount) + ' — everyone else folded';
     }
 
     try {
@@ -776,7 +776,7 @@
   function syncHeroControlLabels() {
     if (!table) return;
     var legal;
-    try { legal = table.legalActions(0); } catch (e) { return; }
+    try { legal = table.legalActions(0); } catch { return; }
     var toCall = legal.toCall;
     UI.setControls({
       fold: false,
@@ -1391,6 +1391,7 @@
       setGameMode: function (m) { gameMode = m; },
       setHandRec: function (r) { handRec = r; },
       adviceFollowed: adviceFollowed,
+      handEnd: onHandEnd,
       handClass: handClass,
       boardTexture: boardTexture,
       boardVulnerability: boardVulnerability,

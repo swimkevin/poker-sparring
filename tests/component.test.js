@@ -453,6 +453,17 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(d.querySelector('#seat-1 .pcards').children.length === 0, 'folded opponent stays cardless mid-hand');
   ok(d.querySelector('#seat-1').classList.contains('folded'), 'folded opponent seat marked folded');
 
+  // Hand end without a showdown reveal: folded hands stay mucked (v1.8.223).
+  UI.renderTable(t, { handEnd: true });
+  ok(d.querySelector('#seat-1 .pcards').children.length === 0, 'fold-win hand end keeps folded cards mucked');
+  ok(!d.querySelector('#seat-1').classList.contains('cards-up'), 'no cards-up class on a mucked hand end');
+
+  // Hand end WITH a showdown reveal: only the revealed seat shows cards.
+  UI.renderTable(t, { handEnd: true, revealed: { 1: true } });
+  ok(d.querySelector('#seat-1 .pcards').children.length === 2, 'showdown hand end reveals the shown-down seat');
+  ok(d.querySelector('#seat-1').classList.contains('cards-up'), 'cards-up class on a revealed hand end');
+  UI.renderTable(t, {});
+
   // Folded hero keeps seeing own cards in the strip.
   t.players[0].folded = true;
   UI.renderTable(t, {});
@@ -507,8 +518,9 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 })();
 
 // ---------- hand end: results pause, bot reveal, hero show/muck ----------
-// Bots always show their hole cards at hand end (practice mode); a folded
-// hero sees backs with a Show choice; the banner carries Next-hand controls.
+// Only showdown-revealed bots show hole cards at hand end (v1.8.223);
+// folded hands stay mucked like real poker. A folded hero sees backs
+// with a Show choice; the banner carries Next-hand controls.
 (function () {
   var d = dom.window.document;
   var wb = d.createElement('div');
@@ -530,12 +542,18 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   }
   UI.buildSeats();
 
-  // Folded bot's cards are revealed face-up at hand end (expandable overlay).
+  // Folded bots stay mucked at hand end (v1.8.223), like real poker.
   var t = endTable(false, true);
   UI.renderTable(t, { handEnd: true, winners: [0], revealed: {}, button: 0 });
+  ok(d.querySelectorAll('#seat-1 .pcards .card').length === 0, 'folded bot stays mucked at hand end');
+  ok(!d.querySelector('#seat-1').classList.contains('cards-up'), 'no cards-up class on a mucked hand end');
+
+  // A shown-down bot reveals face-up at hand end (expandable overlay).
+  t = endTable(false, false);
+  UI.renderTable(t, { handEnd: true, winners: [0], revealed: { 1: true }, button: 0 });
   var botCards = d.querySelectorAll('#seat-1 .pcards .card');
-  ok(botCards.length === 2, 'folded bot shows 2 cards at hand end');
-  ok(!!botCards[0].querySelector('.crank'), 'folded bot cards are face-up');
+  ok(botCards.length === 2, 'revealed bot shows 2 cards at hand end');
+  ok(!!botCards[0].querySelector('.crank'), 'revealed bot cards are face-up');
   ok(d.querySelector('#seat-1').classList.contains('cards-up'), 'cards-up class at hand end');
 
   // Hero cards live in the dedicated strip, always face-up to the player.

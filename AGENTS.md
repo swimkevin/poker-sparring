@@ -882,3 +882,47 @@ first; this file is the 30-second version.
   mid-branch leaves the original branch body behind and duplicates it —
   include the whole branch (or the whole function) in the match, and run
   node --check after any structural test edit before the suite.
+- Position is measured over live players only (v1.8.220, 2026-11-12):
+  `positionScore` built its acting order over every seat including
+  players who had already folded — with the villain on the button and
+  six folded, a late-seat hero scored 0.8 ("in position") while acting
+  first, so the coach advised as if the hero had position in a common
+  heads-up-after-folds spot. It now skips folded players alongside
+  sitting-out ones. Found because lab spots that should have pinned an
+  out-of-position check all advised "bet" pre-fix; the Lag control
+  failing pre-fix was the injection evidence, and the mid-fix lab run
+  (position fix alone: Lag passes, Station/Nathan fail "check") proved
+  the causal chain before the thin-value fix landed.
+- Paired probes remove re-sampling noise (v1.8.219, 2026-11-12): the
+  first unpaired EV probe said Station 1.0x was WORSE than 0.75x (-33)
+  — re-sampling noise; the paired design (same 1,000 hands at every
+  size) said +33. Same-hands-at-every-size is the design for size
+  comparisons. Tie EV must be size-correct: a called tie splits the
+  (500+S) pot, net (500-S)/2 — the first probe hardcoded +250 (tie
+  counts were tiny, conclusions stood, but the formula is fixed in the
+  paired probes).
+- Bluff sizing vs overfolders is already optimal (v1.8.220 negative,
+  2026-11-12): a 1/2-pot bluff folds ~40% vs rock/lag/maniac, 1/3-pot
+  only ~13-22%, 2/3-pot the same ~40% at higher cost and far more
+  raises. No change; the probe is kept at
+  hidden_files/bluff-size-probe-219.js.
+- Literal source assertions break on refactors (v1.8.221, 2026-11-12):
+  the v1.8.208 scenario test pins the all-in nut-raise message as a
+  source literal ("about 3x their bet"); the variable multiplier broke
+  it (first suite run 207 passed, 1 failed). Update the assertion to
+  the new shape, same intent — the v1.8.195 lesson, re-learned.
+- Shell-precedence trap, re-learned twice (2026-11-12): `cd X &&
+  (cmd) &` backgrounds the ENTIRE `cd && (...)` list, so the foreground
+  shell never changes directory and a later relative-path command fails
+  with "no such file". Use absolute paths in status checks; never chain
+  a backgrounded command with a foreground one in the same exec.
+- ci-diagnose `check` can omit the pages run (v1.8.219, 2026-11-12):
+  for c0c7ff69 it listed only the tests run even though the deploy had
+  happened (live version.txt and app.js both served 219). Verify the
+  deploy from the live files, not only from the run list.
+- Solver-lab 3-failure baseline was flake, not a bug (2026-11-12):
+  the fresh-eyes coordinator's lab run on the 1.8.218 tree showed 98
+  spots, 3 failures — Monte Carlo flake on close spots (runs 2-4:
+  98/98 pass) plus mid-iteration state (spots added before their fix).
+  All five of the day's lab runs on stable trees passed (95, 98, 101,
+  104, 104 spots, 0 failures each, EV loss 0).
