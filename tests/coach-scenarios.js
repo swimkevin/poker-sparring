@@ -821,7 +821,7 @@ console.log('\n72. v1.8.208: a facing raise that is the whole stack says all-in'
      src.indexOf('var drawAllIn = drawTo >= legal.maxRaiseTo;') !== -1 &&
      src.indexOf('var tinyAllIn = tinyTo >= legal.maxRaiseTo;') !== -1,
     'all three facing-raise branches (nuts, draw, small bet) detect when the clamped raise equals the whole stack (v1.8.208)');
-  ok(src.indexOf("'<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about 3× their bet.") !== -1 &&
+  ok(src.indexOf("'<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about ' + nutMult + '× their bet.") !== -1 &&
      src.indexOf("'<b>All-in</b> to ~<b>' + fmt(drawTo) + '</b> — your whole stack, about 3× their bet:") !== -1 &&
      src.indexOf("'<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack, about 3× their bet — and take it away.'") !== -1,
     'an all-in facing raise says all-in with the amount still parseable ("to ~X"), instead of the fraction-of-pot label — the same rule the leading bets got in v1.8.192 (v1.8.208)');
