@@ -792,7 +792,7 @@ var UI = (function () {
   var STAT_INFO = {
     'Hands': 'Total hands played. Everything else is built on this sample — bigger sample, more trustworthy.',
     'Win %': 'Hands won ÷ hands played. Short-term luck dominates this one; bb/100 measures skill better.',
-    'bb / 100': 'Big blinds won per 100 hands = (profit in BB ÷ hands) × 100. The standard poker win-rate; 0–5 is solid. Needs 20+ hands to mean anything.',
+    'bb / 100': 'Big blinds won per 100 hands = (profit in BB ÷ hands) × 100. The standard poker win-rate; 0–5 is solid. Needs hundreds of hands to mean anything — 20 is just when the number starts showing.',
     'VPIP %': 'Voluntarily Put money In Pot: % of hands you played preflop by calling or raising (posted blinds don\'t count). ~15% is tight, ~25% standard, 40%+ loose.',
     'PFR %': 'Pre-Flop Raise: % of hands you raised preflop. The VPIP–PFR gap measures passivity — tight-aggressive players keep it small.',
     'Aggr. factor': 'Aggression Factor = (postflop bets + raises) ÷ postflop calls. Under 1 is passive, 1.5–3 is solid tight-aggressive play, 3+ is maniac territory.',
@@ -806,18 +806,20 @@ var UI = (function () {
     var s = loadStats(), d = derivedStats(s);
 
     var bb100 = d.hands >= 20 ? d.bbPer100.toFixed(1) : '—';
+    var noHands = d.hands === 0;
     var cards = [
-      ['Hands', d.hands], ['Win %', d.winRate.toFixed(1)],
-      ['bb / 100', bb100], ['VPIP %', d.vpip.toFixed(1)],
-      ['PFR %', d.pfr.toFixed(1)], ['Aggr. factor', d.af >= 99 ? '∞' : d.af.toFixed(2)],
-      ['Biggest pot', d.biggestPotChips ? fmt(d.biggestPotChips) : d.biggestPotBB.toFixed(0) + ' bb']
+      ['Hands', d.hands], ['Win %', noHands ? '—' : d.winRate.toFixed(1)],
+      ['bb / 100', bb100], ['VPIP %', noHands ? '—' : d.vpip.toFixed(1)],
+      ['PFR %', noHands ? '—' : d.pfr.toFixed(1)],
+      ['Aggr. factor', noHands ? '—' : (d.af >= 99 ? '∞' : d.af.toFixed(2))],
+      ['Biggest pot', noHands ? '—' : (d.biggestPotChips ? fmt(d.biggestPotChips) : d.biggestPotBB.toFixed(0) + ' bb')]
     ];
     var box = $('stat-cards');
     box.innerHTML = '';
     cards.forEach(function (c) {
       var el = document.createElement('div');
       el.className = 'stat-card';
-      var title = c[0] === 'bb / 100' && d.hands < 20 ? ' title="Play 20+ hands for a meaningful win rate"' : '';
+      var title = c[0] === 'bb / 100' && d.hands < 20 ? ' title="Play hundreds of hands for a meaningful win rate"' : '';
       var info = STAT_INFO[c[0]]
         ? '<button class="stat-info" aria-label="What does ' + c[0] + ' mean?">ⓘ</button>' : '';
       el.innerHTML = '<div class="sk"' + title + '>' + c[0] + info + '</div>' +
@@ -873,7 +875,7 @@ var UI = (function () {
         '</button>' +
         '<div class="hist-details" hidden>' +
           '<div class="hist-meta">' + escapeHtml(modeLabel) +
-            (h.board ? ' · saw ' + ['preflop', 'flop', 'turn', 'river'][Math.min(3, Math.floor(h.board / 2))] : '') +
+            (h.board ? ' · saw ' + (h.board >= 5 ? 'river' : h.board >= 4 ? 'turn' : h.board >= 3 ? 'flop' : 'preflop') : '') +
           '</div>' +
           (h.recId ? '<button class="ghost hist-replay" data-rec="' + escapeHtml(h.recId) + '">▶ Replay hand</button>' : '') +
         '</div>';

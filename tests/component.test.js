@@ -137,6 +137,11 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   });
   ok(vals['bb / 100'] === '—', 'bb/100 shows dash below 20 hands, got "' + vals['bb / 100'] + '"');
   ok(vals['Hands'] === '0', 'hands starts at 0');
+  ok(vals['Win %'] === '—', 'Win % shows dash with no hands, got "' + vals['Win %'] + '"');
+  ok(vals['VPIP %'] === '—', 'VPIP shows dash with no hands, got "' + vals['VPIP %'] + '"');
+  ok(vals['PFR %'] === '—', 'PFR shows dash with no hands, got "' + vals['PFR %'] + '"');
+  ok(vals['Aggr. factor'] === '—', 'Aggression shows dash with no hands, got "' + vals['Aggr. factor'] + '"');
+  ok(vals['Biggest pot'] === '—', 'Biggest pot shows dash with no hands, got "' + vals['Biggest pot'] + '"');
 
   // Record 25 hands, then the rate appears.
   for (var i = 0; i < 25; i++) {
@@ -287,6 +292,19 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   UI.renderStats();
   var legacy = document.querySelector('#history-list .hist-row .neg');
   ok(legacy && legacy.textContent === '-2 bb', 'legacy history falls back to bb, got "' + (legacy && legacy.textContent) + '"');
+})();
+
+// ---------- history: a 5-card board is a river, not a turn (v1.8.225) ----------
+(function () {
+  mem = {};
+  stats.recordHand({
+    mode: 'cash', bb: 10, heroHole: [], community: [{ r: 14, s: 0 }, { r: 13, s: 1 }, { r: 12, s: 2 }, { r: 11, s: 3 }, { r: 10, s: 0 }],
+    profitChips: 0, wonHand: false, vpip: false, pfr: false, postBet: 0, postCall: 0,
+    opponents: [], heroStackBB: 100, potBB: 5, resultText: ''
+  });
+  UI.renderStats();
+  var meta = document.querySelector('#history-list .hist-row .hist-meta');
+  ok(meta && meta.textContent.indexOf('saw river') !== -1, '5-card board reads as a river, got "' + (meta && meta.textContent) + '"');
 })();
 
 // ---------- hand story view ----------

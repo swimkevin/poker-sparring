@@ -934,3 +934,9 @@ first; this file is the 30-second version.
   is not money you can win. The tier-6 range label was '?' (Maniac) —
   tier labels are cumulative shares, and the Maniac's own desc says
   ~65%.
+- Card-count street mapping is not arithmetic (v1.8.225, 2026-11-12):
+  history labeled the street as `['preflop','flop','turn','river']
+  [Math.floor(board / 2)]`, so a 5-card board read "saw turn" — the
+  counts 0/3/4/5 do not divide evenly into the four streets. Map the
+  count explicitly (0 preflop, 3 flop, 4 turn, 5 river) instead of
+  deriving the street from a formula.
