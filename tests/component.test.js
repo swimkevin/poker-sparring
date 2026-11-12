@@ -535,6 +535,26 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     'hero bar offset matches the tab bar height (no gap seam)');
 })();
 
+// ---------- bet panel Confirm keeps its gold, light theme keeps its gold ring (v1.8.226) ----------
+// The dark bet-panel flattening must apply to the quick-chip buttons only —
+// Confirm is .ctl.primary (gold) and Cancel is .ctl.ghost (neutral). Light
+// theme: folded seats dim to 0.6 (readable) and the winner ring stays gold.
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  var chipBtn = (css.match(/\.bet-panel \.chip-btn\s*\{[^}]*\}/g) || [])[0] || '';
+  ok(/background:\s*rgba\(255,255,255,0\.08\)/.test(chipBtn), 'chip buttons keep the dark panel treatment');
+  ok(!/\.bet-panel button\s*\{/.test(css), 'no blanket .bet-panel button rule flattens Confirm/Cancel');
+  var lightFolded = (css.match(/\[data-theme="light"\] #screen-table \.seat\.folded\s*\{[^}]*\}/g) || [])[0] || '';
+  ok(/opacity:\s*0\.6/.test(lightFolded), 'light-theme folded seats dim to 0.6, got "' + lightFolded.slice(0, 60) + '"');
+  var lightWinner = (css.match(/\[data-theme="light"\] \.seat\.winner\s*\{[^}]*\}/g) || [])[0] || '';
+  ok(/border-color:\s*var\(--gold\)/.test(lightWinner), 'light-theme winner ring stays gold, got "' + lightWinner.slice(0, 60) + '"');
+  var splash = (css.match(/\.winner-banner\.win-splash\s*\{[^}]*\}/g) || [])[0] || '';
+  ok(/white-space:\s*normal/.test(splash), 'win splash wraps instead of truncating');
+  ok(!/white-space:\s*nowrap/.test(splash), 'win splash has no nowrap left');
+  var splashTitle = (css.match(/\.winner-banner\.win-splash \.wtitle\s*\{[^}]*\}/g) || [])[0] || '';
+  ok(!/text-overflow:\s*ellipsis/.test(splashTitle), 'win splash title has no ellipsis');
+})();
+
 // ---------- hand end: results pause, bot reveal, hero show/muck ----------
 // Only showdown-revealed bots show hole cards at hand end (v1.8.223);
 // folded hands stay mucked like real poker. A folded hero sees backs
@@ -1057,8 +1077,8 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
   ok(/\[data-theme="light"\] \.seat \.pstack\s*\{\s*color:\s*#d4af37;/.test(css),
     'light-theme seat stack uses bright gold (readable on the dark seat)');
-  ok(/\[data-theme="light"\] #screen-table \.seat\.folded\s*\{\s*opacity:\s*0\.85;/.test(css),
-    'light-theme folded seats dim less on mobile (opacity 0.85)');
+  ok(/\[data-theme="light"\] #screen-table \.seat\.folded\s*\{\s*opacity:\s*0\.6;/.test(css),
+    'light-theme folded seats dim to 0.6 on mobile (0.85 was barely distinguishable, v1.8.226)');
   ok(/@media \(max-width: 900px\) \{\s*\[data-theme="light"\] #screen-table \.seat\.folded/.test(css),
     'light-theme folded opacity is mobile-scoped (desktop 0.45 untouched)');
 })();

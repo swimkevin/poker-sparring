@@ -940,3 +940,13 @@ first; this file is the 30-second version.
   counts 0/3/4/5 do not divide evenly into the four streets. Map the
   count explicitly (0 preflop, 3 flop, 4 turn, 5 river) instead of
   deriving the street from a formula.
+- Scope CSS flattening rules to the class they mean (v1.8.226,
+  2026-11-12): `.bet-panel button` flattened EVERY panel button —
+  including gold Confirm — because the rule was written for the
+  quick-chip buttons but addressed the container. A flattening rule
+  with `!important` must name the exact class (`.bet-panel
+  .chip-btn`); a container-wide selector silently swallows later
+  primary/ghost styles. The same release caught light theme drifting
+  the winner ring gold→green and folded seats at 0.85 (barely
+  distinguishable) — pin the intended values in the component suite
+  or a later release re-drifts them.

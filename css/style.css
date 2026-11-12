@@ -240,10 +240,10 @@ button.ghost.danger-text { color: var(--red); border-color: #4a2426; }
   padding: 0.55rem 1.3rem;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   animation: win-splash-in 3.2s ease forwards;
-  white-space: nowrap;
+  white-space: normal;
 }
 .winner-banner.win-splash .wtitle {
-  overflow: hidden; text-overflow: ellipsis;
+  text-align: center;
 }
 @keyframes win-splash-in {
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
@@ -675,7 +675,7 @@ input.bet-amount:focus { border-color: var(--gold); outline: none; background: r
 
 [data-theme="light"] .seat { border-color: #d8d2bd; color: #e8edf3; }
 [data-theme="light"] .seat.to-act { border-color: var(--gold); }
-[data-theme="light"] .seat.winner { border-color: var(--green); }
+[data-theme="light"] .seat.winner { border-color: var(--gold); }
 [data-theme="light"] .seat .pact { color: #9aa39b; }
 [data-theme="light"] .seat .pstack { color: #d4af37; }
 [data-theme="light"] .winner-banner { color: #e8edf3; }
@@ -1573,7 +1573,7 @@ label { font-weight: 600; }
   color: #fff !important;
 }
 .bet-panel .bet-row { color: #fff; }
-.bet-panel button {
+.bet-panel .chip-btn {
   color: #fff !important;
   background: rgba(255,255,255,0.08) !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
@@ -1724,5 +1724,5 @@ label { font-weight: 600; }
 }
 
 @media (max-width: 900px) {
-  [data-theme="light"] #screen-table .seat.folded { opacity: 0.85; }
+  [data-theme="light"] #screen-table .seat.folded { opacity: 0.6; }
 }
