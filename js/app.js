@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.218';
+  var APP_VERSION = '1.8.219';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2042,7 +2042,7 @@
         var tex = boardTexture(table.community);
 
         var frac = tex === 'wet' ? 0.67 : 0.25;
-        if (foldy < 0.25) frac = 0.75;
+        if (foldy < 0.25) frac = table.street === 'flop' || multiway ? 0.75 : 1.0;
         var geo = geometricFrac(sprV, streetsLeft);
         var geoApplied = false;
         if (geo != null && geo > frac) { frac = Math.min(0.75, geo); geoApplied = true; }
@@ -2081,7 +2081,7 @@
         sprLine = (commit === 'commit' && !multiwayShoveBan && betSize >= heroStack * 0.7)
           ? ' The pot is already nearly as big as your stack, so this bet puts almost everything in anyway.'
           : '';
-        var fracLabel = frac >= 0.7 ? '¾' : (frac >= 0.6 ? '⅔' : (frac >= 0.45 ? '½' : (frac >= 0.3 ? '⅓' : '¼')));
+        var fracLabel = frac >= 0.95 ? 'pot' : (frac >= 0.7 ? '¾' : (frac >= 0.6 ? '⅔' : (frac >= 0.45 ? '½' : (frac >= 0.3 ? '⅓' : '¼'))));
         var whyBet = multiFloor
           ? ' — multiway: more callers means more value, and a bigger bet charges the draws'
           : geoApplied
@@ -2092,8 +2092,9 @@
           : riverFloor
           ? ' — last street: no draws left to charge, so size for the worse hands that call'
           : tex === 'wet' ? ' — lots of draws out there, make them pay to chase'
+          : (frac >= 0.95 ? ' — they never fold, so charge them the full pot for value'
           : (frac === 0.75 ? ' — they never fold, so size up for value'
-          : ' — dry board, few draws: bet small to keep worse hands calling');
+          : ' — dry board, few draws: bet small to keep worse hands calling'));
         var vulnNote = '';
         if ((hc === 'trips' || hc === 'twopair') && vuln.paired)
           vulnNote = ' — a full house beats it. If raised big, slow down — that usually means the full house';
@@ -2108,7 +2109,7 @@
             : 'Big enough to charge draws and build the pot, small enough that worse hands still call — a shove would fold those hands out.')
           : 'Small enough that worse hands still call — a bigger bet would fold them out.');
         return mkVerdict('bet', 'strong',
-          '<b>Bet for value</b> ~' + fracLabel + ' pot (' + fmt(betSize) + ')' +
+          '<b>Bet for value</b> ' + (frac >= 0.95 ? 'pot' : '~' + fracLabel + ' pot') + ' (' + fmt(betSize) + ')' +
           whyBet + vulnNote + valueMath + sprLine + rangeNote,
           'Bet your strong hands; bet bigger when draws are possible so they pay to chase.');
       }
