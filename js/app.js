@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.219';
+  var APP_VERSION = '1.8.220';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2138,7 +2138,7 @@
 
       if (hc === 'secondpair' && canBet) {
         var scare2 = scareCardRank();
-        if (!multiway && (inPos || scare2 || foldy > 0.5)) {
+        if (!multiway && (inPos || scare2 || foldy > 0.5 || (foldy < 0.25 && table.street === 'river'))) {
           var b3 = Math.min(hero.stack, Math.max(1, Math.round(pot / 2)));
           return mkVerdict('bet', 'marginal',
             (b3 >= hero.stack

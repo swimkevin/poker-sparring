@@ -177,7 +177,7 @@ function positionScore(table, idx) {
   for (var k = 0; k < n; k++) {
     s = (s + 1) % n;
     var p = table.players[s];
-    if (!p.sittingOut) order.push(s);
+    if (!p.sittingOut && !p.folded) order.push(s);
   }
   var pos = order.indexOf(idx);
   var m = order.length;
