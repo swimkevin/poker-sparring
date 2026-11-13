@@ -57,7 +57,7 @@ d.dispatchEvent(new w.Event('DOMContentLoaded', { bubbles: true }));
 function strip(html) {
   return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
-function tableScript(varName, players, street, currentBet, pot, heroHole, heroStack, villainStack, board, nLive, button) {
+function tableScript(varName, players, street, currentBet, pot, heroHole, heroStack, villainStack, board, nLive, button, heroBet) {
   var lines = [
     'window.' + varName + ' = new PokerTable({ players: [',
     '  { name: "hero", isHero: true }, ' + players,
@@ -65,7 +65,7 @@ function tableScript(varName, players, street, currentBet, pot, heroHole, heroSt
     'var t = window.' + varName + ';',
     't.button = ' + (button == null ? 0 : button) + '; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
     't.players[0].hole = ' + JSON.stringify(heroHole) + ';',
-    't.players[0].stack = ' + heroStack + '; t.players[0].bet = 0;',
+    't.players[0].stack = ' + heroStack + '; t.players[0].bet = ' + (heroBet || 0) + ';',
     't.players[1].stack = ' + villainStack + '; t.players[1].bet = ' + currentBet + ';',
     't.community = ' + JSON.stringify(board) + ';',
     'for (var i = ' + nLive + '; i < 8; i++) t.players[i].folded = true;'
@@ -81,7 +81,7 @@ function runSpot(spot) {
     ' { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }';
   s.textContent = tableScript('__labTable', players, spot.street, spot.bet || 0,
     spot.potBefore, spot.hero, spot.heroStack, spot.villainStack === undefined ? spot.heroStack : spot.villainStack,
-    spot.board, spot.nLive || 2, spot.button);
+    spot.board, spot.nLive || 2, spot.button, spot.heroBet);
   d.head.appendChild(s);
   var t = w.__labTable;
   var sawAggro = false;
@@ -708,6 +708,19 @@ var SPOTS = [
     potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, button: 3, expect: 'raise', expectWord: 'to ~ 40',
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
+    ] },
+  { name: 'iso-aqo-1limper-bb-raise', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 25, bet: 10, heroBet: 10, heroStack: 2000, nLive: 3, button: 6, expect: 'raise', expectWord: 'to ~ 40',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
+    ] },
+  { name: 'iso-aqo-2limpers-bb-raise', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 35, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 50',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 10, pot: 35 }
     ] },
   { name: '3bet-shove-jj-maniac-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',

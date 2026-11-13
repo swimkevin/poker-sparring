@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.235';
+  var APP_VERSION = '1.8.236';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1745,6 +1745,20 @@
         return mkVerdict('raise', 'strong',
           c.nmHtml + ' — a premium and no one raised. <b>Raise</b> to ' + fmt(Math.round(table.bb * 2.5)) + '–' + fmt(table.bb * 3) + ' (2.5–3× the blind) and build a pot while you\'re ahead.',
           'Raise premiums first-in: checking lets worse hands see free cards.');
+      var nLimp = countLimpers();
+      if (nLimp > 0 && tier <= 3) {
+        var isoMult = 3 + nLimp;
+        var isoTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult));
+        if (nLimp === 1)
+          return mkVerdict('raise', 'marginal',
+            '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — ' +
+            'one player who just called rarely has much, and your hand is ahead of their range.',
+            'Isolate a single player who just called: their range is weak, and a raise takes the pot down or plays heads-up against it.');
+        return mkVerdict('raise', 'marginal',
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to attack the extra money in the pot — ' + nLimp + ' players just called. ' +
+          'Take it down now or isolate one player. Or check and take the free flop; both are fine.',
+          'Raising over players who just called is a profitable option: the extra money in the pot makes it winning long-term, but don\'t feel forced — checking and taking the free flop is fine too.');
+      }
       return mkVerdict('check', 'marginal',
         '<b>Check</b> and take the free flop' +
         (tier <= 4 ? ' — ' + c.nmHtml + ' is playable but not worth inflating the pot' : '') + '.',
