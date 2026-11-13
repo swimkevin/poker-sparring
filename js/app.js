@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.226';
+  var APP_VERSION = '1.8.227';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1196,6 +1196,132 @@
     return { canSteal: true, pos: posName, targets: targets };
   }
 
+  function isCurrentNuts(hole, community, ev) {
+    if (!ev || ev.cat < 4) return false;
+    var boardRanks = {}, boardSuits = [0, 0, 0, 0], heroRanks = {};
+    community.forEach(function (c) {
+      boardRanks[c.r] = (boardRanks[c.r] || 0) + 1;
+      boardSuits[c.s]++;
+    });
+    hole.forEach(function (c) { heroRanks[c.r] = (heroRanks[c.r] || 0) + 1; });
+    function copiesLeft(rank) {
+      return 4 - (boardRanks[rank] || 0) - (heroRanks[rank] || 0);
+    }
+    function cardLeft(rank, suit) {
+      var i;
+      for (i = 0; i < community.length; i++)
+        if (community[i].r === rank && community[i].s === suit) return false;
+      for (i = 0; i < hole.length; i++)
+        if (hole[i].r === rank && hole[i].s === suit) return false;
+      return true;
+    }
+    function straightRanks(top) {
+      var out = [], t;
+      for (t = 0; t < 5; t++) out.push(top === 5 && t === 4 ? 14 : top - t);
+      return out;
+    }
+    function boardRanksInWindow(top) {
+      var need = straightRanks(top), n = 0, i;
+      for (i = 0; i < need.length; i++) if (boardRanks[need[i]]) n++;
+      return n;
+    }
+    function higherStraightPossible(top) {
+      var t, need, i, missing, ok;
+      for (t = top + 1; t <= 14; t++) {
+        need = straightRanks(t);
+        if (boardRanksInWindow(t) < 3) continue;
+        missing = [];
+        for (i = 0; i < need.length; i++)
+          if (!boardRanks[need[i]]) missing.push(need[i]);
+        if (missing.length > 2) continue;
+        ok = true;
+        for (i = 0; i < missing.length; i++)
+          if (copiesLeft(missing[i]) < 1) ok = false;
+        if (ok) return true;
+      }
+      return false;
+    }
+    function flushPossible() {
+      return boardSuits.some(function (n) { return n >= 3; });
+    }
+    function boardPaired() {
+      return Object.keys(boardRanks).some(function (r) { return boardRanks[r] >= 2; });
+    }
+    function straightFlushPossible() {
+      var s, t, need, inSuit, i, k, missing, ok, found;
+      for (s = 0; s < 4; s++) {
+        for (t = 5; t <= 14; t++) {
+          need = straightRanks(t);
+          inSuit = 0;
+          missing = [];
+          for (i = 0; i < need.length; i++) {
+            found = false;
+            for (k = 0; k < community.length; k++)
+              if (community[k].r === need[i] && community[k].s === s) found = true;
+            if (found) inSuit++;
+            else missing.push(need[i]);
+          }
+          if (inSuit < 3 || missing.length > 2) continue;
+          ok = true;
+          for (i = 0; i < missing.length; i++)
+            if (!cardLeft(missing[i], s)) ok = false;
+          if (ok) return true;
+        }
+      }
+      return false;
+    }
+    function higherFlushPossible(top, suit) {
+      var r;
+      if (boardSuits[suit] < 3) return false;
+      for (r = top + 1; r <= 14; r++)
+        if (cardLeft(r, suit)) return true;
+      return false;
+    }
+    if (ev.cat === 4) {
+      if (flushPossible() || boardPaired()) return false;
+      return !higherStraightPossible(ev.kickers[0]);
+    }
+    if (ev.cat === 5) {
+      if (boardPaired() || straightFlushPossible()) return false;
+      return !higherFlushPossible(ev.kickers[0], ev.best5[0].s);
+    }
+    if (ev.cat === 6) {
+      if (straightFlushPossible()) return false;
+      var trips = ev.kickers[0], r;
+      for (r in boardRanks) {
+        if (boardRanks[r] < 2) continue;
+        if (copiesLeft(+r) >= 4 - boardRanks[r]) return false;
+        if (+r > trips && copiesLeft(+r) >= 1) return false;
+      }
+      return true;
+    }
+    if (ev.cat === 7) return !straightFlushPossible();
+    if (ev.cat === 8) {
+      var top = ev.kickers[0], s, t, need, inSuit, i, k, missing, ok, found;
+      for (s = 0; s < 4; s++) {
+        for (t = top + 1; t <= 14; t++) {
+          need = straightRanks(t);
+          inSuit = 0;
+          missing = [];
+          for (i = 0; i < need.length; i++) {
+            found = false;
+            for (k = 0; k < community.length; k++)
+              if (community[k].r === need[i] && community[k].s === s) found = true;
+            if (found) inSuit++;
+            else missing.push(need[i]);
+          }
+          if (inSuit < 3 || missing.length > 2) continue;
+          ok = true;
+          for (i = 0; i < missing.length; i++)
+            if (!cardLeft(missing[i], s)) ok = false;
+          if (ok) return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
   function handClass(hole, community) {
     var d = detectDraws(hole, community);
     var ev = (hole.length + community.length >= 5) ? evaluate7(hole.concat(community)) : null;
@@ -1205,7 +1331,8 @@
         return !hole.some(function (h) { return h.r === c.r && h.s === c.s; });
       });
       if (boardOnly) return 'board';
-      return 'nut';
+      if (isCurrentNuts(hole, community, ev)) return 'nut';
+      return 'madehand';
     }
     if (d.flushDraw && d.oesd) return 'draw-strong';
     if (ev) {
@@ -1234,7 +1361,7 @@
   }
 
   function handClassName(hc) {
-    return { nut: 'the nuts', overpair: 'an overpair', toppair: 'top pair',
+    return { nut: 'the nuts', madehand: 'a strong made hand', overpair: 'an overpair', toppair: 'top pair',
       trips: 'three of a kind', twopair: 'two pair',
       secondpair: 'second pair', weakpair: 'a weak pair', 'draw-strong': 'a monster draw', draw: 'a draw',
       'draw-weak': 'a weak draw', air: 'nothing',
@@ -2041,7 +2168,7 @@
       var vManiac = V && villainBluffy(V.archetype) > 0.6 &&
         (V.archetype.aggression || 0) > 0.5;
 
-      if ((hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair') && canBet) {
+      if ((hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair') && canBet) {
         if (vManiac)
           return mkVerdict('check', 'marginal',
             '<b>Check</b> your monster — ' + vName + ' bluffs constantly. Let them bet into you, then raise.' + rangeNote,
@@ -2328,7 +2455,7 @@
     var strongShown = villainShowedStrength(vIdx);
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway && !strongShown && (!passiveTrapper || trapperValue) &&
-          (hc === 'nut' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
+          (hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
         var tinyTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
         var tinyAllIn = tinyTo >= legal.maxRaiseTo;
         if (trapperValue)
@@ -2337,7 +2464,9 @@
             (tinyAllIn
               ? '<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack — for value: he calls down with worse hands.'
               : '<b>Raise</b> to ~<b>' + fmt(tinyTo) + '</b> for value: he calls down with worse hands.') + rangeNote,
-            'Against a player who calls everything, raise your near-nuts for value — he pays you off with worse hands.');
+            hc === 'nut'
+              ? 'Against a player who calls everything, raise your near-nuts for value — he pays you off with worse hands.'
+              : 'Against a player who calls everything, raise a strong made hand for value — he pays you off with worse hands.');
         return mkVerdict('raise', 'marginal',
           'That\'s a tiny bet — usually a marginal hand begging for a cheap showdown. ' +
           (tinyAllIn
@@ -2356,7 +2485,7 @@
         ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
-    if (hc === 'nut' && legal.canRaise) {
+    if ((hc === 'nut' || hc === 'madehand') && legal.canRaise) {
       var nutMult = foldy < 0.25 && table.street === 'river' ? 4 : 3;
       var nutTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * nutMult)));
       var nutAllIn = nutTo >= legal.maxRaiseTo;
@@ -2364,7 +2493,9 @@
         (nutAllIn
           ? '<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about ' + nutMult + '× their bet. Charge the draws and worse hands now, don\'t slow-play.'
           : '<b>Raise for value</b> to ~<b>' + fmt(nutTo) + '</b> (~' + nutMult + '× their bet) — charge the draws and worse hands now, don\'t slow-play.') + rangeNote,
-        'With the near-nuts, raise: every street you don\'t build the pot costs money.');
+        hc === 'nut'
+          ? 'With the near-nuts, raise: every street you don\'t build the pot costs money.'
+          : 'With a strong made hand, raise for value — but a better hand is already possible on this board, so don\'t treat it as a lock.');
     }
     if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&
         range.label !== 'strong' && range.label !== 'polarized') {

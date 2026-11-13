@@ -65,6 +65,33 @@ function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, 
   return w.coachVerdict();
 }
 
+function postflopVerdict(hero, villainId, street, currentBet, pot, board, heroStack, villainStack, timeline, liveCount, button) {
+  var btn = button == null ? 0 : button;
+  var s = d.createElement('script');
+  var arch = villainId
+    ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
+    : 'null';
+  s.textContent = [
+    'window.__pfTable = new PokerTable({ players: [',
+    '  { name: "hero", isHero: true }, { name: "V", archetype: ' + arch + ' }, { name: "S" },',
+    '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
+    '], sb: 5, bb: 10, startingStack: 3000 });',
+    'var t = window.__pfTable;',
+    't.button = ' + btn + '; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
+    't.players[0].hole = ' + JSON.stringify(hero) + ';',
+    't.players[0].stack = ' + heroStack + '; t.players[0].bet = 0;',
+    't.players[1].stack = ' + villainStack + '; t.players[1].bet = ' + currentBet + ';',
+    't.community = ' + JSON.stringify(board) + ';',
+    'for (var i = ' + liveCount + '; i < 8; i++) t.players[i].folded = true;'
+  ].join('\n');
+  d.head.appendChild(s);
+  var t = w.__pfTable;
+  w.__coachTestHooks.setTable(t);
+  w.__coachTestHooks.setHandRec({ timeline: timeline || [] });
+  w.__coachTestHooks.setDecisions([]);
+  return w.coachVerdict();
+}
+
 setTimeout(function () {
   try {
     var H = w.__coachTestHooks;
@@ -124,6 +151,65 @@ setTimeout(function () {
     var rLoss = H.recap(13, false, false);
     ok(rLoss.html.indexOf('To improve') !== -1 && rLoss.html.indexOf('won the hand') === -1,
       'loss with ignored coach: leak only, no false praise');
+
+    // handClass: only a hand no better hand can beat is 'the nuts' (v1.8.227).
+    // A straight or better that a flush, a full house, or a higher straight
+    // can already beat is a strong made hand, and the coach must say so.
+    var HC = H.handClass;
+    function C2(r, s) { return { r: r, s: s }; }
+    ok(HC([C2(10, 0), C2(5, 0)], [C2(9, 1), C2(8, 1), C2(7, 2), C2(6, 3), C2(3, 1)]) === 'madehand',
+      'T-high straight on a 3-flush board is a strong made hand, not the nuts (a flush beats it)');
+    ok(HC([C2(5, 0), C2(2, 1)], [C2(9, 0), C2(8, 1), C2(7, 2), C2(6, 3)]) === 'madehand',
+      '9-high straight on a 4-straight turn board is a strong made hand, not the nuts (a Ten makes a higher straight)');
+    ok(HC([C2(14, 0), C2(13, 0)], [C2(12, 2), C2(11, 3), C2(10, 1), C2(9, 0), C2(2, 1)]) === 'nut',
+      'broadway on a rainbow unpaired board is the nuts');
+    ok(HC([C2(5, 3), C2(4, 0)], [C2(14, 2), C2(2, 1), C2(3, 3), C2(7, 0), C2(8, 1)]) === 'nut',
+      'wheel on a rainbow unpaired board is the nuts (no higher straight, no flush possible)');
+    ok(HC([C2(12, 3), C2(12, 0)], [C2(12, 2), C2(12, 1), C2(7, 1), C2(2, 0), C2(9, 1)]) === 'nut',
+      'quad Queens with both Queens in hand is the nuts (no quads or straight flush left for a villain)');
+    ok(HC([C2(12, 2), C2(12, 3)], [C2(13, 1), C2(13, 3), C2(12, 0), C2(7, 2), C2(2, 1)]) === 'madehand',
+      'Queens full of Kings is a strong made hand, not the nuts (Kings full and quad Kings are still out there)');
+    ok(HC([C2(13, 2), C2(12, 2)], [C2(13, 1), C2(13, 3), C2(12, 1), C2(12, 0), C2(9, 3)]) === 'nut',
+      'Kings full of Queens with the board paired twice is the nuts (no quads left, no higher full house)');
+    ok(HC([C2(14, 1), C2(13, 1)], [C2(12, 1), C2(11, 1), C2(9, 1), C2(7, 3), C2(7, 2)]) === 'madehand',
+      'ace-high flush on a paired board is a strong made hand, not the nuts (a full house beats it)');
+    ok(HC([C2(14, 1), C2(13, 1)], [C2(12, 1), C2(11, 3), C2(9, 1), C2(7, 0), C2(2, 1)]) === 'nut',
+      'ace-high flush on an unpaired board with no straight-flush window is the nuts');
+    ok(HC([C2(5, 1), C2(4, 1)], [C2(9, 1), C2(8, 1), C2(7, 1), C2(6, 1), C2(13, 2)]) === 'madehand',
+      '9-high straight flush is a strong made hand, not the nuts (a Ten of hearts makes a higher one)');
+    ok(HC([C2(10, 1), C2(9, 1)], [C2(8, 1), C2(7, 1), C2(6, 1), C2(13, 2), C2(2, 3)]) === 'nut',
+      'Ten-high straight flush with no higher one possible is the nuts');
+    ok(HC([C2(11, 2), C2(10, 3)], [C2(9, 0), C2(8, 3), C2(7, 1)]) === 'nut',
+      'flopped Jack-high straight on a rainbow unpaired flop is the nuts right now');
+    ok(HC([C2(10, 0), C2(6, 0)], [C2(9, 1), C2(8, 1), C2(7, 1)]) === 'madehand',
+      'flopped Ten-high straight on a 3-flush flop is a strong made hand, not the nuts');
+
+    // A strong made hand still raises for value, but the lesson never calls
+    // it the nuts; true nuts keep the near-nuts lesson (v1.8.227).
+    var madeRaise = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'lag', 'river', 250, 500,
+      [{ r: 12, s: 1 }, { r: 11, s: 1 }, { r: 9, s: 1 }, { r: 7, s: 3 }, { r: 7, s: 2 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(!madeRaise.error, 'made-hand raise verdict has no error' + (madeRaise.error ? ' (' + madeRaise.error + ')' : ''));
+    ok(madeRaise.advice === 'raise', 'ace-high flush on a paired board still raises for value (got ' + madeRaise.advice + ')');
+    ok(stripAdvice(madeRaise.html).indexOf('to ~ 750') !== -1, 'made-hand raise states the size to ~750');
+    ok(madeRaise.lesson.indexOf('nuts') === -1, 'made-hand raise lesson never says nuts');
+    ok(madeRaise.lesson.indexOf('better hand is already possible') !== -1, 'made-hand raise lesson names the vulnerability');
+    var nutRaise = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'lag', 'river', 250, 500,
+      [{ r: 12, s: 1 }, { r: 11, s: 3 }, { r: 9, s: 1 }, { r: 7, s: 0 }, { r: 2, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(!nutRaise.error, 'true-nut raise verdict has no error' + (nutRaise.error ? ' (' + nutRaise.error + ')' : ''));
+    ok(nutRaise.advice === 'raise', 'true nut flush still raises for value (got ' + nutRaise.advice + ')');
+    ok(nutRaise.lesson.indexOf('near-nuts') !== -1, 'true-nut raise lesson keeps the near-nuts wording');
+    // Fake nuts facing a trapper's river bet: the veto prices it instead of
+    // raising into the trap (v1.8.227). The old code shoved here.
+    var fakeNut = postflopVerdict([{ r: 10, s: 0 }, { r: 5, s: 0 }], 'nathan', 'river', 669, 887,
+      [{ r: 9, s: 1 }, { r: 8, s: 1 }, { r: 7, s: 2 }, { r: 6, s: 3 }, { r: 3, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 0, action: 'bet', bet: 266, pot: 621 },
+       { t: 'action', street: 'turn', player: 1, action: 'call', bet: 266, pot: 887 },
+       { t: 'action', street: 'river', player: 1, action: 'bet', bet: 669, pot: 1556 }], 2);
+    ok(!fakeNut.error, 'fake-nut veto verdict has no error' + (fakeNut.error ? ' (' + fakeNut.error + ')' : ''));
+    ok(fakeNut.advice === 'call', 'vulnerable straight vs trapper river bet calls on veto math, not raises (got ' + fakeNut.advice + ')');
+    ok(stripAdvice(fakeNut.html).indexOf('62%') !== -1, 'veto call quotes the exact equity (62%)');
 
     // Regression: 3+ limpers preflop must render (v1.8.63 critical bug).
     // The limpers branch previously required spot==='open', but limpers are

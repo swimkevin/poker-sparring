@@ -34,13 +34,13 @@ setTimeout(function () {
   var board = [C(12, 2), C(12, 1), C(7, 0), C(12, 0), C(7, 2)]; // Qh Qd 7c Qc 7h
   ok(H.handClass([C(14, 0), C(13, 3)], board) === 'board', 'AK on QQQ77 plays the board');
   ok(H.handClass([C(12, 3), C(2, 0)], board) === 'nut', 'Q2 on QQQ77 makes quad queens (hole card plays)');
-  ok(H.handClass([C(7, 3), C(2, 0)], board) === 'nut', '72 on QQQ77 makes sevens full (hole card plays)');
+  ok(H.handClass([C(7, 3), C(2, 0)], board) === 'madehand', '72 on QQQ77 makes Queens full with the hole Seven playing — a strong made hand, not the nuts (the last Queen still makes quads)');
   ok(H.handClass([C(14, 2), C(13, 2)], [C(5, 0), C(6, 1), C(7, 2), C(8, 0), C(9, 3)]) === 'board',
     'AK on 56789 plays the board straight');
   ok(H.handClass([C(14, 0), C(13, 3)], [C(12, 2), C(12, 1), C(7, 0), C(2, 3), C(5, 1)]) !== 'board',
     'AK on QQT72 is trips, not board-play');
-  ok(H.handClass([C(12, 3), C(13, 3)], [C(12, 2), C(12, 1), C(7, 0), C(7, 3), C(2, 1)]) === 'nut',
-    'QK on QQ772 makes queens full (hole queen plays)');
+  ok(H.handClass([C(12, 3), C(13, 3)], [C(12, 2), C(12, 1), C(7, 0), C(7, 3), C(2, 1)]) === 'madehand',
+    'QK on QQ772 makes Queens full with the hole Queen playing — a strong made hand, not the nuts (pocket Sevens still make quads)');
   console.log(fails === 0 ? 'BOARD PLAY TEST PASSED' : 'BOARD PLAY TEST FAILED (' + fails + ')');
   process.exit(fails ? 1 : 0);
 }, 800);

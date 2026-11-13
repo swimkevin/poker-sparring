@@ -435,8 +435,8 @@ console.log('\n33. v1.8.137: trips and two pair are their own hand classes');
     'handClass maps two pair (cat 2) to twopair, not overpair');
   ok(src.indexOf("trips: 'three of a kind'") !== -1, 'trips has a plain name');
   ok(src.indexOf("twopair: 'two pair'") !== -1, 'twopair has a plain name');
-  ok(/\(hc === 'nut' \|\| hc === 'overpair' \|\| hc === 'toppair' \|\| hc === 'trips' \|\| hc === 'twopair'\) && canBet/.test(src),
-    'value-bet branch covers trips and twopair');
+  ok(/\(hc === 'nut' \|\| hc === 'madehand' \|\| hc === 'overpair' \|\| hc === 'toppair' \|\| hc === 'trips' \|\| hc === 'twopair'\) && canBet/.test(src),
+    'value-bet branch covers trips, twopair, and strong made hands (not just the nuts)');
   ok(src.indexOf("if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&") !== -1,
     'facing-call bypass still excludes trips/twopair/toppair (vulnerable hands pass the math, v1.8.140)');
   ok(src.indexOf('full house beats it') !== -1,
@@ -825,6 +825,25 @@ console.log('\n72. v1.8.208: a facing raise that is the whole stack says all-in'
      src.indexOf("'<b>All-in</b> to ~<b>' + fmt(drawTo) + '</b> — your whole stack, about 3× their bet:") !== -1 &&
      src.indexOf("'<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack, about 3× their bet — and take it away.'") !== -1,
     'an all-in facing raise says all-in with the amount still parseable ("to ~X"), instead of the fraction-of-pot label — the same rule the leading bets got in v1.8.192 (v1.8.208)');
+}
+
+console.log('\n73. v1.8.227: only a hand nothing can beat is the nuts');
+{
+  ok(src.indexOf('function isCurrentNuts(hole, community, ev)') !== -1,
+    'a current-nuts check exists: straight+ is the nuts only when no better hand is possible on this board');
+  ok(src.indexOf("if (isCurrentNuts(hole, community, ev)) return 'nut';") !== -1 &&
+     src.indexOf("return 'madehand';") !== -1,
+    'handClass returns nut only for true nuts and madehand for a strong-but-beatable straight or better');
+  ok(src.indexOf("madehand: 'a strong made hand'") !== -1,
+    'a strong made hand has a plain name, not the nuts');
+  ok(src.indexOf("if (veto && !(hc === 'nut' && legal.canRaise))") !== -1,
+    'the river veto still exempts only true nuts: a strong made hand goes through the veto math');
+  ok(/if \(\(hc === 'nut' \|\| hc === 'madehand'\) && legal\.canRaise\)/.test(src),
+    'the value-raise branch still raises a strong made hand for value, with the nuts wording kept for true nuts only');
+  ok(src.indexOf('but a better hand is already possible on this board') !== -1,
+    'the made-hand raise lesson names the vulnerability instead of calling it the nuts');
+  ok(src.indexOf("(hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)") !== -1,
+    'the small-bet raise branch takes a strong made hand, not just the nuts');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

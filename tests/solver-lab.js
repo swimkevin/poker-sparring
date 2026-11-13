@@ -754,7 +754,32 @@ var SPOTS = [
   { name: 'veto-multiway-blank', kind: 'facing-exact', villain: 'nathan',
     hero: [C(4, 1), C(9, 0)], board: RIVER_2, street: 'river',
     potBefore: 887, bet: 669, heroStack: 669, villainStack: 0, nLive: 3, expect: 'fold',
-    timeline: riverTimeline(266, 355, 669, 887), exactPool: true, multiOpp: 2 }
+    timeline: riverTimeline(266, 355, 669, 887), exactPool: true, multiOpp: 2 },
+  { name: 'fake-nut-straight-veto-call', kind: 'facing-exact', villain: 'nathan',
+    hero: [C(10, 0), C(5, 0)], board: [C(9, 1), C(8, 1), C(7, 2), C(6, 3), C(3, 1)],
+    street: 'river', potBefore: 887, bet: 669, heroStack: 2000, villainStack: 2000,
+    nLive: 2, expect: 'call',
+    timeline: riverTimeline(266, 355, 669, 887), exactPool: true },
+  { name: 'true-nut-straight-veto-raise', kind: 'facing-raise', villain: 'nathan',
+    hero: [C(14, 0), C(13, 0)], board: [C(12, 2), C(11, 3), C(10, 1), C(9, 0), C(2, 1)],
+    street: 'river', potBefore: 887, bet: 669, heroStack: 2000, villainStack: 2000,
+    nLive: 2, expect: 'raise', expectRaiseTo: 2000, expectWord: 'All-in',
+    timeline: riverTimeline(266, 355, 669, 887) },
+  { name: 'madehand-flush-trapper-raise', kind: 'facing-raise', villain: 'nathan',
+    hero: [C(14, 1), C(13, 1)], board: [C(12, 1), C(11, 1), C(9, 1), C(7, 3), C(7, 2)],
+    street: 'river', potBefore: 500, bet: 100, heroStack: 2000, villainStack: 2000,
+    nLive: 2, expect: 'raise', expectRaiseTo: 400,
+    timeline: betTimeline('river', 100, 500) },
+  { name: 'madehand-flush-raise', kind: 'facing-raise', villain: 'lag',
+    hero: [C(14, 1), C(13, 1)], board: [C(12, 1), C(11, 1), C(9, 1), C(7, 3), C(7, 2)],
+    street: 'river', potBefore: 500, bet: 250, heroStack: 2000, villainStack: 2000,
+    nLive: 2, expect: 'raise', expectRaiseTo: 750,
+    timeline: betTimeline('river', 250, 500) },
+  { name: 'nut-flush-raise-control', kind: 'facing-raise', villain: 'lag',
+    hero: [C(14, 1), C(13, 1)], board: [C(12, 1), C(11, 3), C(9, 1), C(7, 0), C(2, 1)],
+    street: 'river', potBefore: 500, bet: 250, heroStack: 2000, villainStack: 2000,
+    nLive: 2, expect: 'raise', expectRaiseTo: 750,
+    timeline: betTimeline('river', 250, 500) }
 ];
 
 setTimeout(function () {
