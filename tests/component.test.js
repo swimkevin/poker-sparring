@@ -590,6 +590,21 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(botsSrc.indexOf('(v1.8.97)') === -1, 'bot descs carry no version-history asides');
 })();
 
+// ---------- first-load surface: og:image, noscript, SVG theme toggle, hidden mode cards (v1.8.234) ----------
+(function () {
+  var html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  var appSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+  ok(html.indexOf('property="og:image"') !== -1, 'og:image meta present for link previews');
+  ok(html.indexOf('<noscript>') !== -1, 'noscript fallback present for JS-off loads');
+  ok(html.indexOf('id="theme-toggle"') !== -1 && html.indexOf('🌓') === -1,
+    'theme toggle is an SVG like the other topbar controls, not an emoji');
+  var huCard = (html.match(/<button class="mode-card"[^>]*data-mode="hu"[^>]*>/g) || [])[0] || '';
+  var pfCard = (html.match(/<button class="mode-card"[^>]*data-mode="pushfold"[^>]*>/g) || [])[0] || '';
+  ok(/hidden/.test(huCard), 'heads-up mode card is hidden in HTML until its flag turns it on');
+  ok(/hidden/.test(pfCard), 'push/fold mode card is hidden in HTML until its flag turns it on');
+  ok(appSrc.indexOf('c.hidden = false') !== -1, 'flagged mode cards are un-hidden by JS when their flag is on');
+})();
+
 // ---------- hand end: results pause, bot reveal, hero show/muck ----------
 // Only showdown-revealed bots show hole cards at hand end (v1.8.223);
 // folded hands stay mucked like real poker. A folded hero sees backs

@@ -4,7 +4,7 @@
 
 ▶️ **Live:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-2000%2B%20passing-brightgreen)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-4000%2B%20passing-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
 
 ## Screenshots
 
@@ -22,8 +22,9 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.233) — iterative, tested releases, not one big bang
-- **2,000+ test assertions** across 40 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
+- **Daily tested releases** (v1.8.234) — iterative, tested releases, not one big bang
+- **4,000+ test assertions** across 40 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
+- **Solver lab** — 100+ pinned spots where the coach's advice is checked against exact expected value, 0 failures (see `tests/solver-lab.js`)
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step
 - **4 architecture decision records** (`docs/adr/`) explaining every major tradeoff
@@ -56,7 +57,7 @@ An offline-first poker practice app. Play cash games and tournaments against 14 
 
 **Zero-dependency vanilla JS.** No framework, no bundler, no build step. The poker core (`cards → evaluator → equity → engine → bots`) is DOM-free by design — the same code runs in Node tests and the browser.
 
-**2,000+ test assertions, 6 layers.** Unit, component, smoke (full hands auto-played in jsdom), netplay, worker, and live coach-audit tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
+**4,000+ test assertions, 6 layers.** Unit, component, smoke (full hands auto-played in jsdom), netplay, worker, and live coach-audit tests. The suite verifies the invariants that matter: chip conservation, legality of every engine action, hole-card privacy per seat. Every bug gets a regression test verified to fail without its fix.
 
 **Real-time multiplayer on Cloudflare Workers.** One Durable Object per room, authoritative game state, per-seat snapshots so hole cards never leak. Auto-reconnect with backoff, host migration if the host drops.
 
@@ -84,7 +85,7 @@ The coach improves through a **human-in-the-loop verification cycle** — real h
 
 **3. Competitive calibration** — Other training tools are studied for what they do better (see `docs/competitive-analysis-2026-10-09.md`). Best ideas are adapted, not copied.
 
-**4. Automated verification** — The full suite (2,000+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change. A 10-hand live eval plays real hands with a mixed hero policy and flags contradictions, illegal advice, math errors, and over-long messages — the loop that caught the 900-char scouting-report bloat in v1.8.103.
+**4. Automated verification** — The full suite (4,000+ assertions) checks every coach rule stays legal and mathematically consistent. Lint gates every change. A 10-hand live eval plays real hands with a mixed hero policy and flags contradictions, illegal advice, math errors, and over-long messages — the loop that caught the 900-char scouting-report bloat in v1.8.103.
 
 The coach doesn't rewrite itself — improvements are deliberate, tested, and shipped as versions, like any good training program. When the coach is wrong, that's a bug report, not a shrug.
 

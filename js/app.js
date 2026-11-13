@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.233';
+  var APP_VERSION = '1.8.234';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2910,7 +2910,10 @@
     var flagForMode = { hu: 'headsUpMode', pushfold: 'pushFoldTrainer' };
     document.querySelectorAll('.mode-card').forEach(function (c) {
       var flag = flagForMode[c.dataset.mode];
-      if (flag && !PS_FLAGS[flag]) { c.style.display = 'none'; return; }
+      if (flag) {
+        if (!PS_FLAGS[flag]) return;
+        c.hidden = false;
+      }
       c.onclick = function () {
         document.querySelectorAll('.mode-card').forEach(function (x) { x.classList.remove('selected'); });
         c.classList.add('selected');

@@ -1,6 +1,6 @@
 # Testing strategy
 
-`npm test` runs 40 suites, 2,000+ assertions per run: unit, component,
+`npm test` runs 40 suites, 4,000+ assertions per run: unit, component,
 smoke, netplay, worker, service worker, coach scenarios and audits, and
 docs-freshness gates. Exact per-file counts vary run to run (randomized
 sweeps, varying hand counts), so this doc cites order-of-magnitude figures

@@ -103,8 +103,10 @@ ok(claude.indexOf('native port later') === -1,
   'CLAUDE does not present a native port as planned (ROADMAP lists no native app as a non-goal, v1.8.129)');
 
 var incidents = fs.readFileSync(path.join(dir, 'docs', 'INCIDENTS.md'), 'utf8');
-ok(incidents.indexOf('Two real production bugs') === -1,
-  'INCIDENTS header count matches its three entries (was "Two", v1.8.126)');
+ok(incidents.indexOf('Four real production bugs') !== -1,
+  'INCIDENTS header count matches its four entries (v1.8.234)');
+ok((incidents.match(/^## v/gm) || []).length === 4,
+  'INCIDENTS lists four entries (v1.8.234)');
 
 ok(roadmap.indexOf('2,546 lines') === -1,
   'ROADMAP does not cite an exact app.js line count (rots on the next edit)');

@@ -50,7 +50,7 @@ A FANG/AI offer is worth orders of magnitude more than early app revenue; the pu
 
 ## History
 
-See [`CHANGELOG.md`](../CHANGELOG.md) for the full release history (100+ versions).
+See [`CHANGELOG.md`](../CHANGELOG.md) for the full release history (230+ versions).
 
 ## Playtest checklist (run before each release)
 

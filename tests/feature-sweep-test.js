@@ -38,6 +38,8 @@ function visibleScreen() {
 }
 setTimeout(function () {
   ok(visibleScreen() === 'setup', 'boots to setup screen (got ' + visibleScreen() + ')');
+  ok(d.querySelector('.mode-card[data-mode="hu"]').hidden, 'heads-up card hidden by default (v1.8.234)');
+  ok(d.querySelector('.mode-card[data-mode="pushfold"]').hidden, 'push/fold card hidden by default (v1.8.234)');
   click('btn-quick');
 }, 800);
 var phase = 0;

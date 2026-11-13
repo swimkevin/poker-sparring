@@ -106,8 +106,9 @@ of it:
 | Layer | Where | What |
 |---|---|---|
 | Unit + integration | `tests/test.js` (Node) | 1000+ tests: evaluator vectors, equity sanity, deterministic side-pot / odd-chip / full-hand scenarios, push/fold verdict consistency, bot move-legality sweep (thousands of decisions across all archetypes), stats recording, 100-hand engine soak with per-hand chip conservation |
-| Component | `tests/component.test.js` (jsdom) | 279 tests: real `ui.js` rendering — HTML escaping of user input, single-render feedback, glossary accordions, bb/100 guard, leak tracker states |
+| Component | `tests/component.test.js` (jsdom) | 285 tests: real `ui.js` rendering — HTML escaping of user input, single-render feedback, glossary accordions, bb/100 guard, leak tracker states |
 | Live / E2E | `tests/smoke.js` + browser playtest | Boots the real app in jsdom and auto-plays full hands (bot autonomy, hero controls, push/fold screen) with zero JS errors; the human browser playtest covers feel and visual QA |
+| Solver lab | `tests/solver-lab.js` (Node, not in `npm test`) | 100+ pinned spots: the coach's advice checked against exact expected value, 0 failures, 0 EV loss — the proof behind "solver-informed" |
 
 There are no runtime dependencies to integration-test against — the "live
 dependency" layer is the browser itself, covered by the playtest checklist in

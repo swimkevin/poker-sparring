@@ -1,6 +1,6 @@
 # Incident log
 
-Three real production bugs, written up the way they'd be written on the job.
+Four real production bugs, written up the way they'd be written on the job.
 Each was found by verification *around* the test suite, then pinned with
 regression tests so they can never silently return.
 
@@ -81,3 +81,11 @@ regression tests so they can never silently return.
   declared` against the pre-fix tree and passes on the fixed tree. This
   closes the exact layer gap (Node module scope vs browser global scope)
   that let the bug through.
+
+## v1.8.211–214 — Stale cached assets left the app stuck on dark mode after a revert
+
+- **Detected:** Kevin, on his iPhone in Hong Kong, after the v1.8.212–213 revert: the app was stuck on dark mode and would not deal in — the topbar (which holds the theme toggle) was gone.
+- **Root cause:** v1.8.211 hid the topbar on the table screen. The 212/213 revert restored the old layout in the repo, but Kevin's phone was still rendering the stale v1.8.211 assets: the service worker plus the `?v=` cache-buster only update on a fresh fetch, and the phone had not fetched one. No code was broken in 212/213 — the phone was running 211 while the repo was on 213.
+- **Fix:** Rolled back to v1.8.208 — the last version Kevin had verified working on his iPhone — as v1.8.214, then re-applied the minimal card fix as v1.8.215. Phone-side remedy for Kevin: close the Safari tab completely and reopen; if still stale, delete the swimkevin.github.io entry under Settings → Safari → Advanced → Website Data (not all Safari data).
+- **Verification:** Live version.txt confirmed 1.8.215 after the push; Kevin confirmed v1.8.217 "looks better now" on his iPhone.
+- **Regression guard:** The release flow verifies the live version.txt after every push, and the rollback procedure (last iPhone-verified version, new version number, CI green) is documented in AGENTS.md — so a stale phone is caught by asking for the live version, not by re-reading the repo.

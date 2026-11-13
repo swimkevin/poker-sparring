@@ -36,6 +36,7 @@ setTimeout(function () {
   var modes = Array.prototype.filter.call(d.querySelectorAll('.mode-card'), function (c) { return c.style.display !== 'none'; })
     .map(function (c) { return c.dataset.mode; });
   ok(modes.indexOf('hu') >= 0 && modes.indexOf('pushfold') >= 0, 'flagged mode cards visible (' + modes.join(',') + ')');
+  ok(!modeCard('hu').hidden && !modeCard('pushfold').hidden, 'flagged mode cards are un-hidden, not just displayed (v1.8.234)');
   var cbs = d.getElementById('custom-bot-section');
   ok(cbs && cbs.style.display !== 'none', 'custom bot section visible');
   var pf = modeCard('pushfold');

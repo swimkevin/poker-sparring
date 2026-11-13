@@ -9,16 +9,18 @@
 <meta property="og:description" content="Free, no-signup Texas Hold'em practice app: spar against offline AI opponents modeled on real player types, or host a private online table with friends.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://swimkevin.github.io/poker-sparring/">
+<meta property="og:image" content="https://swimkevin.github.io/poker-sparring/docs/screenshots/desktop.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Poker Sparring — Practice vs AI Opponents">
 <meta name="twitter:description" content="Free, no-signup Texas Hold'em practice app: spar against offline AI opponents modeled on real player types, or host a private online table with friends.">
-<link rel="stylesheet" href="css/style.css?v=1.8.233">
-<link rel="stylesheet" href="css/online.css?v=1.8.233">
+<link rel="stylesheet" href="css/style.css?v=1.8.234">
+<link rel="stylesheet" href="css/online.css?v=1.8.234">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 </head>
 <body>
+<noscript><p class="fineprint">Poker Sparring needs JavaScript enabled to play.</p></noscript>
 <header class="topbar">
   <button class="brand" id="brand-home" aria-label="Back to home" title="Back to home"><svg class="brand-mark" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.2C5.6 4.8 3.2 7 3.2 9.9a3.1 3.1 0 0 0 5.2 2.3c-.3 1-.8 1.9-1.4 2.6h2c-.6-.7-1.1-1.6-1.4-2.6a3.1 3.1 0 0 0 5.2-2.3C12.8 7 10.4 4.8 8 1.2z" fill="currentColor"/></svg> Poker Sparring</button>
   <nav class="nav">
@@ -30,7 +32,7 @@
     <button class="nav-btn" data-nav="learn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.8A1.3 1.3 0 0 1 4.3 1.5H13V13H4.3A1.3 1.3 0 0 0 3 14.3z"/><path d="M3 13.5V2.8"/></svg>Learn</button>
     <button class="nav-btn" id="nav-feedback"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3.5 3v-3H2.5z"/></svg>Feedback</button>
   </nav>
-  <div class="topbar-right"><button id="theme-toggle" class="ghost" aria-label="Toggle light/dark theme" title="Toggle theme">🌓</button> <span class="bankroll-label">P/L</span> <span id="bankroll-chip" class="bankroll" title="Your lifetime profit/loss in chips (all games, this browser)">±0</span></div>
+  <div class="topbar-right"><button id="theme-toggle" class="ghost" aria-label="Toggle light/dark theme" title="Toggle theme"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 1.5A6.5 6.5 0 0 1 8 14.5Z" fill="currentColor" stroke="none"/></svg></button> <span class="bankroll-label">P/L</span> <span id="bankroll-chip" class="bankroll" title="Your lifetime profit/loss in chips (all games, this browser)">±0</span></div>
 </header>
 
 <main>
@@ -62,7 +64,7 @@
           <div class="mode-emoji">💵</div><div class="mode-name">Cash Game</div>
           <div class="mode-desc">Deep stacks, rebuys. Practice real poker.</div>
         </button>
-        <button class="mode-card" data-mode="hu">
+        <button class="mode-card" data-mode="hu" hidden>
           <div class="mode-emoji">⚔️</div><div class="mode-name">Heads-Up</div>
           <div class="mode-desc">You vs one bot. Pick your nemesis.</div>
         </button>
@@ -70,7 +72,7 @@
           <div class="mode-emoji">🏆</div><div class="mode-name">Tournament</div>
           <div class="mode-desc">Blinds rise on your schedule. Last player standing wins.</div>
         </button>
-        <button class="mode-card" data-mode="pushfold">
+        <button class="mode-card" data-mode="pushfold" hidden>
           <div class="mode-emoji">🚀</div><div class="mode-name">Push / Fold Trainer</div>
           <div class="mode-desc">Short-stack shove-or-fold drills with instant feedback.</div>
         </button>
@@ -327,20 +329,20 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.233"></script>
-<script src="js/evaluator.js?v=1.8.233"></script>
-<script src="js/equity.js?v=1.8.233"></script>
-<script src="js/engine.js?v=1.8.233"></script>
-<script src="js/bots.js?v=1.8.233"></script>
-<script src="js/names.js?v=1.8.233"></script>
-<script src="js/pushfold.js?v=1.8.233"></script>
-<script src="js/stats.js?v=1.8.233"></script>
-<script src="js/replay.js?v=1.8.233"></script>
-<script src="js/room-server.js?v=1.8.233"></script>
-<script src="js/netplay.js?v=1.8.233"></script>
-<script src="js/ui.js?v=1.8.233"></script>
-<script src="js/online.js?v=1.8.233"></script>
-<script src="js/app.js?v=1.8.233"></script>
+<script src="js/cards.js?v=1.8.234"></script>
+<script src="js/evaluator.js?v=1.8.234"></script>
+<script src="js/equity.js?v=1.8.234"></script>
+<script src="js/engine.js?v=1.8.234"></script>
+<script src="js/bots.js?v=1.8.234"></script>
+<script src="js/names.js?v=1.8.234"></script>
+<script src="js/pushfold.js?v=1.8.234"></script>
+<script src="js/stats.js?v=1.8.234"></script>
+<script src="js/replay.js?v=1.8.234"></script>
+<script src="js/room-server.js?v=1.8.234"></script>
+<script src="js/netplay.js?v=1.8.234"></script>
+<script src="js/ui.js?v=1.8.234"></script>
+<script src="js/online.js?v=1.8.234"></script>
+<script src="js/app.js?v=1.8.234"></script>
 
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="History">

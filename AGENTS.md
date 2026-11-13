@@ -966,6 +966,20 @@ first; this file is the 30-second version.
   is disabled. When renaming, grep the whole tree for every variant
   — the modal title and the tab aria-label were two more instances
   the first pass missed.
+- Count assertions from per-suite finals, not from the log's progress
+  lines (v1.8.234, 2026-11-13): the component suite prints its
+  running total 11 times per run, so summing every "N passed" line
+  in the log overcounts by ~1,800. The honest total is the sum of
+  each suite's FINAL count (4,114 in the v1.8.233 run, before the
+  suites that print no count) — so README says "4,000+", not the
+  "5,000+" a naive sum suggests. Same rule as the docs' own warning:
+  exact numbers rot; floors survive.
+- Flag-gated UI hides in HTML, not in JS (v1.8.234, 2026-11-13):
+  the Heads-Up and Push/Fold mode cards rendered and were then
+  hidden by JS — a flash of shipped-but-hidden UI. Put `hidden` on
+  the element and let JS un-hide it when the flag is on. Check the
+  CSS first: an author `display` rule beats the `hidden`
+  attribute, so this only works when the class sets no display.
 - Real nuts need a board check, not a category (v1.8.227, 2026-11-13):
   any straight-plus hand was 'the nuts', so a Ten-high straight on a
   three-flush board got the near-nuts lesson and the river-veto exemption
