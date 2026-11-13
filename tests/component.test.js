@@ -1061,7 +1061,7 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
 
 // ---------- version stamps: version.txt, package.json, APP_VERSION must agree ----------
 // The update toast compares version.txt against APP_VERSION; drift causes a
-// phantom "update available" (or none at all). See repo AGENTS.md.
+// phantom "update available" (or none at all). See docs/AI-WORKFLOW.md.
 (function () {
   var vt = fs.readFileSync(path.join(__dirname, '..', 'version.txt'), 'utf8').trim();
   var pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
