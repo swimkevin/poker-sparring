@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.236';
+  var APP_VERSION = '1.8.237';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -901,7 +901,7 @@
             'You paid ' + UI.fmt(legal.callAmount) + ' but this hand only wins about ' + Math.round(eq * 100) + ' times out of 100. That\'s not often enough to make the call worth it. It\'s tempting to chase, but only call when you\'re likely enough to win.');
         }
       }
-      if (a === 'check' && street === 'river' && madeStrength(hero.hole, table.community) > 0.88) {
+      if (a === 'check' && street === 'river' && madeStrength(hero.hole, table.community) >= 0.80) {
         return base('missed-value', 'Missed value bet',
           'Checked the river with a monster (' + hole + ')',
           'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');

@@ -668,6 +668,26 @@ setTimeout(function () {
         [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }], 'flop', 500, 0, 0, [], 'check');
       ok(!leakMissedBluffPlain,
         'checking a plain flush draw vs LAG is NOT a missed semi-bluff (coach advice there is only marginal)');
+      // Missed-value monster threshold (v1.8.237): a checked river with a full
+      // house (madeStrength exactly 0.88) or a flush (0.80) is missed value —
+      // the coach bets both for value when first to act. A straight (0.72) or
+      // trips (~0.65) is not a monster, so no flag.
+      var FH = [{ r: 14, s: 0 }, { r: 13, s: 1 }, { r: 13, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }];
+      var leakMonsterFH = postflopLeak([{ r: 14, s: 1 }, { r: 14, s: 2 }], 'station', FH, 'river', 500, 0, 0, [], 'check');
+      ok(leakMonsterFH && leakMonsterFH.type === 'missed-value',
+        'checking a full house on the river flags missed-value (madeStrength 0.88, coach bets it for value)');
+      var FL = [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 1 }, { r: 9, s: 0 }, { r: 3, s: 2 }];
+      var leakMonsterFlush = postflopLeak([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'station', FL, 'river', 500, 0, 0, [], 'check');
+      ok(leakMonsterFlush && leakMonsterFlush.type === 'missed-value',
+        'checking a flush on the river flags missed-value (madeStrength 0.80, coach bets it for value)');
+      var ST = [{ r: 7, s: 3 }, { r: 6, s: 2 }, { r: 5, s: 0 }, { r: 13, s: 1 }, { r: 2, s: 2 }];
+      var leakMonsterStraight = postflopLeak([{ r: 9, s: 0 }, { r: 8, s: 1 }], 'station', ST, 'river', 500, 0, 0, [], 'check');
+      ok(!leakMonsterStraight,
+        'checking a straight on the river is NOT a missed value (madeStrength 0.72, below the monster line)');
+      var TR = [{ r: 12, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 9, s: 1 }, { r: 3, s: 2 }];
+      var leakMonsterTrips = postflopLeak([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'station', TR, 'river', 500, 0, 0, [], 'check');
+      ok(!leakMonsterTrips,
+        'checking trips on the river is NOT a missed value (madeStrength ~0.65, below the monster line)');
       var leakMissedBluffMulti = postflopLeak(drawStrong, 'lag', T92, 'flop', 500, 0, 0, [], 'check', 10);
       ok(!leakMissedBluffMulti,
         'checking a strong draw multiway is NOT a missed semi-bluff (coach checks multiway too)');
