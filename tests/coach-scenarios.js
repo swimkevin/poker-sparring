@@ -651,11 +651,11 @@ console.log('\n54. v1.8.173/203: the bluff 3-bet needs a wide range and a pressu
 
 console.log('\n55. v1.8.174: iso raises scale with the limper count');
 {
-  ok(src.indexOf('var isoMult = 3 + countLimpers();') !== -1,
+  ok(src.indexOf('var isoMult2 = 3 + countLimpers();') !== -1,
     'iso size is 3bb plus 1bb per limper, not a flat 4bb');
   ok(src.indexOf('(4× the blind) to isolate') === -1,
     'no iso message still hardcodes the flat 4x multiple');
-  ok(src.indexOf('Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult))') !== -1,
+  ok(src.indexOf('Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult2))') !== -1,
     'the iso size is clamped to the legal raise range');
 }
 

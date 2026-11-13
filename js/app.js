@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.237';
+  var APP_VERSION = '1.8.238';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1947,15 +1947,15 @@
           : mkVerdict('fold', 'strong',
             '<b>Fold</b> — you can\'t raise over the players who just called with only ' + fmt(hero.stack) + ' left.',
             'No raise means no isolation — wait for a real hand.');
-      var isoMult = 3 + countLimpers();
-      var isoTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult));
+      var isoMult2 = 3 + countLimpers();
+      var isoTo2 = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult2));
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
-          c.nmHtml + ' — players who just called are weak. <b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate one of them and play for stacks.',
+          c.nmHtml + ' — players who just called are weak. <b>Raise</b> to ~<b>' + fmt(isoTo2) + '</b> (' + isoMult2 + '× the blind) to isolate one of them and play for stacks.',
           'Isolate players who just called with premiums: raise big, play heads-up, stack them.');
       if (tier <= 3 && (inPos || countLimpers() === 1))
         return mkVerdict('raise', 'marginal',
-          '<b>Raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to isolate — ' +
+          '<b>Raise</b> to ~<b>' + fmt(isoTo2) + '</b> (' + isoMult2 + '× the blind) to isolate — ' +
           (inPos ? 'players who just called rarely have much, and you have position.'
             : 'one player who just called rarely has much, and your hand is ahead of their range.'),
           inPos ? 'Attack players who just called from late position; they fold or play big pots out of position.'
@@ -1963,13 +1963,13 @@
 
       if (countLimpers() >= 3 && (posName === 'button' || posName === 'cutoff') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to punish the players who just called — ' + countLimpers() + ' of them means ' +
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo2) + '</b> (' + isoMult2 + '× the blind) to punish the players who just called — ' + countLimpers() + ' of them means ' +
           UI.fmt(table.potTotal()) + ' sitting in the pot. Or call behind; both are fine. Mix in the raise sometimes.',
           'Raising over players who just called is a profitable option: the extra money in the pot plus position makes it winning long-term, but don\'t feel forced — calling behind is fine too.');
 
       if (countLimpers() >= 2 && (posName === 'button' || posName === 'cutoff' || posName === 'middle position') && tier <= 5)
         return mkVerdict('raise', 'marginal',
-          'You can <b>raise</b> to ~<b>' + fmt(isoTo) + '</b> (' + isoMult + '× the blind) to attack the extra money in the pot — ' + countLimpers() + ' players just called, so ' +
+          'You can <b>raise</b> to ~<b>' + fmt(isoTo2) + '</b> (' + isoMult2 + '× the blind) to attack the extra money in the pot — ' + countLimpers() + ' players just called, so ' +
           UI.fmt(table.potTotal()) + ' is sitting there. Take it down now or isolate one player. Or fold; both are fine.',
           'Raising over players who just called is a profitable option: the extra money in the pot plus position makes it winning long-term, but don\'t feel forced — folding is fine too.');
       if (tier === 4 && inPos && effStackBB(vIdx) >= 20)
@@ -2191,7 +2191,7 @@
         var tex = boardTexture(table.community);
 
         var frac = tex === 'wet' ? 0.67 : 0.25;
-        if (foldy < 0.25) frac = table.street === 'flop' || multiway ? 0.75 : 1.0;
+        if (foldy < 0.25) frac = multiway ? 0.75 : 1.0;
         var geo = geometricFrac(sprV, streetsLeft);
         var geoApplied = false;
         if (geo != null && geo > frac) { frac = Math.min(0.75, geo); geoApplied = true; }

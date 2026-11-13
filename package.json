@@ -25,5 +25,5 @@
     "test:unit": "node tests/test.js",
     "solver-lab": "node tests/solver-lab.js"
   },
-  "version": "1.8.237"
+  "version": "1.8.238"
 }
