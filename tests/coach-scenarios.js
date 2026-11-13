@@ -868,5 +868,24 @@ console.log('\n75. v1.8.229: second pair bets the turn for thin value against a 
     'the missed-value message names the street it happened on (v1.8.229)');
 }
 
+console.log('\n76. v1.8.230: the lab gross-checks four more range-priced spots, and two messages state their size');
+{
+  var labSrc = fs.readFileSync(__dirname + '/../tests/solver-lab.js', 'utf8');
+  ok(labSrc.indexOf("timeline: betTimeline('turn', 350, 500), grossCheck: true") !== -1,
+    'paired-draw (nut flush draw on a paired board vs Rock, seeded eq 20.2% vs a 29.2% price) is gross-checked: a future call there fails the lab (v1.8.230)');
+  ok(labSrc.indexOf('pot: 1200 }], grossCheck: true') !== -1,
+    'trips vs Rock\'s pot bet (seeded eq 93.7% vs a 33.3% price) is gross-checked: the trips exemption from the tight-player guard is equity-priced, so the lab pins it (v1.8.230)');
+  ok(labSrc.indexOf("timeline: betTimeline('turn', 100, 100), grossCheck: true") !== -1,
+    'facing-multiway-toppair-call (seeded eq 50.9% vs a 33.3% price) is gross-checked (v1.8.230)');
+  ok(labSrc.indexOf("expectWord: 'Pay 90 to win 120', grossCheck: true") !== -1,
+    'preflop-prize-figure (JJ vs Rock, seeded eq 48.4% vs a 42.9% price) is gross-checked (v1.8.230)');
+  ok(!/name: 'toppair-vs-rock-river-potbet-fold'[\s\S]{0,500}grossCheck/.test(labSrc),
+    'the top-pair fold vs Rock\'s pot bet stays gross-check-free on purpose: the seeded open-range eq is 62.8% against a 33.3% price, so the check would false-fail a correct fold — the open range cannot price a tight player\'s pot bet, which is why the tight-player guard exists (v1.8.230)');
+  ok(src.indexOf("raise again for value to ~' + fmt(fourTo) + ' (about 2.3× their raise).") !== -1,
+    'the 4-bet lesson states the exact size (to ~207), not just the bare 2.3x multiple — the recap quotes the lesson, so a size-less lesson hides the size (v1.8.230)');
+  ok(src.indexOf('bet a medium size, so this barely narrows him down: pairs and draws are in there.') !== -1,
+    'the wide-range note respects a tight villain: a medium bet from Rock does not make him "wide" and does not put air in his range (v1.8.230)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

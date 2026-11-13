@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.229';
+  var APP_VERSION = '1.8.230';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1140,7 +1140,9 @@
           ? name + "'s range is either a monster or a bluff — and he bluffs enough that you can't fold everything."
           : name + "'s range is either a monster or a bluff — but he rarely bluffs, so weight it heavily toward a monster.";
       case 'wide':
-        return name + ' plays a wide range, so this barely narrows him down: pairs, draws, and some air are all in there.';
+        return tight > 0.6
+          ? name + ' bet a medium size, so this barely narrows him down: pairs and draws are in there.'
+          : name + ' plays a wide range, so this barely narrows him down: pairs, draws, and some air are all in there.';
     }
     return '';
   }
@@ -1796,7 +1798,7 @@
           var fourTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 2.3)));
           return mkVerdict('raise', 'strong',
             'They <b>re-raised</b> in front of you. With ' + c.nmHtml + ', <b>raise again</b> to ~<b>' + fmt(fourTo) + '</b> — build the pot while you\'re likely ahead.',
-            'Facing a re-raise with a premium: raise again for value, about 2.3× their raise.');
+            'Facing a re-raise with a premium: raise again for value to ~' + fmt(fourTo) + ' (about 2.3× their raise).');
         }
         if (adjEq3 > need3)
           return mkVerdict('call', 'strong',

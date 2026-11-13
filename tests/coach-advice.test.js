@@ -413,6 +413,26 @@ setTimeout(function () {
     ok(pf3Ctl.advice === 'raise', 'Rock 3-bet to 90, QQ still 4-bets (got ' + pf3Ctl.advice + ')');
     ok(stripAdvice(pf3Ctl.html).indexOf('to ~ 207') !== -1,
       'QQ 4-bet states the exact size to ~207 (2.3x the 3-bet)');
+    ok(pf3Ctl.lesson.indexOf('207') !== -1,
+      'QQ 4-bet lesson states the exact size (207) too, not just the bare 2.3x multiple (v1.8.230)');
+
+    // Range note respects a tight villain (v1.8.230): a medium bet from Rock
+    // does not make him "wide" — the note says the bet barely narrows him
+    // instead of claiming pairs, draws, and air are all in there.
+    var wideRock = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'rock', 'turn', 250, 500,
+      [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(wideRock.advice === 'raise', 'nut flush draw semi-bluff raises vs Rock medium bet (got ' + wideRock.advice + ')');
+    ok(stripAdvice(wideRock.html).indexOf('bet a medium size') !== -1,
+      'range note for a tight villain names the medium bet, not a wide range');
+    ok(stripAdvice(wideRock.html).indexOf('plays a wide range') === -1,
+      'range note for a tight villain never claims he plays a wide range');
+    var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(wideLag.advice === 'bet', 'second pair leads vs LAG after his medium flop bet (got ' + wideLag.advice + ')');
+    ok(stripAdvice(wideLag.html).indexOf('plays a wide range') !== -1,
+      'range note for a loose villain still says he plays a wide range');
 
     // Facing a 4-bet shove, premiums are priced, not auto-called (v1.8.176).
     // QQ is ~28% vs Rock's strong range at a 48% price; AA is ~80%.
