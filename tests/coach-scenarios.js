@@ -913,5 +913,15 @@ console.log('\n78. v1.8.232: coach copy stops inventing river cards, ranks, and 
     'the semi-bluff keeps the two-ways-to-win framing (v1.8.232)');
 }
 
+console.log('\n79. v1.8.239: the nut raise goes to 4x on the turn too, and its lesson states the size');
+{
+  ok(src.indexOf("var nutMult = foldy < 0.25 && table.street !== 'flop' ? 4 : 3;") !== -1,
+    'the 4x nut raise applies on the turn and the river against a station, and stays 3x on the flop, which is unmeasured (v1.8.239)');
+  ok(src.indexOf("raise to ~' + fmt(nutTo) + ' (' + nutMult + '× their bet): every street") !== -1,
+    'the nut-raise lesson states the exact size, not just the bare multiple — the recap quotes the lesson, so a size-less lesson hides the size (v1.8.239)');
+  ok(src.indexOf("raise for value to ~' + fmt(nutTo) + ' — but a better hand is already possible") !== -1,
+    'the made-hand raise lesson states its size too (v1.8.239)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

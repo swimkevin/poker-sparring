@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.238';
+  var APP_VERSION = '1.8.239';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2499,7 +2499,7 @@
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
     if ((hc === 'nut' || hc === 'madehand') && legal.canRaise) {
-      var nutMult = foldy < 0.25 && table.street === 'river' ? 4 : 3;
+      var nutMult = foldy < 0.25 && table.street !== 'flop' ? 4 : 3;
       var nutTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * nutMult)));
       var nutAllIn = nutTo >= legal.maxRaiseTo;
       return mkVerdict('raise', 'strong',
@@ -2507,8 +2507,8 @@
           ? '<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about ' + nutMult + '× their bet. Charge the draws and worse hands now, don\'t slow-play.'
           : '<b>Raise for value</b> to ~<b>' + fmt(nutTo) + '</b> (~' + nutMult + '× their bet) — charge the draws and worse hands now, don\'t slow-play.') + rangeNote,
         hc === 'nut'
-          ? 'With the near-nuts, raise: every street you don\'t build the pot costs money.'
-          : 'With a strong made hand, raise for value — but a better hand is already possible on this board, so don\'t treat it as a lock.');
+          ? 'With the near-nuts, raise to ~' + fmt(nutTo) + ' (' + nutMult + '× their bet): every street you don\'t build the pot costs money.'
+          : 'With a strong made hand, raise for value to ~' + fmt(nutTo) + ' — but a better hand is already possible on this board, so don\'t treat it as a lock.');
     }
     if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&
         range.label !== 'strong' && range.label !== 'polarized') {
