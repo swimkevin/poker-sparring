@@ -411,6 +411,7 @@ window.Online = (function () {
       '<div class="player-list">' + rows + '</div>' +
       '<div class="online-row">' +
       (isHost ? '<button id="on-start" class="primary"' + (players.length < 2 ? ' disabled' : '') + '>Start game →</button>' : '<span class="hint">Waiting for the host to start…</span>') +
+      (isHost && players.length < 2 ? '<span class="hint">Waiting for at least 1 more player.</span>' : '') +
       (isHost && mode === 'mock' ? '<button id="on-addbot" class="ghost">+ Add demo bot</button>' : '') +
       '<button id="on-leave" class="ghost">Leave</button>' +
       '</div>' +

@@ -47,8 +47,10 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   $('on-create').click();
   await sleep(300);
   ok(!!$('on-addbot'), 'mock lobby rendered with demo-bot button');
+  ok(d.getElementById('online-root').textContent.indexOf('Waiting for at least 1 more player') !== -1, 'lobby with 1 player explains why Start is disabled (v1.8.233)');
   $('on-addbot').click();
   await sleep(300);
+  ok(d.getElementById('online-root').textContent.indexOf('Waiting for at least 1 more player') === -1, 'hint clears once a second player joins (v1.8.233)');
   $('on-start').click();
   await sleep(500);
   var HANDS = /Two Pair|Full House|Straight|Flush|Pair of|Three of a Kind|Four of a Kind|High Card/;

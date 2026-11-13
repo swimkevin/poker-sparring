@@ -563,6 +563,33 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(!/text-overflow:\s*ellipsis/.test(splashTitle), 'win splash title has no ellipsis');
 })();
 
+// ---------- designer copy: one History label, a visible setup subtitle, glossary first (v1.8.233) ----------
+// Static copy lives in index.html / bots.js / ui.js, so these pins read the
+// sources (same precedent as the CSS pins above) instead of booting the app.
+(function () {
+  var html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  var botsSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'bots.js'), 'utf8');
+  var uiSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'ui.js'), 'utf8');
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  ok(html.indexOf('>History</button>') !== -1, 'topbar nav says History, not Hands');
+  ok(html.indexOf('>Hands</button>') === -1, 'no Hands nav label left');
+  ok(html.indexOf('<h1>History</h1>') !== -1, 'hands screen heading is History');
+  ok(html.indexOf('<h1>Hand history</h1>') === -1, 'no Hand history heading left');
+  ok(html.indexOf('<h2>History</h2>') !== -1, 'stats history section is History');
+  ok(html.indexOf('<h2>Recent hands</h2>') === -1, 'no Recent hands heading left');
+  ok(uiSrc.indexOf("'📖 History'") !== -1, 'history panel title is History');
+  ok(uiSrc.indexOf("'📖 Hand history'") === -1, 'no Hand history panel title left');
+  ok(html.indexOf('📖 History</div>') !== -1, 'hand-story modal title is History');
+  ok(html.indexOf('📖 Hand history</div>') === -1, 'no Hand history modal title left');
+  ok(html.indexOf('Pick your opponents and practice real cash-game spots.</p>') !== -1,
+    'setup subtitle is the shortened line');
+  ok(css.indexOf('#screen-setup .setup-wrap .subtitle { display: none; }') === -1,
+    'setup subtitle is no longer hidden on phones');
+  ok(html.indexOf('<h2>Poker glossary</h2>') < html.indexOf('<h2>Essential reading</h2>'),
+    'glossary comes before books on the Learn screen');
+  ok(botsSrc.indexOf('(v1.8.97)') === -1, 'bot descs carry no version-history asides');
+})();
+
 // ---------- hand end: results pause, bot reveal, hero show/muck ----------
 // Only showdown-revealed bots show hole cards at hand end (v1.8.223);
 // folded hands stay mucked like real poker. A folded hero sees backs

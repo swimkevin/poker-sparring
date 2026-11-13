@@ -1146,7 +1146,6 @@ label { font-weight: 600; }
   #screen-table .table-topbar .last-result { display: none; }
 
   #screen-setup .setup-wrap h1 { font-size: 1.3rem; margin-bottom: 0.25rem; }
-  #screen-setup .setup-wrap .subtitle { display: none; }
   #screen-setup .setup-wrap { padding-top: 1rem; }
 }
 

@@ -959,6 +959,13 @@ first; this file is the 30-second version.
   general case. When a claim depends on the specific cards, compute
   it from the board (paired ranks) or drop it — never hardcode a
   rank, a card, or a number the situation does not guarantee.
+- One visible label per screen (v1.8.233, 2026-11-13): the hand log
+  was Hands / History / Hand history / Recent hands across five
+  places. A disabled button with no reason is the same class of bug
+  as a wrong label: the online lobby's Start button now says why it
+  is disabled. When renaming, grep the whole tree for every variant
+  — the modal title and the tab aria-label were two more instances
+  the first pass missed.
 - Real nuts need a board check, not a category (v1.8.227, 2026-11-13):
   any straight-plus hand was 'the nuts', so a Ten-high straight on a
   three-flush board got the near-nuts lesson and the river-veto exemption

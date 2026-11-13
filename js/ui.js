@@ -1485,7 +1485,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
       if (UI.markCoachIntroSeen) UI.markCoachIntroSeen();
       openPanel('coach', '💡 Coach', fillCoach); return;
     }
-    if (tab === 'history') { openPanel('history', '📖 Hand history', fillHistory); return; }
+    if (tab === 'history') { openPanel('history', '📖 History', fillHistory); return; }
     if (tab === 'chat') { openPanel('chat', '💬 Table chat', fillChat); return; }
     if (tab === 'menu') { openPanel('menu', '☰ Menu', fillMenu); return; }
   });
