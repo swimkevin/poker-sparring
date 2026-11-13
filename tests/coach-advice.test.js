@@ -619,6 +619,16 @@ setTimeout(function () {
       var leakMissedThinLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q7259, 'river', 500, 0, 0, [], 'check');
       ok(!leakMissedThinLag,
         'checking second pair on the river vs LAG is NOT a missed value (coach checks there too)');
+      // Leak tracker mirrors the v1.8.229 turn extension: checking second
+      // pair on the turn against a Station is a missed value bet too (the
+      // coach bets 1/2 pot there), but against LAG the coach checks, so no flag.
+      var Q729 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }];
+      var leakMissedThinTurn = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'station', Q729, 'turn', 500, 0, 0, [], 'check');
+      ok(leakMissedThinTurn && leakMissedThinTurn.type === 'missed-value',
+        'checking second pair on the turn vs a Station flags missed-value (coach bets 1/2 pot for thin value there)');
+      var leakMissedThinTurnLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q729, 'turn', 500, 0, 0, [], 'check');
+      ok(!leakMissedThinTurnLag,
+        'checking second pair on the turn vs LAG is NOT a missed value (coach checks there too)');
     })();
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });

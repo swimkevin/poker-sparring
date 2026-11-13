@@ -858,5 +858,15 @@ console.log('\n74. v1.8.228: the recap does not praise a win the coach was ignor
     'the semi-bluff and isolate praise variants that only fired on a disobeyed coach are gone with them (v1.8.228)');
 }
 
+console.log('\n75. v1.8.229: second pair bets the turn for thin value against a station');
+{
+  ok(src.indexOf("(foldy < 0.25 && (table.street === 'river' || table.street === 'turn'))") !== -1,
+    'the thin-value clause fires on the turn as well as the river against a player who folds little: measured +76 vs a Station, +73 vs Nathan over 2000 seeded runouts with the river bet included, so the turn check was giving chips away (v1.8.229)');
+  ok(src.indexOf("if (a === 'check' && (street === 'river' || street === 'turn') && V && villainFoldy(V.archetype) < 0.25") !== -1,
+    'the leak tracker mirrors the coach rule on the turn too — coach and tracker cannot disagree about the same spot (v1.8.229)');
+  ok(src.indexOf("'Checked the ' + street + ' with second pair against ' + V.name") !== -1,
+    'the missed-value message names the street it happened on (v1.8.229)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
