@@ -950,6 +950,15 @@ first; this file is the 30-second version.
   the winner ring gold→green and folded seats at 0.85 (barely
   distinguishable) — pin the intended values in the component suite
   or a later release re-drifts them.
+- Coach copy must not state what it cannot know (v1.8.232,
+  2026-11-13): the river veto claimed the river "completes the hands
+  he called with" on blank rivers; the board-play fold hardcoded
+  "a Queen or a Seven" for every board; the semi-bluff quoted the
+  pure-bluff break-even for a hand with ~35% equity when called.
+  Each was a plausible-sounding sentence that was false in the
+  general case. When a claim depends on the specific cards, compute
+  it from the board (paired ranks) or drop it — never hardcode a
+  rank, a card, or a number the situation does not guarantee.
 - Real nuts need a board check, not a category (v1.8.227, 2026-11-13):
   any straight-plus hand was 'the nuts', so a Ten-high straight on a
   three-flush board got the near-nuts lesson and the river-veto exemption

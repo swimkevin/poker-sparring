@@ -119,6 +119,14 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   ok(allClosed, 'glossary terms start collapsed (less text at once)');
   var first = terms[0].querySelector('summary.gloss-term');
   ok(first && first.textContent.length > 0, 'glossary summary shows the term');
+  var byTerm = {};
+  Array.prototype.forEach.call(terms, function (d) {
+    var s = d.querySelector('summary.gloss-term');
+    if (s) byTerm[s.textContent.trim()] = d.textContent;
+  });
+  ok(byTerm['Draw'] && byTerm['Draw'].indexOf('about 35%') !== -1, 'Draw glossary gives the real flush-draw number (v1.8.232)');
+  ok(byTerm['Draw'] && byTerm['Draw'].indexOf('often favorites') === -1, 'Draw glossary no longer calls strong draws favorites (v1.8.232)');
+  ok(byTerm['Limp / Limper'] && byTerm['Limp / Limper'].indexOf('does it a lot') === -1, 'Limp glossary drops the awkward phrasing (v1.8.232)');
   ok(document.querySelectorAll('#book-list .book-card').length === 3, '3 book cards');
   var links = document.querySelectorAll('#book-list .book-card');
   var extOk = Array.prototype.every.call(links, function (a) {

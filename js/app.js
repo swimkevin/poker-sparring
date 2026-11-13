@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.231';
+  var APP_VERSION = '1.8.232';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2265,9 +2265,8 @@
         var halfBet = Math.min(hero.stack, Math.max(1, Math.round(pot / 2)));
         return mkVerdict('bet', hc === 'draw-strong' ? 'strong' : 'marginal',
           (halfBet >= hero.stack
-            ? '<b>All-in</b> (' + fmt(halfBet) + ') — semi-bluff: two ways to win: they fold now, or you hit. Needs only <b>'
-            : '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit. Needs only <b>') +
-          pct(bluffBE(halfBet, pot)) + '</b> folds to break even.' + rangeNote,
+            ? '<b>All-in</b> (' + fmt(halfBet) + ') — semi-bluff: two ways to win: they fold now, or you hit.'
+            : '<b>Semi-bluff</b> ~½ pot (' + fmt(halfBet) + ') — two ways to win: they fold now, or you hit.') + rangeNote,
           'Betting a strong draw is smart: you win if they fold now, or if you hit your hand.');
       }
 
@@ -2404,15 +2403,14 @@
       ? 'a ' + paired.map(function (r) { return rankName(r); }).join(', a ') + ', or a strong ' + rankName(top)
       : 'strong hands';
     if (veto && veto.eq <= veto.need) {
-      var riverRank = rankName(table.community[table.community.length - 1].r);
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + vName + ' called a big bet earlier in the hand, so he is down to ' +
-        narrowDesc + '. The river ' + riverRank + ' completes the hands he called with, and ' + vName +
+        narrowDesc + '. ' + vName +
         ' almost never bluffs. ' +
         'Against the hands he would play this way you win only about ' + pct(veto.eq) +
         ' of the time' + vetoMultiNote + ', but calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(veto.need) +
         '. The math says <b>fold</b>.' + rangeNote,
-        'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him — especially when the river card helps exactly the hands he called with.');
+        'When a player who almost never bluffs suddenly bets big on the river after calling a big bet, believe him.');
     }
 
     if (veto && !(hc === 'nut' && legal.canRaise)) {
@@ -2482,7 +2480,7 @@
         '<b>Fold</b> — your cards don\'t improve the board at all: the best five are already out there, ' +
         'so everyone already has at least a split. Nobody can hold a worse hand, so raising can\'t get called ' +
         'by worse — and a bet here is never a bluff, since a bluff can\'t fold out ' +
-        'a chop.' + (tight > 0.6 ? ' From a tight player this is a Queen or a Seven far more often than a split.' : '') +
+        'a chop.' + (tight > 0.6 && paired.length ? ' From a tight player this is usually a ' + paired.map(function (r) { return rankName(r); }).join(' or a ') + ' — a full house — far more often than a split.' : '') +
         ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 

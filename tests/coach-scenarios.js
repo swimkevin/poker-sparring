@@ -897,5 +897,21 @@ console.log('\n77. v1.8.231: the leak tracker flags a missed semi-bluff');
     'the flag is scoped to strong draws (flush + straight draw) — a plain draw is only marginal advice, so it is not flagged (v1.8.231)');
 }
 
+console.log('\n78. v1.8.232: coach copy stops inventing river cards, ranks, and break-evens');
+{
+  ok(src.indexOf('completes the hands he called with') === -1,
+    'the river veto never invents a completing river card — it fires on blank rivers too (v1.8.232)');
+  ok(src.indexOf('especially when the river card helps exactly the hands he called with') === -1,
+    'the veto lesson drops the river-helps claim with it (v1.8.232)');
+  ok(src.indexOf('a Queen or a Seven') === -1,
+    'the board-play fold never hardcodes Queen/Seven ranks (v1.8.232)');
+  ok(src.indexOf(".join(' or a ')") !== -1,
+    'the board-play fold names the actual paired ranks from the board (v1.8.232)');
+  ok(src.indexOf('folds to break even') === -1,
+    'the semi-bluff never quotes the pure-bluff break-even — a draw has equity, so the number is wrong (v1.8.232)');
+  ok(src.indexOf('two ways to win: they fold now, or you hit') !== -1,
+    'the semi-bluff keeps the two-ways-to-win framing (v1.8.232)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
