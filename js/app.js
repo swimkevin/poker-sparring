@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.227';
+  var APP_VERSION = '1.8.228';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1568,18 +1568,11 @@
     }
     var lines = [];
 
-    if (won && wonByFold) {
-      var isSemi = bad && (bad.hc === 'draw-strong' || bad.hc === 'draw');
-      var isIso = bad && bad.action === 'raise' && bad.advice === 'fold' && bad.street === 'preflop';
+    if (won && wonByFold && !bad) {
       var winMsg;
       if (good) winMsg = 'Well played — ' + good.lesson + ' Everyone folded. 🎉';
-      else if (isSemi) winMsg = 'Nice semi-bluff! 🎉 Your draw + aggression took it down.';
-      else if (isIso) winMsg = 'Nice raise! 🎉 You attacked the players who just called and took down the pot.';
       else winMsg = 'Nice aggression! 🎉 Everyone folded — you took it down.';
       lines.push({ kind: 'good', text: winMsg });
-    } else if (won && !good && bad) {
-
-      lines.push({ kind: 'good', text: 'You won the hand! 🎉 Your play got through.' });
     } else if (good && won) {
       lines.push({ kind: 'good', text: 'Well played — ' + good.lesson });
     } else if (good && !won && !bad) {
@@ -1587,7 +1580,7 @@
       lines.push({ kind: 'good', text: 'Tough loss — you stuck to the plan on the key decision. Sometimes the cards don\'t cooperate.' });
     }
 
-    if (bad && !(won && wonByFold)) {
+    if (bad) {
       var prefix = (won && !good) ? 'One thing to tighten up: ' : 'To improve: ';
       lines.push({ kind: 'bad', text: prefix + 'coach said ' + bad.advice +
         ', you went ' + bad.action + (bad.street ? ' (' + bad.street + ')' : '') + '. ' + bad.lesson });

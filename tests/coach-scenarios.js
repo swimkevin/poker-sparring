@@ -846,5 +846,17 @@ console.log('\n73. v1.8.227: only a hand nothing can beat is the nuts');
     'the small-bet raise branch takes a strong made hand, not just the nuts');
 }
 
+console.log('\n74. v1.8.228: the recap does not praise a win the coach was ignored for');
+{
+  ok(src.indexOf('if (won && wonByFold && !bad)') !== -1,
+    'the fold-out win praise fires only when no strong decision was disobeyed: a win after ignoring the coach gets the leak line, not a celebration (v1.8.228)');
+  ok(src.indexOf('Your play got through') === -1,
+    'the showdown-win praise for a disobeyed coach is gone: the recap names the leak instead of crediting the result (v1.8.228)');
+  ok(src.indexOf('if (bad) {') !== -1,
+    'the leak line is no longer suppressed on fold-out wins — the ignored advice is always named when a strong decision was disobeyed (v1.8.228)');
+  ok(src.indexOf('Nice semi-bluff') === -1 && src.indexOf('Nice raise!') === -1,
+    'the semi-bluff and isolate praise variants that only fired on a disobeyed coach are gone with them (v1.8.228)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

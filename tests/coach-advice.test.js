@@ -140,17 +140,34 @@ setTimeout(function () {
       lesson: '<img src=x>', action: 'call', followed: false }]);
     var r2 = H.recap(10);    ok(r2.html.indexOf('<img src=x>') === -1, 'recap escapes lesson text');
 
-    // Win-aware recap: ignoring the coach but winning still gets praise first.
+    // Win-aware recap (v1.8.228): ignoring the coach and winning anyway is
+    // not praised — the win is luck, the leak is the lesson. The recap names
+    // the ignored advice instead of celebrating the result.
     H.setDecisions([{ street: 'river', advice: 'fold', strength: 'strong',
       lesson: 'Folding saves chips.', action: 'raise', followed: false }]);
     var rWin = H.recap(11, true, true);
-    ok(rWin.html.indexOf('Everyone folded') !== -1, 'bluff win praised even when coach ignored');
-    ok(rWin.html.indexOf('tighten up') === -1, 'no lecture when the bluff worked');
+    ok(rWin.html.indexOf('Everyone folded') === -1, 'bluff win with ignored coach: no praise for the fold-out');
+    ok(rWin.html.indexOf('tighten up') !== -1, 'bluff win with ignored coach: the leak is named');
+    ok(rWin.html.indexOf('coach said fold, you went raise (river)') !== -1, 'bluff win recap quotes the ignored advice');
     var rWin2 = H.recap(12, true, false);
-    ok(rWin2.html.indexOf('You won the hand') !== -1, 'showdown win praised even when coach ignored');
+    ok(rWin2.html.indexOf('Your play got through') === -1, 'showdown win with ignored coach: no praise for the play');
+    ok(rWin2.html.indexOf('tighten up') !== -1, 'showdown win with ignored coach: the leak is named');
     var rLoss = H.recap(13, false, false);
     ok(rLoss.html.indexOf('To improve') !== -1 && rLoss.html.indexOf('won the hand') === -1,
       'loss with ignored coach: leak only, no false praise');
+
+    // Praise survives when the coach was followed — or when no strong
+    // decision was recorded at all (v1.8.228 controls).
+    H.setDecisions([{ street: 'river', advice: 'raise', strength: 'strong',
+      lesson: 'Raise for value.', action: 'raise', followed: true }]);
+    var rWinGood = H.recap(14, true, true);
+    ok(rWinGood.html.indexOf('Everyone folded') !== -1, 'fold-out win praised when the coach was followed');
+    ok(rWinGood.html.indexOf('tighten up') === -1, 'no leak line when the coach was followed');
+    var rWinGood2 = H.recap(15, true, false);
+    ok(rWinGood2.html.indexOf('Well played') !== -1, 'showdown win praised when the coach was followed');
+    H.setDecisions([]);
+    var rZeroWin = H.recap(16, true);
+    ok(rZeroWin.html.indexOf('You won the hand') !== -1, 'win with no strong decision still gets the fallback praise');
 
     // handClass: only a hand no better hand can beat is 'the nuts' (v1.8.227).
     // A straight or better that a flush, a full house, or a higher straight
