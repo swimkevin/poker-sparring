@@ -950,3 +950,66 @@ first; this file is the 30-second version.
   the winner ring gold→green and folded seats at 0.85 (barely
   distinguishable) — pin the intended values in the component suite
   or a later release re-drifts them.
+- Real nuts need a board check, not a category (v1.8.227, 2026-11-13):
+  any straight-plus hand was 'the nuts', so a Ten-high straight on a
+  three-flush board got the near-nuts lesson and the river-veto exemption
+  and was shoved into a trapper's big bet. `isCurrentNuts` decides from
+  the board (flush possible, board paired, a higher straight/flush/full
+  house/quads/straight-flush still makeable, counting the cards left in
+  the deck); anything straight-plus that fails it is 'madehand'. The
+  quads check must count what the board rank still needs: board trips
+  need 1 more card, not 2 (the first draft missed it and the full suite
+  caught it). Near-nut full houses that lose only to a one-combination
+  quad now call on veto math instead of raising in trapper spots — the
+  trade-off is documented, not hidden.
+- A recap grades the decision, not the result (v1.8.228, 2026-11-13):
+  praising a win after the coach was ignored ("Your play got through")
+  teaches the wrong thing — the win is luck, the leak is the lesson.
+  When a strong decision was disobeyed, the recap names the ignored
+  advice and says nothing about the win; praise survives only when the
+  coach was followed or no strong decision was recorded.
+- Measure the turn before extending a river rule to it (v1.8.229,
+  2026-11-13): second pair vs a station bets the turn (+76/+73 over
+  2000 seeded runouts) — but only with the river bet included in the
+  model, since that is what the coach actually does there. A
+  checked-through river understates both lines out of position. The
+  leak tracker mirrors every coach extension in the same release, or
+  coach and tracker disagree about the same spot.
+- Gross checks belong only where the range sim decides (v1.8.230,
+  2026-11-13): measure the seeded equity BEFORE adding a grossCheck
+  flag. The top-pair fold vs Rock's pot bet measured 62.8% seeded eq
+  against a 33.3% price — the check would false-fail a correct fold,
+  because the open range cannot price a tight player's pot bet (that is
+  why the tight-player guard exists). Bypass, narrowed-range, air-cap,
+  veto, and trapper spots are excluded for the same reason: their
+  decisions rest on non-range factors the open-range sim cannot see.
+  The seeded sim is deterministic (seeded by spot name), so a passing
+  gross check cannot flake.
+- A range note describes the bet-size range, not the profile
+  (v1.8.230, 2026-11-13): a medium bet from Rock was labeled 'wide'
+  and the note claimed he "plays a wide range... some air are all in
+  there" in the same verdict as "only plays monsters". Qualify the note
+  by tightness when the two conflict.
+- A tracker rule must mirror the coach branch exactly (v1.8.231,
+  2026-11-13): the missed semi-bluff flag fires only on draw-strong
+  (flush + straight draw), heads-up, villain folds (>= 0.25) — the
+  coach's own gates. A plain draw is only marginal advice, so it is
+  not flagged; a Station or a multiway pot is not flagged either.
+  Measured first: the semi-bluff is worth ~180 chips over checking
+  (combo draw vs a loose range, 2000 seeded runouts).
+- Separate stacked iterations by revert-and-reapply, never by file
+  restore (v1.8.228–231, 2026-11-13): when two iterations land in one
+  tree, revert the later one's edits, run the suite, bump, and push the
+  earlier one, then re-apply the later edits with the edit tool and
+  diff against a saved backup to prove the re-apply is exact. A file
+  restore would revert APP_VERSION to the pre-bump value (the
+  v1.8.156–157 trap). Keep the backup under hidden_files/ (gitignored)
+  as a reference, not a restore source.
+- verify-push-list.js runs before EVERY push (v1.8.228, 2026-11-13):
+  it was skipped once (v1.8.227) and the manual list happened to be
+  right — run the script anyway; it diffs the tree against the tip and
+  catches an omitted file the manual check can miss.
+- Service-restart loss, fifth sighting (v1.8.229, 2026-11-13): the
+  full suite died by SIGTERM 2.4 minutes in with a 9-line log. Re-ran
+  from scratch; green. The log-file discipline is what makes the loss
+  visible instead of silent.

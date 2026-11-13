@@ -887,5 +887,15 @@ console.log('\n76. v1.8.230: the lab gross-checks four more range-priced spots, 
     'the wide-range note respects a tight villain: a medium bet from Rock does not make him "wide" and does not put air in his range (v1.8.230)');
 }
 
+console.log('\n77. v1.8.231: the leak tracker flags a missed semi-bluff');
+{
+  ok(src.indexOf("if (a === 'check' && V && villainFoldy(V.archetype) >= 0.25 &&") !== -1,
+    'the tracker flags checking a strong draw heads-up against a player who folds — the exact mirror of the coach semi-bluff branch, which bets when foldy >= 0.25 and checks a Station (v1.8.231)');
+  ok(src.indexOf("'Missed semi-bluff'") !== -1,
+    'the missed semi-bluff has its own title, not the generic missed-value wording (v1.8.231)');
+  ok(src.indexOf("handClass(hero.hole, table.community) === 'draw-strong'") !== -1,
+    'the flag is scoped to strong draws (flush + straight draw) — a plain draw is only marginal advice, so it is not flagged (v1.8.231)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

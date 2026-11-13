@@ -649,6 +649,28 @@ setTimeout(function () {
       var leakMissedThinTurnLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q729, 'turn', 500, 0, 0, [], 'check');
       ok(!leakMissedThinTurnLag,
         'checking second pair on the turn vs LAG is NOT a missed value (coach checks there too)');
+      // Leak tracker mirrors the coach's semi-bluff branch (v1.8.231):
+      // checking a strong draw (flush + straight draw) heads-up against a
+      // player who folds is a missed semi-bluff — the coach bets half pot
+      // there, and the bet is worth ~180 chips over checking (2000 seeded
+      // runouts, combo draw vs a loose range). Against a Station the coach
+      // checks too, so no flag; a plain draw is only marginal advice, so
+      // no flag either; multiway the coach checks too.
+      var drawStrong = [{ r: 12, s: 1 }, { r: 11, s: 1 }];
+      var T92 = [{ r: 10, s: 1 }, { r: 9, s: 1 }, { r: 2, s: 0 }];
+      var leakMissedBluff = postflopLeak(drawStrong, 'lag', T92, 'flop', 500, 0, 0, [], 'check');
+      ok(leakMissedBluff && leakMissedBluff.type === 'missed-value',
+        'checking a strong draw on the flop vs LAG flags missed semi-bluff (coach semi-bluffs half pot there)');
+      var leakMissedBluffStation = postflopLeak(drawStrong, 'station', T92, 'flop', 500, 0, 0, [], 'check');
+      ok(!leakMissedBluffStation,
+        'checking a strong draw vs a Station is NOT a missed semi-bluff (coach checks there too)');
+      var leakMissedBluffPlain = postflopLeak([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'lag',
+        [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }], 'flop', 500, 0, 0, [], 'check');
+      ok(!leakMissedBluffPlain,
+        'checking a plain flush draw vs LAG is NOT a missed semi-bluff (coach advice there is only marginal)');
+      var leakMissedBluffMulti = postflopLeak(drawStrong, 'lag', T92, 'flop', 500, 0, 0, [], 'check', 10);
+      ok(!leakMissedBluffMulti,
+        'checking a strong draw multiway is NOT a missed semi-bluff (coach checks multiway too)');
     })();
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.230';
+  var APP_VERSION = '1.8.231';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -911,6 +911,12 @@
         return base('missed-value', 'Missed value bet',
           'Checked the ' + street + ' with second pair against ' + V.name,
           'Second pair is usually best against a player who calls with any pair — a half-pot bet gets called by worse hands. Checking gives those chips away.');
+      }
+      if (a === 'check' && V && villainFoldy(V.archetype) >= 0.25 &&
+          liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'draw-strong') {
+        return base('missed-value', 'Missed semi-bluff',
+          'Checked with a strong draw against ' + V.name,
+          'A strong draw wins two ways — they fold now, or you hit your hand. A half-pot semi-bluff takes the pot whenever they fold and still has outs when they call; checking gives up the fold equity.');
       }
       var needFold = legal.callAmount / (pot + legal.callAmount);
       if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > needFold + 0.10) {
