@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.241';
+  var APP_VERSION = '1.8.242';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2499,7 +2499,7 @@
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
     if ((hc === 'nut' || hc === 'madehand') && legal.canRaise) {
-      var nutMult = foldy < 0.25 && table.street !== 'flop' ? 4 : 3;
+      var nutMult = foldy < 0.25 ? 4 : 3;
       var nutTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * nutMult)));
       var nutAllIn = nutTo >= legal.maxRaiseTo;
       return mkVerdict('raise', 'strong',

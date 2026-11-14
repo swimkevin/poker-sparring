@@ -915,8 +915,8 @@ console.log('\n78. v1.8.232: coach copy stops inventing river cards, ranks, and 
 
 console.log('\n79. v1.8.239: the nut raise goes to 4x on the turn too, and its lesson states the size');
 {
-  ok(src.indexOf("var nutMult = foldy < 0.25 && table.street !== 'flop' ? 4 : 3;") !== -1,
-    'the 4x nut raise applies on the turn and the river against a station, and stays 3x on the flop, which is unmeasured (v1.8.239)');
+  ok(src.indexOf("var nutMult = foldy < 0.25 ? 4 : 3;") !== -1,
+    'the 4x nut raise applies on every street against a station: the flop was measured in v1.8.242 (+167.5 vs a Station, +153.5 vs Nathan over 1000 shared runouts) after the turn was measured in v1.8.239');
   ok(src.indexOf("raise to ~' + fmt(nutTo) + ' (' + nutMult + '× their bet): every street") !== -1,
     'the nut-raise lesson states the exact size, not just the bare multiple — the recap quotes the lesson, so a size-less lesson hides the size (v1.8.239)');
   ok(src.indexOf("raise for value to ~' + fmt(nutTo) + ' — but a better hand is already possible") !== -1,
