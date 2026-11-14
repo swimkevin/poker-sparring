@@ -379,8 +379,10 @@ function madeStrength(hole, community) {
   }
   var d = detectDraws(hole, community);
   if (d.flushDraw) base += 0.12;
-  if (d.oesd) base += 0.10;
-  else if (d.gutshot) base += 0.05;
+  if (!ev || ev.cat < 4) {
+    if (d.oesd) base += 0.10;
+    else if (d.gutshot) base += 0.05;
+  }
   base += d.overcards * 0.03;
   return Math.max(0, Math.min(1, base));
 }

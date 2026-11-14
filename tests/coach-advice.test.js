@@ -699,6 +699,29 @@ setTimeout(function () {
       var leakMonsterTrips = postflopLeak([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'station', TR, 'river', 500, 0, 0, [], 'check');
       ok(!leakMonsterTrips,
         'checking trips on the river is NOT a missed value (madeStrength ~0.65, below the monster line)');
+      // Missed-value monster threshold, turn extension (v1.8.241): the coach
+      // bets a monster for value on the turn too when first to act, so
+      // checking one there is the same leak as on the river. Same line
+      // (flush or better), same controls. The trap exception never fires
+      // for any shipped bot (it needs bluff above 0.6 with aggression
+      // above 0.5; the Maniac bluffs 0.55, Rohan bluffs 0.68 but never
+      // raises), so the coach bets monsters on the turn against everyone.
+      var FHT = [{ r: 14, s: 0 }, { r: 13, s: 1 }, { r: 13, s: 2 }, { r: 7, s: 3 }];
+      var leakMonsterFHTurn = postflopLeak([{ r: 14, s: 1 }, { r: 14, s: 2 }], 'station', FHT, 'turn', 500, 0, 0, [], 'check');
+      ok(leakMonsterFHTurn && leakMonsterFHTurn.type === 'missed-value',
+        'checking a full house on the turn flags missed-value (madeStrength 0.88, coach bets it for value)');
+      var FLT = [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 1 }, { r: 9, s: 0 }];
+      var leakMonsterFlushTurn = postflopLeak([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'station', FLT, 'turn', 500, 0, 0, [], 'check');
+      ok(leakMonsterFlushTurn && leakMonsterFlushTurn.type === 'missed-value',
+        'checking a flush on the turn flags missed-value (madeStrength 0.80, coach bets it for value)');
+      var STT = [{ r: 7, s: 3 }, { r: 6, s: 2 }, { r: 5, s: 0 }, { r: 13, s: 1 }];
+      var leakMonsterStraightTurn = postflopLeak([{ r: 9, s: 0 }, { r: 8, s: 1 }], 'station', STT, 'turn', 500, 0, 0, [], 'check');
+      ok(!leakMonsterStraightTurn,
+        'checking a straight on the turn is NOT a missed value (madeStrength 0.72, below the monster line)');
+      var TRT = [{ r: 12, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 9, s: 1 }];
+      var leakMonsterTripsTurn = postflopLeak([{ r: 12, s: 0 }, { r: 12, s: 1 }], 'station', TRT, 'turn', 500, 0, 0, [], 'check');
+      ok(!leakMonsterTripsTurn,
+        'checking trips on the turn is NOT a missed value (madeStrength ~0.65, below the monster line)');
       var leakMissedBluffMulti = postflopLeak(drawStrong, 'lag', T92, 'flop', 500, 0, 0, [], 'check', 10);
       ok(!leakMissedBluffMulti,
         'checking a strong draw multiway is NOT a missed semi-bluff (coach checks multiway too)');
