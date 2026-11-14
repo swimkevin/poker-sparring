@@ -66,6 +66,7 @@ global.isRed = cards.isRed;
 global.SUITS = cards.SUITS;
 global.replayState = replay.replayState;
 global.frameIndexForStreet = replay.frameIndexForStreet;
+global.loadHandRecords = replay.loadHandRecords;
 
 var src = fs.readFileSync(path.join(__dirname, '..', 'js', 'ui.js'), 'utf8');
 eval(src); // exposes `var UI` in this module scope
@@ -187,6 +188,42 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   ok(why && !why.open, 'leak explanation collapsed behind <details>');
   ok(document.querySelector('#leak-list .leak-chip').textContent.indexOf('×1') !== -1,
     'leak summary chip counts by type');
+})();
+
+// ---------- leak cards link to their hand in the replayer ----------
+(function () {
+  mem = {};
+  replay.saveHandRecord({
+    v: 1, id: 'h7-abc', handNo: 7, date: '2026-10-04T12:00:00.000Z', mode: 'cash',
+    sb: 5, bb: 10, ante: 0, button: 1,
+    players: [
+      { name: 'You', emoji: '🧑', isHero: true, stack: 1000 },
+      { name: 'The Rock', emoji: '🪨', isHero: false, stack: 1000 }
+    ],
+    heroHole: [{ r: 14, s: 0 }, { r: 13, s: 0 }],
+    timeline: [],
+    heroNet: 0, heroNetBB: 0, result: ''
+  });
+  stats.recordLeak({
+    hand: 8, hole: 'Qd Jd', street: 'turn', type: 'missed-value',
+    title: 'Missed value bet', spot: 'Checked a monster', why: 'Bet it.'
+  });
+  stats.recordLeak({
+    hand: 7, hole: 'As Ks', street: 'flop', type: 'bad-chase',
+    title: 'Chasing without the odds', spot: 'Called 100', why: 'Math says no.'
+  });
+  var opened = null;
+  dom.window.__openReplay = function (id) { opened = id; };
+  UI.renderStats();
+  var cards = document.querySelectorAll('#leak-list .leak-card');
+  ok(cards.length === 2, 'two leak cards rendered');
+  var btn7 = cards[0].querySelector('.leak-replay');
+  ok(btn7 && btn7.dataset.rec === 'h7-abc',
+    'leak for hand 7 renders a replay button for its saved record');
+  btn7.click();
+  ok(opened === 'h7-abc', 'replay button opens the replayer at hand 7');
+  ok(!cards[1].querySelector('.leak-replay'),
+    'leak for hand 8 (no saved record) renders no replay button');
 })();
 
 // ---------- hand history list + replayer ----------

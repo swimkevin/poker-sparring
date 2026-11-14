@@ -565,7 +565,7 @@ setTimeout(function () {
     // folds to tight players as weak. The tracker now prices the villain's
     // range the same way the coach does.
     (function () {
-      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action, callerBet) {
+      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action, callerBet, amount, heroStack) {
         var s = d.createElement('script');
         var arch = villainId
           ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
@@ -578,7 +578,7 @@ setTimeout(function () {
           'var t = window.__lkTable;',
           't.button = 0; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
           't.players[0].hole = ' + JSON.stringify(hero) + ';',
-          't.players[0].stack = 2000; t.players[0].bet = 0;',
+          't.players[0].stack = ' + (heroStack == null ? 2000 : heroStack) + '; t.players[0].bet = 0;',
           't.players[1].stack = 2000; t.players[1].bet = ' + villainBet + ';',
           't.community = ' + JSON.stringify(board) + ';',
           'for (var i = ' + (callerBet ? 3 : 2) + '; i < 8; i++) t.players[i].folded = true;'
@@ -593,7 +593,7 @@ setTimeout(function () {
         H.setTable(t);
         H.setHandRec({ timeline: timeline });
         H.setDecisions([]);
-        return H.detectLeak(action);
+        return H.detectLeak(action, amount);
       }
       var Q725 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
       var leakBad = postflopLeak([{ r: 11, s: 0 }, { r: 9, s: 1 }], 'rock', Q725, 'turn', 200, 150, 150,
@@ -725,6 +725,96 @@ setTimeout(function () {
       var leakMissedBluffMulti = postflopLeak(drawStrong, 'lag', T92, 'flop', 500, 0, 0, [], 'check', 10);
       ok(!leakMissedBluffMulti,
         'checking a strong draw multiway is NOT a missed semi-bluff (coach checks multiway too)');
+      // Leak tracker mirrors the v1.8.238/242 value rules: checking a monster
+      // on the FLOP against a Station is a missed value bet (the coach bets
+      // the full pot there), but a board flush on the river is not — the
+      // coach checks it too, since the hero plays the board.
+      var flopFlush = [{ r: 2, s: 2 }, { r: 7, s: 2 }, { r: 12, s: 2 }];
+      var leakMonsterFlop = postflopLeak([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'station', flopFlush, 'flop', 500, 0, 0, [], 'check');
+      ok(leakMonsterFlop && leakMonsterFlop.type === 'missed-value',
+        'checking a flopped flush vs a Station flags missed-value (coach bets the full pot there)');
+      var boardFlush = [{ r: 14, s: 2 }, { r: 13, s: 2 }, { r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }];
+      var leakBoardFlush = postflopLeak([{ r: 3, s: 0 }, { r: 4, s: 1 }], 'station', boardFlush, 'river', 500, 0, 0, [], 'check');
+      ok(!leakBoardFlush,
+        'checking a board flush on the river vs a Station is NOT a missed value (coach checks — the board plays itself)');
+      // Nut-raise rule (v1.8.239/242): calling with a nut or strong made
+      // hand against a bet is a missed value bet — the coach raises 4x
+      // against a Station and 3x against everyone else. A call is a leak
+      // even when the coach says all-in (short stack) or a small-bet 3x.
+      var quads = [{ r: 12, s: 2 }, { r: 12, s: 1 }];
+      var quadsTurn = [{ r: 12, s: 3 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 2, s: 1 }];
+      var bet250 = [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }];
+      var leakNutCallStation = postflopLeak(quads, 'station', quadsTurn, 'turn', 500, 250, 250, bet250, 'call');
+      ok(leakNutCallStation && leakNutCallStation.title === 'Didn\'t raise the nuts' &&
+          leakNutCallStation.spot.indexOf('1,000') !== -1,
+        'calling quads vs a Station\'s turn bet flags missed-value (coach raises to 1,000, 4x)');
+      var leakNutCallRock = postflopLeak(quads, 'rock', quadsTurn, 'turn', 500, 250, 250, bet250, 'call');
+      ok(leakNutCallRock && leakNutCallRock.title === 'Didn\'t raise the nuts' &&
+          leakNutCallRock.spot.indexOf('750') !== -1,
+        'calling quads vs a Rock\'s turn bet flags missed-value too (coach raises to 750, 3x)');
+      var bet100 = [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 600 }];
+      var leakNutCallNathanSmall = postflopLeak(quads, 'nathan', quadsTurn, 'turn', 500, 100, 100, bet100, 'call');
+      ok(leakNutCallNathanSmall && leakNutCallNathanSmall.title === 'Didn\'t raise the nuts' &&
+          leakNutCallNathanSmall.spot.indexOf('300') !== -1,
+        'calling quads vs Nathan\'s small turn bet flags missed-value (coach raises to 300, 3x)');
+      // Controls: the coach says call here, so calling is not a leak.
+      // Commit-call: the nut flush with a 400 stack and a 100 bet — the pot
+      // is nearly as big as the stack, so the coach calls. Veto: a made
+      // hand on the river against a trapper who called a big bet earlier
+      // and bet first on the river — the coach calls the narrowed range.
+      var nutFlushTurn = [{ r: 2, s: 2 }, { r: 7, s: 2 }, { r: 12, s: 2 }, { r: 9, s: 0 }];
+      var leakNutCallCommit = postflopLeak([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'station', nutFlushTurn, 'turn', 500, 100, 100, bet100, 'call', undefined, undefined, 400);
+      ok(!leakNutCallCommit,
+        'calling the nut flush at SPR under 1 with a cheap price is NOT a missed value (coach calls — commit-call)');
+      var vetoTimeline = [
+        { t: 'action', street: 'flop', player: 0, action: 'bet', bet: 300, pot: 700 },
+        { t: 'action', street: 'flop', player: 1, action: 'call', bet: 300, pot: 1000 },
+        { t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 1250 }
+      ];
+      var vetoRiver = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }, { r: 2, s: 0 }, { r: 11, s: 1 }];
+      var leakNutCallVeto = postflopLeak([{ r: 13, s: 2 }, { r: 9, s: 2 }], 'nathan', vetoRiver, 'river', 1000, 250, 250, vetoTimeline, 'call');
+      ok(!leakNutCallVeto,
+        'calling a made flush on the river vs a trapper who called big earlier is NOT a missed value (coach calls — river veto)');
+      // Nut-raise sizing (v1.8.239/242): raising the nuts below the
+      // coach's target is a missed value bet — 4x against a Station, 3x
+      // against a Rock or on a small bet. At the target there is no flag.
+      var leakNutSmallStation = postflopLeak(quads, 'station', quadsTurn, 'turn', 500, 250, 250, bet250, 'raise', undefined, 750);
+      ok(leakNutSmallStation && leakNutSmallStation.title === 'Under-raised the nuts' &&
+          leakNutSmallStation.spot.indexOf('1,000') !== -1,
+        'raising quads to 750 vs a Station\'s 250 bet flags under-raised (coach raises to 1,000, 4x)');
+      var leakNutFullStation = postflopLeak(quads, 'station', quadsTurn, 'turn', 500, 250, 250, bet250, 'raise', undefined, 1000);
+      ok(!leakNutFullStation,
+        'raising quads to 1,000 vs a Station is NOT under-raised (coach target met)');
+      var leakNutSmallRock = postflopLeak(quads, 'rock', quadsTurn, 'turn', 500, 250, 250, bet250, 'raise', undefined, 750);
+      ok(!leakNutSmallRock,
+        'raising quads to 750 vs a Rock is NOT under-raised (coach raises 3x there)');
+      var leakNutSmallBetStation = postflopLeak(quads, 'station', quadsTurn, 'turn', 500, 100, 100, bet100, 'raise', undefined, 300);
+      ok(!leakNutSmallBetStation,
+        'raising quads to 300 on a small bet vs a Station is NOT under-raised (coach raises 3x on small bets)');
+      var leakNutSmallBetNathan = postflopLeak(quads, 'nathan', quadsTurn, 'turn', 500, 100, 100, bet100, 'raise', undefined, 300);
+      ok(!leakNutSmallBetNathan,
+        'raising quads to 300 on a small bet vs Nathan is NOT under-raised (trapper carve-out: 3x or 4x both plausible)');
+      // Under-bet value (v1.8.238): betting less than the full pot for
+      // value against a Station heads-up is a missed value bet — the coach
+      // bets the full pot there. At the full pot, against a LAG, multiway,
+      // or all-in, there is no flag.
+      var tpFlop = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }];
+      var leakUnderBet = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 0 }], 'station', tpFlop, 'flop', 500, 0, 0, [], 'bet', undefined, 250);
+      ok(leakUnderBet && leakUnderBet.title === 'Under-bet for value' &&
+          leakUnderBet.spot.indexOf('500') !== -1,
+        'betting half pot with top pair vs a Station flags under-bet for value (coach bets the full pot)');
+      var leakFullBet = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 0 }], 'station', tpFlop, 'flop', 500, 0, 0, [], 'bet', undefined, 500);
+      ok(!leakFullBet,
+        'betting the full pot with top pair vs a Station is NOT under-bet (coach target met)');
+      var leakUnderBetLag = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 0 }], 'lag', tpFlop, 'flop', 500, 0, 0, [], 'bet', undefined, 250);
+      ok(!leakUnderBetLag,
+        'betting half pot with top pair vs LAG is NOT under-bet (coach bets about a third there)');
+      var leakUnderBetMulti = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 0 }], 'station', tpFlop, 'flop', 500, 0, 0, [], 'bet', 10, 250);
+      ok(!leakUnderBetMulti,
+        'betting half pot with top pair multiway is NOT under-bet (coach bets about half multiway)');
+      var leakUnderBetAllIn = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 0 }], 'station', tpFlop, 'flop', 500, 0, 0, [], 'bet', undefined, 400, 400);
+      ok(!leakUnderBetAllIn,
+        'betting all-in (400 stack) with top pair vs a Station is NOT under-bet (coach shoves there)');
     })();
 
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });

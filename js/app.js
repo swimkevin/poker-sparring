@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.243';
+  var APP_VERSION = '1.8.244';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -837,7 +837,7 @@
 
   function heroAct(a, amount) {
     if (!waitingForHero) return;
-    var leak = detectLeak(a);
+    var leak = detectLeak(a, amount);
     if (leak) {
       recordLeak(leak);
       UI.log('🩹 <b>Leak spotted:</b> ' + UI.escapeHtml(leak.title) + ' — ' + UI.escapeHtml(leak.spot) + ' <span class="hl-leak-more">(see Stats → Leak tracker)</span>', 'hl-leak');
@@ -855,19 +855,62 @@
     }
   }
 
-  function detectLeak(a) {
-    try {
-
-      if (pendingAdvice && adviceFollowed(pendingAdvice.advice, a)) {
-        return null;
+  function detectSizeLeak(a, amount, hero, hole, legal, pot, V, hc) {
+    if (amount == null || !V) return null;
+    var street = table.street;
+    var foldy = villainFoldy(V.archetype);
+    var vIdx = table.players.indexOf(V);
+    function sizeBase(type, title, spot, why) {
+      return { hand: table.handNo, hole: hole, street: street, type: type, title: title, spot: spot, why: why };
+    }
+    if (a === 'raise' && legal.canRaise && (hc === 'nut' || hc === 'madehand')) {
+      var tell = villainSizingTell(vIdx);
+      var smallBet = tell && tell.unit === 'pot' && tell.size === 'small' &&
+        !isMultiway() && !villainShowedStrength(vIdx);
+      var trapper = V.archetype && V.archetype.neverRaise && villainBluffy(V.archetype) <= 0.10;
+      if (trapper && smallBet) return null;
+      var mult = smallBet ? 3 : (foldy < 0.25 ? 4 : 3);
+      var to = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * mult)));
+      if (amount < 0.9 * to) {
+        return sizeBase('missed-value', 'Under-raised the nuts',
+          'Raised to ' + UI.fmt(amount) + ' with ' + handClassName(hc) + ' against ' + V.name + ' — the coach raises to ~' + UI.fmt(to) + ' (' + mult + '× their bet)',
+          'Against a player who calls everything, a bigger raise gets paid by the same worse hands — every chip you leave behind is a chip you never win back.');
       }
+    }
+    if (a === 'bet' && legal.toCall === 0 && (hc === 'nut' || hc === 'madehand' || hc === 'overpair' ||
+        hc === 'toppair' || hc === 'trips' || hc === 'twopair') &&
+        foldy < 0.25 && liveOpponents().length === 1) {
+      var sprV = spr(effStackChips(vIdx), pot);
+      var streetsLeft = street === 'river' ? 0 : (street === 'turn' ? 1 : 2);
+      var commit = sprVerdict(sprV, hc, { multiway: false, streetsLeft: streetsLeft });
+      var betSize = Math.min(hero.stack, Math.round(pot));
+      var allIn = commit === 'commit' && (betSize >= hero.stack || (betSize < hero.stack * 0.7 && street !== 'river'));
+      var advised = allIn ? hero.stack : Math.min(hero.stack, pot);
+      if (amount < 0.85 * advised) {
+        return sizeBase('missed-value', 'Under-bet for value',
+          'Bet ' + UI.fmt(amount) + ' with ' + handClassName(hc) + ' against ' + V.name + ' — the coach bets ' + (allIn ? 'all-in (' + UI.fmt(advised) + ')' : 'the full pot (' + UI.fmt(advised) + ')') + ' for value',
+          'They never fold, so the same worse hands call a full-pot bet — a smaller bet just leaves their money on the table.');
+      }
+    }
+    return null;
+  }
+
+  function detectLeak(a, amount) {
+    try {
       var hero = table.players[0];
       var hole = hero.hole.map(function (c) { return cardName(c); }).join(' ');
       var street = table.street;
       var legal = table.legalActions(0);
       var pot = table.potTotal();
+      var V = pickVillain();
+      var hc = handClass(hero.hole, table.community);
       function base(type, title, spot, why) {
         return { hand: table.handNo, hole: hole, street: street, type: type, title: title, spot: spot, why: why };
+      }
+      var sizeLeak = detectSizeLeak(a, amount, hero, hole, legal, pot, V, hc);
+      if (sizeLeak) return sizeLeak;
+      if (pendingAdvice && adviceFollowed(pendingAdvice.advice, a)) {
+        return null;
       }
       if (street === 'preflop') {
 
@@ -880,7 +923,6 @@
         }
         return null;
       }
-      var V = pickVillain();
       var rangeTier = 0;
       if (V) {
         var vRange = estimateVillainRange(table.players.indexOf(V));
@@ -910,7 +952,34 @@
             'You paid ' + UI.fmt(legal.callAmount) + ' but this hand only wins about ' + Math.round(eq * 100) + ' times out of 100. That\'s not often enough to make the call worth it. It\'s tempting to chase, but only call when you\'re likely enough to win.');
         }
       }
-      if (a === 'check' && (street === 'river' || street === 'turn') && madeStrength(hero.hole, table.community) >= 0.80) {
+      if (a === 'call' && legal.toCall > 0 && legal.canRaise && V &&
+          (hc === 'nut' || hc === 'madehand')) {
+        var vIdxN = table.players.indexOf(V);
+        var sprVN = spr(effStackChips(vIdxN), pot);
+        var streetsLeftN = street === 'river' ? 0 : (street === 'turn' ? 1 : 2);
+        var commitN = sprVerdict(sprVN, hc, { multiway: isMultiway(), streetsLeft: streetsLeftN });
+        var polarN = vRange && vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25);
+        var commitCallN = commitN === 'commit' && sprVN <= 1 && hc === 'nut' &&
+          legal.toCall <= 0.5 * pot && !polarN;
+        var vetoN = null;
+        if (hc === 'madehand') {
+          vetoN = riverMonsterVeto({ V: V, vIdx: vIdxN, toCall: legal.toCall, pot: pot, hero: hero });
+        }
+        if (!commitCallN && !vetoN) {
+          var foldyN = villainFoldy(V.archetype);
+          var tellN = villainSizingTell(vIdxN);
+          var trapperN = V.archetype && V.archetype.neverRaise && villainBluffy(V.archetype) <= 0.10;
+          var trapperValueN = trapperN && foldyN <= 0.25 && eq >= 0.90;
+          var smallBetN = tellN && tellN.unit === 'pot' && tellN.size === 'small' &&
+            !isMultiway() && !villainShowedStrength(vIdxN) && (!trapperN || trapperValueN);
+          var multN = smallBetN ? 3 : (foldyN < 0.25 ? 4 : 3);
+          var nutToN = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * multN)));
+          return base('missed-value', 'Didn\'t raise the nuts',
+            'Called ' + UI.fmt(legal.callAmount) + ' with ' + handClassName(hc) + ' against ' + V.name + ' instead of raising to ~' + UI.fmt(nutToN) + ' (' + multN + '× their bet)',
+            'With the near-nuts, every street you don\'t build the pot costs money — raise to about ' + multN + '× their bet and charge the worse hands now.');
+        }
+      }
+      if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && hc !== 'board' && madeStrength(hero.hole, table.community) >= 0.80) {
         return base('missed-value', 'Missed value bet',
           'Checked the ' + street + ' with a monster (' + hole + ')',
           'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');

@@ -106,6 +106,13 @@ var UI = (function () {
     });
   }
 
+  function recordForHand(handNo) {
+    if (typeof loadHandRecords !== 'function') return null;
+    var recs = loadHandRecords() || [];
+    for (var i = 0; i < recs.length; i++) if (recs[i].handNo === handNo) return recs[i];
+    return null;
+  }
+
   function renderLeaks() {
     var box = $('leak-list');
     box.innerHTML = '';
@@ -128,10 +135,14 @@ var UI = (function () {
     leaks.slice(0, 12).forEach(function (l) {
       var d = document.createElement('div');
       d.className = 'leak-card';
+      var rec = recordForHand(l.hand);
+      var replayBtn = rec ? '<button class="ghost leak-replay" data-rec="' + escapeHtml(rec.id) + '">▶ Replay hand</button>' : '';
       d.innerHTML = '<div class="leak-head"><span class="leak-title">🩹 ' + escapeHtml(l.title) + '</span>' +
         '<span class="leak-meta">Hand #' + l.hand + ' · ' + escapeHtml(l.street) + ' · ' + escapeHtml(l.hole) + '</span></div>' +
-        '<div class="leak-spot">' + escapeHtml(l.spot) + '</div>' +
+        '<div class="leak-spot">' + escapeHtml(l.spot) + '</div>' + replayBtn +
         '<details class="leak-why"><summary>Why this matters</summary><div>' + escapeHtml(l.why) + '</div></details>';
+      var rb = d.querySelector('.leak-replay');
+      if (rb) rb.onclick = function () { if (typeof window.__openReplay === 'function') window.__openReplay(rb.dataset.rec); };
       box.appendChild(d);
     });
   }
