@@ -1096,6 +1096,46 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(d.getElementById('feedback-modal').hidden === true, 'modal closes via close fn');
 })();
 
+// ---------- Feedback modal: dark panel styling, full-width inputs ----------
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  ok(/#feedback-modal \.fb-input\s*\{[^}]*width:\s*100%/.test(css),
+    'feedback inputs have a full-width rule that beats the generic 160px input rule');
+  var d = dom.window.document;
+  var style = d.createElement('style');
+  style.textContent = css;
+  d.head.appendChild(style);
+  d.documentElement.setAttribute('data-theme', 'light');
+  d.body.innerHTML =
+    '<div id="feedback-modal" class="modal-overlay">' +
+    '<div class="modal-panel"><div class="modal-head">' +
+    '<div class="modal-title">Feedback</div>' +
+    '<button id="feedback-modal-close" class="ghost">x</button></div>' +
+    '<div class="modal-list fb-form">' +
+    '<div class="fb-types">' +
+    '<button class="chip-btn fb-type sel" data-fbtype="general">General</button>' +
+    '</div>' +
+    '<input id="fb-title" class="fb-input" placeholder="e.g. Raise slider jumps on mobile">' +
+    '<textarea id="fb-body" class="fb-input" rows="4"></textarea>' +
+    '<button id="fb-submit" class="primary">Open GitHub issue</button>' +
+    '<p class="hint">Opens a pre-filled GitHub issue — nothing sent.</p>' +
+    '</div></div></div>';
+  var cs = dom.window.getComputedStyle;
+  var panelBg = cs(d.querySelector('#feedback-modal .modal-panel')).backgroundColor;
+  ok(panelBg === 'rgb(18, 24, 34)',
+    'feedback modal panel is dark even in the light theme (got ' + panelBg + ')');
+  var inputBg = cs(d.getElementById('fb-title')).backgroundColor;
+  ok(inputBg === 'rgb(26, 34, 48)',
+    'feedback title input uses the dark panel input color (got ' + inputBg + ')');
+  ok(cs(d.getElementById('fb-title')).width === '100%',
+    'feedback title input computes full-width (got ' + cs(d.getElementById('fb-title')).width + ')');
+  var selColor = cs(d.querySelector('.fb-type.sel')).color;
+  ok(selColor === 'rgb(212, 175, 55)',
+    'selected feedback type chip uses the gold accent (got ' + selColor + ')');
+  d.head.removeChild(style);
+  d.documentElement.removeAttribute('data-theme');
+})();
+
 // ---------- version stamps: version.txt, package.json, APP_VERSION must agree ----------
 // The update toast compares version.txt against APP_VERSION; drift causes a
 // phantom "update available" (or none at all). See docs/AI-WORKFLOW.md.

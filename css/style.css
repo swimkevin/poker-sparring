@@ -886,6 +886,16 @@ label { font-weight: 600; }
 }
 .fb-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
 #fb-submit { margin-top: 0.25rem; }
+#feedback-modal .modal-panel { background: #121822; border-color: #2b3547; color: #e8edf3; }
+#feedback-modal .modal-head { border-bottom-color: #2b3547; }
+#feedback-modal .modal-title { color: #e8edf3; }
+#feedback-modal .fb-types .chip-btn { background: #1a2230; border-color: #2b3547; color: #e8edf3; }
+#feedback-modal .fb-type.sel { border-color: #d4af37; color: #d4af37; background: rgba(212, 175, 55, 0.12); }
+#feedback-modal .fb-label { color: #e8edf3; }
+#feedback-modal .fb-input { width: 100%; background: #1a2230; border-color: #2b3547; color: #e8edf3; }
+#feedback-modal .fb-input::placeholder { color: #8b96a5; }
+#feedback-modal .hint { color: #8b96a5; }
+#feedback-modal .ghost { border-color: #2b3547; color: #8b96a5; }
 
 .online-chat { margin-top: 0.75rem; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .chat-head { padding: 0.4rem 0.75rem; background: var(--panel2); font-weight: 700; font-size: 0.85rem; }
