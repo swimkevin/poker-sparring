@@ -649,6 +649,17 @@ setTimeout(function () {
       var leakMissedThinTurnLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q729, 'turn', 500, 0, 0, [], 'check');
       ok(!leakMissedThinTurnLag,
         'checking second pair on the turn vs LAG is NOT a missed value (coach checks there too)');
+      // Leak tracker mirrors the v1.8.240 flop extension: checking second
+      // pair on the flop out of position against a Station is a missed
+      // value bet too (the coach bets 1/2 pot there), but against LAG the
+      // coach checks, so no flag.
+      var Q72 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }];
+      var leakMissedThinFlop = postflopLeak([{ r: 7, s: 0 }, { r: 11, s: 1 }], 'station', Q72, 'flop', 500, 0, 0, [], 'check');
+      ok(leakMissedThinFlop && leakMissedThinFlop.type === 'missed-value',
+        'checking second pair on the flop vs a Station flags missed-value (coach bets 1/2 pot for thin value there)');
+      var leakMissedThinFlopLag = postflopLeak([{ r: 7, s: 0 }, { r: 11, s: 1 }], 'lag', Q72, 'flop', 500, 0, 0, [], 'check');
+      ok(!leakMissedThinFlopLag,
+        'checking second pair on the flop vs LAG is NOT a missed value (coach checks there too)');
       // Leak tracker mirrors the coach's semi-bluff branch (v1.8.231):
       // checking a strong draw (flush + straight draw) heads-up against a
       // player who folds is a missed semi-bluff — the coach bets half pot
