@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.242';
+  var APP_VERSION = '1.8.243';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -324,7 +324,7 @@
       setTurnStatus('Your turn — action is on you.', true);
       var vd = coachVerdict();
       if (coachIntroVisible()) markCoachIntroSeen();
-      UI.coachTip(vd.html);
+      UI.coachTip(vd.html, { fresh: true });
 
       pendingAdvice = vd.advice ? {
         advice: vd.advice, strength: vd.strength, lesson: vd.lesson, street: table.street
@@ -492,10 +492,15 @@
     } catch (e) { quiet(e); }
 
     var heroShow = false;
+    var showAll = false;
     function renderEndTable() {
       if (!table) return;
+      var displayRevealed = {};
+      table.players.forEach(function (p, i) {
+        if (revealed[i] || (showAll && p.hole.length === 2)) displayRevealed[i] = true;
+      });
       UI.renderTable(table, {
-        lastActions: {}, winners: winnerIdx, revealed: revealed,
+        lastActions: {}, winners: winnerIdx, revealed: displayRevealed,
         acting: -1, button: table.button, handEnd: true, heroShow: heroShow
       });
 
@@ -580,10 +585,14 @@
       }, 600);
     } else {
 
+      var anyMucked = table.players.some(function (p, i) {
+        return !p.isHero && p.hole.length === 2 && !revealed[i];
+      });
       UI.showHandEndControls({
         autoMs: 13000,
         onNext: function () { if (table) prepareNextHand(); },
-        onShowHero: hero.folded ? function () { heroShow = true; renderEndTable(); } : null
+        onShowHero: hero.folded ? function () { heroShow = true; renderEndTable(); } : null,
+        onShowAll: anyMucked ? function () { showAll = true; renderEndTable(); } : null
       });
     }
   }

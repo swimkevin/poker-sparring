@@ -1,6 +1,6 @@
 # Testing strategy
 
-`npm test` runs 40 suites, 4,000+ assertions per run: unit, component,
+`npm test` runs 41 suites, 4,000+ assertions per run: unit, component,
 smoke, netplay, worker, service worker, coach scenarios and audits, and
 docs-freshness gates. Exact per-file counts vary run to run (randomized
 sweeps, varying hand counts), so this doc cites order-of-magnitude figures
@@ -78,7 +78,7 @@ completeness but not counted as a test layer.
 
 Every bug fix ships with a regression test that fails without the fix —
 verified by running the new tests against the unfixed code before committing.
-`npm test` (all 40 suites) gates every release; a red suite blocks the
+`npm test` (all 41 suites) gates every release; a red suite blocks the
 push. See `docs/INCIDENTS.md` for the production bugs this discipline
 has caught and pinned.
 

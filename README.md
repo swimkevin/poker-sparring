@@ -18,12 +18,12 @@ I built it because I wanted realistic practice. Textbook poker AI plays like a t
 
 It's also my first serious software project, and I hold it to that standard: daily tested releases, every bug gets a regression test that fails without its fix, and the whole thing is vanilla JS with zero dependencies — because a poker trainer should work on a plane, and because the engineering should be readable enough to learn from.
 
-The deeper reason I built it this way: this project is an autonomous agent with guardrails. It improves its own codebase daily, verifies every change against 40 test suites, and learns from its mistakes — the loop's instructions grow smarter with each run. That's the AI engineering I want to do professionally: not just writing code, but building systems that write better code over time, within constraints you can verify.
+The deeper reason I built it this way: this project is an autonomous agent with guardrails. It improves its own codebase daily, verifies every change against 41 test suites, and learns from its mistakes — the loop's instructions grow smarter with each run. That's the AI engineering I want to do professionally: not just writing code, but building systems that write better code over time, within constraints you can verify.
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.242) — iterative, tested releases, not one big bang
-- **4,000+ test assertions** across 40 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
+- **Daily tested releases** (v1.8.243) — iterative, tested releases, not one big bang
+- **4,000+ test assertions** across 41 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **Solver lab** — 100+ pinned spots where the coach's advice is checked against exact expected value, 0 failures (see `tests/solver-lab.js`)
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step

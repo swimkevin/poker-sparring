@@ -566,15 +566,19 @@ var UI = (function () {
   }
   function clearLog() { $('hand-log').innerHTML = ''; }
 
-  function coachTip(html) {
+  function coachTip(html, opts) {
     var c = $('coach-tip');
-    if (!html) { c.hidden = true; return; }
+    var ct = document.querySelector('.mtab[data-tab="coach"]');
+    if (!html) {
+      c.hidden = true;
+      if (ct) ct.classList.remove('has-new');
+      return;
+    }
     c.hidden = false;
     c.innerHTML = '<div class="coach-head">Coach</div>' + html;
     var panel = document.getElementById('mobile-panel');
     var coachOpen = panel && !panel.hidden && document.querySelector('.mtab.active[data-tab="coach"]');
-    var ct = document.querySelector('.mtab[data-tab="coach"]');
-    if (ct && !coachOpen) ct.classList.add('has-new');
+    if (ct && !coachOpen && opts && opts.fresh) ct.classList.add('has-new');
   }
 
   function highlightWin(table, results) {
@@ -677,6 +681,14 @@ var UI = (function () {
       if (bar) sh.style.flex = '1';
       sh.onclick = function () { sh.disabled = true; sh.textContent = 'Hand shown'; o.onShowHero(); };
       row.appendChild(sh);
+    }
+    if (o.onShowAll) {
+      var sa = document.createElement('button');
+      sa.className = 'ghost'; sa.id = 'btn-show-hands';
+      sa.textContent = '👀 Show hands';
+      if (bar) sa.style.flex = '1';
+      sa.onclick = function () { sa.disabled = true; sa.textContent = 'Hands shown'; o.onShowAll(); };
+      row.appendChild(sa);
     }
     var btn = document.createElement('button');
     btn.className = 'primary'; btn.id = 'btn-next-hand';
@@ -1410,7 +1422,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
 
   function fillCoach(body) {
     var src = document.getElementById('coach-tip');
-    if (src && !src.hidden) {
+    if (src && src.innerHTML.trim()) {
       body.innerHTML = src.innerHTML;
     } else {
       body.innerHTML = '<p class="fineprint">No tip right now — coach speaks up on your turn.</p>';

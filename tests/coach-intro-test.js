@@ -68,7 +68,7 @@ function runMobileScenario() {
     var tip3 = t3.d.getElementById('coach-tip');
     var coachTab = t3.d.querySelector('.mtab[data-tab="coach"]');
     check(!tip3.hidden && tip3.innerHTML.indexOf('coach-intro-ok') !== -1, 'mobile: first session shows coach intro');
-    check(!!coachTab && coachTab.classList.contains('has-new'), 'mobile: Coach tab carries a new-advice dot while the intro is waiting');
+    check(!!coachTab && !coachTab.classList.contains('has-new'), 'mobile: Coach tab does NOT light up for the off-turn intro (only fresh advice on hero turn lights it)');
     waitFor(function () { return tip3.innerHTML.indexOf('coach-intro-ok') === -1; }, 25000, function (verdictArrived) {
       check(verdictArrived, 'mobile: a hero turn replaced the intro with a verdict (a hero action happened)');
       check(t3.w.localStorage.getItem('ps_coach_intro_seen') !== '1', 'mobile: intro is NOT marked seen when the Coach panel was never opened');
