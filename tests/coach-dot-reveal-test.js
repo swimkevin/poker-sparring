@@ -167,4 +167,31 @@ function finish() {
   process.exit(failures ? 1 : 0);
 }
 
-runHandEndScenario();
+// Chat tab is hidden in offline play (v1.8.248): the tab was a dead end
+// offline — fillChat only says "Chat is available in online games."
+(async function () {
+  function tick() { return new Promise(function (r) { setTimeout(r, 30); }); }
+  var t3 = boot();
+  t3.w.localStorage.clear();
+  var d3 = t3.d;
+  var chatTab = d3.querySelector('.mtab[data-tab="chat"]');
+  check(!!chatTab, 'chat: Chat tab exists');
+  check(chatTab.style.display === 'none', 'chat: Chat tab hidden on setup (not in an online game)');
+  d3.getElementById('btn-quick').click();
+  await tick(); await tick();
+  check(chatTab.style.display === 'none', 'chat: Chat tab stays hidden on the offline table');
+  check(d3.getElementById('mobile-tabs').style.display !== 'none', 'chat: tab bar is shown on the offline table');
+  d3.getElementById('screen-table').hidden = true;
+  d3.getElementById('screen-online').hidden = false;
+  await tick(); await tick();
+  check(chatTab.style.display === '', 'chat: Chat tab appears in an online game');
+  chatTab.click();
+  await tick();
+  check(!d3.getElementById('mobile-panel').hidden, 'chat: Chat tab opens its panel online');
+  d3.getElementById('screen-online').hidden = true;
+  d3.getElementById('screen-table').hidden = false;
+  await tick(); await tick();
+  check(chatTab.style.display === 'none', 'chat: Chat tab hides again back on the offline table');
+  check(d3.getElementById('mobile-panel').hidden, 'chat: leaving the online game closes the open Chat panel');
+  runHandEndScenario();
+})();

@@ -1388,6 +1388,15 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     var onGame = (t && !t.hidden) || (o && !o.hidden);
     tabs.style.display = onGame ? '' : 'none';
     if (!onGame) closePanel();
+    var chatTab = tabs.querySelector('.mtab[data-tab="chat"]');
+    if (chatTab) {
+      var onOnline = !!(o && !o.hidden);
+      chatTab.style.display = onOnline ? '' : 'none';
+      if (!onOnline && !panel.hidden) {
+        var active = tabs.querySelector('.mtab.active');
+        if (active && active.dataset.tab === 'chat') closePanel();
+      }
+    }
   }
 
   function lockScroll() {
