@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.254] — Lab pin: a small station bet gets 3x, not 4x
+
+The small-bet branch (raise 3x against a bet sized ≤ 0.4 of the pot) had no pin that isolated it from the nut branch: the existing `nut-flush-raise-control` vs the LAG gives 3x either way. New lab spot `smallbet-station-3x` — quad Queens on Q-Q-7-2-9 vs the Station, 150 into 500 (tell ratio 0.30, small) — expects `raise` to 450 with the exact branch wording ("3× their bet"); the paired control `nut-raise-station-4x` (same hero, board, villain, street, 250 into 500, ratio 0.50, medium) raises to 1,000 (4x). A coach-advice test pins both sizes and both messages. Lab moves 133 to 134 spots, 0 failures.
+
 ## [1.8.253] — Lab pin: the river veto never diverts the nuts
 
 The river veto (a trapper who called a big bet and bets first on the river gets his bet priced, not raised into) had its firing case pinned (`kevin-river-nathan-blank`) but not its nut carve-out: the coach code explicitly skips the veto when the hero holds the nuts and can raise. New lab spot `veto-nut-carveout` — quad Queens on Q-Q-7-2-9 vs Nathan, 250 into 500, on the full veto timeline (hero bet 266 on the turn, Nathan called, Nathan bet first on the river) — expects `raise` to 1,000 (4x), the same as the no-timeline control `nut-raise-nathan-4x`. A coach-advice test pins the same spot and the exact raise size. Lab moves 132 to 133 spots, 0 failures.

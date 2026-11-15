@@ -255,6 +255,20 @@ setTimeout(function () {
     ok(!vetoNut.error, 'veto-nut verdict has no error' + (vetoNut.error ? ' (' + vetoNut.error + ')' : ''));
     ok(vetoNut.advice === 'raise', 'quad Queens raise through the veto timeline (got ' + vetoNut.advice + ')');
     ok(stripAdvice(vetoNut.html).indexOf('to ~ 1,000') !== -1, 'veto-nut raise goes to 1,000 (4x)');
+    // Small-bet 3x (v1.8.254): a small bet from a station gets 3x, not the
+    // 4x the nut branch would give — the small-bet branch fires first.
+    var smallBet = postflopVerdict([{ r: 12, s: 3 }, { r: 12, s: 0 }], 'station', 'river', 150, 500,
+      [{ r: 12, s: 2 }, { r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 150, pot: 650 }], 2);
+    ok(!smallBet.error, 'small-bet verdict has no error' + (smallBet.error ? ' (' + smallBet.error + ')' : ''));
+    ok(smallBet.advice === 'raise', 'quad Queens raise a small station bet (got ' + smallBet.advice + ')');
+    ok(stripAdvice(smallBet.html).indexOf('to ~ 450') !== -1, 'small-bet raise goes to 450 (3x)');
+    ok(stripAdvice(smallBet.html).indexOf('3× their bet') !== -1, 'small-bet message names the 3x');
+    var smallBetBig = postflopVerdict([{ r: 12, s: 3 }, { r: 12, s: 0 }], 'station', 'river', 250, 500,
+      [{ r: 12, s: 2 }, { r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(smallBetBig.advice === 'raise', 'same hand raises the medium station bet (got ' + smallBetBig.advice + ')');
+    ok(stripAdvice(smallBetBig.html).indexOf('to ~ 1,000') !== -1, 'medium station bet raises to 1,000 (4x)');
     // Fake nuts facing a trapper's river bet: the veto prices it instead of
     // raising into the trap (v1.8.227). The old code shoved here.
     var fakeNut = postflopVerdict([{ r: 10, s: 0 }, { r: 5, s: 0 }], 'nathan', 'river', 669, 887,
