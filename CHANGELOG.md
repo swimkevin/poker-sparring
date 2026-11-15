@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.255] — Doc numbers catch up: 6,000+ assertions, 250+ versions
+
+The FANG review flagged stale numbers: README said "4,000+ test assertions" in three places while recent full runs measure 6,100–6,200 passed, and ROADMAP said "230+ versions" at 255 releases. Both floors are now current — README "6,000+ test assertions", ROADMAP "250+ versions" — and the freshness test pins both strings so they can't silently drift again (same precedent as the suite-count pins). Doc-only: no app, coach, or test-logic change.
+
 ## [1.8.254] — Lab pin: a small station bet gets 3x, not 4x
 
 The small-bet branch (raise 3x against a bet sized ≤ 0.4 of the pot) had no pin that isolated it from the nut branch: the existing `nut-flush-raise-control` vs the LAG gives 3x either way. New lab spot `smallbet-station-3x` — quad Queens on Q-Q-7-2-9 vs the Station, 150 into 500 (tell ratio 0.30, small) — expects `raise` to 450 with the exact branch wording ("3× their bet"); the paired control `nut-raise-station-4x` (same hero, board, villain, street, 250 into 500, ratio 0.50, medium) raises to 1,000 (4x). A coach-advice test pins both sizes and both messages. Lab moves 133 to 134 spots, 0 failures.
