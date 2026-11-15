@@ -244,6 +244,17 @@ setTimeout(function () {
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 700 }], 2);
     ok(commitCallDeep.advice === 'raise', 'same nut flush raises with a deep stack (got ' + commitCallDeep.advice + ')');
+    // River-veto nut carve-out (v1.8.253): the veto fires for a made hand
+    // vs a trapper who called big and bet first on the river — but it never
+    // diverts the nuts, so quad Queens still raise 4x on this timeline.
+    var vetoNut = postflopVerdict([{ r: 12, s: 3 }, { r: 12, s: 0 }], 'nathan', 'river', 250, 500,
+      [{ r: 12, s: 2 }, { r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 0, action: 'bet', bet: 266, pot: 621 },
+       { t: 'action', street: 'turn', player: 1, action: 'call', bet: 266, pot: 887 },
+       { t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(!vetoNut.error, 'veto-nut verdict has no error' + (vetoNut.error ? ' (' + vetoNut.error + ')' : ''));
+    ok(vetoNut.advice === 'raise', 'quad Queens raise through the veto timeline (got ' + vetoNut.advice + ')');
+    ok(stripAdvice(vetoNut.html).indexOf('to ~ 1,000') !== -1, 'veto-nut raise goes to 1,000 (4x)');
     // Fake nuts facing a trapper's river bet: the veto prices it instead of
     // raising into the trap (v1.8.227). The old code shoved here.
     var fakeNut = postflopVerdict([{ r: 10, s: 0 }, { r: 5, s: 0 }], 'nathan', 'river', 669, 887,

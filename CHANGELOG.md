@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.253] — Lab pin: the river veto never diverts the nuts
+
+The river veto (a trapper who called a big bet and bets first on the river gets his bet priced, not raised into) had its firing case pinned (`kevin-river-nathan-blank`) but not its nut carve-out: the coach code explicitly skips the veto when the hero holds the nuts and can raise. New lab spot `veto-nut-carveout` — quad Queens on Q-Q-7-2-9 vs Nathan, 250 into 500, on the full veto timeline (hero bet 266 on the turn, Nathan called, Nathan bet first on the river) — expects `raise` to 1,000 (4x), the same as the no-timeline control `nut-raise-nathan-4x`. A coach-advice test pins the same spot and the exact raise size. Lab moves 132 to 133 spots, 0 failures.
+
 ## [1.8.252] — Lab pin: the commit-call with the nuts
 
 The commit-call branch (call instead of raising with the nuts or an overpair when SPR ≤ 1 and the call is cheap) had no pin that isolated it: the existing `bypass-control` spot is an overpair that could call on equity anyway. New lab spot `commit-call-nut-flush` — nut flush on Qs 7s 2s vs the LAG, 200 into 500, stacks 600 (SPR ~0.86) — expects `call` with the exact branch wording ("calling costs almost nothing"); without the branch the nut branch would raise. A coach-advice test pins the same spot plus the deep-stack control (same hand, 2000 stacks, raises). Lab moves 131 to 132 spots, 0 failures.
