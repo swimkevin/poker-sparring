@@ -1577,17 +1577,18 @@ label { font-weight: 600; }
   #screen-table .turn-status { display: none; }
 }
 
-.bet-panel {
+[data-theme="dark"] .bet-panel {
   background: #1a2230 !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   color: #fff !important;
 }
-.bet-panel .bet-row { color: #fff; }
-.bet-panel .chip-btn {
+[data-theme="dark"] .bet-panel .bet-row { color: #fff; }
+[data-theme="dark"] .bet-panel .chip-btn {
   color: #fff !important;
   background: rgba(255,255,255,0.08) !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
 }
+[data-theme="light"] .bet-panel input.bet-amount { color: var(--gold); }
 @media (max-width: 900px) {
 
   #screen-table .bet-panel {

@@ -600,6 +600,25 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   ok(!/text-overflow:\s*ellipsis/.test(splashTitle), 'win splash title has no ellipsis');
 })();
 
+// ---------- bet panel follows the light theme (v1.8.250) ----------
+// The dark panel forcing was a global !important, so the bet panel was the
+// only dark surface in light mode. It is now scoped to the dark theme; the
+// base rule (var(--panel2)) carries the light theme, and the amount input
+// gets the theme gold instead of pale gold on cream. (jsdom does not resolve
+// var() in computed styles, so these pins read the source like the 226 block.)
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  ok(/\[data-theme="dark"\] \.bet-panel\s*\{[^}]*background:\s*#1a2230/.test(css),
+    'dark bet-panel forcing is scoped to the dark theme');
+  ok(!/(^|\n)\.bet-panel\s*\{[^}]*background:\s*#1a2230/.test(css),
+    'no unscoped bet-panel rule forces the dark background in the light theme');
+  var basePanel = (css.match(/(^|\n)\.bet-panel\s*\{[^}]*\}/) || [])[0] || '';
+  ok(/background:\s*var\(--panel2\)/.test(basePanel),
+    'bet panel base uses the theme panel color');
+  ok(/\[data-theme="light"\] \.bet-panel input\.bet-amount\s*\{[^}]*color:\s*var\(--gold\)/.test(css),
+    'bet amount input uses the theme gold in the light theme');
+})();
+
 // ---------- designer copy: one History label, a visible setup subtitle, glossary first (v1.8.233) ----------
 // Static copy lives in index.html / bots.js / ui.js, so these pins read the
 // sources (same precedent as the CSS pins above) instead of booting the app.

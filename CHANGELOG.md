@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.250] — The bet panel follows the light theme
+
+The bet panel was the only dark surface in light mode: a global `!important` forced `#1a2230` with white text in every theme, overriding the theme-aware base rule (`var(--panel2)`). The forcing is now scoped to `[data-theme="dark"]`, so light mode gets the cream panel, theme text, and theme chip buttons from the base rules; the amount input gets the theme gold instead of pale gold on cream. Dark mode is byte-identical (same `#1a2230`, same chip treatment). Four source pins in the component suite cover it — three fail without the fix — and the existing 226 chip-button pin still passes.
+
 ## [1.8.249] — The hero's hand gets a name preflop too
 
 The line under the hero's cards was blank preflop unless paired, so AK showed nothing while pairs showed "Pair of Kings". It now names the preflop hand the same way the coach does: high card first ("Ace King"), with " suited" when both cards share a suit, and no suffix offsuit ("Jack Four"). Pairs keep "Pair of Kings". Two checks in the dot/reveal suite pin it against a live dealt hand — reading the hero's hole from the card aria-labels and comparing the exact name — and the name check fails blank without the fix.
