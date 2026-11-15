@@ -217,6 +217,20 @@ setTimeout(function () {
     ok(!nutRaise.error, 'true-nut raise verdict has no error' + (nutRaise.error ? ' (' + nutRaise.error + ')' : ''));
     ok(nutRaise.advice === 'raise', 'true nut flush still raises for value (got ' + nutRaise.advice + ')');
     ok(nutRaise.lesson.indexOf('near-nuts') !== -1, 'true-nut raise lesson keeps the near-nuts wording');
+    // The trap branch never fired: its bluff gate was 0.6 and the Maniac
+    // bluffs 0.55 (v1.8.246). Measured trap-vs-bet on this exact spot,
+    // 2000 paired hands: trap +353 chips/hand (SE 11.5).
+    var trapManiac = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'maniac', 'flop', 0, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000, [], 2, 1);
+    ok(!trapManiac.error, 'maniac-trap verdict has no error' + (trapManiac.error ? ' (' + trapManiac.error + ')' : ''));
+    ok(trapManiac.advice === 'check', 'nut flush vs Maniac traps instead of betting (got ' + trapManiac.advice + ')');
+    ok(stripAdvice(trapManiac.html).indexOf('bluffs constantly') !== -1, 'maniac-trap message says he bluffs constantly');
+    var trapRock = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'rock', 'flop', 0, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000, [], 2, 1);
+    ok(trapRock.advice === 'bet', 'nut flush vs Rock bets for value (got ' + trapRock.advice + ')');
+    var trapGambler = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'gambler', 'flop', 0, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000, [], 2, 1);
+    ok(trapGambler.advice === 'bet', 'nut flush vs Gambler bets for value, 0.45 stays below the 0.5 gate (got ' + trapGambler.advice + ')');
     // Fake nuts facing a trapper's river bet: the veto prices it instead of
     // raising into the trap (v1.8.227). The old code shoved here.
     var fakeNut = postflopVerdict([{ r: 10, s: 0 }, { r: 5, s: 0 }], 'nathan', 'river', 669, 887,

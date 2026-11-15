@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.245';
+  var APP_VERSION = '1.8.246';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2092,7 +2092,7 @@
     var adjEq = eq + credit - debit;
     var rp = tourneyRiskPremium(effBB);
     var threshold = need + (multiway ? 0.04 : 0) + rp -
-      ((V && villainBluffy(V.archetype) > 0.55) ? 0.05 : 0);
+      ((V && villainBluffy(V.archetype) > 0.65) ? 0.05 : 0);
 
     if (tier <= 2 && legal.canRaise && !villainAllIn && (!bigOpen || adjEq > 0.5)) {
       var mult = inPos ? 3 : 4;
@@ -2258,7 +2258,7 @@
           'Betting can\'t get called by a worse hand (none exists), and a bluff can\'t fold out a chop.' + rangeNote,
           'When you play the board, just check: there\'s no value to extract and no fold to win.');
 
-      var vManiac = V && villainBluffy(V.archetype) > 0.6 &&
+      var vManiac = V && villainBluffy(V.archetype) > 0.5 &&
         (V.archetype.aggression || 0) > 0.5;
 
       if ((hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair') && canBet) {
