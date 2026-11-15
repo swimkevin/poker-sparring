@@ -785,6 +785,22 @@ setTimeout(function () {
       var leakMonsterFlop = postflopLeak([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'station', flopFlush, 'flop', 500, 0, 0, [], 'check');
       ok(leakMonsterFlop && leakMonsterFlop.type === 'missed-value',
         'checking a flopped flush vs a Station flags missed-value (coach bets the full pot there)');
+      // Maniac trap (v1.8.246/256): checking the same flopped flush vs the
+      // Maniac is the coach's advice (trap), so the tracker must NOT flag
+      // it — the mirror is villain-aware. The tracker only knows the advice
+      // through pendingAdvice (set by onAction in the live app), so the test
+      // sets it explicitly; vs a LAG the coach bets, so the same check
+      // still flags. Pending advice is reset after, so later leak tests
+      // see the default null.
+      H.setPendingAdvice({ advice: 'check', strength: 'marginal', lesson: '', street: 'flop' });
+      var leakTrapManiac = postflopLeak([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'maniac', flopFlush, 'flop', 500, 0, 0, [], 'check');
+      ok(!leakTrapManiac,
+        'checking a flopped flush vs the Maniac is NOT a missed value (coach traps — he bets into the check)');
+      H.setPendingAdvice({ advice: 'bet', strength: 'strong', lesson: '', street: 'flop' });
+      var leakMonsterLag = postflopLeak([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'lag', flopFlush, 'flop', 500, 0, 0, [], 'check');
+      ok(leakMonsterLag && leakMonsterLag.type === 'missed-value',
+        'checking a flopped flush vs a LAG flags missed-value (coach bets there, no trap)');
+      H.setPendingAdvice(null);
       var boardFlush = [{ r: 14, s: 2 }, { r: 13, s: 2 }, { r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }];
       var leakBoardFlush = postflopLeak([{ r: 3, s: 0 }, { r: 4, s: 1 }], 'station', boardFlush, 'river', 500, 0, 0, [], 'check');
       ok(!leakBoardFlush,

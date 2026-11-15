@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.256] — Tracker mirror pin: the Maniac trap is not a leak
+
+The v1.8.246 trap left one unpinned mirror: checking a flopped nut flush vs the Maniac is the coach's advice, so the leak tracker must not flag it — while the same check vs a Station or a LAG (where the coach bets) still flags. Two coach-advice tests pin it, plus a one-line test hook (`__coachTestHooks.setPendingAdvice`) so the test can replicate the live flow: the tracker's advice-followed early return reads `pendingAdvice`, which `onAction` sets in the live app but the harness leaves null (with null, the monster line flags the trap-check — the first version of this test caught exactly that). The hook is reset to null after, so later leak tests see the default. Lab stays 134 spots, 0 failures; coach-advice moves 176 to 178 assertions.
+
 ## [1.8.255] — Doc numbers catch up: 6,000+ assertions, 250+ versions
 
 The FANG review flagged stale numbers: README said "4,000+ test assertions" in three places while recent full runs measure 6,100–6,200 passed, and ROADMAP said "230+ versions" at 255 releases. Both floors are now current — README "6,000+ test assertions", ROADMAP "250+ versions" — and the freshness test pins both strings so they can't silently drift again (same precedent as the suite-count pins). Doc-only: no app, coach, or test-logic change.
