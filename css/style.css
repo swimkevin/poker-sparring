@@ -1009,7 +1009,7 @@ label { font-weight: 600; }
   .mtab.has-new { position: relative; }
   .mtab.has-new::after {
     content: ''; position: absolute; top: 0.3rem; right: calc(50% - 1.15rem);
-    width: 0.55rem; height: 0.55rem; border-radius: 50%;
+    width: 0.7rem; height: 0.7rem; border-radius: 50%;
     background: var(--gold); box-shadow: 0 0 6px rgba(212,175,55,0.8);
   }
 

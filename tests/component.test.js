@@ -619,6 +619,16 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     'bet amount input uses the theme gold in the light theme');
 })();
 
+// ---------- coach gold dot is big enough to notice (v1.8.251) ----------
+// The fresh-eyes designer could not verify the 0.55rem dot's noticeability;
+// 0.7rem is visibly larger without moving the tab layout.
+(function () {
+  var css = fs.readFileSync(path.join(__dirname, '..', 'css', 'style.css'), 'utf8');
+  var dot = (css.match(/\.mtab\.has-new::after\s*\{[^}]*\}/g) || [])[0] || '';
+  ok(/width:\s*0\.7rem/.test(dot), 'coach dot is 0.7rem wide');
+  ok(/height:\s*0\.7rem/.test(dot), 'coach dot is 0.7rem tall');
+})();
+
 // ---------- designer copy: one History label, a visible setup subtitle, glossary first (v1.8.233) ----------
 // Static copy lives in index.html / bots.js / ui.js, so these pins read the
 // sources (same precedent as the CSS pins above) instead of booting the app.
