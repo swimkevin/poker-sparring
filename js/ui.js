@@ -491,6 +491,9 @@ var UI = (function () {
           try { desc = describeHand(evaluate(hero.hole.concat(comm))); } catch { desc = ''; }
         } else if (hero.hole[0].r === hero.hole[1].r) {
           desc = 'Pair of ' + rankName(hero.hole[0].r) + 's';
+        } else {
+          var sh = hero.hole.slice().sort(function (a, b) { return b.r - a.r; });
+          desc = rankName(sh[0].r) + ' ' + rankName(sh[1].r) + (sh[0].s === sh[1].s ? ' suited' : '');
         }
       }
       hd.textContent = desc;

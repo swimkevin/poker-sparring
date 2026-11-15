@@ -193,5 +193,36 @@ function finish() {
   await tick(); await tick();
   check(chatTab.style.display === 'none', 'chat: Chat tab hides again back on the offline table');
   check(d3.getElementById('mobile-panel').hidden, 'chat: leaving the online game closes the open Chat panel');
+
+  // Preflop hero hand name (v1.8.249): hero-hand-desc was blank preflop
+  // unless paired, so AK showed nothing under the cards.
+  var t4 = boot();
+  t4.w.localStorage.clear();
+  var d4 = t4.d;
+  d4.getElementById('btn-quick').click();
+  var heroCards = null;
+  for (var pi = 0; pi < 100; pi++) {
+    var hc = d4.querySelectorAll('#hero-cards .card');
+    if (hc.length === 2) { heroCards = hc; break; }
+    await tick(); await tick();
+  }
+  check(!!heroCards, 'preflop-name: hero is dealt 2 cards');
+  if (heroCards) {
+    var RN = { Ace: 14, King: 13, Queen: 12, Jack: 11, Ten: 10, Nine: 9, Eight: 8, Seven: 7, Six: 6, Five: 5, Four: 4, Three: 3, Two: 2 };
+    var parsed = Array.prototype.map.call(heroCards, function (el) {
+      var parts = (el.getAttribute('aria-label') || '').split(' of ');
+      return { rank: parts[0], suit: parts[1] };
+    });
+    var expected;
+    if (parsed[0].rank === parsed[1].rank) {
+      expected = 'Pair of ' + parsed[0].rank + 's';
+    } else {
+      var srt = parsed.slice().sort(function (a, b) { return RN[b.rank] - RN[a.rank]; });
+      expected = srt[0].rank + ' ' + srt[1].rank + (srt[0].suit === srt[1].suit ? ' suited' : '');
+    }
+    await tick();
+    var got = (d4.getElementById('hero-hand-desc') || {}).textContent || '';
+    check(got === expected, 'preflop-name: hero hand name shows preflop (got "' + got + '", want "' + expected + '")');
+  }
   runHandEndScenario();
 })();

@@ -56,10 +56,14 @@ setTimeout(function () {
   table.players[0].hole = [C(14, 0), C(14, 2)];
   UI.renderTable(table, {});
   chk('PREFLOP AA', el.textContent, 'Pair of Aces');
-  // Non-pair preflop: no label (nothing made yet)
+  // Non-pair preflop: the hand gets a name now (v1.8.249) — high card
+  // first, " suited" when both share a suit, nothing offsuit.
   table.players[0].hole = [C(13, 0), C(9, 2)];
   UI.renderTable(table, {});
-  chk('PREFLOP K9o', el.textContent, '');
+  chk('PREFLOP K9o', el.textContent, 'King Nine');
+  table.players[0].hole = [C(14, 2), C(13, 2)];
+  UI.renderTable(table, {});
+  chk('PREFLOP AKs', el.textContent, 'Ace King suited');
   console.log(fails === 0 ? 'ALL HERO-DESC TESTS PASSED' : fails + ' FAILURES');
   process.exit(fails === 0 ? 0 : 1);
 }, 800);

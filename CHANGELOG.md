@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.249] — The hero's hand gets a name preflop too
+
+The line under the hero's cards was blank preflop unless paired, so AK showed nothing while pairs showed "Pair of Kings". It now names the preflop hand the same way the coach does: high card first ("Ace King"), with " suited" when both cards share a suit, and no suffix offsuit ("Jack Four"). Pairs keep "Pair of Kings". Two checks in the dot/reveal suite pin it against a live dealt hand — reading the hero's hole from the card aria-labels and comparing the exact name — and the name check fails blank without the fix.
+
 ## [1.8.248] — The Chat tab hides itself in offline play
 
 The mobile Chat tab was a dead end offline: tapping it only showed "Chat is available in online games." `syncTabBar` now hides the Chat tab whenever the online screen isn't shown (setup and the offline table), and shows it again in an online game; if the Chat panel is open when the game leaves online, the panel closes with it. Eight checks in the dot/reveal suite pin it: hidden on setup and on the offline table, visible online, opens its panel online, and hides again (closing the panel) back offline — four of them fail without the fix.
