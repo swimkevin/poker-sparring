@@ -1453,7 +1453,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = UI;
     var replay = document.createElement('button');
     replay.className = 'ghost'; replay.style.marginTop = '0.75rem';
     replay.textContent = '📖 Open full hand replayer';
-    replay.onclick = function () { closePanel(); UI.showScreen('hands'); };
+    replay.onclick = function () { closePanel(); if (UI.openHandList) UI.openHandList(); else UI.showScreen('hands'); };
     body.appendChild(replay);
   }
 

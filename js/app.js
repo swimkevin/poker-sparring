@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.246';
+  var APP_VERSION = '1.8.247';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2874,6 +2874,8 @@
     UI.renderHandList(loadHandRecords(), openReplay);
     UI.showScreen('hands');
   }
+
+  UI.openHandList = openHandList;
 
   window.__openReplay = openReplay;
   function openReplay(id) {

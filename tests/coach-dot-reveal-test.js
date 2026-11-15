@@ -70,6 +70,37 @@ t.w.UI.coachTip(null);
 openCoach(t.d);
 check(t.d.getElementById('mp-body').innerHTML.indexOf('New here?') !== -1, 'persist: intro stays until the first real advice replaces it');
 
+// History tab -> "Open full hand replayer" must populate the hand list
+// (v1.8.247). The button only called showScreen('hands') without rendering,
+// so on mobile — where the tab is the way in — the History screen was empty.
+(function () {
+  var recs = [7, 8].map(function (n) {
+    return {
+      v: 1, id: 'h' + n + '-hist', handNo: n, date: '2026-10-04T12:00:00.000Z', mode: 'cash',
+      sb: 5, bb: 10, ante: 0, button: 1,
+      players: [{ name: 'You', emoji: '🧑', isHero: true, stack: 1000 }],
+      heroHole: [{ r: 14, s: 0 }, { r: 13, s: 0 }],
+      timeline: [{ t: 'end', pot: 80, community: [], winners: [{ names: ['You'], amount: 80, hand: 'Pair of Kings', uncalled: false, byFold: false, potIndex: 0 }] }],
+      heroNet: 40, heroNetBB: 4, result: 'You win 80 (Pair of Kings)'
+    };
+  });
+  t.w.localStorage.setItem('ps_hands_v1', JSON.stringify(recs));
+  var histTab = t.d.querySelector('.mtab[data-tab="history"]');
+  check(!!histTab, 'history: History tab exists');
+  histTab.click();
+  var openBtn = null;
+  Array.prototype.forEach.call(t.d.getElementById('mp-body').querySelectorAll('button'), function (b) {
+    if (b.textContent.indexOf('Open full hand replayer') !== -1) openBtn = b;
+  });
+  check(!!openBtn, 'history: History tab offers "Open full hand replayer"');
+  openBtn.click();
+  check(!t.d.getElementById('screen-hands').hidden, 'history: replayer button shows the hands screen');
+  var rows = t.d.querySelectorAll('#hand-list .hrow');
+  check(rows.length === 2, 'history: replayer button populates the hand list (got ' + rows.length + ' rows)');
+  var nums = Array.prototype.map.call(rows, function (r) { return r.querySelector('.hnum').textContent; }).join(',');
+  check(nums.indexOf('Hand #7') !== -1 && nums.indexOf('Hand #8') !== -1, 'history: list shows the seeded hands (' + nums + ')');
+})();
+
 function faceUpCount(d, seat) {
   var box = d.getElementById('seat-' + seat);
   if (!box) return -1;
