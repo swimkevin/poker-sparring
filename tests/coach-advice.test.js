@@ -231,6 +231,19 @@ setTimeout(function () {
     var trapGambler = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'gambler', 'flop', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000, [], 2, 1);
     ok(trapGambler.advice === 'bet', 'nut flush vs Gambler bets for value, 0.45 stays below the 0.5 gate (got ' + trapGambler.advice + ')');
+    // Commit-call (v1.8.252): with the nuts, SPR <= 1 and a cheap call, the
+    // coach calls instead of raising — the pot is already nearly the stack.
+    // The deep-stack control raises, so the call is the SPR, not the hand.
+    var commitCall = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'lag', 'flop', 200, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 600, 600,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 700 }], 2);
+    ok(!commitCall.error, 'commit-call verdict has no error' + (commitCall.error ? ' (' + commitCall.error + ')' : ''));
+    ok(commitCall.advice === 'call', 'nut flush calls when committed at SPR <= 1 (got ' + commitCall.advice + ')');
+    ok(stripAdvice(commitCall.html).indexOf('calling costs almost nothing') !== -1, 'commit-call message names the cheap call');
+    var commitCallDeep = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'lag', 'flop', 200, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 700 }], 2);
+    ok(commitCallDeep.advice === 'raise', 'same nut flush raises with a deep stack (got ' + commitCallDeep.advice + ')');
     // Fake nuts facing a trapper's river bet: the veto prices it instead of
     // raising into the trap (v1.8.227). The old code shoved here.
     var fakeNut = postflopVerdict([{ r: 10, s: 0 }, { r: 5, s: 0 }], 'nathan', 'river', 669, 887,

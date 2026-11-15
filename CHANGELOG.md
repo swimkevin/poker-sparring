@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (100+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.252] — Lab pin: the commit-call with the nuts
+
+The commit-call branch (call instead of raising with the nuts or an overpair when SPR ≤ 1 and the call is cheap) had no pin that isolated it: the existing `bypass-control` spot is an overpair that could call on equity anyway. New lab spot `commit-call-nut-flush` — nut flush on Qs 7s 2s vs the LAG, 200 into 500, stacks 600 (SPR ~0.86) — expects `call` with the exact branch wording ("calling costs almost nothing"); without the branch the nut branch would raise. A coach-advice test pins the same spot plus the deep-stack control (same hand, 2000 stacks, raises). Lab moves 131 to 132 spots, 0 failures.
+
 ## [1.8.251] — The Coach gold dot is easier to notice
 
 The fresh-eyes designer could not verify the 0.55rem Coach-tab dot's noticeability. It is now 0.7rem — visibly larger without moving the tab layout (same position, same gold, same glow). Two source pins in the component suite cover the size. Note: the designer's other mobile fix, restoring the "Your turn" text cue in the hero bar, was measured and DROPPED — it would add ~23px to the hero bar and push every measured viewport below the 4px hero-seat clearance (margins are 7.1–23.8px), reintroducing the v1.8.215 overlap; see docs/AI-WORKFLOW.md.
