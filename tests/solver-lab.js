@@ -440,6 +440,49 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 200, pot: 245 }
     ],
     expectWord: 'Pay 200 to win 230' },
+  { name: '3bet-ako-maniac-25bb-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 220, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ] },
+  { name: '3bet-aqs-maniac-25bb-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(12, 0)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 220, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ] },
+  { name: '3bet-jj-maniac-25bb-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(11, 1), C(11, 0)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 220, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ] },
+  { name: '3bet-ako-lag-25bb-call', kind: 'facing-preflop', villain: 'lag',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 220, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ] },
+  { name: '3bet-aqo-maniac-25bb-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 220, nLive: 2, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ] },
+  { name: '3bet-kqs-rock-25bb-fold', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(13, 1), C(12, 1)], board: [], street: 'preflop',
+    potBefore: 30, bet: 90, heroStack: 220, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ],
+    expectWord: 'Pay 90 to win 120' },
   { name: '3bet-aqo-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
     potBefore: 30, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',

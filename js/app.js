@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.256';
+  var APP_VERSION = '1.8.257';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1920,21 +1920,21 @@
         var setMine2 = hero.hole[0].r === hero.hole[1].r && toCall * 15 <= effStackChips(vIdx);
         var oopEdge2 = !inPos && adjEq3 > need3 + 0.10;
         var eqCall2 = (inPos && adjEq3 > need3) || oopEdge2;
-        var call2 = effBB3 >= 40 && (setMine2 || eqCall2);
+        var call2 = (setMine2 && effBB3 >= 40) || eqCall2;
         var callMsg2;
         if (!call2)
-          callMsg2 = '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a re-raise' + (inPos ? '' : ' out of position') + '.' + (inPos && effBB3 >= 40 ? math3 : '');
+          callMsg2 = '<b>Fold</b> — ' + c.nmHtml + ' doesn\'t play well against a re-raise' + (inPos ? '' : ' out of position') + '.' + math3;
         else if (eqCall2 && !inPos)
           callMsg2 = '<b>Call</b> — ' + c.nmHtml + ' is a big favorite against ' + vName + '\'s wide re-raise range (about <b>' + pct(adjEq3) + '</b> vs <b>' + pct(need3) + '</b> needed), so the price is right even out of position. Fold to more heat.' + math3;
         else if (eqCall2)
-          callMsg2 = '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re deep. Fold to more heat.' + math3;
+          callMsg2 = '<b>Call</b> in position — ' + c.nmHtml + ' flops well and you\'re a favorite. Fold to more heat.' + math3;
         else
           callMsg2 = '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math3;
         var callLesson2 = (call2 && eqCall2 && !inPos)
           ? 'Out of position, only call a re-raise when you\'re a big favorite — a small edge isn\'t enough when you\'ll be guessing on every street.'
           : (call2 && !eqCall2)
           ? 'You can call re-raises with pairs only when ~15× the call sits behind.'
-          : 'Medium pairs and broadways shrink fast against re-raises — call only deep and in position.';
+          : 'Medium pairs and broadways shrink fast against re-raises — call only as a favorite, or deep enough to hunt three of a kind.';
         return mkVerdict(call2 ? 'call' : 'fold', call2 ? 'marginal' : 'strong', callMsg2, callLesson2);
       }
       if (isSmallPair(hero.hole)) {
@@ -1950,14 +1950,14 @@
           '<b>Fold</b> — too shallow to chase three of a kind against a re-raise. You won\'t win enough later when you hit to make this call worth it.',
           'Folding small pairs to re-raises when shallow is disciplined, not weak.');
       }
-      if (tier <= 4 && effBB3 >= 30 && ((inPos && adjEq3 > need3) || (!inPos && adjEq3 > need3 + 0.10)))
+      if (tier <= 4 && ((inPos && adjEq3 > need3) || (!inPos && adjEq3 > need3 + 0.10)))
         return mkVerdict('call', 'marginal',
           inPos
-            ? '<b>Call</b> in position — your hand flops well and you\'re deep. Re-evaluate on the flop.' + math3
+            ? '<b>Call</b> in position — your hand flops well and the price is right. Re-evaluate on the flop.' + math3
             : '<b>Call</b> — your hand is a big favorite against ' + vName + '\'s wide re-raise range (about <b>' + pct(adjEq3) + '</b> vs <b>' + pct(need3) + '</b> needed), so the price is right even out of position. Re-evaluate on the flop.' + math3,
-          'Calling re-raises with playable hands is fine when deep — out of position, only when the edge is big.');
+          'Calling re-raises with playable hands is fine when the math says you\'re ahead — out of position, only when the edge is big.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.' + (tier <= 4 && inPos && effBB3 >= 30 ? math3 : ''),
+        '<b>Fold</b> — ' + c.nmHtml + ' plays terribly against a re-raise. Tight players fold these.' + (tier <= 4 && inPos ? math3 : ''),
         'Fold hands like AJo and KQo to re-raises: when called, you\'re usually dominated.');
     }
 

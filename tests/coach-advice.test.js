@@ -335,6 +335,36 @@ setTimeout(function () {
       stripAdvice(pf3bet.html).indexOf('need 43%') !== -1,
       'facing-3bet call states pot-odds math: Pay 90 to win 120, need 43% (v1.8.159, prize figure unified v1.8.165)');
 
+    // Facing-3bet equity calls ignore the stack-depth gate (v1.8.257): an
+    // equity edge calls at any depth — only set-mining needs deep stacks.
+    // AKo vs a Maniac 3-bet at 25bb is a ~63% favorite at a 43% price, so it
+    // calls; before the fix the 40bb gate folded it. Same for AQs and JJ,
+    // and for AKo vs the LAG and AQo vs the Maniac (tier<=4 branch).
+    // liveCount 2 (not 3): with 3 live, pickVillain takes the archetype-less
+    // player 2 (bigger bet) and the hand prices against tier 3, not the
+    // named villain's 3-bet tier — the Rock control would call. liveCount 2
+    // folds player 2, so the named villain prices the hand.
+    var threeBet25 = [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 135 }
+    ];
+    var pf3ako25 = preflopVerdict([{ r: 14, s: 0 }, { r: 13, s: 1 }], 'maniac', 90, threeBet25, 2, 30, 90, 220, 220);
+    ok(pf3ako25.advice === 'call', 'facing-3bet AKo vs Maniac at 25bb calls on the equity edge (got ' + pf3ako25.advice + ')');
+    ok(stripAdvice(pf3ako25.html).indexOf('Pay 90 to win 120') !== -1,
+      'facing-3bet AKo 25bb call states the price (Pay 90 to win 120)');
+    var pf3aqs25 = preflopVerdict([{ r: 14, s: 0 }, { r: 12, s: 0 }], 'maniac', 90, threeBet25, 2, 30, 90, 220, 220);
+    ok(pf3aqs25.advice === 'call', 'facing-3bet AQs vs Maniac at 25bb calls (got ' + pf3aqs25.advice + ')');
+    var pf3jj25 = preflopVerdict([{ r: 11, s: 1 }, { r: 11, s: 0 }], 'maniac', 90, threeBet25, 2, 30, 90, 220, 220);
+    ok(pf3jj25.advice === 'call', 'facing-3bet JJ vs Maniac at 25bb calls (got ' + pf3jj25.advice + ')');
+    var pf3akoLag25 = preflopVerdict([{ r: 14, s: 0 }, { r: 13, s: 1 }], 'lag', 90, threeBet25, 2, 30, 90, 220, 220);
+    ok(pf3akoLag25.advice === 'call', 'facing-3bet AKo vs LAG at 25bb calls (got ' + pf3akoLag25.advice + ')');
+    var pf3aqo25 = preflopVerdict([{ r: 14, s: 0 }, { r: 12, s: 1 }], 'maniac', 90, threeBet25, 2, 30, 90, 220, 220);
+    ok(pf3aqo25.advice === 'call', 'facing-3bet AQo vs Maniac at 25bb calls (tier<=4 branch, got ' + pf3aqo25.advice + ')');
+    var pf3kqsRock25 = preflopVerdict([{ r: 13, s: 1 }, { r: 12, s: 1 }], 'rock', 90, threeBet25, 2, 30, 90, 220, 220);
+    ok(pf3kqsRock25.advice === 'fold', 'facing-3bet KQs vs Rock at 25bb still folds (got ' + pf3kqsRock25.advice + ')');
+    ok(stripAdvice(pf3kqsRock25.html).indexOf('Pay 90 to win 120') !== -1,
+      'facing-3bet fold states the price too (Pay 90 to win 120, v1.8.257)');
+
     // Out of position, a re-raise call needs a big edge, not just any edge (v1.8.180):
     // JJ vs a Maniac 3-bet is a 74% favorite at a 47% price out of position, so it
     // calls; the identical hand vs Rock (about 25%) still folds. The 15x set-mine

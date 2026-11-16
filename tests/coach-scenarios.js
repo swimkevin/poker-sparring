@@ -611,12 +611,17 @@ console.log('\n51. v1.8.170: facing-3bet calls respect pot odds');
     'the 3-bet implied-odds credit is halved: a 3-bettor\'s tight range pays off less and dominates more');
   // v1.8.180 widened both gates below: out of position, a 3-bet call needs
   // the equity to clear the price by 10 points, not just any edge.
+  // v1.8.257 removed the depth gates: an equity edge calls at any depth —
+  // only set-mining still needs deep stacks (40bb for tier 2, 30bb was the
+  // tier<=4 gate). Folding a 63% favorite at 25bb to a Maniac 3-bet was a
+  // leak: depth changes how much you win later, not whether the price is
+  // right now.
   ok(src.indexOf('var oopEdge2 = !inPos && adjEq3 > need3 + 0.10;') !== -1 &&
      src.indexOf('var eqCall2 = (inPos && adjEq3 > need3) || oopEdge2;') !== -1 &&
-     src.indexOf('var call2 = effBB3 >= 40 && (setMine2 || eqCall2);') !== -1,
-    'tier-2 calls need the equity or the 15x set-mining depth, not just position');
-  ok(src.indexOf('tier <= 4 && effBB3 >= 30 && ((inPos && adjEq3 > need3) || (!inPos && adjEq3 > need3 + 0.10))') !== -1,
-    'playable-hand 3-bet calls are gated on the equity clearing the price');
+     src.indexOf('var call2 = (setMine2 && effBB3 >= 40) || eqCall2;') !== -1,
+    'tier-2 equity calls ignore the depth gate — only set-mining needs 40bb');
+  ok(src.indexOf('tier <= 4 && ((inPos && adjEq3 > need3) || (!inPos && adjEq3 > need3 + 0.10))') !== -1,
+    'playable-hand 3-bet calls are gated on the equity clearing the price, at any depth');
 }
 
 console.log('\n52. v1.8.171: small pairs call when ahead of a wide range');
