@@ -582,6 +582,31 @@ var SPOTS = [
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }
     ] },
+  { name: 'bb-aa-3-limpers-60', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
+    potBefore: 45, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 60',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 10, pot: 35 }
+    ] },
+  { name: 'bb-aks-1-limper-40', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(12, 0)], board: [], street: 'preflop',
+    potBefore: 25, bet: 10, heroBet: 10, heroStack: 2000, nLive: 3, button: 6, expect: 'raise', expectWord: 'to ~ 40',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }
+    ] },
+  { name: 'bb-jj-2-limpers-50', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',
+    potBefore: 35, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 50',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
+    ] },
+  { name: 'bb-aa-no-limpers-25-30', kind: 'facing-preflop', villain: 'rock',
+    hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
+    potBefore: 15, bet: 10, heroBet: 10, heroStack: 2000, nLive: 2, button: 6, expect: 'raise', expectWord: 'no one raised',
+    timeline: [] },
   { name: '3bet-shove-rock-qq-fold', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
     potBefore: 30, bet: 3000, heroStack: 3000, villainStack: 0, nLive: 3, expect: 'fold', grossCheck: true, grossWhich: 'threeBet',

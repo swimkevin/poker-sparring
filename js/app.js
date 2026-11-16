@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.258';
+  var APP_VERSION = '1.8.259';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1820,11 +1820,18 @@
     if (ss) return ss;
 
     if (spot === 'open') {
+      var nLimp = countLimpers();
+      if (tier <= 2 && nLimp > 0) {
+        var premIsoMult = 3 + nLimp;
+        var premIsoTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * premIsoMult));
+        return mkVerdict('raise', 'strong',
+          c.nmHtml + ' — a premium, and ' + nLimp + (nLimp === 1 ? ' player' : ' players') + ' just called. <b>Raise</b> to ~<b>' + fmt(premIsoTo) + '</b> (' + premIsoMult + '× the blind) to isolate one of them and play for stacks.',
+          'Isolate players who just called with premiums: raise big, play heads-up, stack them.');
+      }
       if (tier <= 2)
         return mkVerdict('raise', 'strong',
           c.nmHtml + ' — a premium and no one raised. <b>Raise</b> to ' + fmt(Math.round(table.bb * 2.5)) + '–' + fmt(table.bb * 3) + ' (2.5–3× the blind) and build a pot while you\'re ahead.',
           'Raise premiums first-in: checking lets worse hands see free cards.');
-      var nLimp = countLimpers();
       if (nLimp > 0 && tier <= 3) {
         var isoMult = 3 + nLimp;
         var isoTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, table.bb * isoMult));

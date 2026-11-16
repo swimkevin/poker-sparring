@@ -37,7 +37,7 @@ function ok(cond, name) {
 function stripAdvice(html) {
   return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
-function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, heroStack, villainStack, button) {
+function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, heroStack, villainStack, button, heroBet) {
   var btn = button == null ? 0 : button;
   var s = d.createElement('script');
   var arch = villainId
@@ -51,7 +51,7 @@ function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, 
     'var t = window.__pfTable;',
     't.button = ' + btn + '; t.street = "preflop"; t.currentBet = ' + open + '; t.pot = 0; t.sbIdx = ' + ((btn + 1) % 8) + '; t.bbIdx = ' + ((btn + 2) % 8) + ';',
     't.players[0].hole = ' + JSON.stringify(hero) + ';',
-    't.players[0].stack = ' + (heroStack == null ? 2000 : heroStack) + '; t.players[0].bet = 0;',
+    't.players[0].stack = ' + (heroStack == null ? 2000 : heroStack) + '; t.players[0].bet = ' + (heroBet == null ? 0 : heroBet) + ';',
     't.players[1].stack = ' + (villainStack == null ? 2000 : villainStack) + '; t.players[1].bet = ' + bet1 + ';',
     't.players[2].stack = 2000; t.players[2].bet = ' + bet2 + ';',
     't.community = [];',
@@ -385,6 +385,36 @@ setTimeout(function () {
       'facing-4bet AKo 25bb call states the price (Pay 200 to win 290)');
     var pf4aqoRock25 = preflopVerdict([{ r: 14, s: 0 }, { r: 12, s: 1 }], 'rock', 200, fourBet25, 2, 200, 90, 250, 2000);
     ok(pf4aqoRock25.advice === 'fold', 'facing-4bet AQo vs Rock at 25bb still folds (got ' + pf4aqoRock25.advice + ')');
+
+    // BB premiums iso-raise over limpers (v1.8.259): the 'open' branch's
+    // tier<=2 case raised a flat 2.5-3x and ignored limpers, so BB AA with 3
+    // limpers got 25-30 instead of the 60 the limpers' money demands. The
+    // premium now uses the same (3 + nLimp)x iso sizing as the tier<=3
+    // branch. button 6 puts the hero on the BB; the 11th preflopVerdict
+    // argument sets hero bet 10 (the posted blind) so toCall is 0.
+    var limp3 = [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
+      { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 10, pot: 35 }
+    ];
+    var pfBbAa3 = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 10, limp3, 4, 10, 10, 2000, 2000, 6, 10);
+    ok(pfBbAa3.advice === 'raise', 'BB AA with 3 limpers raises (got ' + pfBbAa3.advice + ')');
+    ok(stripAdvice(pfBbAa3.html).indexOf('to ~ 60') !== -1,
+      'BB AA with 3 limpers iso-raises to ~60 (6x the blind, v1.8.259)');
+    var limp1 = [{ t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }];
+    var pfBbAks1 = preflopVerdict([{ r: 14, s: 0 }, { r: 12, s: 0 }], 'rock', 10, limp1, 3, 10, 0, 2000, 2000, 6, 10);
+    ok(pfBbAks1.advice === 'raise' && stripAdvice(pfBbAks1.html).indexOf('to ~ 40') !== -1,
+      'BB AKs with 1 limper iso-raises to ~40 (got ' + pfBbAks1.advice + ')');
+    var limp2 = [
+      { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
+      { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
+    ];
+    var pfBbJj2 = preflopVerdict([{ r: 11, s: 0 }, { r: 11, s: 1 }], 'rock', 10, limp2, 4, 10, 10, 2000, 2000, 6, 10);
+    ok(pfBbJj2.advice === 'raise' && stripAdvice(pfBbJj2.html).indexOf('to ~ 50') !== -1,
+      'BB JJ with 2 limpers iso-raises to ~50 (got ' + pfBbJj2.advice + ')');
+    var pfBbAa0 = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 10, [], 2, 0, 0, 2000, 2000, 6, 10);
+    ok(pfBbAa0.advice === 'raise' && stripAdvice(pfBbAa0.html).indexOf('no one raised') !== -1,
+      'BB AA with no limpers still raises 25-30 (got ' + pfBbAa0.advice + ')');
 
     // Out of position, a re-raise call needs a big edge, not just any edge (v1.8.180):
     // JJ vs a Maniac 3-bet is a 74% favorite at a 47% price out of position, so it
