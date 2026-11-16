@@ -429,8 +429,11 @@ console.log('\n32. v1.8.136: committed wording rewritten in plain pot-vs-stack l
 
 console.log('\n33. v1.8.137: trips and two pair are their own hand classes');
 {
-  ok(/if \(ev\.cat === 3\) return 'trips';/.test(src),
-    'handClass maps trips (cat 3) to trips, not overpair');
+  // v1.8.260: trips that are the effective nuts (top trips on an unpaired,
+  // rainbow, straight-free board) now return 'nut'; all other trips still
+  // return 'trips' — the class is still its own, never overpair.
+  ok(/if \(ev\.cat === 3\) \{\s*if \(isTripsNuts\(ev\.kickers\[0\], community\)\) return 'nut';\s*return 'trips';\s*\}/.test(src),
+    'handClass maps trips (cat 3) to trips, or to nut when it is the effective nuts');
   ok(/if \(ev\.cat === 2\) return 'twopair';/.test(src),
     'handClass maps two pair (cat 2) to twopair, not overpair');
   ok(src.indexOf("trips: 'three of a kind'") !== -1, 'trips has a plain name');

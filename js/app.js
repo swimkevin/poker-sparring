@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.259';
+  var APP_VERSION = '1.8.260';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1408,6 +1408,24 @@
     return false;
   }
 
+  function isTripsNuts(tripsRank, community) {
+    var ranks = community.map(function (c) { return c.r; });
+    var seen = {};
+    for (var i = 0; i < ranks.length; i++) {
+      if (seen[ranks[i]]) return false;
+      seen[ranks[i]] = true;
+    }
+    var suits = [0, 0, 0, 0];
+    community.forEach(function (c) { suits[c.s]++; });
+    if (suits.some(function (n) { return n >= 3; })) return false;
+    var rs = ranks.slice().sort(function (a, b) { return a - b; });
+    if (rs.indexOf(14) !== -1) rs.unshift(1);
+    for (var j = 0; j + 2 < rs.length; j++) {
+      if (rs[j + 2] - rs[j] <= 4) return false;
+    }
+    return tripsRank === Math.max.apply(null, ranks);
+  }
+
   function handClass(hole, community) {
     var d = detectDraws(hole, community);
     var ev = (hole.length + community.length >= 5) ? evaluate7(hole.concat(community)) : null;
@@ -1422,7 +1440,10 @@
     }
     if (d.flushDraw && d.oesd) return 'draw-strong';
     if (ev) {
-      if (ev.cat === 3) return 'trips';
+      if (ev.cat === 3) {
+        if (isTripsNuts(ev.kickers[0], community)) return 'nut';
+        return 'trips';
+      }
       if (ev.cat === 2) return 'twopair';
       if (ev.cat === 1) {
         var pr = ev.kickers[0];

@@ -217,6 +217,37 @@ setTimeout(function () {
     ok(!nutRaise.error, 'true-nut raise verdict has no error' + (nutRaise.error ? ' (' + nutRaise.error + ')' : ''));
     ok(nutRaise.advice === 'raise', 'true nut flush still raises for value (got ' + nutRaise.advice + ')');
     ok(nutRaise.lesson.indexOf('near-nuts') !== -1, 'true-nut raise lesson keeps the near-nuts wording');
+
+    // Trips that are the effective nuts count as the nuts (v1.8.260): top
+    // trips on an unpaired, rainbow, straight-free board — no higher set,
+    // flush or straight is possible — so the coach raises for value instead
+    // of just calling. The turn case is NOT the probe's 7-2-5-9 (a set of
+    // 9s and a 6-8 straight both beat trip 7s there — that board is a call
+    // control below); it is trip Kings on K-9-2-5, where the King is the
+    // board's top rank and no straight is possible.
+    var tripsBet = [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }];
+    var tripsNutFlop = postflopVerdict([{ r: 7, s: 1 }, { r: 7, s: 0 }], 'lag', 'flop', 250, 500,
+      [{ r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000, tripsBet, 2);
+    ok(tripsNutFlop.advice === 'raise', 'trip 7s on 7-2-5 raises for value (got ' + tripsNutFlop.advice + ')');
+    ok(stripAdvice(tripsNutFlop.html).indexOf('to ~ 750') !== -1, 'trip 7s on 7-2-5 raises to ~750 (3x)');
+    ok(tripsNutFlop.lesson.indexOf('near-nuts') !== -1, 'trips-nuts raise lesson keeps the near-nuts wording');
+    var tripsBetTurn = [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }];
+    var tripsNutTurn = postflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 0 }], 'lag', 'turn', 250, 500,
+      [{ r: 13, s: 2 }, { r: 9, s: 0 }, { r: 2, s: 3 }, { r: 5, s: 1 }], 2000, 2000, tripsBetTurn, 2);
+    ok(tripsNutTurn.advice === 'raise', 'trip Kings on K-9-2-5 raises for value (got ' + tripsNutTurn.advice + ')');
+    ok(stripAdvice(tripsNutTurn.html).indexOf('to ~ 750') !== -1, 'trip Kings on K-9-2-5 raises to ~750 (3x)');
+    var tripsLow = postflopVerdict([{ r: 2, s: 1 }, { r: 2, s: 0 }], 'lag', 'flop', 250, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 3 }], 2000, 2000, tripsBet, 2);
+    ok(tripsLow.advice === 'call', 'trip 2s on Q-7-2 still calls — a higher set is possible (got ' + tripsLow.advice + ')');
+    var tripsFlush = postflopVerdict([{ r: 7, s: 1 }, { r: 7, s: 0 }], 'lag', 'flop', 250, 500,
+      [{ r: 7, s: 2 }, { r: 2, s: 2 }, { r: 5, s: 2 }], 2000, 2000, tripsBet, 2);
+    ok(tripsFlush.advice === 'call', 'trip 7s on a 3-flush board still calls — a flush is possible (got ' + tripsFlush.advice + ')');
+    var tripsStraight = postflopVerdict([{ r: 7, s: 1 }, { r: 7, s: 0 }], 'lag', 'flop', 250, 500,
+      [{ r: 7, s: 2 }, { r: 6, s: 1 }, { r: 5, s: 3 }], 2000, 2000, tripsBet, 2);
+    ok(tripsStraight.advice === 'call', 'trip 7s on 7-6-5 still calls — a straight is possible (got ' + tripsStraight.advice + ')');
+    var tripsTurnHigh = postflopVerdict([{ r: 7, s: 1 }, { r: 7, s: 0 }], 'lag', 'turn', 250, 500,
+      [{ r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000, tripsBetTurn, 2);
+    ok(tripsTurnHigh.advice === 'call', 'trip 7s on 7-2-5-9 still calls — a set of 9s or a 6-8 straight beats it (got ' + tripsTurnHigh.advice + ')');
     // The trap branch never fired: its bluff gate was 0.6 and the Maniac
     // bluffs 0.55 (v1.8.246). Measured trap-vs-bet on this exact spot,
     // 2000 paired hands: trap +353 chips/hand (SE 11.5).
@@ -906,6 +937,20 @@ setTimeout(function () {
       ok(leakNutCallNathanSmall && leakNutCallNathanSmall.title === 'Didn\'t raise the nuts' &&
           leakNutCallNathanSmall.spot.indexOf('300') !== -1,
         'calling quads vs Nathan\'s small turn bet flags missed-value (coach raises to 300, 3x)');
+      // Trips that are the effective nuts (v1.8.260) mirror the same way:
+      // calling trip 7s on 7-2-5 vs a LAG bet flags, because the coach
+      // raises to 750 there now. Trip 2s on Q-7-2 is the control — a higher
+      // set is possible, the coach calls, so calling is not a leak.
+      var tripsFlop = [{ r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+      var bet250flop = [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }];
+      var leakTripsNutCall = postflopLeak([{ r: 7, s: 1 }, { r: 7, s: 0 }], 'lag', tripsFlop, 'flop', 500, 250, 250, bet250flop, 'call');
+      ok(leakTripsNutCall && leakTripsNutCall.title === 'Didn\'t raise the nuts' &&
+          leakTripsNutCall.spot.indexOf('750') !== -1,
+        'calling trip 7s on 7-2-5 vs a LAG bet flags missed-value (coach raises to 750, 3x, v1.8.260)');
+      var tripsLowFlop = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 3 }];
+      var leakTripsLowCall = postflopLeak([{ r: 2, s: 1 }, { r: 2, s: 0 }], 'lag', tripsLowFlop, 'flop', 500, 250, 250, bet250flop, 'call');
+      ok(!leakTripsLowCall,
+        'calling trip 2s on Q-7-2 vs a LAG bet is NOT a missed value (coach calls — a higher set is possible)');
       // Controls: the coach says call here, so calling is not a leak.
       // Commit-call: the nut flush with a 400 stack and a 100 bet — the pot
       // is nearly as big as the stack, so the coach calls. Veto: a made
