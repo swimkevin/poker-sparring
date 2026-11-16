@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.257';
+  var APP_VERSION = '1.8.258';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1998,7 +1998,7 @@
         var effBB4 = effStackBB(vIdx);
         var setMine4 = hero.hole[0].r === hero.hole[1].r && toCall * 15 <= effStackChips(vIdx);
         var eqCall4 = (inPos && eq4 > need4) || (!inPos && eq4 > need4 + 0.10);
-        if (effBB4 >= 30 && (setMine4 || eqCall4)) {
+        if ((setMine4 && effBB4 >= 30) || eqCall4) {
           if (setMine4 && !eqCall4)
             return mkVerdict('call', 'marginal',
               '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math4,

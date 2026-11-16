@@ -637,6 +637,14 @@ var SPOTS = [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
     ] },
+  { name: '4bet-maniac-ako-25bb-call', kind: 'facing-preflop', villain: 'maniac',
+    hero: [C(14, 0), C(13, 1)], board: [], street: 'preflop',
+    potBefore: 300, bet: 300, heroStack: 250, heroBet: 90, villainStack: 2000, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',
+    timeline: [
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 300, pot: 135 }
+    ] },
   { name: '4bet-maniac-jj-call', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',
     potBefore: 300, bet: 300, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true, grossWhich: 'threeBet',

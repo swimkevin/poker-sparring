@@ -365,6 +365,27 @@ setTimeout(function () {
     ok(stripAdvice(pf3kqsRock25.html).indexOf('Pay 90 to win 120') !== -1,
       'facing-3bet fold states the price too (Pay 90 to win 120, v1.8.257)');
 
+    // Facing-4bet equity calls ignore the 30bb gate (v1.8.258): same pattern
+    // as the 3-bet gate — an equity edge calls at any depth, only set-mining
+    // needs 30bb. AKo vs a Maniac 4-bet is a ~65% favorite at a 41% price
+    // with 25bb effective, so it calls; before the fix the gate folded it
+    // while its own message quoted the winning math. The helper hardcodes
+    // hero bet 0, so the spot is re-framed with the hero yet to act: 4-bet
+    // to 200, hero stack 250 (can still raise), pot 290, need 41%.
+    // liveCount 2 again so the named villain (not the archetype-less player
+    // 2) prices the hand.
+    var fourBet25 = [
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 15 },
+      { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 90, pot: 45 },
+      { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 200, pot: 135 }
+    ];
+    var pf4ako25 = preflopVerdict([{ r: 14, s: 0 }, { r: 13, s: 1 }], 'maniac', 200, fourBet25, 2, 200, 90, 250, 2000);
+    ok(pf4ako25.advice === 'call', 'facing-4bet AKo vs Maniac at 25bb calls on the equity edge (got ' + pf4ako25.advice + ')');
+    ok(stripAdvice(pf4ako25.html).indexOf('Pay 200 to win 290') !== -1,
+      'facing-4bet AKo 25bb call states the price (Pay 200 to win 290)');
+    var pf4aqoRock25 = preflopVerdict([{ r: 14, s: 0 }, { r: 12, s: 1 }], 'rock', 200, fourBet25, 2, 200, 90, 250, 2000);
+    ok(pf4aqoRock25.advice === 'fold', 'facing-4bet AQo vs Rock at 25bb still folds (got ' + pf4aqoRock25.advice + ')');
+
     // Out of position, a re-raise call needs a big edge, not just any edge (v1.8.180):
     // JJ vs a Maniac 3-bet is a 74% favorite at a 47% price out of position, so it
     // calls; the identical hand vs Rock (about 25%) still folds. The 15x set-mine
