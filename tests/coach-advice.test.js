@@ -729,7 +729,7 @@ setTimeout(function () {
     // folds to tight players as weak. The tracker now prices the villain's
     // range the same way the coach does.
     (function () {
-      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action, callerBet, amount, heroStack) {
+      function postflopLeak(hero, villainId, board, street, pot, currentBet, villainBet, timeline, action, callerBet, amount, heroStack, button) {
         var s = d.createElement('script');
         var arch = villainId
           ? 'ARCHETYPES.filter(function (a) { return a.id === "' + villainId + '"; })[0]'
@@ -740,7 +740,7 @@ setTimeout(function () {
           '  { name: "B" }, { name: "E" }, { name: "F" }, { name: "G" }, { name: "H" }',
           '], sb: 5, bb: 10, startingStack: 2000 });',
           'var t = window.__lkTable;',
-          't.button = 0; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
+          't.button = ' + (button == null ? 0 : button) + '; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
           't.players[0].hole = ' + JSON.stringify(hero) + ';',
           't.players[0].stack = ' + (heroStack == null ? 2000 : heroStack) + '; t.players[0].bet = 0;',
           't.players[1].stack = 2000; t.players[1].bet = ' + villainBet + ';',
@@ -796,34 +796,48 @@ setTimeout(function () {
         'the same weak-pair fold heads-up still flags weak-fold (range eq ~55% vs need + 10 = 35%)');
       // Leak tracker mirrors the v1.8.220 thin-value rule: checking second
       // pair on the river against a Station is a missed value bet (the coach
-      // bets 1/2 pot there), but against LAG the coach checks too, so no flag.
+      // bets 1/2 pot there). v1.8.261: the same check against a LAG flags
+      // too — the old "coach checks there too" premise was wrong: the coach
+      // bets second pair in position vs a LAG (foldy 0.40 is neither foldy
+      // nor sticky enough to matter; position is what bets). Out of position
+      // the coach checks vs a LAG, so the OOP check is the no-flag control.
       var leakMissedThin = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'station', Q7259, 'river', 500, 0, 0, [], 'check');
       ok(leakMissedThin && leakMissedThin.type === 'missed-value',
         'checking second pair on the river vs a Station flags missed-value (coach bets 1/2 pot for thin value there)');
       var leakMissedThinLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q7259, 'river', 500, 0, 0, [], 'check');
-      ok(!leakMissedThinLag,
-        'checking second pair on the river vs LAG is NOT a missed value (coach checks there too)');
+      ok(leakMissedThinLag && leakMissedThinLag.type === 'missed-value' &&
+          leakMissedThinLag.why.indexOf('Bet second pair for thin value and protection') !== -1,
+        'checking second pair on the river vs LAG flags missed-value in position (coach bets there, v1.8.261)');
+      var leakMissedThinLagOop = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q7259, 'river', 500, 0, 0, [], 'check', undefined, undefined, undefined, 1);
+      ok(!leakMissedThinLagOop,
+        'checking second pair on the river vs LAG out of position is NOT a missed value (coach checks there too)');
       // Leak tracker mirrors the v1.8.229 turn extension: checking second
       // pair on the turn against a Station is a missed value bet too (the
-      // coach bets 1/2 pot there), but against LAG the coach checks, so no flag.
+      // coach bets 1/2 pot there). Same v1.8.261 correction for the LAG:
+      // in position it flags, out of position it does not.
       var Q729 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }];
       var leakMissedThinTurn = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'station', Q729, 'turn', 500, 0, 0, [], 'check');
       ok(leakMissedThinTurn && leakMissedThinTurn.type === 'missed-value',
         'checking second pair on the turn vs a Station flags missed-value (coach bets 1/2 pot for thin value there)');
       var leakMissedThinTurnLag = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q729, 'turn', 500, 0, 0, [], 'check');
-      ok(!leakMissedThinTurnLag,
-        'checking second pair on the turn vs LAG is NOT a missed value (coach checks there too)');
+      ok(leakMissedThinTurnLag && leakMissedThinTurnLag.type === 'missed-value',
+        'checking second pair on the turn vs LAG flags missed-value in position (coach bets there, v1.8.261)');
+      var leakMissedThinTurnLagOop = postflopLeak([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', Q729, 'turn', 500, 0, 0, [], 'check', undefined, undefined, undefined, 1);
+      ok(!leakMissedThinTurnLagOop,
+        'checking second pair on the turn vs LAG out of position is NOT a missed value (coach checks there too)');
       // Leak tracker mirrors the v1.8.240 flop extension: checking second
-      // pair on the flop out of position against a Station is a missed
-      // value bet too (the coach bets 1/2 pot there), but against LAG the
-      // coach checks, so no flag.
+      // pair on the flop against a Station is a missed value bet too (the
+      // coach bets 1/2 pot there). Same v1.8.261 correction for the LAG.
       var Q72 = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }];
       var leakMissedThinFlop = postflopLeak([{ r: 7, s: 0 }, { r: 11, s: 1 }], 'station', Q72, 'flop', 500, 0, 0, [], 'check');
       ok(leakMissedThinFlop && leakMissedThinFlop.type === 'missed-value',
         'checking second pair on the flop vs a Station flags missed-value (coach bets 1/2 pot for thin value there)');
       var leakMissedThinFlopLag = postflopLeak([{ r: 7, s: 0 }, { r: 11, s: 1 }], 'lag', Q72, 'flop', 500, 0, 0, [], 'check');
-      ok(!leakMissedThinFlopLag,
-        'checking second pair on the flop vs LAG is NOT a missed value (coach checks there too)');
+      ok(leakMissedThinFlopLag && leakMissedThinFlopLag.type === 'missed-value',
+        'checking second pair on the flop vs LAG flags missed-value in position (coach bets there, v1.8.261)');
+      var leakMissedThinFlopLagOop = postflopLeak([{ r: 7, s: 0 }, { r: 11, s: 1 }], 'lag', Q72, 'flop', 500, 0, 0, [], 'check', undefined, undefined, undefined, 1);
+      ok(!leakMissedThinFlopLagOop,
+        'checking second pair on the flop vs LAG out of position is NOT a missed value (coach checks there too)');
       // Leak tracker mirrors the coach's semi-bluff branch (v1.8.231):
       // checking a strong draw (flush + straight draw) heads-up against a
       // player who folds is a missed semi-bluff — the coach bets half pot

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.260';
+  var APP_VERSION = '1.8.261';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -984,11 +984,12 @@
           'Checked the ' + street + ' with a monster (' + hole + ')',
           'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');
       }
-      if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && V && villainFoldy(V.archetype) < 0.25 &&
-          liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'secondpair') {
+      if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && V &&
+          liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'secondpair' &&
+          (positionScore(table, 0) > 0.6 || scareCardRank() || villainFoldy(V.archetype) > 0.5 || villainFoldy(V.archetype) < 0.25)) {
         return base('missed-value', 'Missed value bet',
           'Checked the ' + street + ' with second pair against ' + V.name,
-          'Second pair is usually best against a player who calls with any pair — a half-pot bet gets called by worse hands. Checking gives those chips away.');
+          'Bet second pair for thin value and protection — but keep the pot small.');
       }
       if (a === 'check' && V && villainFoldy(V.archetype) >= 0.25 &&
           liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'draw-strong') {

@@ -870,8 +870,13 @@ console.log('\n75. v1.8.229: second pair bets the turn for thin value against a 
 {
   ok(src.indexOf("if (!multiway && (inPos || scare2 || foldy > 0.5 || foldy < 0.25)) {") !== -1,
     'the thin-value clause fires on every street against a player who folds little: the turn was measured +76 vs a Station, +73 vs Nathan over 2000 seeded runouts (v1.8.229), and the flop +97/+40 over 1000 shared runouts (v1.8.240) — the street restriction is gone');
-  ok(src.indexOf("if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && V && villainFoldy(V.archetype) < 0.25") !== -1,
-    'the leak tracker mirrors the coach rule on every street too — coach and tracker cannot disagree about the same spot (v1.8.229, extended to the flop in v1.8.240)');
+  // v1.8.261: the tracker mirrors the coach's FULL bet condition (in
+  // position, scare card, or a very foldy / very sticky villain), not just
+  // the sticky-villain case — the old foldy<0.25-only flag let the tracker
+  // stay silent while the coach bet second pair in position vs a LAG.
+  ok(src.indexOf("liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'secondpair'") !== -1 &&
+     src.indexOf("(positionScore(table, 0) > 0.6 || scareCardRank() || villainFoldy(V.archetype) > 0.5 || villainFoldy(V.archetype) < 0.25)") !== -1,
+    'the leak tracker mirrors the coach rule on every street too — coach and tracker cannot disagree about the same spot (v1.8.229, extended to the flop in v1.8.240, full bet condition in v1.8.261)');
   ok(src.indexOf("'Checked the ' + street + ' with second pair against ' + V.name") !== -1,
     'the missed-value message names the street it happened on (v1.8.229)');
 }
