@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.262';
+  var APP_VERSION = '1.8.263';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2553,8 +2553,9 @@
 
     var onePairOrLess = hc === 'toppair' || hc === 'secondpair' || hc === 'weakpair' ||
       hc === 'air' || hc === 'draw-weak';
+    var strongVsOverbet = hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand';
     var tightBigBet = tell && tell.unit === 'pot' && tight > 0.6 && hc !== 'nut' &&
-      !(V && V.archetype && V.archetype.wideOverbet) &&
+      !(V && V.archetype && V.archetype.wideOverbet && strongVsOverbet) &&
       (tell.size === 'overbet' ||
         (table.street === 'river' && tell.size === 'large' && onePairOrLess));
     if (tightBigBet)

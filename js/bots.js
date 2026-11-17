@@ -13,7 +13,7 @@ var ARCHETYPES = [
     openTier: 1, openTierLate: 3, callTier: 2, threeBetTier: 1,
     aggression: 0.35, bluff: 0, stubborn: 0.85, pushTier: 2, callPushTier: 1, limp: 0.05,
     tiltProne: 0.10, rebuy: 0.50,
-    friendly: true,
+    friendly: true, wideOverbet: true,
   },
   {
     id: 'donald', name: 'Donald', emoji: '🦆',

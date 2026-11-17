@@ -601,6 +601,22 @@ setTimeout(function () {
       'range note for a tight villain names the medium bet, not a wide range');
     ok(stripAdvice(wideRock.html).indexOf('plays a wide range') === -1,
       'range note for a tight villain never claims he plays a wide range');
+
+    // Alice is a wide overbettor (v1.8.263): she overbets AA 56%, sets ~52%,
+    // two pair ~50% and KQ 39% on the turn, so the tightBigBet guard's
+    // exemption lifts only for hands that beat her overbet range. Exact
+    // enumeration (44 river cards, frequency-weighted over her tier-1
+    // overbet range): overpair AA ~64% vs a 37.5% price (call, +421 EV),
+    // top pair KQ ~13% (fold, calling loses ~392). 20-run stability:
+    // AA calls 20/20, KQ folds 20/20.
+    var aliceAA = postflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 3 }], 'alice', 'turn', 600, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
+    ok(aliceAA.advice === 'call', 'overpair calls Alice 1.5x overbet — the guard no longer folds it (got ' + aliceAA.advice + ')');
+    var aliceKQ = postflopVerdict([{ r: 13, s: 1 }, { r: 12, s: 1 }], 'alice', 'turn', 600, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
+    ok(aliceKQ.advice === 'fold', 'top pair still folds Alice 1.5x overbet — the exemption is scoped to overpair+, not one pair (got ' + aliceKQ.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);

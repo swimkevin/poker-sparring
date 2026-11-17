@@ -947,5 +947,20 @@ console.log('\n79. v1.8.239: the nut raise goes to 4x on the turn too, and its l
     'the made-hand raise lesson states its size too (v1.8.239)');
 }
 
+console.log('\n80. v1.8.263: Alice is a wide overbettor, and the guard exemption is scoped to overpair+');
+{
+  var botsSrc80 = fs.readFileSync(__dirname + '/../js/bots.js', 'utf8');
+  var aliceBlock = botsSrc80.slice(botsSrc80.indexOf("id: 'alice'"), botsSrc80.indexOf("id: 'donald'"));
+  ok(aliceBlock.indexOf('wideOverbet: true') !== -1,
+    'Alice carries wideOverbet: she overbets AA 56%, sets ~52%, two pair ~50% and KQ 39% on the turn, and her profile already says she sometimes bets bigger than the pot (v1.8.263)');
+  ok(src.indexOf("var strongVsOverbet = hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand';") !== -1,
+    'the overbet exemption is scoped to hands that beat a wide overbet range: overpair, trips, two pair, made hand (v1.8.263)');
+  ok(src.indexOf("!(V && V.archetype && V.archetype.wideOverbet && strongVsOverbet)") !== -1,
+    'the tightBigBet guard lifts only for a wide overbettor AND a strong hand: a broad exemption flips top pair KQ to a call at 70% coach-implied equity, but its true equity vs Alice\'s overbet range is ~13% — a -392 EV call (v1.8.263)');
+  ok(labSrc.indexOf("name: 'overpair-vs-alice-overbet-call'") !== -1 &&
+     labSrc.indexOf("name: 'toppair-vs-alice-overbet-fold'") !== -1,
+    'the lab pins both sides: overpair calls Alice\'s 1.5x overbet, top pair folds it (v1.8.263)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
