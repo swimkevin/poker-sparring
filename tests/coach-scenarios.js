@@ -23,6 +23,7 @@ function ok(cond, msg) {
 const fs = require('fs');
 const src = fs.readFileSync(__dirname + '/../js/app.js', 'utf8');
 const equitySrc = fs.readFileSync(__dirname + '/../js/equity.js', 'utf8');
+const labSrc = fs.readFileSync(__dirname + '/../tests/solver-lab.js', 'utf8');
 
 console.log('1. Limpers branch condition (v1.8.63 critical bug)');
 {
@@ -61,11 +62,17 @@ console.log('\n3. handClass: board pair ≠ hero pair (v1.8.62 fix)');
     'board pair without hero card → draw if drawing, else air (v1.8.152 refines v1.8.62)');
 }
 
-console.log('\n4. No multiway semi-bluffs (v1.8.62 fix)');
+console.log('\n4. No semi-bluff raise into a bet (v1.8.262 fix)');
 {
-  // Should check multiway before suggesting semi-bluff
-  ok(/\(hc === 'draw-strong' \|\| hc === 'draw'\) && legal\.canRaise && foldy > 0\.4 && !multiway &&/.test(src),
-     'semi-bluff raise requires !multiway');
+  // A semi-bluff raise needs fold equity, and the bots never fold a
+  // betting range to a 3x raise: top pair and second pair fold 0/200
+  // for all seven villains, and the paired sim loses ~385 chips/hand
+  // vs Rock's top pair (and ~478 vs a Maniac's). Draws call or fold
+  // on equity instead of raising.
+  ok(src.indexOf("if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4") === -1,
+     'the draw-raise branch is gone: no semi-bluff raise into a bet');
+  ok(!/\(hc === 'nut' \|\| hc === 'madehand' \|\| hc === 'overpair' \|\| hc === 'toppair' \|\| hc === 'trips' \|\| hc === 'twopair' \|\| anyDraw\)/.test(src),
+     'the small-bet raise no longer takes draws: only made hands raise a small bet for value');
 }
 
 console.log('\n5. Jargon-free coach');
@@ -735,12 +742,19 @@ console.log('\n62. v1.8.197: raise the near-nuts for value vs a station trapper\
     'the trapper value-raise message says why: he calls down with worse, not "take it away" (v1.8.197)');
 }
 
-console.log('\n63. v1.8.198: no semi-bluff raise into a range that just showed strength');
+console.log('\n63. v1.8.262 supersedes v1.8.198: no semi-bluff raise into a bet at all');
 {
-  ok(src.indexOf("range.label !== 'strong' && range.label !== 'polarized') {") !== -1,
-    'the draw semi-bluff raise skips strong/polarized ranges: Rock folds top pair 0/200 to a raise after betting 3/4 pot, so the generic foldy (0.8) is pure fiction there (v1.8.198)');
-  ok(src.indexOf("if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&") !== -1,
-    'the draw-raise branch still fires on wide/capped ranges: the wide-range draw still raises to 900 in the lab (v1.8.198)');
+  // v1.8.198 kept the draw-raise firing on wide/capped ranges. The
+  // v1.8.262 paired sim shows the wide-range raise loses ~385
+  // chips/hand vs Rock's top pair (and ~478 vs a Maniac's), because
+  // pairs fold 0/200 to a 3x raise for every villain — the fold
+  // equity the branch assumed does not exist in any range. The
+  // branch is deleted; the 198 strong/polarized exclusion is moot
+  // with it, and the lab spots now expect calls.
+  ok(src.indexOf("if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4") === -1,
+    'the draw-raise branch is gone, so the v1.8.198 strong/polarized exclusion goes with it (v1.8.262)');
+  ok(labSrc.indexOf("name: 'draw-mediumbet-call'") !== -1,
+    'the lab spot that pinned the 900 raise now pins a call (v1.8.262)');
 }
 
 console.log('\n64. v1.8.199: callers ahead get a calling range in the multiway dilution');
@@ -826,11 +840,9 @@ console.log('\n71. v1.8.207: an all-in re-raise is priced, not folded on stack d
 console.log('\n72. v1.8.208: a facing raise that is the whole stack says all-in');
 {
   ok(src.indexOf('var nutAllIn = nutTo >= legal.maxRaiseTo;') !== -1 &&
-     src.indexOf('var drawAllIn = drawTo >= legal.maxRaiseTo;') !== -1 &&
      src.indexOf('var tinyAllIn = tinyTo >= legal.maxRaiseTo;') !== -1,
-    'all three facing-raise branches (nuts, draw, small bet) detect when the clamped raise equals the whole stack (v1.8.208)');
+    'the two facing-raise branches (nuts, small bet) detect when the clamped raise equals the whole stack (v1.8.208; the draw branch is gone in v1.8.262)');
   ok(src.indexOf("'<b>All-in</b> to ~<b>' + fmt(nutTo) + '</b> — your whole stack, about ' + nutMult + '× their bet.") !== -1 &&
-     src.indexOf("'<b>All-in</b> to ~<b>' + fmt(drawTo) + '</b> — your whole stack, about 3× their bet:") !== -1 &&
      src.indexOf("'<b>All-in</b> to ~<b>' + fmt(tinyTo) + '</b> — your whole stack, about 3× their bet — and take it away.'") !== -1,
     'an all-in facing raise says all-in with the amount still parseable ("to ~X"), instead of the fraction-of-pot label — the same rule the leading bets got in v1.8.192 (v1.8.208)');
 }
@@ -850,8 +862,8 @@ console.log('\n73. v1.8.227: only a hand nothing can beat is the nuts');
     'the value-raise branch still raises a strong made hand for value, with the nuts wording kept for true nuts only');
   ok(src.indexOf('but a better hand is already possible on this board') !== -1,
     'the made-hand raise lesson names the vulnerability instead of calling it the nuts');
-  ok(src.indexOf("(hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)") !== -1,
-    'the small-bet raise branch takes a strong made hand, not just the nuts');
+  ok(src.indexOf("(hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair')") !== -1,
+    'the small-bet raise branch takes a strong made hand, not just the nuts (draws no longer raise a small bet either, v1.8.262)');
 }
 
 console.log('\n74. v1.8.228: the recap does not praise a win the coach was ignored for');
@@ -883,7 +895,6 @@ console.log('\n75. v1.8.229: second pair bets the turn for thin value against a 
 
 console.log('\n76. v1.8.230: the lab gross-checks four more range-priced spots, and two messages state their size');
 {
-  var labSrc = fs.readFileSync(__dirname + '/../tests/solver-lab.js', 'utf8');
   ok(labSrc.indexOf("timeline: betTimeline('turn', 350, 500), grossCheck: true") !== -1,
     'paired-draw (nut flush draw on a paired board vs Rock, seeded eq 20.2% vs a 29.2% price) is gross-checked: a future call there fails the lab (v1.8.230)');
   ok(labSrc.indexOf('pot: 1200 }], grossCheck: true') !== -1,

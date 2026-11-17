@@ -542,10 +542,10 @@ setTimeout(function () {
     ok(pfBluffBig.advice === 'fold', 'Rock 8x open, A5s folds instead of bluff 3-betting (got ' + pfBluffBig.advice + ')');
 
     // Iso raises scale with the limper count: 3bb + 1bb per limper (v1.8.174).
-    var limp3 = [1, 2, 3].map(function (p) {
+    var limpThree = [1, 2, 3].map(function (p) {
       return { t: 'action', street: 'preflop', player: p, action: 'call', bet: 10, pot: 15 };
     });
-    var pfIso3 = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 10, limp3, 8, 10, 10);
+    var pfIso3 = preflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 1 }], 'rock', 10, limpThree, 8, 10, 10);
     ok(!pfIso3.error, 'iso verdict has no error' + (pfIso3.error ? ' (' + pfIso3.error + ')' : ''));
     ok(pfIso3.advice === 'raise', '3 limpers, AA iso-raises (got ' + pfIso3.advice + ')');
     ok(stripAdvice(pfIso3.html).indexOf('to ~ 60') !== -1,
@@ -580,13 +580,23 @@ setTimeout(function () {
     ok(pf3Ctl.lesson.indexOf('207') !== -1,
       'QQ 4-bet lesson states the exact size (207) too, not just the bare 2.3x multiple (v1.8.230)');
 
+    // The semi-bluff raise is gone (v1.8.262): the nut flush draw calls
+    // instead of raising — Rock folds top pair 0/200 to a 3x raise, so
+    // raising a draw into his betting range loses ~385 chips/hand vs
+    // calling (paired N=2000).
+    var drawRock = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'rock', 'turn', 250, 500,
+      [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
+    ok(drawRock.advice === 'call', 'nut flush draw calls vs Rock medium bet (got ' + drawRock.advice + ')');
+
     // Range note respects a tight villain (v1.8.230): a medium bet from Rock
     // does not make him "wide" — the note says the bet barely narrows him
     // instead of claiming pairs, draws, and air are all in there.
-    var wideRock = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'rock', 'turn', 250, 500,
+    // (A set raises here, so the note appears in the raise message.)
+    var wideRock = postflopVerdict([{ r: 12, s: 0 }, { r: 12, s: 3 }], 'rock', 'turn', 250, 500,
       [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
-    ok(wideRock.advice === 'raise', 'nut flush draw semi-bluff raises vs Rock medium bet (got ' + wideRock.advice + ')');
+    ok(wideRock.advice === 'raise', 'set of Queens raises vs Rock medium bet (got ' + wideRock.advice + ')');
     ok(stripAdvice(wideRock.html).indexOf('bet a medium size') !== -1,
       'range note for a tight villain names the medium bet, not a wide range');
     ok(stripAdvice(wideRock.html).indexOf('plays a wide range') === -1,

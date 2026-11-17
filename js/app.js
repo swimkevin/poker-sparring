@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.261';
+  var APP_VERSION = '1.8.262';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2576,7 +2576,7 @@
     var strongShown = villainShowedStrength(vIdx);
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway && !strongShown && (!passiveTrapper || trapperValue) &&
-          (hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair' || anyDraw)) {
+          (hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair')) {
         var tinyTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
         var tinyAllIn = tinyTo >= legal.maxRaiseTo;
         if (trapperValue)
@@ -2618,18 +2618,6 @@
           ? 'With the near-nuts, raise to ~' + fmt(nutTo) + ' (' + nutMult + '× their bet): every street you don\'t build the pot costs money.'
           : 'With a strong made hand, raise for value to ~' + fmt(nutTo) + ' — but a better hand is already possible on this board, so don\'t treat it as a lock.');
     }
-    if ((hc === 'draw-strong' || hc === 'draw') && legal.canRaise && foldy > 0.4 && !multiway &&
-        range.label !== 'strong' && range.label !== 'polarized') {
-      var drawTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * 3)));
-      var drawAllIn = drawTo >= legal.maxRaiseTo;
-      return mkVerdict('raise', 'marginal',
-        (drawAllIn
-          ? '<b>All-in</b> to ~<b>' + fmt(drawTo) + '</b> — your whole stack, about 3× their bet: you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' + fmt(toCall) + '.'
-          : '<b>Raise</b> sometimes to ~<b>' + fmt(drawTo) + '</b> (~3× their bet): you win if they fold, or about ' + pct(adjEq) + ' of the time if they call. Otherwise just call ' +
-          fmt(toCall) + '.') + rangeNote,
-        '');
-    }
-
     var rp2 = tourneyRiskPremium(effBB);
     var threshold = need2 + rangeAdjust + rp2;
 

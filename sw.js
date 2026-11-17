@@ -1,4 +1,4 @@
-var PS_VERSION = '1.8.261';
+var PS_VERSION = '1.8.262';
 var CACHE_NAME = 'poker-sparring-' + PS_VERSION;
 var V = '?v=' + PS_VERSION;
 var APP_SHELL = [
