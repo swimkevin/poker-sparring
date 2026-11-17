@@ -962,5 +962,19 @@ console.log('\n80. v1.8.263: Alice is a wide overbettor, and the guard exemption
     'the lab pins both sides: overpair calls Alice\'s 1.5x overbet, top pair folds it (v1.8.263)');
 }
 
+console.log('\n81. v1.8.264: a big river bet folds one pair or less from any villain');
+{
+  ok(src.indexOf("var riverBigValue = table.street === 'river' && tell && tell.unit === 'pot' &&") !== -1 &&
+     src.indexOf("tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';") !== -1,
+    'the river big-bet fold is gated on the river, a pot-ratio of 0.7+, and one pair or less — not on the villain being tight: the Maniac bets large 100% with made hands and ~0% with air on the river, and the LAG/Amogh/Station/Rock bluff air 0-4% there (v1.8.264)');
+  ok(src.indexOf("if (tightBigBet || riverBigValue)") !== -1,
+    'the river fold joins the tight-player guard in one return, so the tight overbet and the loose river bet share the fold (v1.8.264)');
+  ok(src.indexOf('even loose players rarely bluff the river with air') !== -1,
+    'the river fold message says why it applies to loose players too, not just tight ones (v1.8.264)');
+  ok(labSrc.indexOf("name: 'thirdpair-vs-maniac-river-fold'") !== -1 &&
+     labSrc.indexOf("name: 'toppair-vs-maniac-river-fold'") !== -1,
+    'the lab pins both folds: third pair (true eq 0.0%) and top pair (~18%) vs the Maniac 0.75x river bet at a 30% price (v1.8.264)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

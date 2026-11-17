@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.263';
+  var APP_VERSION = '1.8.264';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2558,12 +2558,14 @@
       !(V && V.archetype && V.archetype.wideOverbet && strongVsOverbet) &&
       (tell.size === 'overbet' ||
         (table.street === 'river' && tell.size === 'large' && onePairOrLess));
-    if (tightBigBet)
+    var riverBigValue = table.street === 'river' && tell && tell.unit === 'pot' &&
+      tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';
+    if (tightBigBet || riverBigValue)
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — ' + (tell.size === 'overbet'
+        '<b>Fold</b> — ' + (tightBigBet && tell.size === 'overbet'
           ? 'an overbet from a tight player is almost always the nuts. Don\'t pay it off.'
-          : 'a pot-sized bet from a tight player on the river is almost always a better hand. Don\'t pay it off.') + rangeNote,
-        'Respect big bets from tight players: it\'s a better hand far more often than a bluff.');
+          : 'a big bet on the river is almost always a better hand — even loose players rarely bluff the river with air. Don\'t pay it off.') + rangeNote,
+        'Respect big bets on the river: it\'s a better hand far more often than a bluff.');
 
     if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&
         toCall <= 0.5 * pot && !polarStrong)

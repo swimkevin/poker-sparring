@@ -617,6 +617,21 @@ setTimeout(function () {
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
     ok(aliceKQ.advice === 'fold', 'top pair still folds Alice 1.5x overbet — the exemption is scoped to overpair+, not one pair (got ' + aliceKQ.advice + ')');
+
+    // A big river bet is value-heavy from every villain (v1.8.264): the
+    // Maniac bets large 100% with made hands and ~0% with air on the
+    // river, and the LAG/Amogh/Station/Rock bluff air 0-4% there — yet
+    // the coach called third pair at 41-44% vs a tier-6 pool. Frequency-
+    // weighted exact equity vs the Maniac's large-bet range: third pair
+    // 0.0%, top pair ~18% — both below the 30% price, so both fold.
+    var maniac76 = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 0 }], 'maniac', 'river', 300, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(maniac76.advice === 'fold', 'third pair folds the Maniac 0.75x river bet — the tier-pool call at 41-44% was priced against air he never bets (got ' + maniac76.advice + ')');
+    var maniacQJ = postflopVerdict([{ r: 12, s: 0 }, { r: 11, s: 0 }], 'maniac', 'river', 300, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(maniacQJ.advice === 'fold', 'top pair folds the Maniac 0.75x river bet too — its true equity vs his large-bet range is ~18% (got ' + maniacQJ.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
