@@ -996,8 +996,8 @@ console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every s
 
 console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too');
 {
-  ok(src.indexOf("(hc === 'air' || hc === 'weakpair')") !== -1,
-    'the made-range price covers air and weak pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair')") !== -1,
+    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267)');
   ok(src.indexOf('madePriced') !== -1 && src.indexOf('airPriced') === -1,
     'the flag is named for what it prices now, not just air (v1.8.266)');
   ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-fold'") !== -1 &&
@@ -1006,6 +1006,23 @@ console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too')
      labSrc.indexOf("name: 'weak-vs-lag-turn-fold'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-maniac-flop-call'") !== -1,
     'the lab pins all four weak-pair folds plus the second-pair small-bet call control (v1.8.266)');
+}
+
+console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as good as it');
+{
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair')") !== -1,
+    'the made-range price covers air, weak pair and second pair (v1.8.267)');
+  ok(src.indexOf('estimateEquityVsMadePairPlus') !== -1 &&
+     equitySrc.indexOf('pairRankOf(h, community) < heroPair') !== -1,
+    'second pair is priced against the pair-plus pool: made hands whose pair is at least as good as the hero pair — the uniform made pool is bottom-pair heavy and priced second pair at 42-49% against true 15-28% (v1.8.267)');
+  ok(src.indexOf('usually behind the top-pair hands') !== -1,
+    'the second-pair fold explains it in plain English (v1.8.267)');
+  ok(labSrc.indexOf("name: 'secondpair-vs-maniac-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-lag-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-maniac-turn-fold'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-lag-turn-fold'") !== -1 &&
+     labSrc.indexOf("name: 'facing-2ndpair-rock-fold'") !== -1,
+    'the lab pins all four second-pair folds, and the Rock spot now expects a fold: second pair 8-7 wins 19.5% vs the Rock betting range at a 33% price (v1.8.267)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

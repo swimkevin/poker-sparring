@@ -409,10 +409,10 @@ var SPOTS = [
   { name: 'archetype-range', kind: 'facing', villain: 'lag',
     hero: [C(7, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 200, 500), expectWord: 'kinds of hands', grossCheck: true },
-  { name: 'facing-2ndpair-rock-call', kind: 'facing', villain: 'rock',
+    timeline: betTimeline('turn', 200, 500), expectWord: 'made hands', grossCheck: true },
+  { name: 'facing-2ndpair-rock-fold', kind: 'facing', villain: 'rock',
     hero: [C(8, 0), C(7, 0)], board: [C(12, 2), C(7, 1), C(2, 0)], street: 'flop',
-    potBefore: 100, bet: 100, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 100, bet: 100, heroStack: 2000, nLive: 2, expect: 'fold',
     timeline: betTimeline('flop', 100, 100), grossCheck: true },
   { name: 'nut-raise-size', kind: 'facing-raise', villain: 'lag',
     hero: [C(5, 0), C(2, 1)], board: [C(9, 0), C(8, 1), C(7, 2), C(6, 3)], street: 'turn',
@@ -1056,7 +1056,23 @@ var SPOTS = [
   { name: 'secondpair-vs-maniac-flop-call', kind: 'facing', villain: 'maniac',
     hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 2), C(2, 0)],
     street: 'flop', potBefore: 400, bet: 100, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('flop', 100, 400) }
+    timeline: betTimeline('flop', 100, 400) },
+  { name: 'secondpair-vs-maniac-flop-fold', kind: 'facing', villain: 'maniac',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 2), C(2, 0)],
+    street: 'flop', potBefore: 400, bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('flop', 400, 400) },
+  { name: 'secondpair-vs-lag-flop-fold', kind: 'facing', villain: 'lag',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 2), C(2, 0)],
+    street: 'flop', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('flop', 300, 400) },
+  { name: 'secondpair-vs-maniac-turn-fold', kind: 'facing', villain: 'maniac',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 200, 400) },
+  { name: 'secondpair-vs-lag-turn-fold', kind: 'facing', villain: 'lag',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 200, 400) }
 ];
 
 setTimeout(function () {

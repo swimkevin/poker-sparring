@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.266';
+  var APP_VERSION = '1.8.267';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2504,8 +2504,10 @@
       ? blockerCredit(hero.hole, table.community) : 0;
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
     var madePriced = false;
-    if ((hc === 'air' || hc === 'weakpair') && !diluted && !narrowedByCall) {
-      var eqMade = estimateEquityVsMadeRange(hero.hole, table.community, 2000);
+    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair') && !diluted && !narrowedByCall) {
+      var eqMade = hc === 'secondpair'
+        ? estimateEquityVsMadePairPlus(hero.hole, table.community, 2000)
+        : estimateEquityVsMadeRange(hero.hole, table.community, 2000);
       if (eqMade != null) {
         adjEq = Math.max(0, Math.min(1, eqMade));
         if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
@@ -2645,7 +2647,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
+      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."

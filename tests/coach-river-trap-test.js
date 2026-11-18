@@ -219,8 +219,8 @@ setTimeout(function () {
   var secondPair = [{ r: 7, s: 0 }, { r: 13, s: 1 }];
   var ar = setupFacing('lag', secondPair, dryBoard, 2, 500, 200);
   console.log('  archetype-range says: ' + strip(ar.html).slice(0, 200));
-  ok(strip(ar.html).indexOf('kinds of hands') !== -1,
-    'archetype-range message names the kinds of hands he plays (v1.8.141)');
+  ok(strip(ar.html).indexOf('made hands') !== -1,
+    'archetype-range message names the made hands he bets — second pair is priced against them now, not the tier pool (v1.8.141, v1.8.267)');
   ok(strip(ar.html).indexOf('random hands') === -1,
     'archetype-range message never falls back to random hands (v1.8.141)');
 

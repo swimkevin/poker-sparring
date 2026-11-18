@@ -704,6 +704,28 @@ setTimeout(function () {
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
     ok(secondSmallManiac.advice === 'call', 'second pair still calls the Maniac small flop bet — true equity ~28% at a 17% price (got ' + secondSmallManiac.advice + ')');
+    // Second pair is priced vs the made hands at least as good as it (v1.8.267):
+    // the uniform made pool is bottom-pair heavy — the villain bets weak pairs
+    // only 1-6% of the time — so it priced second pair at 42-49% against true
+    // 15-28%. The pair-plus pool prices it at 16-22%, right on the truth.
+    var secondFlopManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'flop', 400, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
+    ok(secondFlopManiac.advice === 'fold', 'second pair folds the Maniac pot-sized flop bet — true equity ~28% at a 33% price (got ' + secondFlopManiac.advice + ')');
+    ok(stripAdvice(secondFlopManiac.html).indexOf('usually behind the top-pair hands') !== -1,
+      'second-pair fold says it is usually behind the top-pair hands he bets with');
+    var secondFlopLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'flop', 300, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(secondFlopLag.advice === 'fold', 'second pair folds the LAG 0.75x flop bet too — true equity ~25% at a 30% price (got ' + secondFlopLag.advice + ')');
+    var secondTurnManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'turn', 200, 400,
+      weakTurnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(secondTurnManiac.advice === 'fold', 'second pair folds the Maniac medium turn bet — true equity ~19%, not 49% (got ' + secondTurnManiac.advice + ')');
+    var secondTurnLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'turn', 200, 400,
+      weakTurnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(secondTurnLag.advice === 'fold', 'second pair folds the LAG medium turn bet too (got ' + secondTurnLag.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
