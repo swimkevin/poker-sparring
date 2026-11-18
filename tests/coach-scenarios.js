@@ -557,17 +557,19 @@ console.log('\n44. v1.8.149: preflop-to-postflop range consistency — an earlie
     'narrowed message explains the earlier big call');
 }
 
-console.log('\n45. v1.8.167: air priced vs the betting range, not the bluff rate');
+console.log('\n45. v1.8.167/265: air priced vs the made hands he bets, not the bluff rate');
 {
   ok(src.indexOf('airPriced') !== -1,
-    'facing math prices air against the betting range (made hands + bluffs)');
-  ok(src.indexOf('estimateEquityVsMadeRange(hero.hole, table.community, 500)') !== -1 &&
-     src.indexOf('estimateEquityVsAirRange(hero.hole, table.community, 500)') !== -1,
-    'air pricing runs 500 sims, not 300: 300-sim noise flipped borderline air calls (v1.8.184)');
+    'facing math prices air against the betting range');
+  ok(src.indexOf('estimateEquityVsMadeRange(hero.hole, table.community, 2000)') !== -1,
+    'air pricing runs 2,000 sims: 500-sim noise flipped borderline air calls (v1.8.184, v1.8.265)');
+  ok(src.indexOf('(1 - bluffy) * eqMade') === -1 &&
+     src.indexOf('estimateEquityVsAirRange') === -1,
+    'the bluff-rate blend is gone: the Maniac bets air 1.9-9.1% of his bets by street, not 55%, so weighting the air pool by the bluff param priced ace-high at 35-55% against true 2-15% (v1.8.265)');
   ok(equitySrc.indexOf('estimateEquityVsMadeRange') !== -1,
     'equity helper prices air vs the villain made range');
-  ok(equitySrc.indexOf('estimateEquityVsAirRange') !== -1,
-    'equity helper prices air vs the villain air range');
+  ok(equitySrc.indexOf('estimateEquityVsAirRange') === -1,
+    'the air-range helper is gone with the blend — nothing prices vs the air pool anymore (v1.8.265)');
   ok(src.indexOf('airCapped') === -1,
     'the bluff-rate cap is gone from the coach');
   ok(src.indexOf('!narrowedByCall') !== -1,
@@ -706,8 +708,8 @@ console.log('\n58. v1.8.193: the weak-fold flag is priced against the pot odds')
 
 console.log('\n59. v1.8.194: the lean call needs a real bluffer, not just a wide range');
 {
-  ok(src.indexOf("if (bluffy > 0.5 && !narrowedByCall && !diluted && adjEq > threshold - 0.10)") !== -1,
-    'the lean call fires only when the villain actually bluffs a lot: a wide range alone already gets its discount in the threshold, and the message claims bluffing (v1.8.194)');
+  ok(src.indexOf("if (bluffy > 0.5 && hc !== 'air' && !narrowedByCall && !diluted && adjEq > threshold - 0.10)") !== -1,
+    'the lean call fires only when the villain actually bluffs a lot — and never for air, whose equity is already priced against the betting range: a wide range alone already gets its discount in the threshold, and the message claims bluffing (v1.8.194, v1.8.265)');
   ok(src.indexOf("(bluffy > 0.5 || range.label === 'wide')") === -1,
     'no wide-range arm on the lean call: it called a gutshot and ace-high into Rock (bluff 0.02) on a false "bluffs a lot" (v1.8.194)');
 }
@@ -974,6 +976,22 @@ console.log('\n81. v1.8.264: a big river bet folds one pair or less from any vil
   ok(labSrc.indexOf("name: 'thirdpair-vs-maniac-river-fold'") !== -1 &&
      labSrc.indexOf("name: 'toppair-vs-maniac-river-fold'") !== -1,
     'the lab pins both folds: third pair (true eq 0.0%) and top pair (~18%) vs the Maniac 0.75x river bet at a 30% price (v1.8.264)');
+}
+
+console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every street');
+{
+  ok(src.indexOf('adjEq = Math.max(0, Math.min(1, eqMade));') !== -1 &&
+     src.indexOf('a betting range is mostly made hands, not bluffs') !== -1,
+    'air is priced vs the made range alone on every street: the Maniac bets air 9.1%/3.2%/1.9% (flop/turn/river) and the LAG 4.7%/1.5%/1.4%, while the old bluff-rate blend priced ace-high at 35-55% against true 2-15% (v1.8.265)');
+  ok(src.indexOf("bluffy > 0.5 && hc !== 'air'") !== -1,
+    'air is excluded from the bluffy marginal call: its equity is already priced against the betting range, so the bluff credit would double-count (v1.8.265)');
+  ok(labSrc.indexOf("name: 'air-vs-maniac-river-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-lag-river-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-maniac-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-lag-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-maniac-turn-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-lag-turn-fold'") !== -1,
+    'the lab pins all six air folds: ace-high vs medium bets on flop, turn and river (v1.8.265)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

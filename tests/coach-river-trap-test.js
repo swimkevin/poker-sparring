@@ -181,13 +181,13 @@ setTimeout(function () {
   var airCap = setupFacing('nathan', airTop, dryBoard, 2, 500, 150);
   console.log('  air-cap says: ' + strip(airCap.html).slice(0, 220));
   ok(airCap.advice === 'fold', 'air vs a near-never bluffer folds at a real price (got ' + airCap.advice + ', v1.8.167)');
-  ok(strip(airCap.html).indexOf('made hands and bluffs') !== -1,
-    'air message prices the betting range, not the bluff rate (v1.8.167)');
+  ok(strip(airCap.html).indexOf('mostly made hands') !== -1,
+    'air message prices the betting range, not the bluff rate (v1.8.167, v1.8.265)');
   var airCall = setupFacing('nathan', airTop, dryBoard, 2, 500, 25);
   console.log('  air-call says: ' + strip(airCall.html).slice(0, 220));
   ok(airCall.advice === 'call', 'same air calls at a tiny price — overcard equity beats the price (got ' + airCall.advice + ', v1.8.167)');
-  ok(strip(airCall.html).indexOf('made hands and bluffs') !== -1,
-    'air call message prices the betting range (v1.8.167)');
+  ok(strip(airCall.html).indexOf('mostly made hands') !== -1,
+    'air call message prices the betting range (v1.8.167, v1.8.265)');
   var pairedDrawBoard = [{ r: 12, s: 2 }, { r: 12, s: 1 }, { r: 7, s: 2 }, { r: 5, s: 3 }];
   var nutDraw = [{ r: 14, s: 2 }, { r: 2, s: 2 }];
   var pairedDraw = setupFacing('rock', nutDraw, pairedDrawBoard, 4, 500, 350);
@@ -208,9 +208,14 @@ setTimeout(function () {
   var airCapControl = setupFacing('lag', airTop, dryBoard, 2, 500, 50);
   console.log('  air-cap control says: ' + strip(airCapControl.html).slice(0, 200));
   ok(airCapControl.advice === 'call', 'same air spot vs a bluffer still calls (got ' + airCapControl.advice + ', v1.8.150)');
+  // The old call here was the bluff-rate blend, not a real price (v1.8.265):
+  // the blend priced ace-high air against the LAG's wide range and called,
+  // but its true equity vs the LAG's betting range is 4.1% at a 29% price
+  // (EV -292), so the control folds now. The narrowed spot above still
+  // folds too — the distinction v1.8.149 pins is the message, not the action.
   var narrowedControl = setupFacing('lag', airHigh, dryBoard, 2, 500, 340);
   console.log('  narrowed control says: ' + strip(narrowedControl.html).slice(0, 200));
-  ok(narrowedControl.advice === 'call', 'same spot without the earlier big call still calls (got ' + narrowedControl.advice + ', v1.8.149)');
+  ok(narrowedControl.advice === 'fold', 'same spot without the earlier big call folds too — the old call was the blend pricing air at ~26% against a 4.1% true equity (got ' + narrowedControl.advice + ', v1.8.149, v1.8.265)');
   var secondPair = [{ r: 7, s: 0 }, { r: 13, s: 1 }];
   var ar = setupFacing('lag', secondPair, dryBoard, 2, 500, 200);
   console.log('  archetype-range says: ' + strip(ar.html).slice(0, 200));

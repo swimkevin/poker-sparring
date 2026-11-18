@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.264';
+  var APP_VERSION = '1.8.265';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2505,10 +2505,9 @@
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
     var airPriced = false;
     if (hc === 'air' && !diluted && !narrowedByCall) {
-      var eqMade = estimateEquityVsMadeRange(hero.hole, table.community, 500);
-      var eqAir = estimateEquityVsAirRange(hero.hole, table.community, 500);
-      if (eqMade != null && eqAir != null) {
-        adjEq = Math.max(0, Math.min(1, (1 - bluffy) * eqMade + bluffy * eqAir));
+      var eqMade = estimateEquityVsMadeRange(hero.hole, table.community, 2000);
+      if (eqMade != null) {
+        adjEq = Math.max(0, Math.min(1, eqMade));
         if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
         airPriced = true;
       }
@@ -2636,7 +2635,7 @@
       : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     if (diluted) eqSource = eqSource + ', beating everyone still in';
-    if (airPriced) eqSource = 'simulated 500× vs the hands ' + vName + ' bets — made hands and bluffs';
+    if (airPriced) eqSource = 'simulated 2,000× vs the made hands ' + vName + ' bets — a betting range is mostly made hands, not bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' +
@@ -2646,7 +2645,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (airPriced ? ' With no pair, that counts improving and the times ' + vName + ' is bluffing.' : '');
+      (airPriced ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."
@@ -2654,7 +2653,7 @@
     if (adjEq > threshold + 0.03)
       return mkVerdict('call', 'strong', mathLine + 'The math says <b>call</b>.',
         'Calling when you win often enough is how winning poker works.');
-    if (bluffy > 0.5 && !narrowedByCall && !diluted && adjEq > threshold - 0.10)
+    if (bluffy > 0.5 && hc !== 'air' && !narrowedByCall && !diluted && adjEq > threshold - 0.10)
       return mkVerdict('call', 'marginal',
         mathLine + 'Close — but ' + vName + ' bluffs a lot, so lean <b>call</b>.',
         'Against heavy bluffers, call lighter: their range holds more air than usual.');

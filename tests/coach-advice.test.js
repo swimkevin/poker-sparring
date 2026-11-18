@@ -632,6 +632,48 @@ setTimeout(function () {
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
     ok(maniacQJ.advice === 'fold', 'top pair folds the Maniac 0.75x river bet too — its true equity vs his large-bet range is ~18% (got ' + maniacQJ.advice + ')');
+
+    // Air on the river is priced vs the made hands he bets, not the bluff
+    // rate (v1.8.265): the Maniac's river betting range is 98% made hands
+    // (air share 1.9%) and the LAG's 99% (1.4%), yet the old blend priced
+    // ace-high at 54%/35% and called a 200-into-400 bet at a 25% price.
+    // True equity is ~2% — calling loses ~185 chips.
+    var riverBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
+    var airManiac = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', 'river', 200, 400,
+      riverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(airManiac.advice === 'fold', 'ace-high folds the Maniac medium river bet — his betting range is ~98% made hands, not 55% air (got ' + airManiac.advice + ')');
+    ok(stripAdvice(airManiac.html).indexOf('mostly made hands') !== -1,
+      'river air fold says a betting range is mostly made hands');
+    var airLag = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'lag', 'river', 200, 400,
+      riverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(airLag.advice === 'fold', 'ace-high folds the LAG medium river bet too — his betting range is ~99% made hands (got ' + airLag.advice + ')');
+
+    // The same mispricing held on earlier streets (v1.8.265): the flop
+    // blend said 50.6%/40.5% vs true 14.6%/12.7%, the turn 50.0%/35.9%
+    // vs true 7.8%/6.3% — the betting range is ~91-98% made hands on
+    // every street. Flop spots use a 0.75x bet: the 0.5x flop spot still
+    // wobbles (2/25 calls at 2,000 sims on a 1-point margin), so the lab
+    // pins the wide-margin variant.
+    var flopBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }];
+    var airFlopManiac = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', 'flop', 300, 400,
+      flopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(airFlopManiac.advice === 'fold', 'ace-high folds the Maniac 0.75x flop bet — true equity ~15%, not the 51% the old blend claimed (got ' + airFlopManiac.advice + ')');
+    var airFlopLag = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'lag', 'flop', 300, 400,
+      flopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(airFlopLag.advice === 'fold', 'ace-high folds the LAG 0.75x flop bet too (got ' + airFlopLag.advice + ')');
+    var turnBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+    var airTurnManiac = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', 'turn', 200, 400,
+      turnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(airTurnManiac.advice === 'fold', 'ace-high folds the Maniac medium turn bet — true equity ~8%, not 50% (got ' + airTurnManiac.advice + ')');
+    var airTurnLag = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'lag', 'turn', 200, 400,
+      turnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(airTurnLag.advice === 'fold', 'ace-high folds the LAG medium turn bet too (got ' + airTurnLag.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);

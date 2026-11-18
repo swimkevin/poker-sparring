@@ -125,9 +125,6 @@ function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
 function estimateEquityVsMadeRange(hole, community, iters) {
   return estimateEquityVsBoardClass(hole, community, iters, true);
 }
-function estimateEquityVsAirRange(hole, community, iters) {
-  return estimateEquityVsBoardClass(hole, community, iters, false);
-}
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
@@ -557,7 +554,6 @@ if (typeof module !== 'undefined' && module.exports) {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,
-    estimateEquityVsAirRange: estimateEquityVsAirRange,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
     estimateEquityVsMadePoolMulti: estimateEquityVsMadePoolMulti,

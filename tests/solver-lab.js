@@ -1012,7 +1012,31 @@ var SPOTS = [
     hero: [C(7, 1), C(7, 0)], board: [C(7, 2), C(2, 0), C(5, 3), C(9, 1)],
     street: 'turn', potBefore: 500, bet: 250, heroStack: 2000, nLive: 2,
     expect: 'call',
-    timeline: betTimeline('turn', 250, 500) }
+    timeline: betTimeline('turn', 250, 500) },
+  { name: 'air-vs-maniac-river-fold', kind: 'facing-exact', villain: 'maniac',
+    hero: [C(14, 1), C(13, 0)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3), C(9, 1)],
+    street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('river', 200, 400) },
+  { name: 'air-vs-lag-river-fold', kind: 'facing-exact', villain: 'lag',
+    hero: [C(14, 1), C(13, 0)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3), C(9, 1)],
+    street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('river', 200, 400) },
+  { name: 'air-vs-maniac-flop-fold', kind: 'facing', villain: 'maniac',
+    hero: [C(14, 1), C(13, 0)], board: [C(12, 2), C(7, 2), C(2, 0)],
+    street: 'flop', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('flop', 300, 400) },
+  { name: 'air-vs-lag-flop-fold', kind: 'facing', villain: 'lag',
+    hero: [C(14, 1), C(13, 0)], board: [C(12, 2), C(7, 2), C(2, 0)],
+    street: 'flop', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('flop', 300, 400) },
+  { name: 'air-vs-maniac-turn-fold', kind: 'facing', villain: 'maniac',
+    hero: [C(14, 1), C(13, 0)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 200, 400) },
+  { name: 'air-vs-lag-turn-fold', kind: 'facing', villain: 'lag',
+    hero: [C(14, 1), C(13, 0)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 200, 400) }
 ];
 
 setTimeout(function () {
