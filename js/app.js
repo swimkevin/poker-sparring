@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.267';
+  var APP_VERSION = '1.8.268';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -946,10 +946,21 @@
       }
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
-        if (eq < need - 0.12) {
+        var chaseEq = eq;
+        if (V && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair') && liveOpponents().length < 2) {
+          var rangeEqTierL = (vRange && vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) ? 2 : (vRange && vRange.label === 'strong' ? 3 : 0);
+          var narrowedL = !rangeEqTierL && villainCalledBig(table.players.indexOf(V));
+          if (!narrowedL) {
+            var eqMadeL = hc === 'secondpair'
+              ? estimateEquityVsMadePairPlus(hero.hole, table.community, 2000)
+              : estimateEquityVsMadeRange(hero.hole, table.community, 2000);
+            if (eqMadeL != null) chaseEq = eqMadeL;
+          }
+        }
+        if (chaseEq < need - 0.12) {
           return base('bad-chase', 'Chasing without the odds',
-            'Called ' + UI.fmt(legal.callAmount) + ' but only win about ' + Math.round(eq * 100) + ' out of 100 here',
-            'You paid ' + UI.fmt(legal.callAmount) + ' but this hand only wins about ' + Math.round(eq * 100) + ' times out of 100. That\'s not often enough to make the call worth it. It\'s tempting to chase, but only call when you\'re likely enough to win.');
+            'Called ' + UI.fmt(legal.callAmount) + ' but only win about ' + Math.round(chaseEq * 100) + ' out of 100 here',
+            'You paid ' + UI.fmt(legal.callAmount) + ' but this hand only wins about ' + Math.round(chaseEq * 100) + ' times out of 100. That\'s not often enough to make the call worth it. It\'s tempting to chase, but only call when you\'re likely enough to win.');
         }
       }
       if (a === 'call' && legal.toCall > 0 && legal.canRaise && V &&

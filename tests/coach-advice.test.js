@@ -899,7 +899,19 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 150, pot: 350 }], 'call');
       ok(leakBad && leakBad.type === 'bad-chase',
         'J9 overcards calling Rock\'s turn bet flags bad-chase (range eq ~6% vs 30% need; random eq ~30% hid it)');
+      // Leak tracker mirrors the made-range price (v1.8.268): the coach folds
+      // air and weak pair at medium bets, but the tracker priced the call
+      // against the tier pool (35-50% for air) and stayed silent. The tracker
+      // now prices the same bad calls against the made hands he bets.
+      var leakAirManiac = postflopLeak([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', Q725, 'turn', 400, 200, 200,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
+      ok(leakAirManiac && leakAirManiac.type === 'bad-chase',
+        'ace-high calling Maniac\'s medium turn bet flags bad-chase (made eq ~5% vs 25% need; tier eq ~40% hid it)');
       var Q7259 = Q725.concat([{ r: 9, s: 1 }]);
+      var leakWeakRiver = postflopLeak([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', Q7259, 'river', 400, 200, 200,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
+      ok(leakWeakRiver && leakWeakRiver.type === 'bad-chase',
+        'weak pair calling Maniac\'s medium river bet flags bad-chase (made eq ~5% vs 25% need; tier eq hid it)');
       // Alice opens the tightest range (openTier 1), so her capped small bet
       // prices second pair at ~22% vs a 20% need: below the need + 10 flag
       // line (30%), so folding is correct, no flag. Rock opens tier 2, so

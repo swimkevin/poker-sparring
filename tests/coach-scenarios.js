@@ -1025,5 +1025,15 @@ console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as
     'the lab pins all four second-pair folds, and the Rock spot now expects a fold: second pair 8-7 wins 19.5% vs the Rock betting range at a 33% price (v1.8.267)');
 }
 
+console.log('\n85. v1.8.268: the leak tracker prices bad-chase calls the way the coach does');
+{
+  ok(src.indexOf('var chaseEq = eq;') !== -1 &&
+     src.indexOf('estimateEquityVsMadePairPlus(hero.hole, table.community, 2000)') !== -1,
+    'bad-chase is priced against the made hands he bets for air, weak pair and second pair — the tier pool priced ace-high at ~40% and stayed silent on calls the coach folds (v1.8.268)');
+  ok(src.indexOf('liveOpponents().length < 2') !== -1 &&
+     src.indexOf('villainCalledBig(table.players.indexOf(V))') !== -1,
+    'the tracker mirror applies only heads-up and not when the villain called big earlier, matching the coach pricing conditions (v1.8.268)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
