@@ -726,6 +726,28 @@ setTimeout(function () {
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(secondTurnLag.advice === 'fold', 'second pair folds the LAG medium turn bet too (got ' + secondTurnLag.advice + ')');
+    // Weak pair is priced vs the pair-plus pool too (v1.8.269): handClass
+    // only knows top/second/bottom, so a middle pair like 7s on a Q-9-7
+    // river is 'weakpair' and the uniform made pool priced it at ~40% —
+    // it beats every 2x/5x pair in the pool, but the villain never bets
+    // those on the river. The pair-plus pool prices it at ~3%.
+    var riverBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 0 }];
+    var weakRiverManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'river', 200, 400,
+      riverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(weakRiverManiac.advice === 'fold', 'middle weak pair folds the Maniac medium river bet — true equity ~16% at a 25% price, not ~40% (got ' + weakRiverManiac.advice + ')');
+    var weakRiverLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'river', 100, 400,
+      riverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
+    ok(weakRiverLag.advice === 'fold', 'middle weak pair folds the LAG small river bet too — true equity ~9% at a 17% price (got ' + weakRiverLag.advice + ')');
+    var weakRiverRock = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'rock', 'river', 100, 400,
+      riverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
+    ok(weakRiverRock.advice === 'fold', 'middle weak pair folds the Rock small river bet too — true equity ~1% (got ' + weakRiverRock.advice + ')');
+    var weakRiverBottom = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'river', 200, 400,
+      riverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(weakRiverBottom.advice === 'fold', 'bottom pair still folds the Maniac medium river bet — the pair-plus pool is the same pool for the bottom pair (got ' + weakRiverBottom.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
@@ -912,6 +934,10 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
       ok(leakWeakRiver && leakWeakRiver.type === 'bad-chase',
         'weak pair calling Maniac\'s medium river bet flags bad-chase (made eq ~5% vs 25% need; tier eq hid it)');
+      var leakWeakRiverMiddle = postflopLeak([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', Q7259, 'river', 400, 200, 200,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
+      ok(leakWeakRiverMiddle && leakWeakRiverMiddle.type === 'bad-chase',
+        'middle weak pair calling Maniac\'s medium river bet flags bad-chase (pair-plus eq ~3% vs 25% need; uniform made eq ~40% hid it, v1.8.269)');
       // Alice opens the tightest range (openTier 1), so her capped small bet
       // prices second pair at ~22% vs a 20% need: below the need + 10 flag
       // line (30%), so folding is correct, no flag. Rock opens tier 2, so

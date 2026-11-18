@@ -1072,7 +1072,23 @@ var SPOTS = [
   { name: 'secondpair-vs-lag-turn-fold', kind: 'facing', villain: 'lag',
     hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
     street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
-    timeline: betTimeline('turn', 200, 400) }
+    timeline: betTimeline('turn', 200, 400) },
+  { name: 'weakpair-river-vs-maniac-fold', kind: 'facing', villain: 'maniac',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
+    street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('river', 200, 400) },
+  { name: 'weakpair-river-vs-lag-fold', kind: 'facing', villain: 'lag',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
+    street: 'river', potBefore: 400, bet: 100, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('river', 100, 400) },
+  { name: 'weakpair-river-vs-rock-fold', kind: 'facing', villain: 'rock',
+    hero: [C(7, 0), C(6, 3)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
+    street: 'river', potBefore: 400, bet: 100, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('river', 100, 400) },
+  { name: 'weakpair-river-bottom-control', kind: 'facing', villain: 'maniac',
+    hero: [C(2, 1), C(6, 0)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
+    street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('river', 200, 400) }
 ];
 
 setTimeout(function () {

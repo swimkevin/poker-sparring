@@ -1035,5 +1035,17 @@ console.log('\n85. v1.8.268: the leak tracker prices bad-chase calls the way the
     'the tracker mirror applies only heads-up and not when the villain called big earlier, matching the coach pricing conditions (v1.8.268)');
 }
 
+console.log('\n86. v1.8.269: weak pair is priced vs the pair-plus pool too');
+{
+  ok(src.indexOf("var eqMade = hc === 'air'") !== -1 &&
+     equitySrc.indexOf('function estimateEquityVsMadePairPlus') !== -1,
+    'only air still uses the uniform made pool: weak pair and second pair both use the pair-plus pool, since handClass calls a middle pair weak pair and the uniform pool priced it at ~40% on the river (v1.8.269)');
+  ok(labSrc.indexOf("name: 'weakpair-river-vs-maniac-fold'") !== -1 &&
+     labSrc.indexOf("name: 'weakpair-river-vs-lag-fold'") !== -1 &&
+     labSrc.indexOf("name: 'weakpair-river-vs-rock-fold'") !== -1 &&
+     labSrc.indexOf("name: 'weakpair-river-bottom-control'") !== -1,
+    'the lab pins the three middle-pair river folds plus the bottom-pair control, which is unchanged because the pair-plus pool is the same pool for the bottom pair (v1.8.269)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.268';
+  var APP_VERSION = '1.8.269';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -951,9 +951,9 @@
           var rangeEqTierL = (vRange && vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) ? 2 : (vRange && vRange.label === 'strong' ? 3 : 0);
           var narrowedL = !rangeEqTierL && villainCalledBig(table.players.indexOf(V));
           if (!narrowedL) {
-            var eqMadeL = hc === 'secondpair'
-              ? estimateEquityVsMadePairPlus(hero.hole, table.community, 2000)
-              : estimateEquityVsMadeRange(hero.hole, table.community, 2000);
+            var eqMadeL = hc === 'air'
+              ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
+              : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
             if (eqMadeL != null) chaseEq = eqMadeL;
           }
         }
@@ -2516,9 +2516,9 @@
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
     var madePriced = false;
     if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair') && !diluted && !narrowedByCall) {
-      var eqMade = hc === 'secondpair'
-        ? estimateEquityVsMadePairPlus(hero.hole, table.community, 2000)
-        : estimateEquityVsMadeRange(hero.hole, table.community, 2000);
+      var eqMade = hc === 'air'
+        ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
+        : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
       if (eqMade != null) {
         adjEq = Math.max(0, Math.min(1, eqMade));
         if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
