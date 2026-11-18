@@ -674,6 +674,36 @@ setTimeout(function () {
       turnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(airTurnLag.advice === 'fold', 'ace-high folds the LAG medium turn bet too (got ' + airTurnLag.advice + ')');
+
+    // Weak pair is priced vs the made hands he bets too (v1.8.266): the tier
+    // pool priced a pair of 2s at 36-50% against true 11-23%, calling medium
+    // bets at 25-33% prices. The made range prices it at 12-19% — and the
+    // bluffy marginal call no longer fires for it, since its equity is
+    // already priced against the betting range.
+    var weakFlopBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }];
+    var weakFlopManiac = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'flop', 300, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(weakFlopManiac.advice === 'fold', 'weak pair folds the Maniac 0.75x flop bet — true equity ~23%, not the 36% the tier pool claimed (got ' + weakFlopManiac.advice + ')');
+    ok(stripAdvice(weakFlopManiac.html).indexOf('mostly made hands') !== -1,
+      'weak-pair fold says a betting range is mostly made hands');
+    var weakFlopLag = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'lag', 'flop', 200, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(weakFlopLag.advice === 'fold', 'weak pair folds the LAG medium flop bet too — true equity ~21% at a 25% price (got ' + weakFlopLag.advice + ')');
+    var weakTurnBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+    var weakTurnManiac = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'turn', 200, 400,
+      weakTurnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(weakTurnManiac.advice === 'fold', 'weak pair folds the Maniac medium turn bet — true equity ~13%, not 50% (got ' + weakTurnManiac.advice + ')');
+    var weakTurnLag = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'lag', 'turn', 200, 400,
+      weakTurnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(weakTurnLag.advice === 'fold', 'weak pair folds the LAG medium turn bet too (got ' + weakTurnLag.advice + ')');
+    var secondSmallManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'flop', 100, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
+    ok(secondSmallManiac.advice === 'call', 'second pair still calls the Maniac small flop bet — true equity ~28% at a 17% price (got ' + secondSmallManiac.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
