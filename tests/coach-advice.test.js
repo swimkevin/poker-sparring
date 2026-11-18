@@ -618,20 +618,22 @@ setTimeout(function () {
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
     ok(aliceKQ.advice === 'fold', 'top pair still folds Alice 1.5x overbet — the exemption is scoped to overpair+, not one pair (got ' + aliceKQ.advice + ')');
 
-    // A big river bet is value-heavy from every villain (v1.8.264): the
-    // Maniac bets large 100% with made hands and ~0% with air on the
-    // river, and the LAG/Amogh/Station/Rock bluff air 0-4% there — yet
-    // the coach called third pair at 41-44% vs a tier-6 pool. Frequency-
-    // weighted exact equity vs the Maniac's large-bet range: third pair
-    // 0.0%, top pair ~18% — both below the 30% price, so both fold.
+    // A big river bet is NOT value-only heads-up (v1.8.270 corrects v1.8.264):
+    // the v1.8.264 veto rested on a 22-holding sample that omitted the
+    // worse-pair mass, so it quoted third pair 0.0% and top pair ~18% vs
+    // the Maniac's large-bet range. Full 990-holding enumeration of the
+    // bot's own bet rule, heads-up, gives third pair 38% (31% even with
+    // the bluff mass removed) and top pair 76% (74% value-only) — both
+    // clear the 30% price, so both call. The veto now stands down for a
+    // lone river bet priced against the betting range.
     var maniac76 = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 0 }], 'maniac', 'river', 300, 400,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
-    ok(maniac76.advice === 'fold', 'third pair folds the Maniac 0.75x river bet — the tier-pool call at 41-44% was priced against air he never bets (got ' + maniac76.advice + ')');
+    ok(maniac76.advice === 'call', 'third pair calls the Maniac 0.75x river bet — the betting range is 38% weak pairs and bluffs, not the 0% the 22-holding sample claimed (got ' + maniac76.advice + ')');
     var maniacQJ = postflopVerdict([{ r: 12, s: 0 }, { r: 11, s: 0 }], 'maniac', 'river', 300, 400,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
-    ok(maniacQJ.advice === 'fold', 'top pair folds the Maniac 0.75x river bet too — its true equity vs his large-bet range is ~18% (got ' + maniacQJ.advice + ')');
+    ok(maniacQJ.advice === 'call', 'top pair calls the Maniac 0.75x river bet too — 76% vs a 30% price, 74% even with the bluffs removed (got ' + maniacQJ.advice + ')');
 
     // Air on the river is priced vs the made hands he bets, not the bluff
     // rate (v1.8.265): the Maniac's river betting range is 98% made hands
@@ -726,28 +728,66 @@ setTimeout(function () {
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(secondTurnLag.advice === 'fold', 'second pair folds the LAG medium turn bet too (got ' + secondTurnLag.advice + ')');
-    // Weak pair is priced vs the pair-plus pool too (v1.8.269): handClass
-    // only knows top/second/bottom, so a middle pair like 7s on a Q-9-7
-    // river is 'weakpair' and the uniform made pool priced it at ~40% —
-    // it beats every 2x/5x pair in the pool, but the villain never bets
-    // those on the river. The pair-plus pool prices it at ~3%.
-    var riverBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 0 }];
+    // Weak pair is priced vs the pair-plus pool too (v1.8.269, corrected in
+    // v1.8.270): handClass only knows top/second/bottom, so a middle pair
+    // like 7s on a Q-9-7 river is 'weakpair' and the uniform made pool
+    // priced it at ~40% — it beats every 2x/5x pair in the pool, but the
+    // villain never bets those on the river. The pair-plus pool prices it
+    // at ~3% against the FOUR-player truth; heads-up the villain bets far
+    // wider, so the betting-range price is 38%/30%/6% vs Maniac/LAG/Rock
+    // and the loose-villain calls below are the correct advice (v1.8.270).
+    var weakRiverBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 0 }];
     var weakRiverManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'river', 200, 400,
-      riverBoard, 2000, 2000,
+      weakRiverBoard, 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(weakRiverManiac.advice === 'fold', 'middle weak pair folds the Maniac medium river bet — true equity ~16% at a 25% price, not ~40% (got ' + weakRiverManiac.advice + ')');
+    ok(weakRiverManiac.advice === 'call', 'middle weak pair calls the Maniac medium river bet — heads-up equity is 38% at a 25% price, not the 16% the four-player truth claimed (got ' + weakRiverManiac.advice + ')');
     var weakRiverLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'river', 100, 400,
-      riverBoard, 2000, 2000,
+      weakRiverBoard, 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
-    ok(weakRiverLag.advice === 'fold', 'middle weak pair folds the LAG small river bet too — true equity ~9% at a 17% price (got ' + weakRiverLag.advice + ')');
+    ok(weakRiverLag.advice === 'call', 'middle weak pair calls the LAG small river bet too — heads-up equity is 30% at a 17% price, not 9% (got ' + weakRiverLag.advice + ')');
     var weakRiverRock = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'rock', 'river', 100, 400,
-      riverBoard, 2000, 2000,
+      weakRiverBoard, 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
-    ok(weakRiverRock.advice === 'fold', 'middle weak pair folds the Rock small river bet too — true equity ~1% (got ' + weakRiverRock.advice + ')');
+    ok(weakRiverRock.advice === 'fold', 'middle weak pair folds the Rock small river bet too — true equity ~6% heads-up (got ' + weakRiverRock.advice + ')');
     var weakRiverBottom = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'river', 200, 400,
-      riverBoard, 2000, 2000,
+      weakRiverBoard, 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(weakRiverBottom.advice === 'fold', 'bottom pair still folds the Maniac medium river bet — the pair-plus pool is the same pool for the bottom pair (got ' + weakRiverBottom.advice + ')');
+
+    // River one-pair hands are priced vs the villain's actual betting range
+    // (v1.8.270): the bot's river bet line runs on equity vs the LIVE
+    // opponents, so heads-up he bets far wider than the four-player truth
+    // probe 7 measured — second pair 7x wins 38%/30%/6% vs Maniac/LAG/Rock
+    // heads-up (not 16%/9%/1%), top pair QJ 76%/74%/64% (not 46%/34%/7%).
+    // The pair-plus pool understated loose villains and the big-bet veto
+    // over-folded top pair; the analytic price fixes both. Note 7x is
+    // 'weakpair' in handClass (third board rank), not 'secondpair'.
+    var riverBetManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'river', 200, 400,
+      weakRiverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(riverBetManiac.advice === 'call', 'second pair calls the Maniac medium river bet — the betting range is 38% weak pairs and bluffs, not the 5% the pair-plus pool claimed (got ' + riverBetManiac.advice + ')');
+    ok(stripAdvice(riverBetManiac.html).indexOf('weighted by how often he bets it') !== -1,
+      'betting-range call quotes the weighted betting-range price');
+    var riverBetLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'river', 200, 400,
+      weakRiverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(riverBetLag.advice === 'call', 'second pair calls the LAG medium river bet too — 30% vs a 25% price (got ' + riverBetLag.advice + ')');
+    var riverBetRock = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'rock', 'river', 200, 400,
+      weakRiverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(riverBetRock.advice === 'fold', 'second pair still folds the Rock medium river bet — 6% vs a 25% price (got ' + riverBetRock.advice + ')');
+    var riverTopManiac = postflopVerdict([{ r: 12, s: 0 }, { r: 11, s: 0 }], 'maniac', 'river', 300, 400,
+      weakRiverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(riverTopManiac.advice === 'call', 'top pair calls the Maniac 0.75x river bet — the lone-river-bet veto no longer folds a 76% hand (got ' + riverTopManiac.advice + ')');
+    var riverTopRock = postflopVerdict([{ r: 12, s: 0 }, { r: 11, s: 0 }], 'rock', 'river', 300, 400,
+      weakRiverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(riverTopRock.advice === 'call', 'top pair calls the Rock 0.75x river bet too — heads-up he bets every top pair, so 64% clears the 30% price (got ' + riverTopRock.advice + ')');
+    var riverOverRock = postflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 3 }], 'rock', 'river', 300, 400,
+      weakRiverBoard, 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+    ok(riverOverRock.advice === 'call', 'overpair calls the Rock 0.75x river bet — 70% vs a 30% price (got ' + riverOverRock.advice + ')');
     var wideLag = postflopVerdict([{ r: 9, s: 0 }, { r: 3, s: 1 }], 'lag', 'turn', 0, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 9, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);

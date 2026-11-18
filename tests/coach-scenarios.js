@@ -969,13 +969,13 @@ console.log('\n81. v1.8.264: a big river bet folds one pair or less from any vil
   ok(src.indexOf("var riverBigValue = table.street === 'river' && tell && tell.unit === 'pot' &&") !== -1 &&
      src.indexOf("tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';") !== -1,
     'the river big-bet fold is gated on the river, a pot-ratio of 0.7+, and one pair or less — not on the villain being tight: the Maniac bets large 100% with made hands and ~0% with air on the river, and the LAG/Amogh/Station/Rock bluff air 0-4% there (v1.8.264)');
-  ok(src.indexOf("if (tightBigBet || riverBigValue)") !== -1,
-    'the river fold joins the tight-player guard in one return, so the tight overbet and the loose river bet share the fold (v1.8.264)');
+  ok(src.indexOf("if ((tightBigBet || riverBigValue) && !loneRiverPriced)") !== -1,
+    'the river fold joins the tight-player guard in one return, but stands down for a lone river bet priced against the betting range: heads-up the Maniac bets every top pair, so a 0.75x bet is not value-only (v1.8.270 corrects the v1.8.264 veto, whose ~18% came from a 22-holding sample that omitted the worse-pair mass)');
   ok(src.indexOf('even loose players rarely bluff the river with air') !== -1,
     'the river fold message says why it applies to loose players too, not just tight ones (v1.8.264)');
-  ok(labSrc.indexOf("name: 'thirdpair-vs-maniac-river-fold'") !== -1 &&
-     labSrc.indexOf("name: 'toppair-vs-maniac-river-fold'") !== -1,
-    'the lab pins both folds: third pair (true eq 0.0%) and top pair (~18%) vs the Maniac 0.75x river bet at a 30% price (v1.8.264)');
+  ok(labSrc.indexOf("name: 'thirdpair-vs-maniac-river-call'") !== -1 &&
+     labSrc.indexOf("name: 'toppair-vs-maniac-river-call'") !== -1,
+    'the lab pins both calls: third pair (38% heads-up) and top pair (76%) vs the Maniac 0.75x river bet at a 30% price (v1.8.270 corrects v1.8.264)');
 }
 
 console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every street');
@@ -1037,14 +1037,32 @@ console.log('\n85. v1.8.268: the leak tracker prices bad-chase calls the way the
 
 console.log('\n86. v1.8.269: weak pair is priced vs the pair-plus pool too');
 {
-  ok(src.indexOf("var eqMade = hc === 'air'") !== -1 &&
+  ok(src.indexOf("eqMade = hc === 'air'") !== -1 &&
      equitySrc.indexOf('function estimateEquityVsMadePairPlus') !== -1,
     'only air still uses the uniform made pool: weak pair and second pair both use the pair-plus pool, since handClass calls a middle pair weak pair and the uniform pool priced it at ~40% on the river (v1.8.269)');
-  ok(labSrc.indexOf("name: 'weakpair-river-vs-maniac-fold'") !== -1 &&
-     labSrc.indexOf("name: 'weakpair-river-vs-lag-fold'") !== -1 &&
+  ok(labSrc.indexOf("name: 'weakpair-river-vs-maniac-call'") !== -1 &&
+     labSrc.indexOf("name: 'weakpair-river-vs-lag-call'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-river-vs-rock-fold'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-river-bottom-control'") !== -1,
-    'the lab pins the three middle-pair river folds plus the bottom-pair control, which is unchanged because the pair-plus pool is the same pool for the bottom pair (v1.8.269)');
+    'the lab pins the three middle-pair river spots plus the bottom-pair control: the Maniac/LAG calls are corrected to calls in v1.8.270 (heads-up truth 38%/30%), the Rock fold and bottom-pair control are unchanged (v1.8.269, v1.8.270)');
+}
+
+console.log('\n87. v1.8.270: river one-pair hands are priced vs the betting range');
+{
+  ok(equitySrc.indexOf('function estimateEquityVsBettingRange') !== -1 &&
+     src.indexOf('estimateEquityVsBettingRange(hero.hole, table.community,') !== -1,
+    'river one-pair hands are priced by applying the bot\'s own bet rule to every holding, exactly enumerated — the four-player truth probe 7 measured understated every loose-villain range heads-up (QJ 46% vs 76%, KK 55% vs 79%) (v1.8.270)');
+  ok(src.indexOf("['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1") !== -1 &&
+     src.indexOf('!V.archetype.neverRaise') !== -1,
+    'the analytic price applies only to generic-rule villains: Alice/Amogh/Donald/Nathan have custom river logic and Rohan/Station never raise, so their river bets are not the generic rule (v1.8.270)');
+  ok(src.indexOf('var loneRiverPriced = riverBetPriced') !== -1 &&
+     src.indexOf('villainFirstRiverAggro(vIdx) && adjEq > need2') !== -1,
+    'the big-bet veto stands down only for a lone river bet whose betting-range price clears need — a turn bet before the river bet keeps the veto (v1.8.270)');
+  ok(src.indexOf('bluffy <= 0.55 && !riverBetPriced') !== -1,
+    'the +0.03 river prior is zeroed for betting-range-priced spots: the under-bluffing is already in the price, and keeping it kept second pair vs LAG 200 a fold (v1.8.270)');
+  ok(labSrc.indexOf("name: 'toppair-river-vs-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'overpair-river-vs-rock-call'") !== -1,
+    'the lab pins top pair and overpair calls vs the Rock 0.75x river bet: heads-up he bets every top pair, so 64%/70% clear the 30% price (v1.8.270)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

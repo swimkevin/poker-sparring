@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.269';
+  var APP_VERSION = '1.8.270';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2515,10 +2515,23 @@
       ? blockerCredit(hero.hole, table.community) : 0;
     if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
     var madePriced = false;
-    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair') && !diluted && !narrowedByCall) {
-      var eqMade = hc === 'air'
-        ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
-        : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
+    var riverBetPriced = false;
+    var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
+      ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') && !diluted && !narrowedByCall) {
+      var eqMade = null;
+      if (table.street === 'river' && liveOpponents().length === 1 &&
+          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') && genericBettor) {
+        var vAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+        eqMade = estimateEquityVsBettingRange(hero.hole, table.community,
+          vAggr, villainBluffy(V.archetype), 1);
+        if (eqMade != null) riverBetPriced = true;
+      }
+      if (eqMade == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair')) {
+        eqMade = hc === 'air'
+          ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
+          : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
+      }
       if (eqMade != null) {
         adjEq = Math.max(0, Math.min(1, eqMade));
         if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
@@ -2572,7 +2585,9 @@
         (table.street === 'river' && tell.size === 'large' && onePairOrLess));
     var riverBigValue = table.street === 'river' && tell && tell.unit === 'pot' &&
       tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';
-    if (tightBigBet || riverBigValue)
+    var loneRiverPriced = riverBetPriced && table.street === 'river' &&
+      villainFirstRiverAggro(vIdx) && adjEq > need2;
+    if ((tightBigBet || riverBigValue) && !loneRiverPriced)
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + (tightBigBet && tell.size === 'overbet'
           ? 'an overbet from a tight player is almost always the nuts. Don\'t pay it off.'
@@ -2636,7 +2651,7 @@
     var rp2 = tourneyRiskPremium(effBB);
     var threshold = need2 + rangeAdjust + rp2;
 
-    var riverPrior = (table.street === 'river' && bluffy <= 0.55) ? 0.03 : 0;
+    var riverPrior = (table.street === 'river' && bluffy <= 0.55 && !riverBetPriced) ? 0.03 : 0;
     threshold += riverPrior;
 
     var strongAdj = rangeAdjust > 0.005;
@@ -2648,7 +2663,8 @@
       : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     if (diluted) eqSource = eqSource + ', beating everyone still in';
-    if (madePriced) eqSource = 'simulated 2,000× vs the made hands ' + vName + ' bets — a betting range is mostly made hands, not bluffs';
+    if (riverBetPriced) eqSource = 'against every hand ' + vName + ' bets on the river, weighted by how often he bets it';
+    else if (madePriced) eqSource = 'simulated 2,000× vs the made hands ' + vName + ' bets — a betting range is mostly made hands, not bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
       'need <b>' + pct(need2) + '</b> to break even' +
@@ -2658,7 +2674,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
+      (madePriced ? (riverBetPriced ? ' That counts the weaker pairs and bluffs he bets too — not just his best hands.' : hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."

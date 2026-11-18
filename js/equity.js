@@ -175,6 +175,51 @@ function estimateEquityVsMadePairPlus(hole, community, iters) {
   }
   return score / iters;
 }
+function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) {
+  if (!hole || !community || community.length !== 5) return null;
+  if (nOpp !== 1) return null;
+  if (typeof aggression !== 'number' || typeof bluff !== 'number') return null;
+  var boardKnown = {};
+  community.forEach(function (c) { boardKnown[_key(c)] = 1; });
+  var heroKnown = {};
+  hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
+  var deck = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!boardKnown[_key({ r: r, s: s })]) deck.push({ r: r, s: s });
+  var pool = [];
+  for (var i = 0; i < deck.length; i++)
+    for (var j = i + 1; j < deck.length; j++) pool.push([deck[i], deck[j]]);
+  var scores = pool.map(function (h) { return evaluate7(h.concat(community)).score; });
+  var mss = pool.map(function (h) { return madeStrength(h, community); });
+  var keys = pool.map(function (h) { return [_key(h[0]), _key(h[1])]; });
+  var betLine = 0.62 - aggression * 0.22 + 0.04;
+  var bluffP = bluff * 0.22;
+  var myScore = evaluate7(hole.concat(community)).score;
+  var wTot = 0, wEq = 0;
+  for (var a = 0; a < pool.length; a++) {
+    if (heroKnown[keys[a][0]] || heroKnown[keys[a][1]]) continue;
+    var tot = 0, sc = 0;
+    for (var b = 0; b < pool.length; b++) {
+      if (b === a) continue;
+      if (keys[b][0] === keys[a][0] || keys[b][0] === keys[a][1] ||
+          keys[b][1] === keys[a][0] || keys[b][1] === keys[a][1]) continue;
+      tot++;
+      if (scores[a] > scores[b]) sc += 1;
+      else if (scores[a] === scores[b]) sc += 0.5;
+    }
+    var eq1 = tot ? sc / tot : 0;
+    var p = 0;
+    if (eq1 > betLine || mss[a] > 0.74) p = 1;
+    else if (mss[a] < 0.55) p = bluffP;
+    if (p <= 0) continue;
+    wTot += p;
+    if (myScore > scores[a]) wEq += p;
+    else if (myScore === scores[a]) wEq += p * 0.5;
+  }
+  if (!wTot) return null;
+  return wEq / wTot;
+}
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
@@ -605,6 +650,7 @@ if (typeof module !== 'undefined' && module.exports) {
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,
     estimateEquityVsMadePairPlus: estimateEquityVsMadePairPlus,
+    estimateEquityVsBettingRange: estimateEquityVsBettingRange,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
     estimateEquityVsMadePoolMulti: estimateEquityVsMadePoolMulti,
