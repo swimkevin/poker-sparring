@@ -89,6 +89,88 @@ function evaluate5(cards) {
   }
 }
 
+function straightHighFromMask(mask) {
+  var h, want;
+  for (h = 14; h >= 6; h--) {
+    want = 31 << (h - 6);
+    if ((mask & want) === want) return h;
+  }
+  if ((mask & 0x100F) === 0x100F) return 5;
+  return 0;
+}
+
+function topRanksFromMask(mask, count) {
+  var out = [];
+  for (var r = 14; r >= 2 && out.length < count; r--) {
+    if (mask & (1 << (r - 2))) out.push(r);
+  }
+  return out;
+}
+
+function topKickersFromCounts(rc, ex1, ex2, count) {
+  var out = [];
+  for (var r = 14; r >= 2 && out.length < count; r--) {
+    if (rc[r] > 0 && r !== ex1 && r !== ex2) out.push(r);
+  }
+  return out;
+}
+
+function evaluate7Fast(cards) {
+  var rc = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var sc = [0, 0, 0, 0];
+  var sm = [0, 0, 0, 0];
+  var n = cards.length;
+  var i, r, s;
+  for (i = 0; i < n; i++) {
+    r = cards[i].r; s = cards[i].s;
+    rc[r]++;
+    sc[s]++;
+    sm[s] |= 1 << (r - 2);
+  }
+  var fs = -1;
+  for (i = 0; i < 4; i++) if (sc[i] >= 5) { fs = i; break; }
+  var q = 0, t1 = 0, t2 = 0, p1 = 0, p2 = 0;
+  for (i = 14; i >= 2; i--) {
+    if (rc[i] === 4) q = i;
+    else if (rc[i] === 3) { if (!t1) t1 = i; else t2 = i; }
+    else if (rc[i] === 2) { if (!p1) p1 = i; else if (!p2) p2 = i; }
+  }
+  var k;
+  if (fs >= 0) {
+    var sf = straightHighFromMask(sm[fs]);
+    if (sf) return { score: encodeScore(8, [sf]), cat: 8, kickers: [sf] };
+  }
+  if (q) {
+    k = topKickersFromCounts(rc, q, 0, 1);
+    return { score: encodeScore(7, [q, k[0]]), cat: 7, kickers: [q, k[0]] };
+  }
+  if (t1 && (p1 || t2)) {
+    var pr = (p1 && (!t2 || p1 > t2)) ? p1 : t2;
+    return { score: encodeScore(6, [t1, pr]), cat: 6, kickers: [t1, pr] };
+  }
+  if (fs >= 0) {
+    k = topRanksFromMask(sm[fs], 5);
+    return { score: encodeScore(5, k), cat: 5, kickers: k };
+  }
+  var rm = sm[0] | sm[1] | sm[2] | sm[3];
+  var st = straightHighFromMask(rm);
+  if (st) return { score: encodeScore(4, [st]), cat: 4, kickers: [st] };
+  if (t1) {
+    k = topKickersFromCounts(rc, t1, 0, 2);
+    return { score: encodeScore(3, [t1, k[0], k[1]]), cat: 3, kickers: [t1, k[0], k[1]] };
+  }
+  if (p1 && p2) {
+    k = topKickersFromCounts(rc, p1, p2, 1);
+    return { score: encodeScore(2, [p1, p2, k[0]]), cat: 2, kickers: [p1, p2, k[0]] };
+  }
+  if (p1) {
+    k = topKickersFromCounts(rc, p1, 0, 3);
+    return { score: encodeScore(1, [p1, k[0], k[1], k[2]]), cat: 1, kickers: [p1, k[0], k[1], k[2]] };
+  }
+  k = topKickersFromCounts(rc, 0, 0, 5);
+  return { score: encodeScore(0, k), cat: 0, kickers: k };
+}
+
 function evaluate(cards) {
   if (cards.length === 5) return evaluate5(cards);
   if (cards.length < 5) throw new Error('evaluate needs at least 5 cards');
@@ -128,7 +210,7 @@ function compareHands(a, b) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CATEGORY_NAMES: CATEGORY_NAMES, catOf: catOf, encodeScore: encodeScore,
-    evaluate5: evaluate5, evaluate: evaluate, evaluate7: evaluate7,
+    evaluate5: evaluate5, evaluate: evaluate, evaluate7: evaluate7, evaluate7Fast: evaluate7Fast,
     describeHand: describeHand, compareHands: compareHands
   };
 }
