@@ -976,24 +976,26 @@ setTimeout(function () {
         'weak pair calling Maniac\'s medium river bet flags bad-chase (made eq ~5% vs 25% need; tier eq hid it)');
       var leakWeakRiverMiddle = postflopLeak([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', Q7259, 'river', 400, 200, 200,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
-      ok(leakWeakRiverMiddle && leakWeakRiverMiddle.type === 'bad-chase',
-        'middle weak pair calling Maniac\'s medium river bet flags bad-chase (pair-plus eq ~3% vs 25% need; uniform made eq ~40% hid it, v1.8.269)');
+      ok(!leakWeakRiverMiddle,
+        'middle weak pair calling Maniac\'s medium river bet is NOT a bad chase (betting-range eq ~38% vs 33% need; the pair-plus pool priced it at ~3% because it is uniform over made hands and omits the worse pairs and bluffs he bets, v1.8.271)');
       // Alice opens the tightest range (openTier 1), so her capped small bet
       // prices second pair at ~22% vs a 20% need: below the need + 10 flag
       // line (30%), so folding is correct, no flag. Rock opens tier 2, so
-      // the same fold against him IS a weak fold (eq ~38%).
+      // the tier pool priced the same fold at ~38% and flagged it — but the
+      // betting-range price is ~6% (he only bets his better pairs), so
+      // folding is correct there too (v1.8.271).
       var leakWeakAlice = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'alice', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(!leakWeakAlice,
         'folding second pair to Alice\'s small river bet is NOT a weak fold (range eq ~22%; random eq ~62% used to flag it)');
       var leakWeakRock = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
-      ok(leakWeakRock && leakWeakRock.type === 'weak-fold',
-        'folding second pair to Rock\'s small river bet still flags weak-fold (range eq ~38% vs 20% need, flags above need + 10)');
+      ok(!leakWeakRock,
+        'folding second pair to Rock\'s small river bet is NOT a weak fold (betting-range eq ~6% vs 25% need; the tier pool priced it at ~38% because it is uniform over his range, not weighted by what he bets, v1.8.271)');
       var leakWeakManiac = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'maniac', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(leakWeakManiac && leakWeakManiac.type === 'weak-fold',
-        'folding second pair to a Maniac\'s small river bet still flags weak-fold (range eq ~60%)');
+        'folding second pair to a Maniac\'s small river bet still flags weak-fold (betting-range eq ~38% vs 25% need, flags above need + 10)');
       // Leak tracker dilutes multiway equity (v1.8.200): the same weak-pair
       // fold against LAG's 250-into-500 turn bet flags weak-fold heads-up
       // (range eq ~55% vs a 35% line) but NOT with a caller ahead (true

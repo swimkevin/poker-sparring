@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.270';
+  var APP_VERSION = '1.8.271';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -951,10 +951,21 @@
           var rangeEqTierL = (vRange && vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) ? 2 : (vRange && vRange.label === 'strong' ? 3 : 0);
           var narrowedL = !rangeEqTierL && villainCalledBig(table.players.indexOf(V));
           if (!narrowedL) {
-            var eqMadeL = hc === 'air'
-              ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
-              : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
-            if (eqMadeL != null) chaseEq = eqMadeL;
+            var genericL = V.archetype && !V.archetype.neverRaise &&
+              ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+            var betEqL = null;
+            if (genericL && hc !== 'air') {
+              var vAggrL = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+              betEqL = estimateEquityVsBettingRange(hero.hole, table.community,
+                vAggrL, villainBluffy(V.archetype), 1);
+            }
+            if (betEqL != null) chaseEq = betEqL;
+            else {
+              var eqMadeL = hc === 'air'
+                ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
+                : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
+              if (eqMadeL != null) chaseEq = eqMadeL;
+            }
           }
         }
         if (chaseEq < need - 0.12) {
@@ -1009,7 +1020,17 @@
           'A strong draw wins two ways — they fold now, or you hit your hand. A half-pot semi-bluff takes the pot whenever they fold and still has outs when they call; checking gives up the fold equity.');
       }
       var needFold = legal.callAmount / (pot + legal.callAmount);
-      if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && eq > needFold + 0.10) {
+      var foldEq = eq;
+      if (V && table.street === 'river' && liveOpponents().length === 1 &&
+          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') &&
+          V.archetype && !V.archetype.neverRaise &&
+          ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1) {
+        var vAggrF = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+        var betEqF = estimateEquityVsBettingRange(hero.hole, table.community,
+          vAggrF, villainBluffy(V.archetype), 1);
+        if (betEqF != null) foldEq = betEqF;
+      }
+      if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && foldEq > needFold + 0.10) {
         return base('weak-fold', 'Folding too often',
           'Folded to a small bet of ' + UI.fmt(legal.toCall),
           'That was a tiny bet — you don\'t need a great hand to call it. If you always fold to small bets, other players will keep bluffing you.');

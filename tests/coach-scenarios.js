@@ -700,8 +700,8 @@ console.log('\n57. v1.8.176: facing a 4-bet shove, premiums are priced');
 
 console.log('\n58. v1.8.193: the weak-fold flag is priced against the pot odds');
 {
-  ok(src.indexOf('eq > needFold + 0.10') !== -1,
-    'the weak-fold flag fires when equity clears need + 10, not a fixed 35%: the fixed line sat 1.5 sigma from the Rock spot and flaked CI 1.8.189 (v1.8.193)');
+  ok(src.indexOf('foldEq > needFold + 0.10') !== -1,
+    'the weak-fold flag fires when equity clears need + 10, not a fixed 35%: the fixed line sat 1.5 sigma from the Rock spot and flaked CI 1.8.189 (v1.8.193) — foldEq is the betting-range price on river one-pair hands, the tier-range eq otherwise (v1.8.271)');
   ok(src.indexOf('eq > 0.35') === -1,
     'the old fixed 35% weak-fold line is gone');
 }
@@ -1063,6 +1063,18 @@ console.log('\n87. v1.8.270: river one-pair hands are priced vs the betting rang
   ok(labSrc.indexOf("name: 'toppair-river-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'overpair-river-vs-rock-call'") !== -1,
     'the lab pins top pair and overpair calls vs the Rock 0.75x river bet: heads-up he bets every top pair, so 64%/70% clear the 30% price (v1.8.270)');
+}
+
+console.log('\n88. v1.8.271: the leak tracker mirrors the betting-range price');
+{
+  ok(src.indexOf('betEqL = estimateEquityVsBettingRange') !== -1 &&
+     src.indexOf('if (betEqL != null) chaseEq = betEqL;') !== -1,
+    'bad-chase prices a river one-pair call against the betting range, falling back to the pair-plus pool off the river or for a non-generic villain: calling 7x vs the Maniac 200 is a correct call at 38%, not a chase (v1.8.271)');
+  ok(src.indexOf('var foldEq = eq;') !== -1 &&
+     src.indexOf('if (betEqF != null) foldEq = betEqF;') !== -1,
+    'weak-fold prices a river one-pair fold against the betting range too: folding 7x vs the Rock 50 is correct at ~6%, not a weak fold, while folding it vs the Maniac 50 still flags at ~38% (v1.8.271)');
+  ok(src.indexOf('genericL && hc !== \'air\'') !== -1,
+    'air keeps the uniform made pool in the tracker, matching the coach: the analytic price is for one-pair hands only (v1.8.271)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
