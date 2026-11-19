@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.271';
+  var APP_VERSION = '1.8.272';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -960,7 +960,7 @@
                 vAggrL, villainBluffy(V.archetype), 1);
             }
             if (betEqL != null) chaseEq = betEqL;
-            else {
+            else if (hc !== 'secondpair' || table.street === 'river') {
               var eqMadeL = hc === 'air'
                 ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
                 : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);
@@ -2548,7 +2548,8 @@
           vAggr, villainBluffy(V.archetype), 1);
         if (eqMade != null) riverBetPriced = true;
       }
-      if (eqMade == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair')) {
+      if (eqMade == null && (hc === 'air' || hc === 'weakpair' ||
+          (hc === 'secondpair' && table.street === 'river'))) {
         eqMade = hc === 'air'
           ? estimateEquityVsMadeRange(hero.hole, table.community, 2000)
           : estimateEquityVsMadePairPlus(hero.hole, table.community, 2000);

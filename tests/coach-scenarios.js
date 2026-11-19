@@ -1010,19 +1010,20 @@ console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too')
 
 console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as good as it');
 {
-  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair')") !== -1,
-    'the made-range price covers air, weak pair and second pair (v1.8.267)');
+  ok(src.indexOf("(hc === 'secondpair' && table.street === 'river')") !== -1,
+    'the pair-plus fallback covers second pair only on the river now: off the river it keeps the tier-range price, since the pair-plus pool priced it at 16-22% against the heads-up truth of 34-58% (v1.8.272 corrects v1.8.267, whose "true 15-28%" was the four-player truth)');
   ok(src.indexOf('estimateEquityVsMadePairPlus') !== -1 &&
      equitySrc.indexOf('pairRankOf(h, community) < heroPair') !== -1,
-    'second pair is priced against the pair-plus pool: made hands whose pair is at least as good as the hero pair — the uniform made pool is bottom-pair heavy and priced second pair at 42-49% against true 15-28% (v1.8.267)');
+    'second pair is priced against the pair-plus pool on the river when the analytic price is unavailable: made hands whose pair is at least as good as the hero pair (v1.8.267, v1.8.272)');
   ok(src.indexOf('usually behind the top-pair hands') !== -1,
-    'the second-pair fold explains it in plain English (v1.8.267)');
-  ok(labSrc.indexOf("name: 'secondpair-vs-maniac-flop-fold'") !== -1 &&
-     labSrc.indexOf("name: 'secondpair-vs-lag-flop-fold'") !== -1 &&
-     labSrc.indexOf("name: 'secondpair-vs-maniac-turn-fold'") !== -1 &&
-     labSrc.indexOf("name: 'secondpair-vs-lag-turn-fold'") !== -1 &&
-     labSrc.indexOf("name: 'facing-2ndpair-rock-fold'") !== -1,
-    'the lab pins all four second-pair folds, and the Rock spot now expects a fold: second pair 8-7 wins 19.5% vs the Rock betting range at a 33% price (v1.8.267)');
+    'the second-pair fold explains it in plain English for the river fallback case (v1.8.267)');
+  ok(labSrc.indexOf("name: 'secondpair-vs-maniac-flop-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-lag-flop-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-maniac-turn-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-lag-turn-call'") !== -1 &&
+     labSrc.indexOf("name: 'facing-2ndpair-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-rock-turn-fold'") !== -1,
+    'the lab pins the second-pair calls at medium bets on flop and turn, the Rock small-bet call, and the Rock big-bet turn fold: the v1.8.267 folds were the four-player truth, heads-up they all call (v1.8.272)');
 }
 
 console.log('\n85. v1.8.268: the leak tracker prices bad-chase calls the way the coach does');
@@ -1075,6 +1076,17 @@ console.log('\n88. v1.8.271: the leak tracker mirrors the betting-range price');
     'weak-fold prices a river one-pair fold against the betting range too: folding 7x vs the Rock 50 is correct at ~6%, not a weak fold, while folding it vs the Maniac 50 still flags at ~38% (v1.8.271)');
   ok(src.indexOf('genericL && hc !== \'air\'') !== -1,
     'air keeps the uniform made pool in the tracker, matching the coach: the analytic price is for one-pair hands only (v1.8.271)');
+}
+
+console.log('\n89. v1.8.272: second pair is priced on the tier range off the river');
+{
+  ok(src.indexOf("(hc === 'secondpair' && table.street === 'river')") !== -1,
+    'the coach prices second pair on the tier range on flop and turn: the pair-plus pool said 16-22% against a heads-up truth of 34-58% (probe12), while the tier range says 66%/55%/39% on the flop and 68%/56%/38% on the turn (probe14) (v1.8.272)');
+  ok(src.indexOf("else if (hc !== 'secondpair' || table.street === 'river')") !== -1,
+    'the tracker mirrors it: a second-pair call off the river is not re-priced to the pair-plus pool, so calling the Maniac 300 on the turn is not a bad chase (v1.8.272)');
+  ok(labSrc.indexOf("name: 'secondpair-vs-maniac-flop-potbet-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-rock-turn-fold'") !== -1,
+    'the lab pins both sides: second pair calls a pot-sized flop bet vs the Maniac (truth 58% at a 33% price) and folds a 1.5x turn bet vs the Rock (truth 36% at a 40% price) (v1.8.272)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

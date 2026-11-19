@@ -706,28 +706,39 @@ setTimeout(function () {
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
     ok(secondSmallManiac.advice === 'call', 'second pair still calls the Maniac small flop bet — true equity ~28% at a 17% price (got ' + secondSmallManiac.advice + ')');
-    // Second pair is priced vs the made hands at least as good as it (v1.8.267):
-    // the uniform made pool is bottom-pair heavy — the villain bets weak pairs
-    // only 1-6% of the time — so it priced second pair at 42-49% against true
-    // 15-28%. The pair-plus pool prices it at 16-22%, right on the truth.
+    // Second pair is priced vs the kinds of hands he plays, off the river
+    // (v1.8.272): the pair-plus pool priced it at 16-22% against the
+    // heads-up truth of 34-58% (probe12) — the pool is uniform over made
+    // hands, but heads-up the villain bets worse pairs and air too, so
+    // the tier range (66%/55%/39% on the flop, 68%/56%/38% on the turn)
+    // is the closer price. The v1.8.267 "true 15-28%" was the four-player
+    // truth and is superseded.
     var secondFlopManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'flop', 400, 400,
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
-    ok(secondFlopManiac.advice === 'fold', 'second pair folds the Maniac pot-sized flop bet — true equity ~28% at a 33% price (got ' + secondFlopManiac.advice + ')');
-    ok(stripAdvice(secondFlopManiac.html).indexOf('usually behind the top-pair hands') !== -1,
-      'second-pair fold says it is usually behind the top-pair hands he bets with');
+    ok(secondFlopManiac.advice === 'call', 'second pair calls the Maniac pot-sized flop bet — heads-up truth ~58% at a 33% price (got ' + secondFlopManiac.advice + ')');
+    ok(stripAdvice(secondFlopManiac.html).indexOf('mostly made hands') === -1,
+      'second-pair flop call is no longer priced vs the made hands — the pair-plus math line is gone');
     var secondFlopLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'flop', 300, 400,
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
-    ok(secondFlopLag.advice === 'fold', 'second pair folds the LAG 0.75x flop bet too — true equity ~25% at a 30% price (got ' + secondFlopLag.advice + ')');
+    ok(secondFlopLag.advice === 'call', 'second pair calls the LAG 0.75x flop bet too — heads-up truth ~56% at a 30% price (got ' + secondFlopLag.advice + ')');
     var secondTurnManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'turn', 200, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(secondTurnManiac.advice === 'fold', 'second pair folds the Maniac medium turn bet — true equity ~19%, not 49% (got ' + secondTurnManiac.advice + ')');
+    ok(secondTurnManiac.advice === 'call', 'second pair calls the Maniac medium turn bet — heads-up truth ~56% at a 25% price, not the 19% the pair-plus pool claimed (got ' + secondTurnManiac.advice + ')');
     var secondTurnLag = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', 'turn', 200, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(secondTurnLag.advice === 'fold', 'second pair folds the LAG medium turn bet too (got ' + secondTurnLag.advice + ')');
+    ok(secondTurnLag.advice === 'call', 'second pair calls the LAG medium turn bet too — heads-up truth ~54% (got ' + secondTurnLag.advice + ')');
+    var secondTurnRock = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'rock', 'turn', 200, 400,
+      weakTurnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(secondTurnRock.advice === 'call', 'second pair calls the Rock medium turn bet too — heads-up truth ~36% at a 25% price (got ' + secondTurnRock.advice + ')');
+    var secondFlopRock = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'rock', 'flop', 200, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(secondFlopRock.advice === 'call', 'second pair calls the Rock medium flop bet too — heads-up truth ~34% at a 25% price (got ' + secondFlopRock.advice + ')');
     // Weak pair is priced vs the pair-plus pool too (v1.8.269, corrected in
     // v1.8.270): handClass only knows top/second/bottom, so a middle pair
     // like 7s on a Q-9-7 river is 'weakpair' and the uniform made pool
@@ -996,6 +1007,14 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(leakWeakManiac && leakWeakManiac.type === 'weak-fold',
         'folding second pair to a Maniac\'s small river bet still flags weak-fold (betting-range eq ~38% vs 25% need, flags above need + 10)');
+      // Second pair keeps the tier price off the river in the tracker too
+      // (v1.8.272): calling the Maniac's 300 on the turn with 7x is correct
+      // (tier eq ~68% vs a 30% need), but the pair-plus pool priced it at
+      // ~15% and flagged it as a chase.
+      var leakSecondTurn = postflopLeak([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', Q725, 'turn', 400, 300, 300,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 300, pot: 700 }], 'call');
+      ok(!leakSecondTurn,
+        'calling the Maniac\'s big turn bet with second pair is NOT a bad chase (tier eq ~68% vs 30% need; the pair-plus pool priced it at ~15%)');
       // Leak tracker dilutes multiway equity (v1.8.200): the same weak-pair
       // fold against LAG's 250-into-500 turn bet flags weak-fold heads-up
       // (range eq ~55% vs a 35% line) but NOT with a caller ahead (true
