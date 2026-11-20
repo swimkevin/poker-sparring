@@ -1078,6 +1078,17 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakSecondTurnLagFold && leakSecondTurnLagFold.type === 'weak-fold',
         'folding second pair to the LAG\'s small turn bet flags weak-fold (betting-range eq ~55% vs need + 10 = 27%)');
+      // The "Didn't raise the nuts" lesson states the raise-to amount
+      // (v1.8.276): it used to say "raise to about 4× their bet" with no
+      // amount, while the spot line above it had the number. Calling the
+      // LAG's half-pot flop bet with top trips (the nuts on an unpaired,
+      // flushless board) is a missed-value flag, and the lesson now reads
+      // "raise to about 800 (4× their bet)".
+      var leakNutCall = postflopLeak([{ r: 12, s: 1 }, { r: 12, s: 3 }], 'lag', Q72b, 'flop', 400, 200, 200,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
+      ok(leakNutCall && leakNutCall.type === 'missed-value' &&
+        /raise to about \d+ \(\d+× their bet\)/.test(leakNutCall.why),
+        'calling with top trips flags missed-value and the lesson states the raise-to amount (got: ' + (leakNutCall && leakNutCall.why) + ')');
       // Leak tracker dilutes multiway equity (v1.8.200): the same weak-pair
       // fold against LAG's 250-into-500 turn bet flags weak-fold heads-up
       // (range eq ~55% vs a 35% line) but NOT with a caller ahead (true

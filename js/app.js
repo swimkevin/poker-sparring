@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.275';
+  var APP_VERSION = '1.8.276';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1002,7 +1002,7 @@
           var nutToN = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * multN)));
           return base('missed-value', 'Didn\'t raise the nuts',
             'Called ' + UI.fmt(legal.callAmount) + ' with ' + handClassName(hc) + ' against ' + V.name + ' instead of raising to ~' + UI.fmt(nutToN) + ' (' + multN + '× their bet)',
-            'With the near-nuts, every street you don\'t build the pot costs money — raise to about ' + multN + '× their bet and charge the worse hands now.');
+            'With the near-nuts, every street you don\'t build the pot costs money — raise to about ' + UI.fmt(nutToN) + ' (' + multN + '× their bet) and charge the worse hands now.');
         }
       }
       if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && hc !== 'board' && madeStrength(hero.hole, table.community) >= 0.80) {
