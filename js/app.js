@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.274';
+  var APP_VERSION = '1.8.275';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -958,7 +958,7 @@
               var vAggrL = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
               betEqL = estimateEquityVsBettingRange(hero.hole, table.community,
                 vAggrL, villainBluffy(V.archetype), 1);
-              if (betEqL == null && hc === 'weakpair' && table.street !== 'river') {
+              if (betEqL == null && (hc === 'weakpair' || hc === 'secondpair') && table.street !== 'river') {
                 betEqL = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype));
               }
@@ -1034,7 +1034,8 @@
           vAggrF, villainBluffy(V.archetype), 1);
         if (betEqF != null) foldEq = betEqF;
       }
-      if (V && table.street !== 'river' && liveOpponents().length === 1 && hc === 'weakpair' &&
+      if (V && table.street !== 'river' && liveOpponents().length === 1 &&
+          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') &&
           V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1 &&
           !villainCalledBig(table.players.indexOf(V))) {
@@ -2562,7 +2563,8 @@
           vAggr, villainBluffy(V.archetype), 1);
         if (eqMade != null) riverBetPriced = true;
       }
-      if (eqMade == null && hc === 'weakpair' && table.street !== 'river' &&
+      if (eqMade == null && (hc === 'weakpair' || hc === 'secondpair' ||
+          hc === 'toppair' || hc === 'overpair') && table.street !== 'river' &&
           liveOpponents().length === 1 && genericBettor) {
         var vAggr2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,

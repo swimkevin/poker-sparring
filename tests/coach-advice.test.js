@@ -717,12 +717,12 @@ setTimeout(function () {
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
     ok(secondSmallManiac.advice === 'call', 'second pair still calls the Maniac small flop bet — true equity ~28% at a 17% price (got ' + secondSmallManiac.advice + ')');
-    // Second pair is priced vs the kinds of hands he plays, off the river
-    // (v1.8.272): the pair-plus pool priced it at 16-22% against the
-    // heads-up truth of 34-58% (probe12) — the pool is uniform over made
-    // hands, but heads-up the villain bets worse pairs and air too, so
-    // the tier range (66%/55%/39% on the flop, 68%/56%/38% on the turn)
-    // is the closer price. The v1.8.267 "true 15-28%" was the four-player
+    // Second pair is priced vs the betting range off the river
+    // (v1.8.275, superseding the v1.8.272 tier range): the estimator
+    // lands within ~3 points of the heads-up truth (probe22) — the tier
+    // range overstated it vs the Maniac on the turn by 11 (67% vs 56%).
+    // The pair-plus pool priced it at 16-22% against the heads-up truth
+    // of 34-58% (probe12); the v1.8.267 "true 15-28%" was the four-player
     // truth and is superseded.
     var secondFlopManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'flop', 400, 400,
       weakFlopBoard, 2000, 2000,
@@ -1041,6 +1041,43 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakWeakTurnLagFold && leakWeakTurnLagFold.type === 'weak-fold',
         'folding a pair of 5s to the LAG\'s small turn bet flags weak-fold (betting-range eq ~41% vs need + 10 = 27%)');
+      // Every one-pair hand is priced vs the betting range off the river
+      // (v1.8.275): the tier range understated top pair vs the Rock by
+      // 11-14 points (53% quoted vs 67% true on the flop) and overstated
+      // second pair vs the Maniac on the turn by 11 (67% vs 56%), while
+      // the estimator lands within ~3 points of the heads-up truth on
+      // every street and villain (probe22). The bands below fail on the
+      // old tier prices and pass on the estimator; the advice is call in
+      // all four spots under either price, so the lab pins the advice
+      // and these pin the number the user actually reads.
+      function quotedEq(v) {
+        var m = /You win about (\d+)%/.exec(stripAdvice(v.html));
+        return m ? parseInt(m[1], 10) : null;
+      }
+      var Q72b = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }];
+      var topFlopRock = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 3 }], 'rock', 'flop', 200, 400, Q72b, 2000, 2000,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(topFlopRock.advice === 'call' && quotedEq(topFlopRock) >= 60 && quotedEq(topFlopRock) <= 75,
+        'top pair vs the Rock\'s flop bet quotes 60-75% (estimator 70%, truth 67%; the tier price quoted 53%)');
+      var topTurnRock = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 3 }], 'rock', 'turn', 200, 400, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(topTurnRock.advice === 'call' && quotedEq(topTurnRock) >= 64 && quotedEq(topTurnRock) <= 79,
+        'top pair vs the Rock\'s turn bet quotes 64-79% (estimator 73%, truth 72%; the tier price quoted 60%)');
+      var overFlopRock = postflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 3 }], 'rock', 'flop', 200, 400, Q72b, 2000, 2000,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(overFlopRock.advice === 'call' && quotedEq(overFlopRock) >= 68 && quotedEq(overFlopRock) <= 78,
+        'overpair vs the Rock\'s flop bet quotes 68-78% (estimator 74%, truth 73%; the tier price quoted 66%)');
+      var secondTurnManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'turn', 200, 400, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(secondTurnManiac.advice === 'call' && quotedEq(secondTurnManiac) >= 48 && quotedEq(secondTurnManiac) <= 64,
+        'second pair vs the Maniac\'s turn bet quotes 48-64% (estimator 57%, truth 56%; the tier price quoted 67%)');
+      // The tracker mirrors the estimator for second pair too (v1.8.275):
+      // folding second pair to the LAG's small turn bet still flags
+      // weak-fold (estimator ~55% vs need + 10 = 27%).
+      var leakSecondTurnLagFold = postflopLeak([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'lag', Q725, 'turn', 400, 100, 100,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
+      ok(leakSecondTurnLagFold && leakSecondTurnLagFold.type === 'weak-fold',
+        'folding second pair to the LAG\'s small turn bet flags weak-fold (betting-range eq ~55% vs need + 10 = 27%)');
       // Leak tracker dilutes multiway equity (v1.8.200): the same weak-pair
       // fold against LAG's 250-into-500 turn bet flags weak-fold heads-up
       // (range eq ~55% vs a 35% line) but NOT with a caller ahead (true

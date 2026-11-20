@@ -409,7 +409,7 @@ var SPOTS = [
   { name: 'archetype-range', kind: 'facing', villain: 'lag',
     hero: [C(7, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 200, 500), expectWord: 'kinds of hands', grossCheck: true },
+    timeline: betTimeline('turn', 200, 500), expectWord: 'bets on the turn', grossCheck: true },
   { name: 'facing-2ndpair-rock-call', kind: 'facing', villain: 'rock',
     hero: [C(8, 0), C(7, 0)], board: [C(12, 2), C(7, 1), C(2, 0)], street: 'flop',
     potBefore: 100, bet: 100, heroStack: 2000, nLive: 2, expect: 'call',
@@ -1120,7 +1120,23 @@ var SPOTS = [
   { name: 'weakpair-turn-vs-lag-small-call', kind: 'facing', villain: 'lag',
     hero: [C(2, 1), C(6, 0)], board: Q725,
     street: 'turn', potBefore: 400, bet: 75, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 75, 400), grossCheck: true }
+    timeline: betTimeline('turn', 75, 400), grossCheck: true },
+  { name: 'toppair-flop-vs-rock-call', kind: 'facing', villain: 'rock',
+    hero: [C(12, 1), C(11, 3)], board: [C(12, 2), C(7, 2), C(2, 0)],
+    street: 'flop', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('flop', 200, 400), grossCheck: true },
+  { name: 'toppair-turn-vs-rock-call', kind: 'facing', villain: 'rock',
+    hero: [C(12, 1), C(11, 3)], board: Q725,
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('turn', 200, 400), grossCheck: true },
+  { name: 'overpair-flop-vs-rock-call', kind: 'facing', villain: 'rock',
+    hero: [C(13, 1), C(13, 3)], board: [C(12, 2), C(7, 2), C(2, 0)],
+    street: 'flop', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('flop', 200, 400), grossCheck: true },
+  { name: 'secondpair-turn-vs-maniac-call', kind: 'facing', villain: 'maniac',
+    hero: [C(7, 0), C(6, 3)], board: Q725,
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('turn', 200, 400), grossCheck: true }
 ];
 
 setTimeout(function () {

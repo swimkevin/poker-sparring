@@ -1095,14 +1095,27 @@ console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the ri
      equitySrc.indexOf('evaluate7Fast(h.concat(board2))') !== -1,
     'the flop/turn betting-range price runs on the fast evaluator: the slow one cost 43-64s a call (probe16) because it enumerates all 21 five-card subsets (v1.8.274)');
   ok(src.indexOf('eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,') !== -1 &&
-     src.indexOf("hc === 'weakpair' && table.street !== 'river'") !== -1,
-    'the coach prices weak pair off the river against the betting range: the pair-plus pool said 18-21% against the heads-up truth of 42%/38%/19% on the flop and 26%/22%/10% on the turn (probe12) (v1.8.274)');
+     src.indexOf("hc === 'weakpair'") !== -1 && src.indexOf("table.street !== 'river'") !== -1,
+    'the coach prices weak pair off the river against the betting range: the pair-plus pool said 18-21% against the heads-up truth of 42%/38%/19% on the flop and 26%/22%/10% on the turn (probe12) (v1.8.274; extended to every one-pair hand in v1.8.275)');
   ok(src.indexOf("((riverBetPriced || betRangePriced) ? 0 : rangeAdjust)") !== -1,
     'the threshold does not discount for a wide range once the price IS the betting range: the discount double-counted looseness and called with 22% against a 25% need vs the Rock (v1.8.274)');
   ok(labSrc.indexOf("name: 'weakpair-flop-vs-maniac-call'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-flop-vs-rock-fold'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-turn-vs-maniac-small-call'") !== -1,
     'the lab pins the weak-pair flop/turn calls and folds: the price lands within ~3 points of the heads-up truth on every street and villain (probe18) (v1.8.274)');
+}
+
+console.log('\n91. v1.8.275: every one-pair hand is priced vs the betting range off the river');
+{
+  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair') && table.street !== 'river'") !== -1,
+    'the flop/turn betting-range price covers all four one-pair classes: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22) (v1.8.275)');
+  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair') && table.street !== 'river'") !== -1,
+    'the leak tracker mirrors the estimator for second pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275)');
+  ok(labSrc.indexOf("name: 'toppair-flop-vs-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'toppair-turn-vs-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'overpair-flop-vs-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-turn-vs-maniac-call'") !== -1,
+    'the lab pins the one-pair calls vs the Rock and the Maniac under the new price: the advice is call at medium bets under either price, so the lab pins stability and the coach-advice tests pin the number (v1.8.275)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
