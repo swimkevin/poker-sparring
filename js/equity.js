@@ -1,6 +1,6 @@
 if (typeof module !== 'undefined' && module.exports) {
   var __ev = require('./evaluator.js');
-  var evaluate7 = __ev.evaluate7;
+  var evaluate7Fast = __ev.evaluate7Fast;
   var __cd = require('./cards.js');
   var rankChar = __cd.rankChar;
 }
@@ -29,11 +29,11 @@ function estimateEquity(hole, community, opponents, iters) {
       var t = deck[d]; deck[d] = deck[j]; deck[j] = t;
     }
     var board = community.concat(deck.slice(0, boardNeed));
-    var myScore = evaluate7(hole.concat(board)).score;
+    var myScore = evaluate7Fast(hole.concat(board)).score;
     var win = true, tie = false;
     for (var o = 0; o < opponents; o++) {
       var oh = [deck[boardNeed + o * 2], deck[boardNeed + o * 2 + 1]];
-      var os = evaluate7(oh.concat(board)).score;
+      var os = evaluate7Fast(oh.concat(board)).score;
       if (os > myScore) { win = false; break; }
       if (os === myScore) tie = true;
     }
@@ -75,8 +75,8 @@ function estimateEquityVsRange(hole, maxTier, iters) {
       var t = deck[d]; deck[d] = deck[jj]; deck[jj] = t;
     }
     var board = deck.slice(0, 5);
-    var myScore = evaluate7(hole.concat(board)).score;
-    var opScore = evaluate7(vh.concat(board)).score;
+    var myScore = evaluate7Fast(hole.concat(board)).score;
+    var opScore = evaluate7Fast(vh.concat(board)).score;
     if (myScore > opScore) score += 1;
     else if (myScore === opScore) score += 0.5;
   }
@@ -95,7 +95,7 @@ function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
   for (var i = 0; i < rest.length; i++)
     for (var j = i + 1; j < rest.length; j++) {
       var h = [rest[i], rest[j]];
-      var made = evaluate7(h.concat(community)).cat >= 1;
+      var made = evaluate7Fast(h.concat(community)).cat >= 1;
       if (made === wantMade) pool.push(h);
     }
   if (!pool.length) return null;
@@ -115,8 +115,8 @@ function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
-    var myScore = evaluate7(hole.concat(board)).score;
-    var opScore = evaluate7(vh.concat(board)).score;
+    var myScore = evaluate7Fast(hole.concat(board)).score;
+    var opScore = evaluate7Fast(vh.concat(board)).score;
     if (myScore > opScore) score += 1;
     else if (myScore === opScore) score += 0.5;
   }
@@ -146,7 +146,7 @@ function estimateEquityVsMadePairPlus(hole, community, iters) {
   for (var i = 0; i < rest.length; i++)
     for (var j = i + 1; j < rest.length; j++) {
       var h = [rest[i], rest[j]];
-      var ev = evaluate7(h.concat(community));
+      var ev = evaluate7Fast(h.concat(community));
       if (ev.cat < 1) continue;
       if (ev.cat === 1 && heroPair > 0 && pairRankOf(h, community) < heroPair) continue;
       pool.push(h);
@@ -168,8 +168,8 @@ function estimateEquityVsMadePairPlus(hole, community, iters) {
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
-    var myScore = evaluate7(hole.concat(board)).score;
-    var opScore = evaluate7(vh.concat(board)).score;
+    var myScore = evaluate7Fast(hole.concat(board)).score;
+    var opScore = evaluate7Fast(vh.concat(board)).score;
     if (myScore > opScore) score += 1;
     else if (myScore === opScore) score += 0.5;
   }
@@ -190,12 +190,12 @@ function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) 
   var pool = [];
   for (var i = 0; i < deck.length; i++)
     for (var j = i + 1; j < deck.length; j++) pool.push([deck[i], deck[j]]);
-  var scores = pool.map(function (h) { return evaluate7(h.concat(community)).score; });
+  var scores = pool.map(function (h) { return evaluate7Fast(h.concat(community)).score; });
   var mss = pool.map(function (h) { return madeStrength(h, community); });
   var keys = pool.map(function (h) { return [_key(h[0]), _key(h[1])]; });
   var betLine = 0.62 - aggression * 0.22 + 0.04;
   var bluffP = bluff * 0.22;
-  var myScore = evaluate7(hole.concat(community)).score;
+  var myScore = evaluate7Fast(hole.concat(community)).score;
   var wTot = 0, wEq = 0;
   for (var a = 0; a < pool.length; a++) {
     if (heroKnown[keys[a][0]] || heroKnown[keys[a][1]]) continue;
@@ -216,6 +216,87 @@ function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) 
     wTot += p;
     if (myScore > scores[a]) wEq += p;
     else if (myScore === scores[a]) wEq += p * 0.5;
+  }
+  if (!wTot) return null;
+  return wEq / wTot;
+}
+function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff) {
+  if (!hole || !community || (community.length !== 3 && community.length !== 4)) return null;
+  if (typeof aggression !== 'number' || typeof bluff !== 'number') return null;
+  var boardNeed = 5 - community.length;
+  var seed = 987654321;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  seed = (seed * 31 + Math.round(aggression * 1000) + Math.round(bluff * 1000)) % 2147483647;
+  function rnd() {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  }
+  var boardKnown = {};
+  community.forEach(function (c) { boardKnown[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!boardKnown[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var heroKnown = {};
+  hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
+  var betLine = 0.62 - aggression * 0.22;
+  var bluffP = bluff * 0.22 * 0.55;
+  var holdings = [];
+  var pBet = [];
+  for (var i = 0; i < rest.length; i++) {
+    for (var j = i + 1; j < rest.length; j++) {
+      var h = [rest[i], rest[j]];
+      if (heroKnown[_key(h[0])] || heroKnown[_key(h[1])]) continue;
+      holdings.push(h);
+      var ms = madeStrengthEv(evaluate7Fast(h.concat(community)), h, community);
+      var rem = [];
+      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j) rem.push(rest[k]);
+      var wins = 0;
+      for (var q = 0; q < 100; q++) {
+        var need = boardNeed + 2;
+        for (var d = 0; d < need; d++) {
+          var jj = d + Math.floor(rnd() * (rem.length - d));
+          var tmp = rem[d]; rem[d] = rem[jj]; rem[jj] = tmp;
+        }
+        var board2 = community.concat(rem.slice(0, boardNeed));
+        var opp = [rem[boardNeed], rem[boardNeed + 1]];
+        var hs = evaluate7Fast(h.concat(board2)).score;
+        var os = evaluate7Fast(opp.concat(board2)).score;
+        if (hs > os) wins += 1;
+        else if (hs === os) wins += 0.5;
+      }
+      var eq1 = wins / 100;
+      var p = 0;
+      if (ms > 0.74 || eq1 > betLine) p = 1;
+      else if (ms < 0.55) p = bluffP;
+      pBet.push(p);
+    }
+  }
+  var deck = [];
+  var hk = {};
+  hole.concat(community).forEach(function (c) { hk[_key(c)] = 1; });
+  for (var s2 = 0; s2 < 4; s2++)
+    for (var r2 = 2; r2 <= 14; r2++)
+      if (!hk[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
+  var wTot = 0, wEq = 0, acc = 0, att = 0;
+  while (acc < 6000 && att < 180000) {
+    att++;
+    var idx = Math.floor(rnd() * holdings.length);
+    var vh = holdings[idx];
+    var pv = pBet[idx];
+    if (pv <= 0 || rnd() > pv) continue;
+    var pool = deck.filter(function (c) { return _key(c) !== _key(vh[0]) && _key(c) !== _key(vh[1]); });
+    for (var d2 = 0; d2 < boardNeed; d2++) {
+      var j2 = d2 + Math.floor(rnd() * (pool.length - d2));
+      var tmp2 = pool[d2]; pool[d2] = pool[j2]; pool[j2] = tmp2;
+    }
+    var full = community.concat(pool.slice(0, boardNeed));
+    var hs2 = evaluate7Fast(hole.concat(full)).score;
+    var vs2 = evaluate7Fast(vh.concat(full)).score;
+    acc++;
+    wTot += 1;
+    if (hs2 > vs2) wEq += 1;
+    else if (hs2 === vs2) wEq += 0.5;
   }
   if (!wTot) return null;
   return wEq / wTot;
@@ -254,8 +335,8 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
-    var myScore = evaluate7(hole.concat(board)).score;
-    var opScore = evaluate7(vh.concat(board)).score;
+    var myScore = evaluate7Fast(hole.concat(board)).score;
+    var opScore = evaluate7Fast(vh.concat(board)).score;
     if (myScore > opScore) score += 1;
     else if (myScore === opScore) score += 0.5;
   }
@@ -314,10 +395,10 @@ function estimateEquityVsRanges(hole, community, tiers, iters) {
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
-    var myScore = evaluate7(hole.concat(board)).score;
+    var myScore = evaluate7Fast(hole.concat(board)).score;
     var best = true, strict = true;
     hands.forEach(function (hh) {
-      var os = evaluate7(hh.concat(board)).score;
+      var os = evaluate7Fast(hh.concat(board)).score;
       if (os > myScore) { best = false; strict = false; }
       else if (os === myScore) strict = false;
     });
@@ -337,12 +418,12 @@ function estimateEquityVsMadePool(hole, community, minCat) {
   for (var s = 0; s < 4; s++)
     for (var r = 2; r <= 14; r++)
       if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
-  var myScore = evaluate7(hole.concat(community)).score;
+  var myScore = evaluate7Fast(hole.concat(community)).score;
   var total = 0, score = 0;
   for (var i = 0; i < rest.length; i++)
     for (var j = i + 1; j < rest.length; j++) {
       var vh = [rest[i], rest[j]];
-      var op = evaluate7(vh.concat(community));
+      var op = evaluate7Fast(vh.concat(community));
       if (op.cat < minCat) continue;
       total++;
       if (myScore > op.score) score += 1;
@@ -367,13 +448,13 @@ function estimateEquityVsMadePoolMulti(hole, community, minCat, nOpp) {
   for (var i = 0; i < rest.length; i++)
     for (var j = i + 1; j < rest.length; j++) {
       var vh = [rest[i], rest[j]];
-      var op = evaluate7(vh.concat(community));
+      var op = evaluate7Fast(vh.concat(community));
       if (op.cat < minCat) continue;
       pool.push(vh);
       scores.push(op.score);
     }
   if (!pool.length) return null;
-  var myScore = evaluate7(hole.concat(community)).score;
+  var myScore = evaluate7Fast(hole.concat(community)).score;
   function scoreCombo(idx) {
     var beaten = true, tied = false;
     for (var k = 0; k < idx.length; k++) {
@@ -441,9 +522,7 @@ function estimateEquityVsMadePoolMulti(hole, community, minCat, nOpp) {
   return sScore / sTotal;
 }
 
-function madeStrength(hole, community) {
-  var cards = hole.concat(community);
-  var ev = cards.length >= 5 ? evaluate7(cards) : null;
+function madeStrengthEv(ev, hole, community) {
   var base = 0;
   if (ev) {
     switch (ev.cat) {
@@ -477,6 +556,12 @@ function madeStrength(hole, community) {
   }
   base += d.overcards * 0.03;
   return Math.max(0, Math.min(1, base));
+}
+
+function madeStrength(hole, community) {
+  var cards = hole.concat(community);
+  var ev = cards.length >= 5 ? evaluate7Fast(cards) : null;
+  return madeStrengthEv(ev, hole, community);
 }
 
 function detectDraws(hole, community) {
@@ -651,10 +736,11 @@ if (typeof module !== 'undefined' && module.exports) {
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,
     estimateEquityVsMadePairPlus: estimateEquityVsMadePairPlus,
     estimateEquityVsBettingRange: estimateEquityVsBettingRange,
+    estimateEquityVsBettingRangePostflop: estimateEquityVsBettingRangePostflop,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
     estimateEquityVsMadePoolMulti: estimateEquityVsMadePoolMulti,
-    madeStrength: madeStrength,
+    madeStrength: madeStrength, madeStrengthEv: madeStrengthEv,
     detectDraws: detectDraws, holeTier: holeTier, tierName: tierName, TIER_NAMES: TIER_NAMES,
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,
     exploitLine: exploitLine, EXPLOIT_LINES: EXPLOIT_LINES,

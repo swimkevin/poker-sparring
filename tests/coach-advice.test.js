@@ -677,31 +677,42 @@ setTimeout(function () {
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(airTurnLag.advice === 'fold', 'ace-high folds the LAG medium turn bet too (got ' + airTurnLag.advice + ')');
 
-    // Weak pair is priced vs the made hands he bets too (v1.8.266): the tier
-    // pool priced a pair of 2s at 36-50% against true 11-23%, calling medium
-    // bets at 25-33% prices. The made range prices it at 12-19% — and the
-    // bluffy marginal call no longer fires for it, since its equity is
-    // already priced against the betting range.
+    // Weak pair is priced vs the villain's actual betting range off the
+    // river too (v1.8.274): the pair-plus pool priced a pair of 2s at
+    // 18-21% against the heads-up truth of 42%/38%/19% on the flop and
+    // 26%/22%/10% on the turn (probe12) — the pool is uniform over made
+    // hands, but heads-up the villain bets worse pairs and air too. The
+    // old v1.8.266 "true 11-23%" figures were the four-player truth and
+    // are superseded. The betting-range price (probe18) lands within
+    // ~3 points of the heads-up truth on every street and villain.
     var weakFlopBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }];
     var weakFlopManiac = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'flop', 300, 400,
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
-    ok(weakFlopManiac.advice === 'fold', 'weak pair folds the Maniac 0.75x flop bet — true equity ~23%, not the 36% the tier pool claimed (got ' + weakFlopManiac.advice + ')');
-    ok(stripAdvice(weakFlopManiac.html).indexOf('mostly made hands') !== -1,
-      'weak-pair fold says a betting range is mostly made hands');
+    ok(weakFlopManiac.advice === 'call', 'weak pair calls the Maniac 0.75x flop bet — heads-up truth ~42% at a 30% price, not the 23% the four-player truth claimed (got ' + weakFlopManiac.advice + ')');
+    ok(stripAdvice(weakFlopManiac.html).indexOf('weaker pairs and bluffs he bets too') !== -1,
+      'weak-pair flop call says the price counts the weaker pairs and bluffs he bets too');
     var weakFlopLag = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'lag', 'flop', 200, 400,
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(weakFlopLag.advice === 'fold', 'weak pair folds the LAG medium flop bet too — true equity ~21% at a 25% price (got ' + weakFlopLag.advice + ')');
+    ok(weakFlopLag.advice === 'call', 'weak pair calls the LAG medium flop bet too — heads-up truth ~38% at a 25% price (got ' + weakFlopLag.advice + ')');
+    var weakFlopRock = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'rock', 'flop', 200, 400,
+      weakFlopBoard, 2000, 2000,
+      [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(weakFlopRock.advice === 'fold', 'weak pair folds the Rock medium flop bet — betting-range price ~22% at a 25% price (got ' + weakFlopRock.advice + ')');
     var weakTurnBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
     var weakTurnManiac = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'turn', 200, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(weakTurnManiac.advice === 'fold', 'weak pair folds the Maniac medium turn bet — true equity ~13%, not 50% (got ' + weakTurnManiac.advice + ')');
+    ok(weakTurnManiac.advice === 'fold', 'weak pair folds the Maniac medium turn bet — heads-up truth ~26% at a 25% price, inside the 3-point call margin (got ' + weakTurnManiac.advice + ')');
     var weakTurnLag = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'lag', 'turn', 200, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(weakTurnLag.advice === 'fold', 'weak pair folds the LAG medium turn bet too (got ' + weakTurnLag.advice + ')');
+    ok(weakTurnLag.advice === 'fold', 'weak pair folds the LAG medium turn bet too — heads-up truth ~22% at a 25% price (got ' + weakTurnLag.advice + ')');
+    var weakTurnManiacSmall = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'turn', 100, 400,
+      weakTurnBoard, 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
+    ok(weakTurnManiacSmall.advice === 'call', 'weak pair calls the Maniac small turn bet — betting-range price ~27% at a 17% price (got ' + weakTurnManiacSmall.advice + ')');
     var secondSmallManiac = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 3 }], 'maniac', 'flop', 100, 400,
       weakFlopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);
@@ -1015,6 +1026,21 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 300, pot: 700 }], 'call');
       ok(!leakSecondTurn,
         'calling the Maniac\'s big turn bet with second pair is NOT a bad chase (tier eq ~68% vs 30% need; the pair-plus pool priced it at ~15%)');
+      // Leak tracker mirrors the flop/turn betting-range price for weak pair
+      // (v1.8.274): calling the Rock's big turn bet with bottom pair is a
+      // bad chase (betting-range eq ~11% vs a 30% need), and folding a
+      // pair of 5s to the LAG's small turn bet is a weak fold (betting-
+      // range eq ~41% vs need + 10 = 27%). The pair-plus pool priced the
+      // first at ~19% (silent) and the tier pool the second at ~55% (the
+      // flag fired, but for the wrong price).
+      var leakWeakTurnRock = postflopLeak([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'rock', Q725, 'turn', 400, 300, 300,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 300, pot: 700 }], 'call');
+      ok(leakWeakTurnRock && leakWeakTurnRock.type === 'bad-chase',
+        'weak pair calling the Rock\'s big turn bet flags bad-chase (betting-range eq ~11% vs 30% need)');
+      var leakWeakTurnLagFold = postflopLeak([{ r: 9, s: 1 }, { r: 5, s: 0 }], 'lag', Q725, 'turn', 400, 100, 100,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
+      ok(leakWeakTurnLagFold && leakWeakTurnLagFold.type === 'weak-fold',
+        'folding a pair of 5s to the LAG\'s small turn bet flags weak-fold (betting-range eq ~41% vs need + 10 = 27%)');
       // Leak tracker dilutes multiway equity (v1.8.200): the same weak-pair
       // fold against LAG's 250-into-500 turn bet flags weak-fold heads-up
       // (range eq ~55% vs a 35% line) but NOT with a caller ahead (true

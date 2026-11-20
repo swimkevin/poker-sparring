@@ -1000,12 +1000,12 @@ console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too')
     'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267)');
   ok(src.indexOf('madePriced') !== -1 && src.indexOf('airPriced') === -1,
     'the flag is named for what it prices now, not just air (v1.8.266)');
-  ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-fold'") !== -1 &&
-     labSrc.indexOf("name: 'weak-vs-lag-flop-fold'") !== -1 &&
+  ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-call'") !== -1 &&
+     labSrc.indexOf("name: 'weak-vs-lag-flop-call'") !== -1 &&
      labSrc.indexOf("name: 'weak-vs-maniac-turn-fold'") !== -1 &&
      labSrc.indexOf("name: 'weak-vs-lag-turn-fold'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-maniac-flop-call'") !== -1,
-    'the lab pins all four weak-pair folds plus the second-pair small-bet call control (v1.8.266)');
+    'the lab pins the weak-pair flop calls and turn folds plus the second-pair small-bet call control (v1.8.266 spots re-decided in v1.8.274: the flop folds were the four-player truth, heads-up they call at 42%/38%)');
 }
 
 console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as good as it');
@@ -1087,6 +1087,22 @@ console.log('\n89. v1.8.272: second pair is priced on the tier range off the riv
   ok(labSrc.indexOf("name: 'secondpair-vs-maniac-flop-potbet-call'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-rock-turn-fold'") !== -1,
     'the lab pins both sides: second pair calls a pot-sized flop bet vs the Maniac (truth 58% at a 33% price) and folds a 1.5x turn bet vs the Rock (truth 36% at a 40% price) (v1.8.272)');
+}
+
+console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the river');
+{
+  ok(equitySrc.indexOf('function estimateEquityVsBettingRangePostflop') !== -1 &&
+     equitySrc.indexOf('evaluate7Fast(h.concat(board2))') !== -1,
+    'the flop/turn betting-range price runs on the fast evaluator: the slow one cost 43-64s a call (probe16) because it enumerates all 21 five-card subsets (v1.8.274)');
+  ok(src.indexOf('eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,') !== -1 &&
+     src.indexOf("hc === 'weakpair' && table.street !== 'river'") !== -1,
+    'the coach prices weak pair off the river against the betting range: the pair-plus pool said 18-21% against the heads-up truth of 42%/38%/19% on the flop and 26%/22%/10% on the turn (probe12) (v1.8.274)');
+  ok(src.indexOf("((riverBetPriced || betRangePriced) ? 0 : rangeAdjust)") !== -1,
+    'the threshold does not discount for a wide range once the price IS the betting range: the discount double-counted looseness and called with 22% against a 25% need vs the Rock (v1.8.274)');
+  ok(labSrc.indexOf("name: 'weakpair-flop-vs-maniac-call'") !== -1 &&
+     labSrc.indexOf("name: 'weakpair-flop-vs-rock-fold'") !== -1 &&
+     labSrc.indexOf("name: 'weakpair-turn-vs-maniac-small-call'") !== -1,
+    'the lab pins the weak-pair flop/turn calls and folds: the price lands within ~3 points of the heads-up truth on every street and villain (probe18) (v1.8.274)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
