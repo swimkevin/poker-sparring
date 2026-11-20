@@ -1078,6 +1078,36 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakSecondTurnLagFold && leakSecondTurnLagFold.type === 'weak-fold',
         'folding second pair to the LAG\'s small turn bet flags weak-fold (betting-range eq ~55% vs need + 10 = 27%)');
+      // Trips and two pair are priced vs the betting range off the river
+      // (v1.8.277): probe25 measured only the dry Q72 board, where the tier
+      // range is within 5 points — probe27 measured wet and paired boards
+      // and the tier price is off by up to 12.6 points (a set vs the Rock
+      // on wet QJ7 quotes 76% against an 89% truth), while the estimator
+      // lands within ~3 points of the truth on 65 of 66 cells. The bands
+      // below fail on the old tier prices and pass on the estimator; the
+      // advice is call in all three spots under either price, so the lab
+      // pins the advice and these pin the number the user actually reads.
+      var QJ7wet = [{ r: 12, s: 2 }, { r: 11, s: 2 }, { r: 7, s: 0 }];
+      var setFlopRock = postflopVerdict([{ r: 7, s: 1 }, { r: 7, s: 3 }], 'rock', 'flop', 200, 400, QJ7wet, 2000, 2000,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(setFlopRock.advice === 'call' && quotedEq(setFlopRock) >= 84 && quotedEq(setFlopRock) <= 94,
+        'set vs the Rock\'s flop bet on wet QJ7 quotes 84-94% (estimator 89%, truth 89%; the tier price quoted 76%)');
+      var twoQ7FlopRock = postflopVerdict([{ r: 12, s: 0 }, { r: 7, s: 1 }], 'rock', 'flop', 200, 400, QJ7wet, 2000, 2000,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(twoQ7FlopRock.advice === 'call' && quotedEq(twoQ7FlopRock) >= 78 && quotedEq(twoQ7FlopRock) <= 88,
+        'two pair Q7 vs the Rock\'s flop bet on wet QJ7 quotes 78-88% (estimator 82%, truth 80%; the tier price quoted 69%)');
+      var twoQJFlopRock = postflopVerdict([{ r: 12, s: 0 }, { r: 11, s: 1 }], 'rock', 'flop', 200, 400, QJ7wet, 2000, 2000,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(twoQJFlopRock.advice === 'call' && quotedEq(twoQJFlopRock) >= 82 && quotedEq(twoQJFlopRock) <= 90,
+        'two pair QJ vs the Rock\'s flop bet on wet QJ7 quotes 82-90% (estimator 85%, truth 83%; the tier price quoted 73%)');
+      // The tracker mirrors the estimator for two pair too (v1.8.277):
+      // folding bottom two pair on a paired 772 turn to the Rock's small
+      // bet still flags weak-fold (estimator ~36% vs need + 10 = 27%).
+      var B772turn = [{ r: 7, s: 3 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 2 }];
+      var leakTwoPairTurnRockFold = postflopLeak([{ r: 5, s: 1 }, { r: 2, s: 2 }], 'rock', B772turn, 'turn', 400, 100, 100,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
+      ok(leakTwoPairTurnRockFold && leakTwoPairTurnRockFold.type === 'weak-fold',
+        'folding two pair on the 772 turn to the Rock\'s small bet flags weak-fold (betting-range eq ~36% vs need + 10 = 27%)');
       // The "Didn't raise the nuts" lesson states the raise-to amount
       // (v1.8.276): it used to say "raise to about 4× their bet" with no
       // amount, while the spot line above it had the number. Calling the

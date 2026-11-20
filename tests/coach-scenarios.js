@@ -996,8 +996,8 @@ console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every s
 
 console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too');
 {
-  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair')") !== -1,
-    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || ((hc === 'trips' || hc === 'twopair') && table.street !== 'river'))") !== -1,
+    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267; trips and two pair join off the river in v1.8.277)');
   ok(src.indexOf('madePriced') !== -1 && src.indexOf('airPriced') === -1,
     'the flag is named for what it prices now, not just air (v1.8.266)');
   ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-call'") !== -1 &&
@@ -1107,10 +1107,10 @@ console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the ri
 
 console.log('\n91. v1.8.275: every one-pair hand is priced vs the betting range off the river');
 {
-  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair') && table.street !== 'river'") !== -1,
-    'the flop/turn betting-range price covers all four one-pair classes: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22) (v1.8.275)');
-  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair') && table.street !== 'river'") !== -1,
-    'the leak tracker mirrors the estimator for second pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275)');
+  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
+    'the flop/turn betting-range price covers all four one-pair classes plus trips and two pair: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27)');
+  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
+    'the leak tracker mirrors the estimator for second pair, trips and two pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275; trips and two pair join in v1.8.277)');
   ok(labSrc.indexOf("name: 'toppair-flop-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'toppair-turn-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'overpair-flop-vs-rock-call'") !== -1 &&

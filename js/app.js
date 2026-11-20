@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.276';
+  var APP_VERSION = '1.8.277';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -947,7 +947,7 @@
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
         var chaseEq = eq;
-        if (V && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair') && liveOpponents().length < 2) {
+        if (V && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || ((hc === 'trips' || hc === 'twopair') && table.street !== 'river')) && liveOpponents().length < 2) {
           var rangeEqTierL = (vRange && vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) ? 2 : (vRange && vRange.label === 'strong' ? 3 : 0);
           var narrowedL = !rangeEqTierL && villainCalledBig(table.players.indexOf(V));
           if (!narrowedL) {
@@ -958,7 +958,7 @@
               var vAggrL = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
               betEqL = estimateEquityVsBettingRange(hero.hole, table.community,
                 vAggrL, villainBluffy(V.archetype), 1);
-              if (betEqL == null && (hc === 'weakpair' || hc === 'secondpair') && table.street !== 'river') {
+              if (betEqL == null && (hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river') {
                 betEqL = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype));
               }
@@ -1035,7 +1035,7 @@
         if (betEqF != null) foldEq = betEqF;
       }
       if (V && table.street !== 'river' && liveOpponents().length === 1 &&
-          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') &&
+          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
           V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1 &&
           !villainCalledBig(table.players.indexOf(V))) {
@@ -2554,7 +2554,7 @@
     var betRangePriced = false;
     var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
       ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
-    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') && !diluted && !narrowedByCall) {
+    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && !diluted && !narrowedByCall) {
       var eqMade = null;
       if (table.street === 'river' && liveOpponents().length === 1 &&
           (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') && genericBettor) {
@@ -2564,7 +2564,7 @@
         if (eqMade != null) riverBetPriced = true;
       }
       if (eqMade == null && (hc === 'weakpair' || hc === 'secondpair' ||
-          hc === 'toppair' || hc === 'overpair') && table.street !== 'river' &&
+          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river' &&
           liveOpponents().length === 1 && genericBettor) {
         var vAggr2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
