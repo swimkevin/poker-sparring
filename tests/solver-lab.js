@@ -995,7 +995,7 @@ var SPOTS = [
   { name: 'madehand-flush-trapper-raise', kind: 'facing-raise', villain: 'nathan',
     hero: [C(14, 1), C(13, 1)], board: [C(12, 1), C(11, 1), C(9, 1), C(7, 3), C(7, 2)],
     street: 'river', potBefore: 500, bet: 100, heroStack: 2000, villainStack: 2000,
-    nLive: 2, expect: 'raise', expectRaiseTo: 400,
+    nLive: 2, expect: 'raise', expectRaiseTo: 400, expectWord: 'charge the draws',
     timeline: betTimeline('river', 100, 500) },
   { name: 'madehand-flush-raise', kind: 'facing-raise', villain: 'lag',
     hero: [C(14, 1), C(13, 1)], board: [C(12, 1), C(11, 1), C(9, 1), C(7, 3), C(7, 2)],

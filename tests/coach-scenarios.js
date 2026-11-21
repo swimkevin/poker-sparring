@@ -736,8 +736,10 @@ console.log('\n61. v1.8.196: squeeze sizing adds 1x per caller in front');
 
 console.log('\n62. v1.8.197: raise the near-nuts for value vs a station trapper\'s small bet');
 {
-  ok(src.indexOf('var trapperValue = passiveTrapper && foldy <= 0.25 && adjEq >= 0.90;') !== -1,
-    'the trapper block lifts only when the villain is a station (folds little) and the coach equity crushes his range: trips vs Nathan raise, overpair at 82% still calls (v1.8.197)');
+  ok(src.indexOf('var trapperValue = passiveTrapper && foldy <= 0.25 && trapperEq >= 0.90;') !== -1,
+    'the trapper block lifts only when the villain is a station (folds little) and the coach equity crushes his range: trips vs Nathan raise, overpair at 82% still calls (v1.8.197, v1.8.282: the gate equity is the exact river enumeration, not the Monte Carlo adjEq)');
+  ok(src.indexOf('estimateEquityVsRangePostflopExact(hero.hole, table.community, trapperTier)') !== -1,
+    'the trapper gate prices exact river equity against the same tier pool the Monte Carlo priced, so the gate cannot flip between runs (v1.8.282)');
   ok(src.indexOf("(!passiveTrapper || trapperValue)") !== -1,
     'the small-bet raise branch takes the value-raise path for a station trapper (v1.8.197)');
   ok(src.indexOf('he calls down with worse hands') !== -1,

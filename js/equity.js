@@ -354,6 +354,30 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   return score / iters;
 }
 
+function estimateEquityVsRangePostflopExact(hole, community, maxTier) {
+  if (!hole || !community || community.length !== 5) return null;
+  maxTier = Math.min(6, Math.max(1, maxTier || 3));
+  var known = {};
+  hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!known[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var myScore = evaluate7Fast(hole.concat(community)).score;
+  var total = 0, score = 0;
+  for (var i = 0; i < rest.length; i++)
+    for (var j = i + 1; j < rest.length; j++) {
+      var h = [rest[i], rest[j]];
+      if (holeTier(h) > maxTier) continue;
+      total++;
+      var os = evaluate7Fast(h.concat(community)).score;
+      if (myScore > os) score += 1;
+      else if (myScore === os) score += 0.5;
+    }
+  if (!total) return null;
+  return score / total;
+}
+
 function estimateEquityVsRanges(hole, community, tiers, iters) {
   iters = iters || 300;
   var known = {};
@@ -741,6 +765,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
+    estimateEquityVsRangePostflopExact: estimateEquityVsRangePostflopExact,
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,
     estimateEquityVsMadePairPlus: estimateEquityVsMadePairPlus,
     estimateEquityVsBettingRange: estimateEquityVsBettingRange,

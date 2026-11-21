@@ -1468,6 +1468,30 @@ setTimeout(function () {
         'betting all-in (400 stack) with top pair vs a Station is NOT under-bet (coach shoves there)');
     })();
 
+    (function () {
+      var flushHero = [{ r: 14, s: 1 }, { r: 13, s: 1 }];
+      var flushBoard = [{ r: 12, s: 1 }, { r: 11, s: 1 }, { r: 9, s: 1 }, { r: 7, s: 3 }, { r: 7, s: 2 }];
+      var flushExact = w.estimateEquityVsRangePostflopExact(flushHero, flushBoard, 3);
+      ok(Math.abs(flushExact - 66 / 76) < 1e-9,
+        'exact river equity vs tier 3 is 66/76 (0.8684) for the ace-high flush on the paired board, below the 0.90 trapper gate');
+      var tripsHero = [{ r: 12, s: 1 }, { r: 12, s: 0 }];
+      var tripsBoard = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
+      ok(w.estimateEquityVsRangePostflopExact(tripsHero, tripsBoard, 3) === 1,
+        'exact river equity vs tier 3 is 1.0 for top set vs the trapper, above the 0.90 trapper gate');
+      ok(w.estimateEquityVsRangePostflopExact(flushHero, flushBoard.slice(0, 4), 3) === null,
+        'exact river equity returns null before the river (no runouts left to enumerate)');
+      var trapperTimeline = [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 600 }];
+      var firstMsg = null, stable = true;
+      for (var i = 0; i < 25; i++) {
+        var tv = postflopVerdict(flushHero, 'nathan', 'river', 100, 500, flushBoard, 2000, 2000, trapperTimeline, 2);
+        var m = stripAdvice(tv.msg);
+        if (firstMsg === null) firstMsg = m;
+        else if (m !== firstMsg) stable = false;
+      }
+      ok(stable && firstMsg.indexOf('charge the draws') !== -1,
+        'trapper flush verdict is identical across 25 runs and takes the generic value-raise line (exact equity below the gate, no Monte Carlo flip)');
+    })();
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

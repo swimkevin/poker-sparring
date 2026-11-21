@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.281';
+  var APP_VERSION = '1.8.282';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1000,7 +1000,11 @@
           var foldyN = villainFoldy(V.archetype);
           var tellN = villainSizingTell(vIdxN);
           var trapperN = V.archetype && V.archetype.neverRaise && villainBluffy(V.archetype) <= 0.10;
-          var trapperValueN = trapperN && foldyN <= 0.25 && eq >= 0.90;
+          var trapperExactN = street === 'river' && rangeTier
+            ? estimateEquityVsRangePostflopExact(hero.hole, table.community, rangeTier)
+            : null;
+          var trapperValueN = trapperN && foldyN <= 0.25 &&
+            (trapperExactN == null ? eq : trapperExactN) >= 0.90;
           var smallBetN = tellN && tellN.unit === 'pot' && tellN.size === 'small' &&
             !isMultiway() && !villainShowedStrength(vIdxN) && (!trapperN || trapperValueN);
           var multN = smallBetN ? 3 : (foldyN < 0.25 ? 4 : 3);
@@ -2653,7 +2657,12 @@
         'When the pot is nearly as big as your stack and your hand is strong, folding saves almost nothing — call.');
 
     var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
-    var trapperValue = passiveTrapper && foldy <= 0.25 && adjEq >= 0.90;
+    var trapperTier = rangeEqTier || vTier;
+    var trapperExact = table.street === 'river' && trapperTier
+      ? estimateEquityVsRangePostflopExact(hero.hole, table.community, trapperTier)
+      : null;
+    var trapperEq = trapperExact == null ? adjEq : trapperExact;
+    var trapperValue = passiveTrapper && foldy <= 0.25 && trapperEq >= 0.90;
     var strongShown = villainShowedStrength(vIdx);
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway && !strongShown && (!passiveTrapper || trapperValue) &&
