@@ -216,6 +216,7 @@ function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) 
     var tot = 0, sc = 0;
     for (var b = 0; b < pool.length; b++) {
       if (b === a) continue;
+      if (heroKnown[keys[b][0]] || heroKnown[keys[b][1]]) continue;
       if (keys[b][0] === keys[a][0] || keys[b][0] === keys[a][1] ||
           keys[b][1] === keys[a][0] || keys[b][1] === keys[a][1]) continue;
       tot++;

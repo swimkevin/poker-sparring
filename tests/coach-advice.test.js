@@ -1130,16 +1130,16 @@ setTimeout(function () {
       var RDRY = [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
       var two772Rock = postflopVerdict([{ r: 5, s: 1 }, { r: 2, s: 2 }], 'rock', 'river', 200, 400, R772, 2000, 2000,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-      ok(two772Rock.advice === 'fold' && quotedEq(two772Rock) >= 0 && quotedEq(two772Rock) <= 12,
-        'bottom two pair on the 772 river vs the Rock folds quoting 0-12% (exact 6%; the tier price quoted 39% and called)');
+      ok(two772Rock.advice === 'fold' && quotedEq(two772Rock) >= 7 && quotedEq(two772Rock) <= 19,
+        'bottom two pair on the 772 river vs the Rock folds quoting 7-19% (exact 13%; the tier price quoted 39% and called)');
       var two772RockPot = postflopVerdict([{ r: 5, s: 1 }, { r: 2, s: 2 }], 'rock', 'river', 400, 400, R772, 2000, 2000,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
-      ok(two772RockPot.advice === 'fold' && quotedEq(two772RockPot) >= 0 && quotedEq(two772RockPot) <= 12,
-        'bottom two pair on the 772 river vs the Rock pot-sized bet folds quoting 0-12% (exact 6%; the tier price quoted 56% and called)');
+      ok(two772RockPot.advice === 'fold' && quotedEq(two772RockPot) >= 7 && quotedEq(two772RockPot) <= 19,
+        'bottom two pair on the 772 river vs the Rock pot-sized bet folds quoting 7-19% (exact 13%; the tier price quoted 56% and called)');
       var twoKK9Rock = postflopVerdict([{ r: 9, s: 1 }, { r: 4, s: 0 }], 'rock', 'river', 200, 400, RKK9, 2000, 2000,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-      ok(twoKK9Rock.advice === 'call' && quotedEq(twoKK9Rock) >= 34 && quotedEq(twoKK9Rock) <= 48,
-        'two pair 9s and 4s on the KK9 river vs the Rock calls quoting 34-48% (exact 41%; the tier price quoted 8% and folded)');
+      ok(twoKK9Rock.advice === 'call' && quotedEq(twoKK9Rock) >= 48 && quotedEq(twoKK9Rock) <= 61,
+        'two pair 9s and 4s on the KK9 river vs the Rock calls quoting 48-61% (exact 55%; the tier price quoted 8% and folded)');
       var twoWetQJRock = postflopVerdict([{ r: 12, s: 0 }, { r: 11, s: 1 }], 'rock', 'river', 200, 400, RWET, 2000, 2000,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
       ok(twoWetQJRock.advice === 'call' && quotedEq(twoWetQJRock) >= 40 && quotedEq(twoWetQJRock) <= 52,
@@ -1154,17 +1154,18 @@ setTimeout(function () {
         'two pair Q2 on the dry Q72 river vs the Rock calls quoting 82-94% (exact 88%; the tier price quoted 98%)');
       // The tracker mirrors the exact river price for two pair too (v1.8.278):
       // calling bottom two pair on the 772 river vs the Rock's half-pot bet
-      // flags bad-chase (exact 6% vs a 13% line), and folding two pair 9s
-      // and 4s on the KK9 river vs the Rock's small bet flags weak-fold
-      // (exact 41% vs need + 10 = 27%).
+      // flags bad-chase (exact 13% vs a 13% line — a 0.1-point margin after
+      // the v1.8.284 eq1-pool fix, exact and deterministic, not noise), and
+      // folding two pair 9s and 4s on the KK9 river vs the Rock's small bet
+      // flags weak-fold (exact 55% vs need + 10 = 27%).
       var leakTwo772RockCall = postflopLeak([{ r: 5, s: 1 }, { r: 2, s: 2 }], 'rock', R772, 'river', 400, 200, 200,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
       ok(leakTwo772RockCall && leakTwo772RockCall.type === 'bad-chase',
-        'calling bottom two pair on the 772 river vs the Rock half-pot bet flags bad-chase (exact eq ~6% vs a 13% line)');
+        'calling bottom two pair on the 772 river vs the Rock half-pot bet flags bad-chase (exact eq ~13% vs a 13% line)');
       var leakTwoKK9RockFold = postflopLeak([{ r: 9, s: 1 }, { r: 4, s: 0 }], 'rock', RKK9, 'river', 400, 100, 100,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakTwoKK9RockFold && leakTwoKK9RockFold.type === 'weak-fold',
-        'folding two pair on the KK9 river to the Rock small bet flags weak-fold (exact eq ~41% vs need + 10 = 27%)');
+        'folding two pair on the KK9 river to the Rock small bet flags weak-fold (exact eq ~55% vs need + 10 = 27%)');
       // Draws are priced vs the betting range off the river too (v1.8.280):
       // probe28 measured 54 draw cells and the tier price overshoots the
       // betting-range truth by 9-19 points vs loose villains, plus a flat
