@@ -1004,10 +1004,10 @@ console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too')
     'the flag is named for what it prices now, not just air (v1.8.266)');
   ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-call'") !== -1 &&
      labSrc.indexOf("name: 'weak-vs-lag-flop-call'") !== -1 &&
-     labSrc.indexOf("name: 'weak-vs-maniac-turn-fold'") !== -1 &&
+     labSrc.indexOf("name: 'weak-vs-maniac-turn-call'") !== -1 &&
      labSrc.indexOf("name: 'weak-vs-lag-turn-fold'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-maniac-flop-call'") !== -1,
-    'the lab pins the weak-pair flop calls and turn folds plus the second-pair small-bet call control (v1.8.266 spots re-decided in v1.8.274: the flop folds were the four-player truth, heads-up they call at 42%/38%)');
+    'the lab pins the weak-pair flop calls and turn folds plus the second-pair small-bet call control (v1.8.266 spots re-decided in v1.8.274: the flop folds were the four-player truth, heads-up they call at 42%/38%; v1.8.283 re-decides the Maniac turn spot to a call: exact truth 28.3% vs a 25% need, the old fold was the hero-cards-in-the-eq1-pool flaw)');
 }
 
 console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as good as it');

@@ -261,7 +261,7 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
       holdings.push(h);
       var ms = madeStrengthEv(evaluate7Fast(h.concat(community)), h, community);
       var rem = [];
-      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j) rem.push(rest[k]);
+      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j && !heroKnown[_key(rest[k])]) rem.push(rest[k]);
       var wins = 0;
       for (var q = 0; q < 100; q++) {
         var need = boardNeed + 2;

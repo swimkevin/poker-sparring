@@ -711,11 +711,11 @@ setTimeout(function () {
     var weakTurnManiac = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'turn', 200, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(weakTurnManiac.advice === 'fold', 'weak pair folds the Maniac medium turn bet — heads-up truth ~26% at a 25% price, inside the 3-point call margin (got ' + weakTurnManiac.advice + ')');
+    ok(weakTurnManiac.advice === 'call', 'weak pair calls the Maniac medium turn bet — exact truth 28.3% at a 25% price, clearing the 3-point call margin (the old fold priced the flawed eq1 pool, v1.8.283) (got ' + weakTurnManiac.advice + ')');
     var weakTurnLag = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'lag', 'turn', 200, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(weakTurnLag.advice === 'fold', 'weak pair folds the LAG medium turn bet too — heads-up truth ~22% at a 25% price (got ' + weakTurnLag.advice + ')');
+    ok(weakTurnLag.advice === 'fold', 'weak pair folds the LAG medium turn bet too — exact truth 25.0% at a 25% price, inside the 3-point call margin (got ' + weakTurnLag.advice + ')');
     var weakTurnManiacSmall = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', 'turn', 100, 400,
       weakTurnBoard, 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 2);

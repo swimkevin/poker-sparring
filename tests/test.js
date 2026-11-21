@@ -84,6 +84,8 @@ function hand(str) {
   ok(gut > 0.22 && gut < 0.34, 'gutshot vs lag wet flop ~28% (truth 28.4; old LCG stream gave 12.8%), got ' + gut.toFixed(3));
   var gut2 = EQ.estimateEquityVsBettingRangePostflop(hand('Ts 8s'), hand('Qd Jd 7s'), 0.80, 0.35);
   ok(gut2 > 0.22 && gut2 < 0.34, 'gutshot suit variant ~28% too (seed-robust), got ' + gut2.toFixed(3));
+  var twoPair772 = EQ.estimateEquityVsBettingRangePostflop(hand('5d 2s'), hand('7c 7d 2h 5s'), 0.20, 0.02);
+  ok(twoPair772 > 0.42 && twoPair772 < 0.52, 'two pair on 772 vs Rock ~46% (exact truth 48.3%; the eq1 opponent pool must exclude hero cards — including them depressed it to 36%, v1.8.283), got ' + twoPair772.toFixed(3));
 })();
 
 // ---------- SPR + commitment (coach) ----------
