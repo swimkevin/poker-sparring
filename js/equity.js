@@ -7,6 +7,16 @@ if (typeof module !== 'undefined' && module.exports) {
 
 function _key(c) { return c.r * 10 + c.s; }
 
+function seededRnd(seed) {
+  var a = seed | 0;
+  return function () {
+    a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
 function estimateEquity(hole, community, opponents, iters) {
   iters = iters || 300;
   opponents = Math.max(1, opponents || 1);
@@ -227,10 +237,7 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
   var seed = 987654321;
   hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
   seed = (seed * 31 + Math.round(aggression * 1000) + Math.round(bluff * 1000)) % 2147483647;
-  function rnd() {
-    seed = (seed * 1103515245 + 12345) % 2147483648;
-    return seed / 2147483648;
-  }
+  var rnd = seededRnd(seed);
   var boardKnown = {};
   community.forEach(function (c) { boardKnown[_key(c)] = 1; });
   var rest = [];
@@ -495,10 +502,7 @@ function estimateEquityVsMadePoolMulti(hole, community, minCat, nOpp) {
   }
   var seed = 1234567;
   hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
-  function rnd() {
-    seed = (seed * 1103515245 + 12345) % 2147483648;
-    return seed / 2147483648;
-  }
+  var rnd = seededRnd(seed);
   var sims = 20000, sTotal = 0, sScore = 0;
   for (var n = 0; n < sims; n++) {
     var picked = [], used = {};

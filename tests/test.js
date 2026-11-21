@@ -78,6 +78,14 @@ function hand(str) {
   ok(eqDraw > 0.45, 'nut flush draw + overs reasonable, got ' + eqDraw.toFixed(3));
 })();
 
+// ---------- betting-range estimator: seeded stream must not corrupt a cell (v1.8.279) ----------
+(function () {
+  var gut = EQ.estimateEquityVsBettingRangePostflop(hand('Tc 8s'), hand('Qd Jd 7s'), 0.80, 0.35);
+  ok(gut > 0.22 && gut < 0.34, 'gutshot vs lag wet flop ~28% (truth 28.4; old LCG stream gave 12.8%), got ' + gut.toFixed(3));
+  var gut2 = EQ.estimateEquityVsBettingRangePostflop(hand('Ts 8s'), hand('Qd Jd 7s'), 0.80, 0.35);
+  ok(gut2 > 0.22 && gut2 < 0.34, 'gutshot suit variant ~28% too (seed-robust), got ' + gut2.toFixed(3));
+})();
+
 // ---------- SPR + commitment (coach) ----------
 (function () {
   ok(EQ.spr(200, 100) === 2, 'spr = effStack/pot');
