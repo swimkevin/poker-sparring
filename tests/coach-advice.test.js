@@ -270,7 +270,8 @@ setTimeout(function () {
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 700 }], 2);
     ok(!commitCall.error, 'commit-call verdict has no error' + (commitCall.error ? ' (' + commitCall.error + ')' : ''));
     ok(commitCall.advice === 'call', 'nut flush calls when committed at SPR <= 1 (got ' + commitCall.advice + ')');
-    ok(stripAdvice(commitCall.html).indexOf('calling costs almost nothing') !== -1, 'commit-call message names the cheap call');
+    ok(stripAdvice(commitCall.html).indexOf('calling 200 costs almost nothing') !== -1, 'commit-call message names the cheap call');
+    ok(stripAdvice(commitCall.html).indexOf('The pot (700)') !== -1 && stripAdvice(commitCall.html).indexOf('your stack (600)') !== -1, 'commit-call message states the pot and stack amounts (v1.8.281)');
     var commitCallDeep = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'lag', 'flop', 200, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 2 }], 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 700 }], 2);

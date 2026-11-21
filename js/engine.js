@@ -38,8 +38,6 @@ class PokerTable {
     try { this.onEvent(evt); } catch {  }
   }
 
-  drainEvents() { var q = this.eventQueue; this.eventQueue = []; return q; }
-
   livePlayers() {
 
     return this.players.filter(function (p) { return !p.folded && !p.sittingOut && (p.stack > 0 || p.totalBet > 0); });

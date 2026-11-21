@@ -287,7 +287,7 @@ var SPOTS = [
   { name: 'commit-call-nut-flush', kind: 'facing', villain: 'lag',
     hero: [C(14, 2), C(13, 2)], board: [C(2, 2), C(7, 2), C(12, 2)],
     street: 'flop', potBefore: 500, bet: 200, heroStack: 600, nLive: 2, expect: 'call',
-    expectWord: 'calling costs almost nothing',
+    expectWord: 'calling 200 costs almost nothing',
     timeline: betTimeline('flop', 200, 500) },
   { name: 'toppair-vs-rock-river-potbet-fold', kind: 'facing', villain: 'rock',
     hero: [C(12, 1), C(11, 0)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 1)],
@@ -569,7 +569,7 @@ var SPOTS = [
     ] },
   { name: 'open-10x-rock-aa-raise', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
-    potBefore: 15, bet: 100, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'raise',
+    potBefore: 15, bet: 100, heroStack: 3000, villainStack: 2900, nLive: 2, expect: 'raise', expectRaiseTo: 300,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 100, pot: 115 }
     ] },
@@ -588,14 +588,14 @@ var SPOTS = [
     ] },
   { name: 'bluff-3bet-maniac-shallow-raise', kind: 'facing-preflop', villain: 'maniac',
     hero: [C(14, 0), C(5, 0)], board: [], street: 'preflop',
-    potBefore: 15, bet: 30, heroStack: 3000, villainStack: 470, nLive: 2, expect: 'raise',
+    potBefore: 15, bet: 30, heroStack: 3000, villainStack: 470, nLive: 2, expect: 'raise', expectRaiseTo: 90,
     expectWord: 'short stack',
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 30, pot: 45 }
     ] },
   { name: 'iso-3-limpers-60', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
-    potBefore: 45, bet: 10, heroStack: 2000, nLive: 4, expect: 'raise', expectWord: 'to ~ 60',
+    potBefore: 45, bet: 10, heroStack: 2000, nLive: 4, expect: 'raise', expectWord: 'to ~ 60', expectRaiseTo: 60,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
@@ -603,13 +603,13 @@ var SPOTS = [
     ] },
   { name: 'iso-1-limper-40', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
-    potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, expect: 'raise', expectWord: 'to ~ 40',
+    potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, expect: 'raise', expectWord: 'to ~ 40', expectRaiseTo: 40,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }
     ] },
   { name: 'bb-aa-3-limpers-60', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(14, 1)], board: [], street: 'preflop',
-    potBefore: 45, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 60',
+    potBefore: 45, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 60', expectRaiseTo: 60,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
@@ -617,13 +617,13 @@ var SPOTS = [
     ] },
   { name: 'bb-aks-1-limper-40', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 0)], board: [], street: 'preflop',
-    potBefore: 25, bet: 10, heroBet: 10, heroStack: 2000, nLive: 3, button: 6, expect: 'raise', expectWord: 'to ~ 40',
+    potBefore: 25, bet: 10, heroBet: 10, heroStack: 2000, nLive: 3, button: 6, expect: 'raise', expectWord: 'to ~ 40', expectRaiseTo: 40,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 }
     ] },
   { name: 'bb-jj-2-limpers-50', kind: 'facing-preflop', villain: 'rock',
     hero: [C(11, 0), C(11, 1)], board: [], street: 'preflop',
-    potBefore: 35, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 50',
+    potBefore: 35, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 50', expectRaiseTo: 50,
     timeline: [
       { t: 'action', street: 'preflop', player: 1, action: 'call', bet: 10, pot: 15 },
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
@@ -648,7 +648,7 @@ var SPOTS = [
     ] },
   { name: '3bet-rock-qq-raise', kind: 'facing-preflop', villain: 'rock',
     hero: [C(12, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 30, bet: 90, heroStack: 2000, villainStack: 1910, nLive: 3, expect: 'raise',
+    potBefore: 30, bet: 90, heroStack: 2000, villainStack: 1910, nLive: 3, expect: 'raise', expectRaiseTo: 207,
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'raise', bet: 30, pot: 15 },
       { t: 'action', street: 'preflop', player: 1, action: 'raise', bet: 90, pot: 45 }
@@ -838,19 +838,19 @@ var SPOTS = [
     ] },
   { name: 'iso-aqo-1limper-oop-raise', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, button: 3, expect: 'raise', expectWord: 'to ~ 40',
+    potBefore: 25, bet: 10, heroStack: 2000, nLive: 3, button: 3, expect: 'raise', expectWord: 'to ~ 40', expectRaiseTo: 40,
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
     ] },
   { name: 'iso-aqo-1limper-bb-raise', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 25, bet: 10, heroBet: 10, heroStack: 2000, nLive: 3, button: 6, expect: 'raise', expectWord: 'to ~ 40',
+    potBefore: 25, bet: 10, heroBet: 10, heroStack: 2000, nLive: 3, button: 6, expect: 'raise', expectWord: 'to ~ 40', expectRaiseTo: 40,
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 }
     ] },
   { name: 'iso-aqo-2limpers-bb-raise', kind: 'facing-preflop', villain: 'rock',
     hero: [C(14, 0), C(12, 1)], board: [], street: 'preflop',
-    potBefore: 35, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 50',
+    potBefore: 35, bet: 10, heroBet: 10, heroStack: 2000, nLive: 4, button: 6, expect: 'raise', expectWord: 'to ~ 50', expectRaiseTo: 50,
     timeline: [
       { t: 'action', street: 'preflop', player: 2, action: 'call', bet: 10, pot: 25 },
       { t: 'action', street: 'preflop', player: 3, action: 'call', bet: 10, pot: 35 }
@@ -1224,7 +1224,7 @@ setTimeout(function () {
         problems.push('message ' + strip(v.msg).length + ' chars exceeds ' +
           spot.maxMsgLen + ' tone budget');
     }
-    if (spot.kind === 'facing-raise') {
+    if ((spot.kind === 'facing-raise' || spot.kind === 'facing-preflop') && spot.expectRaiseTo != null) {
       var rm = /to ~\s*([\d,]+)/.exec(msg);
       var gotTo = rm ? parseInt(rm[1].replace(/,/g, ''), 10) : null;
       if (v.advice === 'raise' && gotTo == null) problems.push('raise with no parsable size');

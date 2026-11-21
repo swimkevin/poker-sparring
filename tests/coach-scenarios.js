@@ -1137,5 +1137,34 @@ console.log('\n92. v1.8.280: draws are priced vs the betting range off the river
     'the lab pins the draw flips and the two margin-zeroed 3/4-pot calls: the gutshot and nut-FD folds were calls under the tier price, and the 3/4-pot calls sit 0.8 points over need on the seeded estimator, so they are deterministic, not noise (v1.8.280)');
 }
 
+console.log('\n93. v1.8.281: preflop raise sizes are pinned in the lab and verdicts state amounts');
+{
+  ok(labSrc.indexOf("if ((spot.kind === 'facing-raise' || spot.kind === 'facing-preflop') && spot.expectRaiseTo != null) {") !== -1,
+    'the lab raise-size check covers facing-preflop spots too, gated on expectRaiseTo so range and all-in messages stay unpinned (v1.8.281, probe32)');
+  ok(labSrc.indexOf("name: '3bet-rock-qq-raise'") !== -1 &&
+     labSrc.indexOf('expectRaiseTo: 207') !== -1 &&
+     labSrc.indexOf("name: 'open-10x-rock-aa-raise'") !== -1 &&
+     labSrc.indexOf('expectRaiseTo: 300') !== -1 &&
+     labSrc.indexOf("name: 'iso-3-limpers-60'") !== -1 &&
+     labSrc.indexOf('expectRaiseTo: 60') !== -1,
+    'the lab pins 11 preflop raise sizes (4-bet to 207, open-raise to 300, iso raises to 40/50/60) measured stable over 3 reps each in probe32; the 4 all-in/range spots stay unpinned because their messages carry no single to ~ size');
+  ok(src.indexOf("behind a ' + fmt(toCall) + ' call") !== -1 &&
+     src.indexOf("fmt(toCall * 15) + ' behind") !== -1,
+    'set-mine lessons state the concrete amounts: 15x the call is named in chips behind a named call, not a bare multiple (v1.8.281 audit)');
+  ok(src.indexOf("plus 1× per caller in front — here that is to ~' + fmt(three) + '.'") !== -1,
+    'the 3-bet rule lesson states the actual re-raise size for this hand, not just the 3x/4x rule (v1.8.281 audit)');
+  ok(src.indexOf("but a ' + fmt(heroTotalV) + ' reshove needs") !== -1,
+    'the reshove-fold verdict states the shove size in chips, not just the break-even percentage (v1.8.281 audit)');
+  ok(src.indexOf("The pot (' + fmt(pot) + ') is already nearly as big as your stack (' + fmt(hero.stack) + ') — calling ' + fmt(toCall) + ' costs") !== -1,
+    'the commit-call verdict states the pot, the stack and the call cost, not just that the pot is nearly as big as the stack (v1.8.281 audit)');
+  ok(src.indexOf("bet about ' + UI.fmt(Math.round(pot * 2 / 3)) + ' (two-thirds pot)") !== -1 &&
+     src.indexOf("about ' + UI.fmt(Math.round(pot / 3)) + ' (a third of the pot)") !== -1 &&
+     src.indexOf("A half-pot semi-bluff (~' + UI.fmt(Math.round(pot / 2)) + ')") !== -1,
+    'the missed-value and semi-bluff leak lessons state the bet size in chips for the street pot at leak time, not a bare fraction of an unnamed pot (v1.8.281 audit)');
+  var engineSrc = fs.readFileSync(__dirname + '/../js/engine.js', 'utf8');
+  ok(engineSrc.indexOf('drainEvents') === -1,
+    'the dead drainEvents() method is gone from the engine: zero call sites, only the definition remained (v1.8.281 debloat scan)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.280';
+  var APP_VERSION = '1.8.281';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1013,20 +1013,20 @@
       if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && hc !== 'board' && madeStrength(hero.hole, table.community) >= 0.80) {
         return base('missed-value', 'Missed value bet',
           'Checked the ' + street + ' with a monster (' + hole + ')',
-          'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet to make the pot bigger.');
+          'You had one of the best possible hands but didn\'t bet! When you\'re almost sure to win, bet about ' + UI.fmt(Math.round(pot * 2 / 3)) + ' (two-thirds pot) to make the pot bigger.');
       }
       if (a === 'check' && (street === 'river' || street === 'turn' || street === 'flop') && V &&
           liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'secondpair' &&
           (positionScore(table, 0) > 0.6 || scareCardRank() || villainFoldy(V.archetype) > 0.5 || villainFoldy(V.archetype) < 0.25)) {
         return base('missed-value', 'Missed value bet',
           'Checked the ' + street + ' with second pair against ' + V.name,
-          'Bet second pair for thin value and protection — but keep the pot small.');
+          'Bet second pair for thin value and protection — about ' + UI.fmt(Math.round(pot / 3)) + ' (a third of the pot) keeps the pot small.');
       }
       if (a === 'check' && V && villainFoldy(V.archetype) >= 0.25 &&
           liveOpponents().length === 1 && handClass(hero.hole, table.community) === 'draw-strong') {
         return base('missed-value', 'Missed semi-bluff',
           'Checked with a strong draw against ' + V.name,
-          'A strong draw wins two ways — they fold now, or you hit your hand. A half-pot semi-bluff takes the pot whenever they fold and still has outs when they call; checking gives up the fold equity.');
+          'A strong draw wins two ways — they fold now, or you hit your hand. A half-pot semi-bluff (~' + UI.fmt(Math.round(pot / 2)) + ') takes the pot whenever they fold and still has outs when they call; checking gives up the fold equity.');
       }
       var needFold = legal.callAmount / (pot + legal.callAmount);
       var foldEq = eq;
@@ -1873,7 +1873,7 @@
         return shoveVerdict(c.nmHtml + ' is strong enough to reshove ' + Math.round(effBB) + 'bb.',
           'When short, go all-in with strong hands instead of just calling — you win extra when they fold.');
       return mkVerdict('fold', 'strong',
-        '<b>Fold</b> — ' + c.nmHtml + ' wins only about <b>' + pct(eqV) + '</b> against ' + c.vName + '\'s range, but a reshove needs <b>' + pct(breakEvenV) + '</b> to break even. Wait for a better spot.',
+        '<b>Fold</b> — ' + c.nmHtml + ' wins only about <b>' + pct(eqV) + '</b> against ' + c.vName + '\'s range, but a ' + fmt(heroTotalV) + ' reshove needs <b>' + pct(breakEvenV) + '</b> to break even. Wait for a better spot.',
         'A reshove into a tight range needs the math, not just a strong hand — the range decides.');
     }
     return mkVerdict('fold', 'strong',
@@ -2013,7 +2013,7 @@
         var callLesson2 = (call2 && eqCall2 && !inPos)
           ? 'Out of position, only call a re-raise when you\'re a big favorite — a small edge isn\'t enough when you\'ll be guessing on every street.'
           : (call2 && !eqCall2)
-          ? 'You can call re-raises with pairs only when ~15× the call sits behind.'
+          ? 'You can call re-raises with pairs only when ~15× the call sits behind — here that is ~' + fmt(toCall * 15) + ' behind a ' + fmt(toCall) + ' call.'
           : 'Medium pairs and broadways shrink fast against re-raises — call only as a favorite, or deep enough to hunt three of a kind.';
         return mkVerdict(call2 ? 'call' : 'fold', call2 ? 'marginal' : 'strong', callMsg2, callLesson2);
       }
@@ -2021,7 +2021,7 @@
         if (toCall * 15 <= effStackChips(vIdx))
           return mkVerdict('call', 'marginal',
             '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math3,
-            'You can call re-raises with small pairs only when ~15× the call sits behind.');
+            'You can call re-raises with small pairs only when ~15× the call sits behind — here that is ~' + fmt(toCall * 15) + ' behind a ' + fmt(toCall) + ' call.');
         if (adjEq3 > need3)
           return mkVerdict('call', 'marginal',
             '<b>Call</b> — ' + c.nmHtml + ' wins about <b>' + pct(adjEq3) + '</b> against ' + vName + '\'s wide re-raise range, so the price is right even without three of a kind.' + math3,
@@ -2082,7 +2082,7 @@
           if (setMine4 && !eqCall4)
             return mkVerdict('call', 'marginal',
               '<b>Call</b> — you\'re hunting three of a kind, and stacks are deep enough that one hit pays for all the misses.' + math4,
-              'You can call re-raises with pairs only when ~15× the call sits behind.');
+              'You can call re-raises with pairs only when ~15× the call sits behind — here that is ~' + fmt(toCall * 15) + ' behind a ' + fmt(toCall) + ' call.');
           return mkVerdict('call', 'marginal',
             (inPos ? '<b>Call</b> in position — ' : '<b>Call</b> — ') + c.nmHtml + ' is a big favorite against ' + vName + '\'s wide re-raise range (about <b>' + pct(eq4) + '</b> vs <b>' + pct(need4) + '</b> needed), so the price is right' + (inPos ? '' : ' even out of position') + '. Fold to more heat.' + math4,
             'Out of position, only call a re-raise when you\'re a big favorite — a small edge isn\'t enough when you\'ll be guessing on every street.');
@@ -2184,7 +2184,7 @@
         (callers ? ' + 1× per caller' : '') +
         (inPos ? ') — you have position' : ') — out of position, size up to charge them') +
         '. You\'re usually ahead, so build the pot now.',
-        'Re-raise premiums for value: 3× in position, 4× out of position, plus 1× per caller in front.');
+        'Re-raise premiums for value: 3× in position, 4× out of position, plus 1× per caller in front — here that is to ~' + fmt(three) + '.');
     }
 
     var handDesc = c.nmHtml + (suited ? ' suited' : '');
@@ -2196,7 +2196,7 @@
       if (toCall * 15 <= effStackChips(vIdx) && effStackBB(vIdx) >= 12)
         return mkVerdict('call', 'marginal',
           'Call <b>' + fmt(toCall) + '</b> — hunting three of a kind: ' + Math.round(effStackBB(vIdx)) + 'bb deep is plenty to get paid when you hit.',
-          'Chasing three of a kind needs about 15× the call behind: you miss most flops.');
+          'Chasing three of a kind needs about 15× the call behind — here ~' + fmt(toCall * 15) + ' behind a ' + fmt(toCall) + ' call — because you miss most flops.');
       if (adjEq > threshold)
         return mkVerdict('call', 'marginal',
           mathLine + 'The math says <b>call</b> — the pair is ahead of ' + vName + '\'s wide range, so you don\'t need three of a kind.',
@@ -2648,7 +2648,7 @@
     if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&
         toCall <= 0.5 * pot && !polarStrong)
       return mkVerdict('call', 'strong',
-        'The pot is already nearly as big as your stack — calling costs almost nothing compared to what is already in there. With ' + handClassName(hc) +
+        'The pot (' + fmt(pot) + ') is already nearly as big as your stack (' + fmt(hero.stack) + ') — calling ' + fmt(toCall) + ' costs almost nothing compared to what is already in there. With ' + handClassName(hc) +
         ', <b>call</b>.' + rangeNote,
         'When the pot is nearly as big as your stack and your hand is strong, folding saves almost nothing — call.');
 
