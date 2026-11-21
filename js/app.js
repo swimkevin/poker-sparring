@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.277';
+  var APP_VERSION = '1.8.278';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -947,7 +947,7 @@
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
         var chaseEq = eq;
-        if (V && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || ((hc === 'trips' || hc === 'twopair') && table.street !== 'river')) && liveOpponents().length < 2) {
+        if (V && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && liveOpponents().length < 2) {
           var rangeEqTierL = (vRange && vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) ? 2 : (vRange && vRange.label === 'strong' ? 3 : 0);
           var narrowedL = !rangeEqTierL && villainCalledBig(table.players.indexOf(V));
           if (!narrowedL) {
@@ -1026,7 +1026,7 @@
       var needFold = legal.callAmount / (pot + legal.callAmount);
       var foldEq = eq;
       if (V && table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') &&
+          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
           V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1) {
         var vAggrF = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
@@ -2557,7 +2557,7 @@
     if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && !diluted && !narrowedByCall) {
       var eqMade = null;
       if (table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair') && genericBettor) {
+          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && genericBettor) {
         var vAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         eqMade = estimateEquityVsBettingRange(hero.hole, table.community,
           vAggr, villainBluffy(V.archetype), 1);

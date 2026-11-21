@@ -996,8 +996,8 @@ console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every s
 
 console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too');
 {
-  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || ((hc === 'trips' || hc === 'twopair') && table.street !== 'river'))") !== -1,
-    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267; trips and two pair join off the river in v1.8.277)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair')") !== -1,
+    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267; trips and two pair join off the river in v1.8.277 and on the river in v1.8.278)');
   ok(src.indexOf('madePriced') !== -1 && src.indexOf('airPriced') === -1,
     'the flag is named for what it prices now, not just air (v1.8.266)');
   ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-call'") !== -1 &&

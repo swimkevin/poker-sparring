@@ -22,7 +22,7 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.277) — iterative, tested releases, not one big bang
+- **Daily tested releases** (v1.8.278) — iterative, tested releases, not one big bang
 - **6,000+ test assertions** across 42 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
 - **Solver lab** — 180+ pinned spots where the coach's advice is checked against exact expected value, 0 failures (see `tests/solver-lab.js`)
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
