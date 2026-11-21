@@ -980,7 +980,7 @@ console.log('\n81. v1.8.264: a big river bet folds one pair or less from any vil
 
 console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every street');
 {
-  ok(src.indexOf('adjEq = Math.max(0, Math.min(1, eqMade));') !== -1 &&
+  ok(src.indexOf('adjEq = Math.max(0, Math.min(1, eqMade - drawRealizationDiscount(hc)));') !== -1 &&
      src.indexOf('a betting range is mostly made hands, not bluffs') !== -1,
     'air is priced vs the made range alone on every street: the Maniac bets air 9.1%/3.2%/1.9% (flop/turn/river) and the LAG 4.7%/1.5%/1.4%, while the old bluff-rate blend priced ace-high at 35-55% against true 2-15% (v1.8.265)');
   ok(src.indexOf("bluffy > 0.5 && hc !== 'air' && !madePriced") !== -1,
@@ -996,8 +996,8 @@ console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every s
 
 console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too');
 {
-  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair')") !== -1,
-    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267; trips and two pair join off the river in v1.8.277 and on the river in v1.8.278)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong')") !== -1,
+    'the made-range price covers air, weak pair and second pair: the tier pool priced a pair of 2s at 36-50% against true 11-23% (v1.8.266, extended to second pair in v1.8.267; trips and two pair join off the river in v1.8.277 and on the river in v1.8.278; draws join in v1.8.280, probe28)');
   ok(src.indexOf('madePriced') !== -1 && src.indexOf('airPriced') === -1,
     'the flag is named for what it prices now, not just air (v1.8.266)');
   ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-call'") !== -1 &&
@@ -1069,8 +1069,8 @@ console.log('\n87. v1.8.270: river one-pair hands are priced vs the betting rang
 console.log('\n88. v1.8.271: the leak tracker mirrors the betting-range price');
 {
   ok(src.indexOf('betEqL = estimateEquityVsBettingRange') !== -1 &&
-     src.indexOf('if (betEqL != null) chaseEq = betEqL;') !== -1,
-    'bad-chase prices a river one-pair call against the betting range, falling back to the pair-plus pool off the river or for a non-generic villain: calling 7x vs the Maniac 200 is a correct call at 38%, not a chase (v1.8.271)');
+     src.indexOf('if (betEqL != null) chaseEq = Math.max(0, betEqL - drawRealizationDiscount(hc));') !== -1,
+    'bad-chase prices a river one-pair call against the betting range, falling back to the pair-plus pool off the river or for a non-generic villain: calling 7x vs the Maniac 200 is a correct call at 38%, not a chase (v1.8.271; draws join in v1.8.280 and the chase price is the realized equity, 5 points under the raw betting-range figure)');
   ok(src.indexOf('var foldEq = eq;') !== -1 &&
      src.indexOf('if (betEqF != null) foldEq = betEqF;') !== -1,
     'weak-fold prices a river one-pair fold against the betting range too: folding 7x vs the Rock 50 is correct at ~6%, not a weak fold, while folding it vs the Maniac 50 still flags at ~38% (v1.8.271)');
@@ -1107,8 +1107,8 @@ console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the ri
 
 console.log('\n91. v1.8.275: every one-pair hand is priced vs the betting range off the river');
 {
-  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
-    'the flop/turn betting-range price covers all four one-pair classes plus trips and two pair: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27)');
+  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||\n          hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river'") !== -1,
+    'the flop/turn betting-range price covers all four one-pair classes plus trips and two pair: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27; draws join in v1.8.280, probe28/30)');
   ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
     'the leak tracker mirrors the estimator for second pair, trips and two pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275; trips and two pair join in v1.8.277)');
   ok(labSrc.indexOf("name: 'toppair-flop-vs-rock-call'") !== -1 &&
@@ -1116,6 +1116,25 @@ console.log('\n91. v1.8.275: every one-pair hand is priced vs the betting range 
      labSrc.indexOf("name: 'overpair-flop-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-turn-vs-maniac-call'") !== -1,
     'the lab pins the one-pair calls vs the Rock and the Maniac under the new price: the advice is call at medium bets under either price, so the lab pins stability and the coach-advice tests pin the number (v1.8.275)');
+}
+
+console.log('\n92. v1.8.280: draws are priced vs the betting range off the river');
+{
+  ok(equitySrc.indexOf('function drawRealizationDiscount(hc)') !== -1 &&
+     equitySrc.indexOf("hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') ? 0.05 : 0") !== -1,
+    'a draw realizes 5 points under its raw betting-range equity: it folds when it misses and faces another bet, so the coach prices the realized figure, not the raw one (v1.8.280, probe28/30)');
+  ok(src.indexOf("if ((hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river')") !== -1 &&
+     src.indexOf('eqMade - drawRealizationDiscount(hc)') !== -1,
+    'the leak tracker prices draws against the betting range off the river (postflop estimator only, never the river one — a draw has no river) and subtracts the realization discount: the tier price overshot the truth by 9-19 points vs loose villains plus a flat +10 credit, over-calling 18 of 54 cells (probe28)');
+  ok(src.indexOf('var callMargin = (betRangePriced && anyDraw) ? 0 : 0.03;') !== -1,
+    'the +0.03 call margin is zeroed for betting-range-priced draws: the realization discount already is their margin, and stacking the two folded hands the truth calls (nut FD vs LAG 3/4-pot, combo vs Rock 3/4-pot) — probe30 goes 23 flips to 4, all within 1.4 points of the line');
+  ok(src.indexOf('if (betEqF2 != null) foldEq = Math.max(0, betEqF2 - drawRealizationDiscount(hc));') !== -1,
+    'the leak tracker mirrors the draw price for weak-fold too, so a fold the coach would call still flags (v1.8.280)');
+  ok(labSrc.indexOf("name: 'draw-gutshot-flop-vs-maniac-fold'") !== -1 &&
+     labSrc.indexOf("name: 'draw-nutfd-turn-vs-rock-fold'") !== -1 &&
+     labSrc.indexOf("name: 'draw-nutfd-turn-vs-lag-call'") !== -1 &&
+     labSrc.indexOf("name: 'draw-combo-turn-vs-rock-call'") !== -1,
+    'the lab pins the draw flips and the two margin-zeroed 3/4-pot calls: the gutshot and nut-FD folds were calls under the tier price, and the 3/4-pot calls sit 0.8 points over need on the seeded estimator, so they are deterministic, not noise (v1.8.280)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

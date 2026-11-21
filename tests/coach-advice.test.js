@@ -580,14 +580,20 @@ setTimeout(function () {
     ok(pf3Ctl.lesson.indexOf('207') !== -1,
       'QQ 4-bet lesson states the exact size (207) too, not just the bare 2.3x multiple (v1.8.230)');
 
-    // The semi-bluff raise is gone (v1.8.262): the nut flush draw calls
-    // instead of raising — Rock folds top pair 0/200 to a 3x raise, so
-    // raising a draw into his betting range loses ~385 chips/hand vs
-    // calling (paired N=2000).
+    // The semi-bluff raise is gone (v1.8.262): the nut flush draw does not
+    // raise — Rock folds top pair 0/200 to a 3x raise, so raising a draw
+    // into his betting range loses ~385 chips/hand vs calling (paired
+    // N=2000). And the call is gone too at this price (v1.8.280): probe28/30
+    // show the nut flush draw vs the Rock on a dry turn realizes ~24%
+    // against this 33% price (bet 250 into 500) — the old tier price quoted
+    // 52% and called. It folds now; the raise is still wrong, and so is
+    // the call.
     var drawRock = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'rock', 'turn', 250, 500,
       [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
-    ok(drawRock.advice === 'call', 'nut flush draw calls vs Rock medium bet (got ' + drawRock.advice + ')');
+    var drawRockEq = (function () { var m = /You win about (\d+)%/.exec(stripAdvice(drawRock.html)); return m ? parseInt(m[1], 10) : null; })();
+    ok(drawRock.advice === 'fold' && drawRockEq >= 20 && drawRockEq <= 28,
+      'nut flush draw folds vs Rock medium turn bet quoting 20-28% (realized 24%, raw 29%; the tier price quoted 52% and called)');
 
     // Range note respects a tight villain (v1.8.230): a medium bet from Rock
     // does not make him "wide" — the note says the bet barely narrows him
@@ -1158,6 +1164,54 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakTwoKK9RockFold && leakTwoKK9RockFold.type === 'weak-fold',
         'folding two pair on the KK9 river to the Rock small bet flags weak-fold (exact eq ~41% vs need + 10 = 27%)');
+      // Draws are priced vs the betting range off the river too (v1.8.280):
+      // probe28 measured 54 draw cells and the tier price overshoots the
+      // betting-range truth by 9-19 points vs loose villains, plus a flat
+      // +10 implied-odds credit — the coach over-called draws in 18 cells
+      // (23 flip events), worst a gutshot vs the Maniac quoted 53% against
+      // a 29% truth. The fix wires draw, draw-weak and draw-strong to the
+      // betting-range estimator (fixed in v1.8.279) and prices the realized
+      // equity, 5 points under the raw figure, since a draw that misses has
+      // to fold to the next bet. Probe30 re-runs the whole grid: 23 flips
+      // become 4, all within 1.4 points of the decision line (the OESD vs
+      // the Rock 3/4-pot cell is the one known marginal miss, truthAdj 30.1
+      // vs a 30% need — it is not pinned here). The bands below fail on the
+      // old tier prices and pass on the realized betting-range price.
+      var DRY_TURN = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
+      var WET_TURN_BLANK = [{ r: 12, s: 2 }, { r: 11, s: 2 }, { r: 7, s: 0 }, { r: 3, s: 3 }];
+      var gutFlopManiac = postflopVerdict([{ r: 10, s: 3 }, { r: 8, s: 0 }], 'maniac', 'flop', 200, 400, QJ7wet, 2000, 2000,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(gutFlopManiac.advice === 'fold' && quotedEq(gutFlopManiac) >= 20 && quotedEq(gutFlopManiac) <= 28,
+        'gutshot vs the Maniac half-pot flop bet folds quoting 20-28% (realized 24%, raw 29%; the tier price quoted 53% and called)');
+      var nutTurnRock = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'rock', 'turn', 200, 400, DRY_TURN, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(nutTurnRock.advice === 'fold' && quotedEq(nutTurnRock) >= 20 && quotedEq(nutTurnRock) <= 28,
+        'nut flush draw vs the Rock half-pot turn bet folds quoting 20-28% (realized 24%, raw 29%; the tier price quoted 52% and called)');
+      var nonNutTurnBlankManiac = postflopVerdict([{ r: 8, s: 2 }, { r: 6, s: 2 }], 'maniac', 'turn', 200, 400, WET_TURN_BLANK, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+      ok(nonNutTurnBlankManiac.advice === 'fold' && quotedEq(nonNutTurnBlankManiac) >= 16 && quotedEq(nonNutTurnBlankManiac) <= 24,
+        'non-nut flush draw vs the Maniac half-pot blank-turn bet folds quoting 16-24% (realized 20%, raw 25%; the tier price quoted 43% and called)');
+      var nutTurnLagQ = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'lag', 'turn', 300, 400, DRY_TURN, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+      ok(nutTurnLagQ.advice === 'call' && quotedEq(nutTurnLagQ) >= 28 && quotedEq(nutTurnLagQ) <= 34,
+        'nut flush draw vs the LAG 3/4-pot turn bet calls quoting 28-34% (realized 31%, raw 36%; the tier price quoted 60%)');
+      var comboTurnBlankRockQ = postflopVerdict([{ r: 10, s: 2 }, { r: 9, s: 2 }], 'rock', 'turn', 300, 400, WET_TURN_BLANK, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
+      ok(comboTurnBlankRockQ.advice === 'call' && quotedEq(comboTurnBlankRockQ) >= 28 && quotedEq(comboTurnBlankRockQ) <= 34,
+        'combo draw vs the Rock 3/4-pot blank-turn bet calls quoting 28-34% (realized 31%, raw 36%; the tier price quoted 38%)');
+      // The tracker mirrors the estimator for draws too (v1.8.280):
+      // calling a gutshot into a pot-sized turn bet flags bad-chase
+      // (realized eq ~13% vs a 38% line), while folding a nut flush draw
+      // to a small flop bet still flags weak-fold (realized eq ~59% vs
+      // need + 10 = 30%).
+      var leakGutTurnManiacCall = postflopLeak([{ r: 10, s: 3 }, { r: 8, s: 0 }], 'maniac', WET_TURN_BLANK, 'turn', 400, 400, 400,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 400, pot: 800 }], 'call');
+      ok(leakGutTurnManiacCall && leakGutTurnManiacCall.type === 'bad-chase',
+        'calling a gutshot into the Maniac pot-sized turn bet flags bad-chase (realized eq ~13% vs a 38% line; the tier price did not flag it)');
+      var leakNutFlopManiacFold = postflopLeak([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'maniac', [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }], 'flop', 400, 100, 100,
+        [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
+      ok(leakNutFlopManiacFold && leakNutFlopManiacFold.type === 'weak-fold',
+        'folding a nut flush draw to the Maniac small flop bet flags weak-fold (realized eq ~59% vs need + 10 = 30%)');
       // The "Didn't raise the nuts" lesson states the raise-to amount
       // (v1.8.276): it used to say "raise to about 4× their bet" with no
       // amount, while the spot line above it had the number. Calling the

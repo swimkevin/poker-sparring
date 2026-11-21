@@ -432,9 +432,9 @@ var SPOTS = [
     hero: [C(8, 2), C(6, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)], street: 'turn',
     potBefore: 500, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',
     timeline: betTimeline('turn', 300, 500) },
-  { name: 'draw-vs-rock-strongbet-call', kind: 'facing', villain: 'rock',
+  { name: 'draw-vs-rock-strongbet-fold', kind: 'facing', villain: 'rock',
     hero: [C(14, 2), C(13, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)], street: 'turn',
-    potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'fold',
     timeline: betTimeline('turn', 300, 400), grossCheck: true },
   { name: 'squeeze-aks-1-caller', kind: 'facing-raise', villain: 'rock',
     hero: [C(14, 1), C(13, 1)], board: [], street: 'preflop',
@@ -1160,7 +1160,23 @@ var SPOTS = [
   { name: 'secondpair-turn-vs-maniac-call', kind: 'facing', villain: 'maniac',
     hero: [C(7, 0), C(6, 3)], board: Q725,
     street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 200, 400), grossCheck: true }
+    timeline: betTimeline('turn', 200, 400), grossCheck: true },
+  { name: 'draw-gutshot-flop-vs-maniac-fold', kind: 'facing', villain: 'maniac',
+    hero: [C(10, 3), C(8, 0)], board: [C(12, 2), C(11, 2), C(7, 0)],
+    street: 'flop', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('flop', 200, 400), grossCheck: true },
+  { name: 'draw-nutfd-turn-vs-rock-fold', kind: 'facing', villain: 'rock',
+    hero: [C(14, 2), C(13, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 200, 400), grossCheck: true },
+  { name: 'draw-nutfd-turn-vs-lag-call', kind: 'facing', villain: 'lag',
+    hero: [C(14, 2), C(13, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('turn', 300, 400), grossCheck: true },
+  { name: 'draw-combo-turn-vs-rock-call', kind: 'facing', villain: 'rock',
+    hero: [C(10, 2), C(9, 2)], board: [C(12, 2), C(11, 2), C(7, 0), C(3, 3)],
+    street: 'turn', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',
+    timeline: betTimeline('turn', 300, 400), grossCheck: true }
 ];
 
 setTimeout(function () {

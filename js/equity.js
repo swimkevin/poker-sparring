@@ -7,6 +7,10 @@ if (typeof module !== 'undefined' && module.exports) {
 
 function _key(c) { return c.r * 10 + c.s; }
 
+function drawRealizationDiscount(hc) {
+  return (hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') ? 0.05 : 0;
+}
+
 function seededRnd(seed) {
   var a = seed | 0;
   return function () {
@@ -749,6 +753,6 @@ if (typeof module !== 'undefined' && module.exports) {
     bluffBE: bluffBE, villainFoldy: villainFoldy, villainBluffy: villainBluffy,
     exploitLine: exploitLine, EXPLOIT_LINES: EXPLOIT_LINES,
     spr: spr, sprVerdict: sprVerdict, impliedCredit: impliedCredit, rioPenalty: rioPenalty,
-    blockerCredit: blockerCredit
+    blockerCredit: blockerCredit, drawRealizationDiscount: drawRealizationDiscount
   };
 }
