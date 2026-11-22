@@ -1130,9 +1130,9 @@ console.log('\n92. v1.8.280: draws are priced vs the betting range off the river
   ok(equitySrc.indexOf('function drawRealizationDiscount(hc)') !== -1 &&
      equitySrc.indexOf("hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') ? 0.05 : 0") !== -1,
     'a draw realizes 5 points under its raw betting-range equity: it folds when it misses and faces another bet, so the coach prices the realized figure, not the raw one (v1.8.280, probe28/30)');
-  ok(src.indexOf("if ((hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river')") !== -1 &&
+  ok(src.indexOf("} else if (genericL && (hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river')") !== -1 &&
      src.indexOf('eqMade - drawRealizationDiscount(hc)') !== -1,
-    'the leak tracker prices draws against the betting range off the river (postflop estimator only, never the river one — a draw has no river) and subtracts the realization discount: the tier price overshot the truth by 9-19 points vs loose villains plus a flat +10 credit, over-calling 18 of 54 cells (probe28)');
+    'the leak tracker prices draws against the betting range off the river (postflop estimator only, never the river one — a draw has no river) and subtracts the realization discount: the tier price overshot the truth by 9-19 points vs loose villains plus a flat +10 credit, over-calling 18 of 54 cells (probe28) — the draw branch is generic-only since v1.8.290, customs take the custom pricer first');
   ok(src.indexOf('var callMargin = (betRangePriced && anyDraw) ? 0 : 0.03;') !== -1,
     'the +0.03 call margin is zeroed for betting-range-priced draws: the realization discount already is their margin, and stacking the two folded hands the truth calls (nut FD vs LAG 3/4-pot, combo vs Rock 3/4-pot) — probe30 goes 23 flips to 4, all within 1.4 points of the line');
   ok(src.indexOf('if (betEqF2 != null) foldEq = Math.max(0, betEqF2 - drawRealizationDiscount(hc));') !== -1,
@@ -1207,6 +1207,36 @@ console.log('\n95. v1.8.289: facing a raise is priced vs the raise range');
      labSrc.indexOf("name: 'turn-toppair-vs-lag-raise-call'") !== -1 &&
      labSrc.indexOf("name: 'river-toppair-vs-maniac-raise-call'") !== -1,
     'the lab pins all four raise spots: second pair folds to a raise on the river and the flop, top pair calls it on the turn and the river — the lab had zero postflop raise-facing spots before (v1.8.289)');
+}
+
+console.log('\n96. v1.8.290: custom villains are priced vs their own betting rule');
+{
+  ok(equitySrc.indexOf('function estimateEquityVsBettingRangeCustom(') !== -1 &&
+     equitySrc.indexOf('function estimateEquityVsBettingRangeCustomPostflop(') !== -1,
+    'the custom pricers exist: an exact river enumerator and a seeded postflop sampler, one bet rule per villain (v1.8.290)');
+  ok(equitySrc.indexOf("if (villainId === 'alice')") !== -1 &&
+     equitySrc.indexOf('return (ms >= 0.52 || eq1 >= 0.62) ? 1 : 0;') !== -1 &&
+     equitySrc.indexOf("if (villainId === 'nathan')") !== -1 &&
+     equitySrc.indexOf("return ms > 0.78 ? (isRiver ? 0.75 : 1) : 0;") !== -1,
+    'Alice bets any pair-plus or a strong draw, Nathan only bets monsters (75% on the river, always off it — his monsterThrough lets monsters bet); the old tier price quoted two pair 94 vs Alice at 0% against a ~54% truth (v1.8.290)');
+  ok(equitySrc.indexOf("var betLine = 0.62 - aggression * 0.12 + (isRiver ? 0.04 : 0);") !== -1 &&
+     equitySrc.indexOf('if (ms >= 0.3 && ms <= 0.6 && !isRiver && !hasDraw) return wantsBet ? 0.3 : 0;') !== -1,
+    'Amogh bets the narrow line agg*0.12 with draw-only bluffs and checks mid-strength pairs 70% off the river (v1.8.290)');
+  ok(equitySrc.indexOf('function isWetBoard(community)') !== -1 &&
+     equitySrc.indexOf('var pDraw = (hasDrawD && ms < 0.55) ? 0.65 : 0;') !== -1 &&
+     equitySrc.indexOf('var pWet = (ms >= 0.4 && ms < 0.78 && isWetBoard(community)) ? 0.7 : 0;') !== -1,
+    'Donald adds a 65% draw bluff and a 70% wet-board overbet to the generic line (v1.8.290)');
+  ok(src.indexOf("var customBettor = V && V.archetype &&") !== -1 &&
+     src.indexOf('estimateEquityVsBettingRangeCustom(hero.hole, table.community,') !== -1 &&
+     src.indexOf('estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,') !== -1,
+    'the coach and the leak tracker both price customs with the custom pricers when the villain bets — the F5 contradiction (coach folds quoting the made pool while the tracker flags both the fold and the call) is gone (v1.8.290)');
+  ok(src.indexOf('} else if (!raiseInfo) {') !== -1,
+    'a custom villain\'s RAISE still falls back to the tier price: the generic raise rule does not model Alice\'s monster shoves or Amogh\'s tier-1 shoves (v1.8.290)');
+  ok(labSrc.indexOf("name: 'twopair-KK9-vs-alice-call'") !== -1 &&
+     labSrc.indexOf("name: 'twopair-KK9-vs-nathan-fold'") !== -1 &&
+     labSrc.indexOf("name: 'toppair-vs-alice-call'") !== -1 &&
+     labSrc.indexOf("name: 'twopair-772-vs-amogh-potbet-fold'") !== -1,
+    'the lab pins the four custom spots: two pair calls Alice and folds to Nathan, top pair calls Alice, two pair folds to Amogh\'s pot bet (v1.8.290)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.289';
+  var APP_VERSION = '1.8.290';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -953,23 +953,31 @@
           if (!narrowedL) {
             var genericL = V.archetype && !V.archetype.neverRaise &&
               ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+            var customL = V.archetype &&
+              ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
             var betEqL = null;
-            if (genericL) {
+            if (genericL || customL) {
               var vAggrL = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
               var raiseInfoL = villainRaiseInfo(table.players.indexOf(V));
               var vStubbornL = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
               var vStationL = V.archetype.id === 'station';
               var raiseL = raiseInfoL && raiseInfoL.deep;
-              if (raiseL && table.street === 'river') {
+              if (genericL && raiseL && table.street === 'river') {
                 betEqL = estimateEquityVsRaiseRange(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype), vStubbornL, raiseInfoL.needV, vStationL);
-              } else if (raiseL) {
+              } else if (genericL && raiseL) {
                 betEqL = estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype), vStubbornL, raiseInfoL.needV, vStationL);
-              } else if ((hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river') {
+              } else if (customL && !raiseInfoL) {
+                betEqL = table.street === 'river'
+                  ? estimateEquityVsBettingRangeCustom(hero.hole, table.community,
+                    V.archetype.id, vAggrL, villainBluffy(V.archetype))
+                  : estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,
+                    V.archetype.id, vAggrL, villainBluffy(V.archetype));
+              } else if (genericL && (hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river') {
                 betEqL = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype));
-              } else {
+              } else if (genericL) {
                 betEqL = estimateEquityVsBettingRange(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype), 1);
                 if (betEqL == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river') {
@@ -1046,31 +1054,42 @@
       var foldEq = eq;
       var raiseInfoF = V ? villainRaiseInfo(table.players.indexOf(V)) : null;
       var raiseF = raiseInfoF && raiseInfoF.deep;
+      var customF = V && V.archetype &&
+        ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
+      var genericF = V && V.archetype && !V.archetype.neverRaise && !customF;
       if (V && table.street === 'river' && liveOpponents().length === 1 &&
           (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
-          V.archetype && !V.archetype.neverRaise &&
-          ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1) {
+          (genericF || customF)) {
         var vAggrF = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         var vStubbornF = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
-        var betEqF = raiseF
-          ? estimateEquityVsRaiseRange(hero.hole, table.community,
-            vAggrF, villainBluffy(V.archetype), vStubbornF, raiseInfoF.needV, V.archetype.id === 'station')
-          : estimateEquityVsBettingRange(hero.hole, table.community,
+        var betEqF = null;
+        if (genericF && raiseF)
+          betEqF = estimateEquityVsRaiseRange(hero.hole, table.community,
+            vAggrF, villainBluffy(V.archetype), vStubbornF, raiseInfoF.needV, V.archetype.id === 'station');
+        else if (genericF)
+          betEqF = estimateEquityVsBettingRange(hero.hole, table.community,
             vAggrF, villainBluffy(V.archetype), 1);
+        else if (!raiseInfoF)
+          betEqF = estimateEquityVsBettingRangeCustom(hero.hole, table.community,
+            V.archetype.id, vAggrF, villainBluffy(V.archetype));
         if (betEqF != null) foldEq = betEqF;
       }
       if (V && table.street !== 'river' && liveOpponents().length === 1 &&
           (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') &&
-          V.archetype && !V.archetype.neverRaise &&
-          ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1 &&
+          (genericF || customF) &&
           !villainCalledBig(table.players.indexOf(V))) {
         var vAggrF2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         var vStubbornF2 = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
-        var betEqF2 = raiseF
-          ? estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
-            vAggrF2, villainBluffy(V.archetype), vStubbornF2, raiseInfoF.needV, V.archetype.id === 'station')
-          : estimateEquityVsBettingRangePostflop(hero.hole, table.community,
+        var betEqF2 = null;
+        if (genericF && raiseF)
+          betEqF2 = estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
+            vAggrF2, villainBluffy(V.archetype), vStubbornF2, raiseInfoF.needV, V.archetype.id === 'station');
+        else if (genericF)
+          betEqF2 = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
             vAggrF2, villainBluffy(V.archetype));
+        else if (!raiseInfoF)
+          betEqF2 = estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,
+            V.archetype.id, vAggrF2, villainBluffy(V.archetype));
         if (betEqF2 != null) foldEq = Math.max(0, betEqF2 - drawRealizationDiscount(hc));
       }
       if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && foldEq > needFold + 0.10) {
@@ -2609,34 +2628,46 @@
     var raisePriced = false;
     var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
       ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+    var customBettor = V && V.archetype &&
+      ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
     if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && !diluted && !narrowedByCall) {
       var eqMade = null;
       var raiseInfo = villainRaiseInfo(vIdx);
       var vStubborn = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
       var vStation = V.archetype.id === 'station';
       if (table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && genericBettor) {
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && (genericBettor || customBettor)) {
         var vAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-        if (raiseInfo && raiseInfo.deep)
+        if (genericBettor && raiseInfo && raiseInfo.deep) {
           eqMade = estimateEquityVsRaiseRange(hero.hole, table.community,
             vAggr, villainBluffy(V.archetype), vStubborn, raiseInfo.needV, vStation);
-        else
+          if (eqMade != null) raisePriced = true;
+        } else if (genericBettor) {
           eqMade = estimateEquityVsBettingRange(hero.hole, table.community,
             vAggr, villainBluffy(V.archetype), 1);
-        if (eqMade != null) { riverBetPriced = true; if (raiseInfo && raiseInfo.deep) raisePriced = true; }
+        } else if (!raiseInfo) {
+          eqMade = estimateEquityVsBettingRangeCustom(hero.hole, table.community,
+            V.archetype.id, vAggr, villainBluffy(V.archetype));
+        }
+        if (eqMade != null) riverBetPriced = true;
       }
       if (eqMade == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||
           hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||
           hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river' &&
-          liveOpponents().length === 1 && genericBettor) {
+          liveOpponents().length === 1 && (genericBettor || customBettor)) {
         var vAggr2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-        if (raiseInfo && raiseInfo.deep)
+        if (genericBettor && raiseInfo && raiseInfo.deep) {
           eqMade = estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
             vAggr2, villainBluffy(V.archetype), vStubborn, raiseInfo.needV, vStation);
-        else
+          if (eqMade != null) raisePriced = true;
+        } else if (genericBettor) {
           eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
             vAggr2, villainBluffy(V.archetype));
-        if (eqMade != null) { betRangePriced = true; if (raiseInfo && raiseInfo.deep) raisePriced = true; }
+        } else if (!raiseInfo) {
+          eqMade = estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,
+            V.archetype.id, vAggr2, villainBluffy(V.archetype));
+        }
+        if (eqMade != null) betRangePriced = true;
       }
       if (eqMade == null && (hc === 'air' || hc === 'weakpair' ||
           (hc === 'secondpair' && table.street === 'river'))) {

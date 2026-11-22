@@ -627,6 +627,34 @@ setTimeout(function () {
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
     ok(aliceKQ.advice === 'call', 'top pair calls Alice 1.5x overbet too — her sizing is random, so the overbet is not a strength tell (got ' + aliceKQ.advice + ')');
 
+    // Custom villains are priced vs their own betting rule, not the preflop
+    // open tier (v1.8.290): Alice bets any pair-plus (ms >= 0.52) or a strong
+    // draw, Nathan only bets monsters (ms > 0.78) on the river, Amogh bets
+    // a narrow strong line with draw-only bluffs, Donald adds draw bluffs
+    // and wet-board overbets to the generic line. Two pair 94 on KK9 vs
+    // Alice's 200 into 400: the tier-1 price is 0% so the old coach folded,
+    // but her betting range is top pair-plus and the truth is ~54% — call.
+    // The same hand vs Nathan folds at ~0%: he only bets monsters. Top
+    // pair QJ vs Alice calls at ~64%. Two pair 52 on 77259 vs Amogh's pot
+    // bet folds at ~26% vs a 33% need.
+    var customKK9 = function (villain) {
+      return postflopVerdict([{ r: 9, s: 2 }, { r: 4, s: 1 }], villain, 'river', 200, 400,
+        [{ r: 13, s: 2 }, { r: 13, s: 3 }, { r: 9, s: 1 }, { r: 4, s: 0 }, { r: 2, s: 2 }], 2000, 2000,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    };
+    var aliceTwoPair = customKK9('alice');
+    ok(aliceTwoPair.advice === 'call', 'two pair calls Alice\'s river bet — her betting range is top pair-plus, ~54% (got ' + aliceTwoPair.advice + ')');
+    var nathanTwoPair = customKK9('nathan');
+    ok(nathanTwoPair.advice === 'fold', 'the same two pair folds to Nathan\'s river bet — he only bets monsters, ~0% (got ' + nathanTwoPair.advice + ')');
+    var aliceTopPair = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 0 }], 'alice', 'river', 200, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(aliceTopPair.advice === 'call', 'top pair calls Alice\'s river bet — ~64% vs a 25% need (got ' + aliceTopPair.advice + ')');
+    var amoghTwoPair = postflopVerdict([{ r: 5, s: 3 }, { r: 2, s: 1 }], 'amogh', 'river', 400, 400,
+      [{ r: 7, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 5, s: 1 }, { r: 9, s: 2 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
+    ok(amoghTwoPair.advice === 'fold', 'two pair folds to Amogh\'s river pot bet — ~26% vs a 33% need (got ' + amoghTwoPair.advice + ')');
+
     // Facing a RAISE is priced vs the raise range, not the bet range (v1.8.289):
     // a raise range is far stronger (the bot raises only with eq > need+margin
     // and eq > 0.74, plus a small bluff-raise mass). River second pair 7x vs
@@ -1070,6 +1098,22 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(!leakWeakAlice,
         'folding second pair to Alice\'s small river bet is NOT a weak fold (range eq ~22%; random eq ~62% used to flag it)');
+      // The leak tracker uses the same custom price as the coach (v1.8.290
+      // fixes the F5 contradiction): second pair 7x on the Q7259 river vs
+      // Donald's 200 into 400 prices ~23% against his betting rule (draw
+      // bluffs + wet overbets + the generic line) vs a 25% need — a marginal
+      // fold, not a clear mistake in either direction, so the tracker stays
+      // silent whether hero calls or folds. Before, the coach folded quoting
+      // the 5% made pool while the tracker flagged the fold as weak AND the
+      // call as a bad chase.
+      var leakDonald2ndCall = postflopLeak([{ r: 7, s: 1 }, { r: 6, s: 2 }], 'donald', Q7259, 'river', 400, 200, 200,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
+      ok(!leakDonald2ndCall,
+        'second pair calling Donald\'s medium river bet is NOT a bad chase (custom betting-range eq ~23% vs 25% need — marginal, below the clear-mistake bar)');
+      var leakDonald2ndFold = postflopLeak([{ r: 7, s: 1 }, { r: 6, s: 2 }], 'donald', Q7259, 'river', 400, 200, 200,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'fold');
+      ok(!leakDonald2ndFold,
+        'second pair folding to Donald\'s medium river bet is NOT a weak fold (same ~23% price — the tracker no longer contradicts the coach)');
       var leakWeakRock = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', Q7259, 'river', 150, 50, 50,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
       ok(!leakWeakRock,
