@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.286';
+  var APP_VERSION = '1.8.287';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -954,7 +954,7 @@
             var genericL = V.archetype && !V.archetype.neverRaise &&
               ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
             var betEqL = null;
-            if (genericL && hc !== 'air') {
+            if (genericL) {
               var vAggrL = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
               if ((hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river') {
                 betEqL = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
@@ -962,7 +962,7 @@
               } else {
                 betEqL = estimateEquityVsBettingRange(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype), 1);
-                if (betEqL == null && (hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river') {
+                if (betEqL == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river') {
                   betEqL = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
                     vAggrL, villainBluffy(V.archetype));
                 }
@@ -1035,7 +1035,7 @@
       var needFold = legal.callAmount / (pot + legal.callAmount);
       var foldEq = eq;
       if (V && table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
           V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1) {
         var vAggrF = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
@@ -1044,7 +1044,7 @@
         if (betEqF != null) foldEq = betEqF;
       }
       if (V && table.street !== 'river' && liveOpponents().length === 1 &&
-          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') &&
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') &&
           V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1 &&
           !villainCalledBig(table.players.indexOf(V))) {
@@ -2566,13 +2566,13 @@
     if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && !diluted && !narrowedByCall) {
       var eqMade = null;
       if (table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && genericBettor) {
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && genericBettor) {
         var vAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         eqMade = estimateEquityVsBettingRange(hero.hole, table.community,
           vAggr, villainBluffy(V.archetype), 1);
         if (eqMade != null) riverBetPriced = true;
       }
-      if (eqMade == null && (hc === 'weakpair' || hc === 'secondpair' ||
+      if (eqMade == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||
           hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||
           hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river' &&
           liveOpponents().length === 1 && genericBettor) {
@@ -2735,7 +2735,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (madePriced ? ((riverBetPriced || betRangePriced) ? ' That counts the weaker pairs and bluffs he bets too — not just his best hands.' : hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
+      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : (riverBetPriced || betRangePriced) ? ' That counts the weaker pairs and bluffs he bets too — not just his best hands.' : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."

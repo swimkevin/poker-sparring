@@ -989,11 +989,11 @@ console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every s
     'air and weak pair are excluded from the bluffy marginal call: their equity is already priced against the betting range, so the bluff credit would double-count (v1.8.265, v1.8.266)');
   ok(labSrc.indexOf("name: 'air-vs-maniac-river-fold'") !== -1 &&
      labSrc.indexOf("name: 'air-vs-lag-river-fold'") !== -1 &&
-     labSrc.indexOf("name: 'air-vs-maniac-flop-fold'") !== -1 &&
-     labSrc.indexOf("name: 'air-vs-lag-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-maniac-flop-call'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-lag-flop-call'") !== -1 &&
      labSrc.indexOf("name: 'air-vs-maniac-turn-fold'") !== -1 &&
      labSrc.indexOf("name: 'air-vs-lag-turn-fold'") !== -1,
-    'the lab pins all six air folds: ace-high vs medium bets on flop, turn and river (v1.8.265)');
+    'the lab pins the air spots on flop, turn and river (v1.8.265; the flop folds are re-decided to calls in v1.8.287: the v1.8.265 "true 14.6%/12.7%" was the made-pool price, the betting-range truth is ~40%/36% and sequential EV says calling wins ~111/~29 chips)');
 }
 
 console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too');
@@ -1076,8 +1076,9 @@ console.log('\n88. v1.8.271: the leak tracker mirrors the betting-range price');
   ok(src.indexOf('var foldEq = eq;') !== -1 &&
      src.indexOf('if (betEqF != null) foldEq = betEqF;') !== -1,
     'weak-fold prices a river one-pair fold against the betting range too: folding 7x vs the Rock 50 is correct at ~6%, not a weak fold, while folding it vs the Maniac 50 still flags at ~38% (v1.8.271)');
-  ok(src.indexOf('genericL && hc !== \'air\'') !== -1,
-    'air keeps the uniform made pool in the tracker, matching the coach: the analytic price is for one-pair hands only (v1.8.271)');
+  ok(src.indexOf('if (genericL) {') !== -1 &&
+     src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
+    'air uses the analytic price in the tracker too, matching the coach (v1.8.287 corrects v1.8.271, whose "analytic price is for one-pair hands only" left air on the uniform made pool that priced KQ-high at ~37% on a paired board against a ~8% truth)');
 }
 
 console.log('\n89. v1.8.272: second pair is priced on the tier range off the river');
@@ -1109,10 +1110,10 @@ console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the ri
 
 console.log('\n91. v1.8.275: every one-pair hand is priced vs the betting range off the river');
 {
-  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||\n          hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river'") !== -1,
-    'the flop/turn betting-range price covers all four one-pair classes plus trips and two pair: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27; draws join in v1.8.280, probe28/30)');
-  ok(src.indexOf("(hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
-    'the leak tracker mirrors the estimator for second pair, trips and two pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275; trips and two pair join in v1.8.277)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||\n          hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river'") !== -1,
+    'the flop/turn betting-range price covers air plus all four one-pair classes plus trips and two pair: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27; draws join in v1.8.280, probe28/30; air joins in v1.8.287)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
+    'the leak tracker mirrors the estimator for air, second pair, trips and two pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275; trips and two pair join in v1.8.277; air joins in v1.8.287)');
   ok(labSrc.indexOf("name: 'toppair-flop-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'toppair-turn-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'overpair-flop-vs-rock-call'") !== -1 &&

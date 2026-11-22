@@ -642,38 +642,40 @@ setTimeout(function () {
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
     ok(maniacQJ.advice === 'call', 'top pair calls the Maniac 0.75x river bet too — 76% vs a 30% price, 74% even with the bluffs removed (got ' + maniacQJ.advice + ')');
 
-    // Air on the river is priced vs the made hands he bets, not the bluff
-    // rate (v1.8.265): the Maniac's river betting range is 98% made hands
-    // (air share 1.9%) and the LAG's 99% (1.4%), yet the old blend priced
-    // ace-high at 54%/35% and called a 200-into-400 bet at a 25% price.
-    // True equity is ~2% — calling loses ~185 chips.
+    // Air on the river is priced vs the betting range too (v1.8.287):
+    // the made pool priced ace-high at ~37% on a paired board because
+    // the board pair makes every holding "made", while the betting-range
+    // truth is ~8% vs the Maniac — the coach folds, and the message
+    // names the betting range instead of the made pool.
     var riverBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }];
     var airManiac = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', 'river', 200, 400,
       riverBoard, 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(airManiac.advice === 'fold', 'ace-high folds the Maniac medium river bet — his betting range is ~98% made hands, not 55% air (got ' + airManiac.advice + ')');
-    ok(stripAdvice(airManiac.html).indexOf('mostly made hands') !== -1,
-      'river air fold says a betting range is mostly made hands');
+    ok(stripAdvice(airManiac.html).indexOf('bets on the river') !== -1,
+      'river air fold names the betting range it was priced against');
     var airLag = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'lag', 'river', 200, 400,
       riverBoard, 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
     ok(airLag.advice === 'fold', 'ace-high folds the LAG medium river bet too — his betting range is ~99% made hands (got ' + airLag.advice + ')');
 
-    // The same mispricing held on earlier streets (v1.8.265): the flop
-    // blend said 50.6%/40.5% vs true 14.6%/12.7%, the turn 50.0%/35.9%
-    // vs true 7.8%/6.3% — the betting range is ~91-98% made hands on
-    // every street. Flop spots use a 0.75x bet: the 0.5x flop spot still
-    // wobbles (2/25 calls at 2,000 sims on a 1-point margin), so the lab
-    // pins the wide-margin variant.
+    // Air off the river is priced vs the betting range too (v1.8.287):
+    // the v1.8.265 "true 14.6%/12.7%" flop figures were the made-pool
+    // price, not the betting-range truth — independent enumeration puts
+    // ace-high at ~40% vs the Maniac and ~36% vs the LAG on the flop,
+    // and a sequential-EV simulation (call the flop, face a half-pot
+    // turn bet, fold unimproved) says calling wins ~111 chips vs the
+    // Maniac and ~29 vs the LAG at a 30% price. The turn stays a fold
+    // (truth ~23% vs a 25% need).
     var flopBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }];
     var airFlopManiac = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', 'flop', 300, 400,
       flopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
-    ok(airFlopManiac.advice === 'fold', 'ace-high folds the Maniac 0.75x flop bet — true equity ~15%, not the 51% the old blend claimed (got ' + airFlopManiac.advice + ')');
+    ok(airFlopManiac.advice === 'call', 'ace-high calls the Maniac 0.75x flop bet — true equity ~40%, not the ~15% the made pool claimed (got ' + airFlopManiac.advice + ')');
     var airFlopLag = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'lag', 'flop', 300, 400,
       flopBoard, 2000, 2000,
       [{ t: 'action', street: 'flop', player: 1, action: 'bet', bet: 300, pot: 700 }], 2);
-    ok(airFlopLag.advice === 'fold', 'ace-high folds the LAG 0.75x flop bet too (got ' + airFlopLag.advice + ')');
+    ok(airFlopLag.advice === 'call', 'ace-high calls the LAG 0.75x flop bet too — true equity ~36% (got ' + airFlopLag.advice + ')');
     var turnBoard = [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }];
     var airTurnManiac = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', 'turn', 200, 400,
       turnBoard, 2000, 2000,
@@ -990,14 +992,15 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 150, pot: 350 }], 'call');
       ok(leakBad && leakBad.type === 'bad-chase',
         'J9 overcards calling Rock\'s turn bet flags bad-chase (range eq ~6% vs 30% need; random eq ~30% hid it)');
-      // Leak tracker mirrors the made-range price (v1.8.268): the coach folds
-      // air and weak pair at medium bets, but the tracker priced the call
-      // against the tier pool (35-50% for air) and stayed silent. The tracker
-      // now prices the same bad calls against the made hands he bets.
+      // Air is priced vs the betting range on the turn too (v1.8.287):
+      // ace-high vs the Maniac's medium turn bet is ~23% against a 25%
+      // need — a marginal fold, not a clear chase, so the tracker stays
+      // silent (its bad-chase bar is need - 0.12). The made pool priced
+      // it at ~5% and flagged it; the tier pool at ~40% hid it.
       var leakAirManiac = postflopLeak([{ r: 14, s: 1 }, { r: 13, s: 0 }], 'maniac', Q725, 'turn', 400, 200, 200,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
-      ok(leakAirManiac && leakAirManiac.type === 'bad-chase',
-        'ace-high calling Maniac\'s medium turn bet flags bad-chase (made eq ~5% vs 25% need; tier eq ~40% hid it)');
+      ok(!leakAirManiac,
+        'ace-high calling Maniac\'s medium turn bet is NOT a bad chase (betting-range eq ~23% vs 25% need — a marginal spot, below the clear-mistake bar)');
       var Q7259 = Q725.concat([{ r: 9, s: 1 }]);
       var leakWeakRiver = postflopLeak([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'maniac', Q7259, 'river', 400, 200, 200,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
@@ -1007,6 +1010,20 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
       ok(!leakWeakRiverMiddle,
         'middle weak pair calling Maniac\'s medium river bet is NOT a bad chase (betting-range eq ~38% vs 33% need; the pair-plus pool priced it at ~3% because it is uniform over made hands and omits the worse pairs and bluffs he bets, v1.8.271)');
+      // Air is priced vs the betting range too (v1.8.287): on a paired board
+      // the board pair makes every holding "made", so the made pool priced
+      // KQ-high at ~37% vs the Maniac and the coach called a 200 bet it
+      // wins ~8% of the time. The tracker mirrors it for bad-chase and
+      // weak-fold.
+      var P77259 = [{ r: 7, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 5, s: 1 }, { r: 9, s: 2 }];
+      var leakAirPairedCall = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 1 }], 'maniac', P77259, 'river', 400, 200, 200,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 'call');
+      ok(leakAirPairedCall && leakAirPairedCall.type === 'bad-chase',
+        'KQ-high calling the Maniac\'s medium river bet on a paired board flags bad-chase (betting-range eq ~8% vs 25% need; the made pool priced it at ~37%)');
+      var leakAirPairedFold = postflopLeak([{ r: 13, s: 0 }, { r: 12, s: 1 }], 'maniac', P77259, 'river', 150, 50, 50,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 50, pot: 200 }], 'fold');
+      ok(!leakAirPairedFold,
+        'folding KQ-high to the Maniac\'s small river bet on a paired board is NOT a weak fold (betting-range eq ~8% vs 25% need; the tier pool priced it at ~39%)');
       // Alice opens the tightest range (openTier 1), so her capped small bet
       // prices second pair at ~22% vs a 20% need: below the need + 10 flag
       // line (30%), so folding is correct, no flag. Rock opens tier 2, so
