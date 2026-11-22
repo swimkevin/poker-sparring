@@ -88,6 +88,13 @@ function hand(str) {
   ok(twoPair772 > 0.42 && twoPair772 < 0.52, 'two pair on 772 vs Rock ~46% (exact truth 48.3%; the eq1 opponent pool must exclude hero cards — including them depressed it to 36%, v1.8.283), got ' + twoPair772.toFixed(3));
 })();
 
+// ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------
+(function () {
+  var a = EQ.seededRnd(424242), b = EQ.seededRnd(424242);
+  ok(a() === b(), 'seededRnd is deterministic per seed (two streams agree)');
+  ok(Math.abs(EQ.seededRnd(424242)() - 0.128708) < 1e-6, 'seededRnd(424242) first draw is the mulberry32 golden value, not the glibc LCG');
+})();
+
 // ---------- SPR + commitment (coach) ----------
 (function () {
   ok(EQ.spr(200, 100) === 2, 'spr = effStack/pot');

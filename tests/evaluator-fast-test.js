@@ -3,12 +3,9 @@
 // enumerates all 21 five-card subsets. Any mismatch is a fast-evaluator bug,
 // not a test tolerance issue. Seeded RNG, so the run is deterministic.
 var EV = require('../js/evaluator.js');
+var EQ = require('../js/equity.js');
 
-var seed = 424242;
-function rnd() {
-  seed = (seed * 1103515245 + 12345) % 2147483648;
-  return seed / 2147483648;
-}
+var rnd = EQ.seededRnd(424242);
 function C(r, s) { return { r: r, s: s }; }
 function randHand(n) {
   var deck = [];

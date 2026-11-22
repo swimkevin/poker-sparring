@@ -130,11 +130,7 @@ function callAheadTotal(spot) {
 function seededGrossEq(spot) {
   var h = 0;
   for (var i = 0; i < spot.name.length; i++) h = (h * 31 + spot.name.charCodeAt(i)) % 2147483647;
-  var seed = h || 1;
-  function rnd() {
-    seed = (seed * 1103515245 + 12345) % 2147483648;
-    return seed / 2147483648;
-  }
+  var rnd = EQ.seededRnd(h || 1);
   var arch = spot.villain
     ? w.ARCHETYPES.filter(function (a) { return a.id === spot.villain; })[0]
     : null;

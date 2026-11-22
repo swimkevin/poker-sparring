@@ -1168,5 +1168,16 @@ console.log('\n93. v1.8.281: preflop raise sizes are pinned in the lab and verdi
     'the dead drainEvents() method is gone from the engine: zero call sites, only the definition remained (v1.8.281 debloat scan)');
 }
 
+console.log('\n94. v1.8.285: one seeded RNG everywhere, no glibc LCG');
+{
+  ok(labSrc.indexOf('1103515245') === -1,
+    'the lab gross check no longer runs its own glibc LCG: seededGrossEq uses the shared mulberry32 (v1.8.279 proved the same LCG family corrupts seeds)');
+  var fastSrc = fs.readFileSync(__dirname + '/../tests/evaluator-fast-test.js', 'utf8');
+  ok(fastSrc.indexOf('1103515245') === -1 && fastSrc.indexOf('EQ.seededRnd(424242)') !== -1,
+    'the evaluator differential test draws its random hands from the same shared mulberry32, not a second copy of the LCG');
+  ok(labSrc.indexOf('EQ.seededRnd(h || 1)') !== -1,
+    'seededGrossEq seeds the shared RNG from the spot name, so the gross figures stay deterministic per spot');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

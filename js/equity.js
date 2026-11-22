@@ -765,6 +765,7 @@ function exploitLine(archetype) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
+    seededRnd: seededRnd,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     estimateEquityVsRangePostflopExact: estimateEquityVsRangePostflopExact,
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,
