@@ -609,13 +609,15 @@ setTimeout(function () {
     ok(stripAdvice(wideRock.html).indexOf('plays a wide range') === -1,
       'range note for a tight villain never claims he plays a wide range');
 
-    // Alice is a wide overbettor (v1.8.263): she overbets AA 56%, sets ~52%,
-    // two pair ~50% and KQ 39% on the turn, so the tightBigBet guard's
-    // exemption lifts only for hands that beat her overbet range. Exact
-    // enumeration (44 river cards, frequency-weighted over her tier-1
-    // overbet range): overpair AA ~64% vs a 37.5% price (call, +421 EV),
-    // top pair KQ ~13% (fold, calling loses ~392). 20-run stability:
-    // AA calls 20/20, KQ folds 20/20.
+    // Alice is a wide overbettor (v1.8.263), but her sizing is random
+    // (v1.8.288): the frac is a coin flip between 0.3-0.5x and 1.2-2.0x,
+    // independent of hand strength, so an overbet carries no extra
+    // information and the size-based guard does not apply to her at
+    // all. Exact enumeration over her turn betting range (ms >= 0.52
+    // or noisy eq >= 0.62, frequency-weighted, 44 river cards):
+    // overpair AA ~77% and top pair KQ ~75% vs a 37.5% price — both
+    // calls. The v1.8.263 "~13%" for KQ was the tier-1 preflop proxy,
+    // not her betting range.
     var aliceAA = postflopVerdict([{ r: 14, s: 0 }, { r: 14, s: 3 }], 'alice', 'turn', 600, 400,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
@@ -623,7 +625,7 @@ setTimeout(function () {
     var aliceKQ = postflopVerdict([{ r: 13, s: 1 }, { r: 12, s: 1 }], 'alice', 'turn', 600, 400,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
-    ok(aliceKQ.advice === 'fold', 'top pair still folds Alice 1.5x overbet — the exemption is scoped to overpair+, not one pair (got ' + aliceKQ.advice + ')');
+    ok(aliceKQ.advice === 'call', 'top pair calls Alice 1.5x overbet too — her sizing is random, so the overbet is not a strength tell (got ' + aliceKQ.advice + ')');
 
     // A big river bet is NOT value-only heads-up (v1.8.270 corrects v1.8.264):
     // the v1.8.264 veto rested on a 22-holding sample that omitted the

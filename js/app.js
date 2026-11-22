@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.287';
+  var APP_VERSION = '1.8.288';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2636,13 +2636,15 @@
     var strongVsOverbet = hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand';
     var tightBigBet = tell && tell.unit === 'pot' && tight > 0.6 && hc !== 'nut' &&
       !(V && V.archetype && V.archetype.wideOverbet && strongVsOverbet) &&
+      !(V && V.archetype && V.archetype.id === 'alice') &&
       (tell.size === 'overbet' ||
         (table.street === 'river' && tell.size === 'large' && onePairOrLess));
     var riverBigValue = table.street === 'river' && tell && tell.unit === 'pot' &&
       tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';
     var loneRiverPriced = riverBetPriced && table.street === 'river' &&
       villainFirstRiverAggro(vIdx) && adjEq > need2;
-    if ((tightBigBet || riverBigValue) && !loneRiverPriced)
+    var pricedEscape = (riverBetPriced || betRangePriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;
+    if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + (tightBigBet && tell.size === 'overbet'
           ? 'an overbet from a tight player is almost always the nuts. Don\'t pay it off.'

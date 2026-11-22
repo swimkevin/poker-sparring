@@ -907,8 +907,8 @@ console.log('\n76. v1.8.230: the lab gross-checks four more range-priced spots, 
     'facing-multiway-toppair-call (seeded eq 50.9% vs a 33.3% price) is gross-checked (v1.8.230)');
   ok(labSrc.indexOf("expectWord: 'Pay 90 to win 120', grossCheck: true") !== -1,
     'preflop-prize-figure (JJ vs Rock, seeded eq 48.4% vs a 42.9% price) is gross-checked (v1.8.230)');
-  ok(!/name: 'toppair-vs-rock-river-potbet-fold'[\s\S]{0,500}grossCheck/.test(labSrc),
-    'the top-pair fold vs Rock\'s pot bet stays gross-check-free on purpose: the seeded open-range eq is 62.8% against a 33.3% price, so the check would false-fail a correct fold — the open range cannot price a tight player\'s pot bet, which is why the tight-player guard exists (v1.8.230)');
+  ok(labSrc.indexOf("name: 'toppair-vs-rock-river-potbet-call'") !== -1,
+    'the top-pair call vs Rock\'s pot bet is pinned: the double-barrel truth is 57% and the betting-range price 64% vs a 33% need, so the equity escape stands the guard down (v1.8.288 corrects v1.8.230, whose gross-check-free note rested on the open-range price of a fold that is now a call)');
   ok(src.indexOf("raise again for value to ~' + fmt(fourTo) + ' (about 2.3× their raise).") !== -1,
     'the 4-bet lesson states the exact size (to ~207), not just the bare 2.3x multiple — the recap quotes the lesson, so a size-less lesson hides the size (v1.8.230)');
   ok(src.indexOf('bet a medium size, so this barely narrows him down: pairs and draws are in there.') !== -1,
@@ -960,10 +960,12 @@ console.log('\n80. v1.8.263: Alice is a wide overbettor, and the guard exemption
   ok(src.indexOf("var strongVsOverbet = hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand';") !== -1,
     'the overbet exemption is scoped to hands that beat a wide overbet range: overpair, trips, two pair, made hand (v1.8.263)');
   ok(src.indexOf("!(V && V.archetype && V.archetype.wideOverbet && strongVsOverbet)") !== -1,
-    'the tightBigBet guard lifts only for a wide overbettor AND a strong hand: a broad exemption flips top pair KQ to a call at 70% coach-implied equity, but its true equity vs Alice\'s overbet range is ~13% — a -392 EV call (v1.8.263)');
+    'the tightBigBet guard still lifts only for a wide overbettor AND a strong hand in the general case (v1.8.263); Alice is exempt separately in v1.8.288 because her sizing is a coin flip, not a strength tell');
+  ok(src.indexOf("V.archetype.id === 'alice'") !== -1,
+    'Alice is exempt from the size-based guard: her overbet sizing is random (a coin flip between 0.3-0.5x and 1.2-2.0x, bots.js), so an overbet carries no strength information — exact enumeration puts top pair KQ at ~75% vs her turn betting range, not the ~13% the tier-1 proxy claimed in v1.8.263 (v1.8.288)');
   ok(labSrc.indexOf("name: 'overpair-vs-alice-overbet-call'") !== -1 &&
-     labSrc.indexOf("name: 'toppair-vs-alice-overbet-fold'") !== -1,
-    'the lab pins both sides: overpair calls Alice\'s 1.5x overbet, top pair folds it (v1.8.263)');
+     labSrc.indexOf("name: 'toppair-vs-alice-overbet-call'") !== -1,
+    'the lab pins both calls: overpair and top pair both call Alice\'s 1.5x overbet (v1.8.288 re-decides the top-pair fold: the v1.8.263 ~13% was the tier-1 preflop proxy, the betting-range truth is ~75%)');
 }
 
 console.log('\n81. v1.8.264: a big river bet folds one pair or less from any villain');
@@ -971,8 +973,10 @@ console.log('\n81. v1.8.264: a big river bet folds one pair or less from any vil
   ok(src.indexOf("var riverBigValue = table.street === 'river' && tell && tell.unit === 'pot' &&") !== -1 &&
      src.indexOf("tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';") !== -1,
     'the river big-bet fold is gated on the river, a pot-ratio of 0.7+, and one pair or less — not on the villain being tight: the Maniac bets large 100% with made hands and ~0% with air on the river, and the LAG/Amogh/Station/Rock bluff air 0-4% there (v1.8.264)');
-  ok(src.indexOf("if ((tightBigBet || riverBigValue) && !loneRiverPriced)") !== -1,
-    'the river fold joins the tight-player guard in one return, but stands down for a lone river bet priced against the betting range: heads-up the Maniac bets every top pair, so a 0.75x bet is not value-only (v1.8.270 corrects the v1.8.264 veto, whose ~18% came from a 22-holding sample that omitted the worse-pair mass)');
+  ok(src.indexOf("if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)") !== -1,
+    'the river fold joins the tight-player guard in one return, but stands down for a lone river bet priced against the betting range, and for any betting-range-priced spot whose equity clears need by 10 points (v1.8.288 equity escape): heads-up the Maniac bets every top pair, so a 0.75x bet is not value-only (v1.8.270 corrects the v1.8.264 veto, whose ~18% came from a 22-holding sample that omitted the worse-pair mass)');
+  ok(src.indexOf("var pricedEscape = (riverBetPriced || betRangePriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;") !== -1,
+    'the escape fires only on a betting-range price, never on an overbet: a >1.2x bet is outside every bot\'s normal sizing (Rock bets 0.55x), so a 2x shove keeps the guard — the bypass-overbet spot still folds (v1.8.288)');
   ok(src.indexOf('even loose players rarely bluff the river with air') !== -1,
     'the river fold message says why it applies to loose players too, not just tight ones (v1.8.264)');
   ok(labSrc.indexOf("name: 'thirdpair-vs-maniac-river-call'") !== -1 &&
