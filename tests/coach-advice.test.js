@@ -1206,12 +1206,12 @@ setTimeout(function () {
         'two pair QJ vs the Rock\'s flop bet on wet QJ7 quotes 82-90% (estimator 85%, truth 83%; the tier price quoted 73%)');
       // The tracker mirrors the estimator for two pair too (v1.8.277):
       // folding bottom two pair on a paired 772 turn to the Rock's small
-      // bet still flags weak-fold (estimator ~36% vs need + 10 = 27%).
+      // bet still flags weak-fold (estimator ~47% vs need + 10 = 27%).
       var B772turn = [{ r: 7, s: 3 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 2 }];
       var leakTwoPairTurnRockFold = postflopLeak([{ r: 5, s: 1 }, { r: 2, s: 2 }], 'rock', B772turn, 'turn', 400, 100, 100,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakTwoPairTurnRockFold && leakTwoPairTurnRockFold.type === 'weak-fold',
-        'folding two pair on the 772 turn to the Rock\'s small bet flags weak-fold (betting-range eq ~36% vs need + 10 = 27%)');
+        'folding two pair on the 772 turn to the Rock\'s small bet flags weak-fold (betting-range eq ~47% vs need + 10 = 27%)');
       // Trips and two pair are priced vs the betting range on the river too
       // (v1.8.278): probe28 measured the river, where the tier price is off
       // by up to 60 points — bottom two pair on a paired 772 river vs the

@@ -283,7 +283,7 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
       var rem = [];
       for (var k = 0; k < rest.length; k++) if (k !== i && k !== j && !heroKnown[_key(rest[k])]) rem.push(rest[k]);
       var wins = 0;
-      for (var q = 0; q < 100; q++) {
+      for (var q = 0; q < 400; q++) {
         var need = boardNeed + 2;
         for (var d = 0; d < need; d++) {
           var jj = d + Math.floor(rnd() * (rem.length - d));
@@ -296,7 +296,7 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
         if (hs > os) wins += 1;
         else if (hs === os) wins += 0.5;
       }
-      var eq1 = wins / 100;
+      var eq1 = wins / 400;
       var p = 0;
       if (ms > 0.74 || eq1 > betLine) p = 1;
       else if (ms < 0.55) p = bluffP;
@@ -310,7 +310,7 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
     for (var r2 = 2; r2 <= 14; r2++)
       if (!hk[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
   var wTot = 0, wEq = 0, acc = 0, att = 0;
-  while (acc < 6000 && att < 180000) {
+  while (acc < 24000 && att < 720000) {
     att++;
     var idx = Math.floor(rnd() * holdings.length);
     var vh = holdings[idx];

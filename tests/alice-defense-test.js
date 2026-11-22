@@ -9,6 +9,11 @@
 // 182.6 +/- 3.93, putting 165 at 4.5 sigma; 160 is mean minus ~5.8 sigma:
 // it still fails decisively if the facingBig bug returns (continuation
 // would collapse toward 0), but no longer flakes on noise.
+// Re-measured again v1.8.293 after the v1.8.292 bot retune shifted the
+// rate down: 16 runs, mean ~164.5, sigma ~6.5, min 154 — the 160 bar sat
+// ~0.7 sigma below the mean and flaked on the baseline (159/200). 135 is
+// mean minus ~4.5 sigma and still fails decisively if the facingBig bug
+// returns (continuation collapses toward 0).
 var path = require('path');
 var js = function (f) { return require(path.join(__dirname, '..', 'js', f)); };
 var EN = js('engine.js'), BOTS = js('bots.js');
@@ -57,6 +62,6 @@ for (var i = 0; i < 200; i++) {
 console.log('ATs vs 75 (stack 1000): continued ' + counts.atsCall + '/' + counts.atsN);
 console.log('72o vs 75: continued ' + counts.trashCall + '/' + counts.trashN);
 console.log('ATs vs 600 (60% stack): continued ' + counts.atsBigCall + '/' + counts.atsBigN);
-var ok = counts.atsCall >= 160 && counts.trashCall <= 30 && counts.atsBigCall <= 50;
+var ok = counts.atsCall >= 135 && counts.trashCall <= 30 && counts.atsBigCall <= 50;
 console.log(ok ? 'ALICE TEST PASSED' : 'ALICE TEST FAILED');
 process.exit(ok ? 0 : 1);

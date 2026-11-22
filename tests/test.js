@@ -85,7 +85,7 @@ function hand(str) {
   var gut2 = EQ.estimateEquityVsBettingRangePostflop(hand('Ts 8s'), hand('Qd Jd 7s'), 0.80, 0.35);
   ok(gut2 > 0.22 && gut2 < 0.34, 'gutshot suit variant ~28% too (seed-robust), got ' + gut2.toFixed(3));
   var twoPair772 = EQ.estimateEquityVsBettingRangePostflop(hand('5d 2s'), hand('7c 7d 2h 5s'), 0.20, 0.02);
-  ok(twoPair772 > 0.42 && twoPair772 < 0.52, 'two pair on 772 vs Rock ~46% (exact truth 48.3%; the eq1 opponent pool must exclude hero cards — including them depressed it to 36%, v1.8.283), got ' + twoPair772.toFixed(3));
+  ok(twoPair772 > 0.45 && twoPair772 < 0.49, 'two pair on 772 vs Rock ~47% (exact truth 47.2% for these cards — the old 48.3% was probe35\'s different suits; eq1 sims 100→400 and second-stage samples 6000→24000, v1.8.293, close the 4.4-point gap), got ' + twoPair772.toFixed(3));
 })();
 
 // ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------
@@ -685,7 +685,10 @@ function heroPolicy(table, idx) {
   }
   ok(spotsFirst > 40, 'amogh monster spots sampled (' + spotsFirst + ')');
   ok(shovesFirst + raisesFirst === spotsFirst, 'Amogh always raises QQ+ first-in, never flats/folds');
-  // Facing an open: shove rate should be relentless.
+  // Facing an open: shove rate should be relentless. Measured v1.8.293:
+  // 54.3% over 600 spots (per-60 sigma ~6.4pts), so the old >0.40 bar sat
+  // only ~2.2 sigma below the mean and flaked (24/60). 0.30 is ~3.8 sigma
+  // below the mean and still fails decisively if the shove branch dies.
   var shovesVs = 0, spotsVs = 0;
   for (var k3 = 0; k3 < 60; k3++) {
     var t3 = new EN.PokerTable({
@@ -705,7 +708,7 @@ function heroPolicy(table, idx) {
     spotsVs++;
     if (mv3 && mv3.a === 'raise' && mv3.amount >= legal3.maxRaiseTo * 0.97) shovesVs++;
   }
-  ok(shovesVs / spotsVs > 0.40, 'Amogh shoves QQ+/AKs vs an open relentlessly (' + shovesVs + '/' + spotsVs + ')');
+  ok(shovesVs / spotsVs > 0.30, 'Amogh shoves QQ+/AKs vs an open relentlessly (' + shovesVs + '/' + spotsVs + ')');
 
   // (b2) Amogh's postflop sizing: whenever he bets with no one to call, it's
   // an overbet (1.5x+ pot) or an all-in bomb. Tested directly against
