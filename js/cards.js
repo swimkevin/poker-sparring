@@ -11,7 +11,6 @@ function rankChar(r) { return RANK_CHARS[r] || String(r); }
 function rankName(r) { return RANK_NAMES[r]; }
 function isRed(card) { return card.s === 1 || card.s === 2; }
 function cardName(c) { return rankChar(c.r) + SUITS[c.s]; }
-function cardsName(cs) { return cs.map(cardName).join(' '); }
 
 function makeDeck() {
   var d = [];
@@ -63,16 +62,12 @@ function shuffle(a, rng) {
   return a;
 }
 
-function sortCardsDesc(cs) {
-  return cs.slice().sort(function (a, b) { return (b.r - a.r) || (b.s - a.s); });
-}
-
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     SUITS: SUITS, SUIT_NAMES: SUIT_NAMES, RANK_CHARS: RANK_CHARS, RANK_NAMES: RANK_NAMES,
     rankChar: rankChar, rankName: rankName, isRed: isRed,
-    cardName: cardName, cardsName: cardsName,
-    makeDeck: makeDeck, shuffle: shuffle, sortCardsDesc: sortCardsDesc,
+    cardName: cardName,
+    makeDeck: makeDeck, shuffle: shuffle,
     getU32: getU32, randInt: randInt
   };
 }

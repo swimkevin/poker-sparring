@@ -3,13 +3,6 @@ if (typeof module !== 'undefined' && module.exports) {
   var rankName = __cards.rankName;
 }
 
-var CATEGORY_NAMES = [
-  'High Card', 'Pair', 'Two Pair', 'Three of a Kind',
-  'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush'
-];
-
-function catOf(score) { return Math.floor(score / 1048576); }
-
 function encodeScore(cat, kickers) {
   var s = cat;
   for (var i = 0; i < 5; i++) s = s * 16 + (kickers[i] || 0);
@@ -203,14 +196,10 @@ function describeHand(ev) {
   }
 }
 
-function compareHands(a, b) {
-  return a.score > b.score ? 1 : a.score < b.score ? -1 : 0;
-}
-
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    CATEGORY_NAMES: CATEGORY_NAMES, catOf: catOf, encodeScore: encodeScore,
+    encodeScore: encodeScore,
     evaluate5: evaluate5, evaluate: evaluate, evaluate7: evaluate7, evaluate7Fast: evaluate7Fast,
-    describeHand: describeHand, compareHands: compareHands
+    describeHand: describeHand
   };
 }

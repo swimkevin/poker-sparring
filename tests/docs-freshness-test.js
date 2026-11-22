@@ -30,8 +30,37 @@ ok(readme.indexOf('live coach-audit rounds') === -1,
 var roadmap = fs.readFileSync(path.join(dir, 'docs', 'ROADMAP.md'), 'utf8');
 ok(roadmap.indexOf('(' + suites + ' suites)') !== -1,
   'ROADMAP suite count matches the npm test chain (' + suites + ')');
-ok(roadmap.indexOf('(250+ versions)') !== -1,
-  'ROADMAP version floor is current (250+; 255 versions at v1.8.255)');
+var changelog = fs.readFileSync(path.join(dir, 'CHANGELOG.md'), 'utf8');
+var changelogEntries = (changelog.match(/^## \[[0-9]+\.[0-9]+\.[0-9]+\]/gm) || []).length;
+var roadmapFloor = (roadmap.match(/\((\d+)\+ versions\)/) || [])[1];
+ok(changelogEntries > 0, 'CHANGELOG parses to a version-entry count (' + changelogEntries + ')');
+ok(roadmapFloor && changelogEntries >= parseInt(roadmapFloor, 10),
+  'CHANGELOG entry count (' + changelogEntries + ') is at or above the ROADMAP floor (' + roadmapFloor + '+, v1.8.297)');
+
+var labSrc = fs.readFileSync(path.join(dir, 'tests', 'solver-lab.js'), 'utf8');
+var spotsAt = labSrc.indexOf('var SPOTS = [');
+var labSpots = 0;
+if (spotsAt !== -1) {
+  var depth = 0, j = labSrc.indexOf('[', spotsAt);
+  for (; j < labSrc.length; j++) {
+    var ch = labSrc[j];
+    if (ch === '[' || ch === '{' || ch === '(') { if (ch === '{' && depth === 1) labSpots++; depth++; }
+    else if (ch === ']' || ch === '}' || ch === ')') { depth--; if (depth === 0) break; }
+  }
+}
+ok(labSpots > 0, 'solver-lab SPOTS parses to a spot count (' + labSpots + ')');
+ok(readme.indexOf(labSpots + '+ pinned spots') !== -1,
+  'README lab floor matches SPOTS.length (' + labSpots + '+, v1.8.297)');
+var archText = fs.readFileSync(path.join(dir, 'docs', 'ARCHITECTURE.md'), 'utf8');
+ok(archText.indexOf(labSpots + '+ pinned spots') !== -1,
+  'ARCHITECTURE lab floor matches SPOTS.length (' + labSpots + '+, v1.8.297)');
+
+var badgeNum = (readme.match(/tests-(\d+)%2B/) || [])[1];
+var floorNum = (readme.match(/([\d,]+)\+ test assertions/) || [])[1];
+ok(badgeNum && floorNum && parseInt(badgeNum, 10) === parseInt(floorNum.replace(/,/g, ''), 10),
+  'README badge number matches the assertion floor in the body (badge ' + badgeNum + ', body ' + floorNum + ', v1.8.297)');
+ok(readme.indexOf('12,021-assertion seeded differential sweep') !== -1,
+  'README names the 12,021-assertion differential behind the 6,000+ floor (v1.8.297)');
 
 var structureStart = readme.indexOf('## Project structure');
 var structureEnd = readme.indexOf('## ', structureStart + 1);

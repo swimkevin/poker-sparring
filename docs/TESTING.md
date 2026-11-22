@@ -115,15 +115,9 @@ What counts as failure (exit code 1):
 - Any river spot where exact enumeration says calling loses
   money and the coach calls anyway — reported with the EV loss.
 
-Honesty note, stated in the lab's own header too: river spots
-with a made-hand pool get exact equity (full enumeration, no
-Monte Carlo noise), so their EV verdicts are exact. Other
-facing spots report the coach's own Monte Carlo figure as
-coach-implied EV for the leak report only — the lab does not
-fail on Monte Carlo EV loss, because simulation noise would
-make that flaky. Leading spots are checked against guardrail
-invariants rather than fake-precision EV: there is no single
-"correct" bet size, only sizes that are clearly too big.
+Honesty note: the full statement lives in the lab's own header
+(`tests/solver-lab.js`) and is not repeated here — one canonical
+copy, so the two can never drift apart again.
 
 The lab is intentionally not part of the `npm test` chain and
 does not gate releases in CI. It gates the daily loop instead:
