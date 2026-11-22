@@ -96,6 +96,25 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
   ok(chtml.indexOf('<svg') === -1, 'custom archetype card escapes emoji');
 })();
 
+// ---------- tournament-only bots carry a tag; cash bots do not ----------
+(function () {
+  UI.renderArchetypes([], null);
+  var cards = document.querySelectorAll('#preset-list .arch-card');
+  var byName = {};
+  Array.prototype.forEach.call(cards, function (c) {
+    var n = c.querySelector('.aname');
+    if (n) byName[n.textContent.trim()] = c.textContent;
+  });
+  ['Pro', 'Nit', 'Bully', 'Gambler'].forEach(function (name) {
+    ok(byName[name] && byName[name].indexOf('Tournament only') !== -1,
+      name + ' card carries a Tournament only tag (v1.8.296)');
+  });
+  ['Shark', 'Station', 'Maniac', 'Rock'].forEach(function (name) {
+    ok(byName[name] && byName[name].indexOf('Tournament only') === -1,
+      name + ' card carries no Tournament only tag');
+  });
+})();
+
 // ---------- push/fold feedback renders exactly once ----------
 (function () {
   UI.renderPFFeedback({ right: true, explain: 'Great call.' });
@@ -126,6 +145,10 @@ if (typeof UI === 'undefined') { console.log('FAIL: UI did not load'); process.e
     if (s) byTerm[s.textContent.trim()] = d.textContent;
   });
   ok(byTerm['Draw'] && byTerm['Draw'].indexOf('about 35%') !== -1, 'Draw glossary gives the real flush-draw number (v1.8.232)');
+  ok(byTerm['Push/Fold'] && byTerm['Push/Fold'].indexOf('under ~12 big blinds') !== -1,
+    'Push/Fold glossary matches the 12bb the coach and README use (v1.8.296)');
+  ok(byTerm['Push/Fold'] && byTerm['Push/Fold'].indexOf('13 big blinds') === -1,
+    'Push/Fold glossary no longer says 13bb');
   ok(byTerm['Draw'] && byTerm['Draw'].indexOf('often favorites') === -1, 'Draw glossary no longer calls strong draws favorites (v1.8.232)');
   ok(byTerm['Limp / Limper'] && byTerm['Limp / Limper'].indexOf('does it a lot') === -1, 'Limp glossary drops the awkward phrasing (v1.8.232)');
   ok(document.querySelectorAll('#book-list .book-card').length === 3, '3 book cards');
@@ -1096,6 +1119,7 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     '<button class="chip-btn fb-type" data-fbtype="general">General</button>' +
     '</div>' +
     '<input id="fb-title" maxlength="120">' +
+    '<div id="fb-error" class="on-error" hidden></div>' +
     '<textarea id="fb-body" rows="5"></textarea>' +
     '<button id="fb-submit" class="primary">Open</button>' +
     '</div></div></div>';
@@ -1108,9 +1132,12 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   // Pick bug type.
   ov.querySelector('.fb-type[data-fbtype="bug"]').click();
   ok(ov.querySelector('.fb-type[data-fbtype="bug"]').classList.contains('sel'), 'bug type selects');
-  // Empty title: submit does nothing.
+  // Empty title: submit shows an inline error and sends nothing (v1.8.296).
   UI.submitFeedback();
   ok(opened === null, 'empty title does not open an issue');
+  var fbErr = d.getElementById('fb-error');
+  ok(fbErr && fbErr.hidden === false && fbErr.textContent === 'Add a short title first.',
+    'empty title shows inline error text');
   // Fill and submit.
   d.getElementById('fb-title').value = 'Raise slider jumps';
   d.getElementById('fb-body').value = 'On mobile the slider jumps.';
@@ -1123,6 +1150,7 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
   UI.openFeedbackModal();
   UI.closeFeedbackModal();
   ok(d.getElementById('feedback-modal').hidden === true, 'modal closes via close fn');
+  ok(d.getElementById('fb-error').hidden === true, 'reopening the modal clears the title error');
 })();
 
 // ---------- Feedback modal: dark panel styling, full-width inputs ----------
@@ -1235,8 +1263,11 @@ console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');
     'light-theme seat stack uses bright gold (readable on the dark seat)');
   ok(/\[data-theme="light"\] #screen-table \.seat\.folded\s*\{\s*opacity:\s*0\.6;/.test(css),
     'light-theme folded seats dim to 0.6 on mobile (0.85 was barely distinguishable, v1.8.226)');
-  ok(/@media \(max-width: 900px\) \{\s*\[data-theme="light"\] #screen-table \.seat\.folded/.test(css),
-    'light-theme folded opacity is mobile-scoped (desktop 0.45 untouched)');
+  var shortStart = css.indexOf('@media (max-width: 900px) and (max-height: 899px)');
+  var mergedStart = css.lastIndexOf('@media (max-width: 900px) {', shortStart);
+  var foldedRule = css.indexOf('[data-theme="light"] #screen-table .seat.folded');
+  ok(mergedStart !== -1 && foldedRule > mergedStart && foldedRule < shortStart,
+    'light-theme folded opacity is mobile-scoped (inside the single 900px block, desktop 0.45 untouched)');
 })();
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed (component)');

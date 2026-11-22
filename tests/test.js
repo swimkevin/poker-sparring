@@ -581,6 +581,19 @@ function heroPolicy(table, idx) {
   var scn2 = { heroHole: hand('As Ah'), stackBB: 10, pos: 'BTN', nPlayers: 3, opponents: [{}, {}], facingShove: false, potBB: 1.5 };
   var r4 = PF.evaluatePushFold(scn2, 'shove');
   ok(r4.right === true, 'shoving AA first-in is correct');
+
+  // Tier label must not misdescribe the hand (v1.8.296): Q6s is tier 5 but
+  // is not a broadway hand, so the feedback must not call it one.
+  var scn3 = { heroHole: hand('Qs 6s'), stackBB: 10, pos: 'BTN', nPlayers: 3, opponents: [{}, {}], facingShove: false, potBB: 1.5 };
+  var r6 = PF.evaluatePushFold(scn3, 'fold');
+  ok(r6.tier === 5, 'Q6s is tier 5, got ' + r6.tier);
+  ok(r6.explain.indexOf('Your Q6s is in the Marginal tier (tier 5)') !== -1,
+    'first-in feedback names the tier without a descriptor: ' + r6.explain);
+  ok(r6.explain.indexOf('weak broadways') === -1, 'first-in feedback never calls Q6s a broadway hand');
+  var r7 = PF.evaluatePushFold(mkScn('Qs 6s', rock), 'fold');
+  ok(r7.explain.indexOf('Your Q6s (Marginal)') !== -1,
+    'facing-shove feedback names the tier without a descriptor: ' + r7.explain);
+  ok(r7.explain.indexOf('weak broadways') === -1, 'facing-shove feedback never calls Q6s a broadway hand');
 })();
 
 // ---------- push/fold: no duplicate opponents in generated scenarios ----------

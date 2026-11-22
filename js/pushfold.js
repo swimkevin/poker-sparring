@@ -60,7 +60,7 @@ function evaluatePushFold(scn, action) {
     out.explain = 'With ' + scn.stackBB + 'bb ' +
       (scn.pos === 'BB' ? 'in the big blind' : 'on the ' + scn.pos) +
       ', the chart shoves the top ~' + tierLabel(shoveTier) + ' of hands. ' +
-      'Your ' + cardPairName(scn.heroHole) + ' is ' + tierName(tier) + ' (tier ' + tier + '). ' +
+      'Your ' + cardPairName(scn.heroHole) + ' is in the ' + shortTierName(tier) + ' tier (tier ' + tier + '). ' +
       'Estimated equity vs ' + scn.opponents.length + ' random hand(s): ' + Math.round(eq * 100) + '%. ' +
       (out.right
         ? (action === 'shove' ? 'Correct shove — fold equity + hand strength makes this +EV.' : 'Correct fold — too weak to shove here; wait for a better spot.')
@@ -80,7 +80,7 @@ function evaluatePushFold(scn, action) {
     out.right = (action === 'call') === out.correct;
     out.explain = scn.shover.emoji + ' ' + scn.shover.name + ' shoves ' + scn.shover.stackBB + 'bb. ' +
       'Calling ' + toCall + 'bb to win ' + Math.round(potAfter) + 'bb — you need ' + Math.round(need * 100) + '% equity. ' +
-      'Your ' + cardPairName(scn.heroHole) + ' (' + tierName(tier) + ') has ~' + Math.round(rangeEq * 100) +
+      'Your ' + cardPairName(scn.heroHole) + ' (' + shortTierName(tier) + ') has ~' + Math.round(rangeEq * 100) +
       '% against ' + scn.shover.name + '\u2019s shoving range (roughly the top ' + tierLabel(shoverTier) + ' of hands — ' +
       'much stronger than a random hand). ' +
       (out.right
@@ -92,6 +92,11 @@ function evaluatePushFold(scn, action) {
 
 function tierLabel(t) {
   return { 1: '3%', 2: '8%', 3: '15%', 4: '25%', 5: '40%', 6: '65%' }[t] || '?';
+}
+function shortTierName(t) {
+  var full = tierName(t);
+  var cut = full.indexOf(' (');
+  return cut === -1 ? full : full.slice(0, cut);
 }
 function cardPairName(hole) {
   return hole.map(function (c) { return rankChar(c.r); }).join('') + (hole[0].s === hole[1].s ? 's' : 'o');

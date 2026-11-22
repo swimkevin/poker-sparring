@@ -152,6 +152,35 @@ var styleCss = fs.readFileSync(path.join(dir, 'css', 'style.css'), 'utf8');
 var indexHtml = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
 ok(mobile.indexOf('900px') !== -1 && styleCss.indexOf('@media (max-width: 900px)') !== -1,
   'MOBILE 900px breakpoint claim matches a real breakpoint in css/style.css');
+function topLevelMediaCount(cssText, cond) {
+  var count = 0, depth = 0, i = 0;
+  while (i < cssText.length) {
+    if (cssText[i] === '{') depth++;
+    else if (cssText[i] === '}') depth--;
+    if (depth === 0 && cssText.slice(i, i + 6) === '@media') {
+      var brace = cssText.indexOf('{', i);
+      if (brace === -1) break;
+      if (cssText.slice(i + 6, brace).trim().replace(/\s+/g, ' ') === cond) count++;
+      i = brace;
+    }
+    i++;
+  }
+  return count;
+}
+var blocks900 = topLevelMediaCount(styleCss, '(max-width: 900px)');
+ok(blocks900 === 1, 'css/style.css has exactly one top-level (max-width: 900px) block, got ' + blocks900 + ' (v1.8.296)');
+ok(styleCss.indexOf('padding-bottom: 140px') === -1,
+  'no dead 140px #screen-table padding-bottom (200px wins, v1.8.296)');
+ok(styleCss.indexOf('#screen-table { padding-bottom: 200px; }') !== -1,
+  'the kept 200px #screen-table padding-bottom is present (v1.8.296)');
+ok(styleCss.indexOf('bottom: 0; left: 0; right: 0; z-index: 50') === -1,
+  'no dead generic .hero-bar bottom-0 rule (both screens have their own bottom, v1.8.296)');
+ok(styleCss.indexOf('bottom: var(--m-tabbar)') !== -1,
+  'table hero-bar keeps bottom: var(--m-tabbar) (v1.8.296)');
+ok(styleCss.indexOf('#screen-table .hero-bar .controls { gap: 0.4rem; }') === -1,
+  'no dead 0.4rem table hero-bar controls gap (0.6rem wins, v1.8.296)');
+ok(styleCss.indexOf('padding: 0.6rem 0.3rem; font-size: 0.9rem; min-height: 40px') === -1,
+  'no dead first table hero-bar .ctl sizing (0.8rem wins, v1.8.296)');
 ok(indexHtml.indexOf('manifest.json') !== -1 && appJs.indexOf("register('sw.js')") !== -1,
   'MOBILE PWA-shipped claim matches the index.html manifest link and app.js service-worker registration');
 

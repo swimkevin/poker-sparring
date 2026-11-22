@@ -456,6 +456,7 @@ window.Online = (function () {
       '<div class="conn-pill"><span class="dot">●</span> ' + (mode === 'mock' ? 'Local mock' : 'Live') + '</div>' +
       '<div class="hand-info">' + esc(s.config.tableName) + (s.handNo ? ' · Hand #' + s.handNo : '') + '</div>' +
       '<div class="blinds-info">' + fmt(s.config.sb) + '/' + fmt(s.config.bb) + '</div>' +
+      (roomCode ? '<button id="on-code-chip" class="ghost" title="Tap to copy room code">Room ' + esc(roomCode) + '</button>' : '') +
       (s.isHost && s.state === 'playing' ? '<button id="on-pause" class="ghost">' + (s.paused ? 'Resume' : 'Pause') + '</button>' : '') +
       (s.state === 'playing' ? '<button id="on-sitout" class="ghost">' + (meSittingOut(s) ? 'Back in' : 'Sit out') + '</button>' : '') +
       (s.state === 'playing' && meCanRebuy(s) ? '<button id="on-rebuy" class="ghost">Rebuy ' + fmt(s.config.startingStack) + '</button>' : '') +
@@ -482,6 +483,14 @@ window.Online = (function () {
     updateTableState(s);
 
     $('on-tleave').onclick = leave;
+    var ccb = $('on-code-chip');
+    if (ccb) ccb.onclick = function () {
+      var code = roomCode;
+      var done = function () { ccb.textContent = 'Copied ✓'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(done, function () { window.prompt('Copy room code:', code); });
+      } else { window.prompt('Copy room code:', code); }
+    };
     var sob = $('on-sitout');
     if (sob) sob.onclick = function () { client.send({ t: 'sitout', out: !meSittingOut(lastState) }); };
     var pb = $('on-pause');

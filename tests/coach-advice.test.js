@@ -1599,6 +1599,29 @@ setTimeout(function () {
         'trapper flush verdict is identical across 25 runs and takes the generic value-raise line (exact equity below the gate, no Monte Carlo flip)');
     })();
 
+    (function () {
+      // Table reads cap (v1.8.296): the first-decision reads block lists at
+      // most 3 opponents — the bettor first, then the biggest stacks —
+      // instead of all 7 live opponents.
+      var v = preflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 0 }], 'station', 30, [], 8, 30, 0);
+      ok(!v.error, 'reads-cap verdict has no error' + (v.error ? ' (' + v.error + ')' : ''));
+      var html = v.html || '';
+      var start = html.indexOf('coach-opps');
+      var end = start === -1 ? -1 : html.indexOf('</div>', start);
+      var readsBlock = start === -1 ? '' : html.slice(start, end);
+      var bullets = (readsBlock.match(/<b>/g) || []).length;
+      ok(start !== -1, 'first verdict with 7 live opponents shows the Table reads block');
+      ok(bullets === 3, 'reads block caps at 3 opponents, got ' + bullets);
+      ok(readsBlock.indexOf('<b>V</b>') !== -1 && readsBlock.indexOf('<b>V</b>') < readsBlock.indexOf('<b>S</b>'),
+        'bettor V is the first read shown');
+      ok(readsBlock.indexOf('+4 more at the table') !== -1, 'reads block says 4 more opponents are capped out');
+      ok(html.indexOf('coach-v') !== -1, 'villain exploit line still renders outside the reads block');
+      ok(stripAdvice(html).indexOf('calls down with anything') !== -1,
+        'station exploit line survives the cap (capped-out reads carry no decision-relevant fact)');
+      var len = stripAdvice(html).length;
+      ok(len < 800, 'capped first verdict is ' + len + ' chars, well under the 800 tone budget');
+    })();
+
     var jsErrs = errors.filter(function (m) { return m.indexOf('navigation') === -1; });
     ok(!jsErrs.length, 'no js errors (' + jsErrs.join('; ') + ')');
   } catch (e) {

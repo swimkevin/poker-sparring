@@ -51,8 +51,18 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   $('on-addbot').click();
   await sleep(300);
   ok(d.getElementById('online-root').textContent.indexOf('Waiting for at least 1 more player') === -1, 'hint clears once a second player joins (v1.8.233)');
+  var lobbyCode = ($('on-code-big') || { textContent: '' }).textContent.trim();
+  ok(/^[A-Z0-9]{6}$/.test(lobbyCode), 'lobby shows a 6-letter room code');
   $('on-start').click();
   await sleep(500);
+  // Room code stays visible in-game (v1.8.296): tap-to-copy chip in the top bar.
+  var chip = $('on-code-chip');
+  ok(!!chip, 'in-game top bar shows the room code chip');
+  ok(chip && chip.textContent.indexOf(lobbyCode) !== -1, 'chip shows the same code as the lobby (' + lobbyCode + ')');
+  var prompted = null;
+  w.prompt = function (msg, def) { prompted = def; return def; };
+  if (chip) chip.click();
+  ok(prompted === lobbyCode, 'tapping the chip copies the room code (prompt fallback)');
   var HANDS = /Two Pair|Full House|Straight|Flush|Pair of|Three of a Kind|Four of a Kind|High Card/;
   var saw = { ring: false, faceUp: false, lift: 0, muck: false, showdown: false };
   // Winners persist in snapshots until the next hand deals (~5s window) —

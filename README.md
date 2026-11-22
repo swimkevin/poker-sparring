@@ -4,7 +4,7 @@
 
 ▶️ **Live:** https://swimkevin.github.io/poker-sparring/
 
-![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-4000%2B%20passing-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
+![vanilla JS](https://img.shields.io/badge/vanilla-JS-yellow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) ![tests](https://img.shields.io/badge/tests-6000%2B%20passing-brightgreen) [![CI](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml/badge.svg)](https://github.com/swimkevin/poker-sparring/actions/workflows/test.yml)
 
 ## Screenshots
 
@@ -22,8 +22,8 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.295) — iterative, tested releases, not one big bang
-- **6,000+ test assertions** across 42 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits
+- **Daily tested releases** (v1.8.296) — iterative, tested releases, not one big bang
+- **6,000+ test assertions** across 42 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits — including a 12,021-assertion seeded differential sweep that checks the fast evaluator bit-for-bit against the reference evaluator
 - **Solver lab** — 180+ pinned spots where the coach's advice is checked against exact expected value, 0 failures (see `tests/solver-lab.js`)
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step

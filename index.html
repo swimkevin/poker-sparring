@@ -13,8 +13,8 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Poker Sparring — Practice vs AI Opponents">
 <meta name="twitter:description" content="Free, no-signup Texas Hold'em practice app: spar against offline AI opponents modeled on real player types, or host a private online table with friends.">
-<link rel="stylesheet" href="css/style.css?v=1.8.295">
-<link rel="stylesheet" href="css/online.css?v=1.8.295">
+<link rel="stylesheet" href="css/style.css?v=1.8.296">
+<link rel="stylesheet" href="css/online.css?v=1.8.296">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d2b24">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
@@ -225,6 +225,7 @@
     <div class="setup-wrap">
       <h1>Bot archetypes</h1>
       <p class="subtitle">Each bot plays a distinct, recognizable style. Build your own to drill the exact player type that gives you trouble.</p>
+      <p class="hint">Custom-bot building is experimental — the builder below appears only with ?flags=customBots in the URL.</p>
       <div id="preset-list" class="arch-list"></div>
       <div id="custom-bot-section">
       <h2>Build a custom bot</h2>
@@ -255,7 +256,7 @@
   <section id="screen-stats" class="screen" hidden>
     <div class="setup-wrap">
       <h1>Your training stats</h1>
-      <p class="subtitle">Tracked locally across cash, heads-up and tournament sessions.</p>
+      <p class="subtitle">Tracked locally across cash and tournament sessions. Heads-up stats appear when the ?flags=headsUpMode experiment is on.</p>
       <div id="stat-cards" class="stat-grid"></div>
       <h2>Stack over time (big blinds)</h2>
       <canvas id="sparkline" width="640" height="160"></canvas>
@@ -329,20 +330,20 @@
 
 <div id="modal-root"></div>
 
-<script src="js/cards.js?v=1.8.295"></script>
-<script src="js/evaluator.js?v=1.8.295"></script>
-<script src="js/equity.js?v=1.8.295"></script>
-<script src="js/engine.js?v=1.8.295"></script>
-<script src="js/bots.js?v=1.8.295"></script>
-<script src="js/names.js?v=1.8.295"></script>
-<script src="js/pushfold.js?v=1.8.295"></script>
-<script src="js/stats.js?v=1.8.295"></script>
-<script src="js/replay.js?v=1.8.295"></script>
-<script src="js/room-server.js?v=1.8.295"></script>
-<script src="js/netplay.js?v=1.8.295"></script>
-<script src="js/ui.js?v=1.8.295"></script>
-<script src="js/online.js?v=1.8.295"></script>
-<script src="js/app.js?v=1.8.295"></script>
+<script src="js/cards.js?v=1.8.296"></script>
+<script src="js/evaluator.js?v=1.8.296"></script>
+<script src="js/equity.js?v=1.8.296"></script>
+<script src="js/engine.js?v=1.8.296"></script>
+<script src="js/bots.js?v=1.8.296"></script>
+<script src="js/names.js?v=1.8.296"></script>
+<script src="js/pushfold.js?v=1.8.296"></script>
+<script src="js/stats.js?v=1.8.296"></script>
+<script src="js/replay.js?v=1.8.296"></script>
+<script src="js/room-server.js?v=1.8.296"></script>
+<script src="js/netplay.js?v=1.8.296"></script>
+<script src="js/ui.js?v=1.8.296"></script>
+<script src="js/online.js?v=1.8.296"></script>
+<script src="js/app.js?v=1.8.296"></script>
 
 <div id="hands-modal" class="modal-overlay" hidden>
   <div class="modal-panel" role="dialog" aria-label="History">
@@ -368,6 +369,7 @@
       </div>
       <label class="fb-label" for="fb-title">Title</label>
       <input id="fb-title" class="fb-input" maxlength="120" placeholder="e.g. Raise slider jumps on mobile">
+      <div id="fb-error" class="on-error" hidden></div>
       <label class="fb-label" for="fb-body">Details</label>
       <textarea id="fb-body" class="fb-input" rows="4" maxlength="2000" placeholder="What happened? What did you expect? Steps to reproduce a bug…"></textarea>
       <button id="fb-submit" class="primary">Open GitHub issue →</button>

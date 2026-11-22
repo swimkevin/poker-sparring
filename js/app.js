@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.295';
+  var APP_VERSION = '1.8.296';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1142,13 +1142,20 @@
 
     var live = liveOpponents();
     if (!live.length) return '';
-    var reads = live.map(function (p) {
+    var ranked = live.slice().sort(function (a, b) {
+      var ba = (a.bet || 0), bb = (b.bet || 0);
+      if (bb !== ba) return bb - ba;
+      return (b.stack || 0) - (a.stack || 0);
+    });
+    var top = ranked.slice(0, 3);
+    var reads = top.map(function (p) {
       var A = p.archetype, name = UI.escapeHtml(p.name);
       var tag = (A && A.tagline) ? String(A.tagline) : 'unknown style';
       return '<b>' + name + '</b> — ' + UI.escapeHtml(tag);
     });
 
-    return '<div class="coach-opps">🎯 Table:<br>• ' + reads.join('<br>• ') + '</div>';
+    return '<div class="coach-opps">🎯 Table:<br>• ' + reads.join('<br>• ') +
+      (live.length > 3 ? '<br>… +' + (live.length - 3) + ' more at the table' : '') + '</div>';
   }
 
   function isSuited(hole) {

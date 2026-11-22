@@ -65,7 +65,7 @@ var UI = (function () {
     ['Check-Raise', 'Checking to induce a bet, then raising. A power move that screams strength — use sparingly.'],
     ['Outs', 'Cards that improve your hand. A flush draw has 9 outs (~35% by the river). Rough rule: outs × 2 ≈ % per street.'],
     ['Draw', 'An unfinished hand needing one more card — flush draws, straight draws. A bare flush draw is about 35% against one pair; only combo draws are favorites.'],
-    ['Push/Fold', 'Short-stack strategy (under ~13 big blinds): either shove all-in or fold. No calling, no small raises — the math demands it.'],
+    ['Push/Fold', 'Short-stack strategy (under ~12 big blinds): either shove all-in or fold. No calling, no small raises — the math demands it.'],
     ['ICM', 'Independent Chip Model: in tournaments, chips have diminishing value — survival near payouts matters more than accumulating.'],
     ['Bubble', 'The last spot before prize money. Medium stacks play terrified here; big stacks should attack relentlessly.'],
     ['Limp / Limper', 'Calling the big blind instead of raising — the weakest way to enter a pot. Strong players raise over limpers instead.'],
@@ -801,8 +801,10 @@ var UI = (function () {
   function archCard(a, custom, onDelete) {
     var d = document.createElement('div');
     d.className = 'arch-card';
+    var tourneyOnly = a.modes && a.modes.length === 1 && a.modes[0] === 'tourney';
     d.innerHTML = '<div class="ah"><span class="aemoji">' + escapeHtml(a.emoji) + '</span>' +
-      '<span class="aname">' + escapeHtml(dispName(a)) + '</span></div>' +
+      '<span class="aname">' + escapeHtml(dispName(a)) + '</span>' +
+      (tourneyOnly ? '<span class="beta-tag">Tournament only</span>' : '') + '</div>' +
       '<div class="atag">' + escapeHtml(a.tagline || '') + '</div>' +
       '<div class="adesc">' + escapeHtml(a.desc || '') + '</div>' +
       (a.beat ? '<div class="abeat"><b>How to beat:</b> ' + escapeHtml(a.beat) + '</div>' : '');
@@ -1052,6 +1054,8 @@ var UI = (function () {
     });
     $('fb-title').value = '';
     $('fb-body').value = '';
+    var err0 = $('fb-error');
+    if (err0) { err0.textContent = ''; err0.hidden = true; }
     ov.hidden = false;
     setTimeout(function () { $('fb-title').focus(); }, 50);
   }
@@ -1059,7 +1063,11 @@ var UI = (function () {
   function submitFeedback() {
     var title = ($('fb-title').value || '').trim();
     var body = ($('fb-body').value || '').trim();
-    if (!title) { $('fb-title').focus(); return; }
+    if (!title) {
+      var err = $('fb-error');
+      if (err) { err.textContent = 'Add a short title first.'; err.hidden = false; }
+      $('fb-title').focus(); return;
+    }
     var prefix = fbType === 'bug' ? '[Bug] ' : fbType === 'idea' ? '[Idea] ' : '[Feedback] ';
     var lines = [
       body,
