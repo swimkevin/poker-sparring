@@ -273,8 +273,8 @@ console.log('\n20. Honest equity vs strong ranges (v1.8.71, v1.8.99)');
   // number the advice is based on — no inflated figure, no fudge factor.
   ok(src.includes("s strong range'"), 'range named in the math line vs strong ranges');
   ok(src.includes('to break even'), 'break-even explained in plain words');
-  ok(src.includes("'simulated 500× vs ' + vName + '\\'s strong range'") ||
-     src.includes("simulated 500× vs ' + vName + '"), 'equity source names the strong range');
+  ok(src.includes('simulated 5,000× vs ') && src.includes('counted exactly vs '),
+    'equity source names the sim count off-river and the exact count on the river (v1.8.294)');
 }
 
 console.log('\n21. Win-% estimation explained (v1.8.71)');
@@ -487,14 +487,15 @@ console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call'
 {
   ok(src.indexOf('var vTier = (V && V.archetype && V.archetype.openTier) || 0;') !== -1,
     'facing math falls back to the villain archetype openTier range');
-  ok(src.indexOf('simulated 500× vs the kinds of hands ') !== -1,
-    'archetype-range source wording names the kinds of hands he plays');
-  ok(src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 500)') !== -1 &&
-     src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)') !== -1 &&
+  ok(src.indexOf('simulated 5,000× vs the kinds of hands ') !== -1 &&
+     src.indexOf('counted exactly vs the kinds of hands ') !== -1,
+    'archetype-range source wording names the kinds of hands he plays (simulated off-river, counted exactly on the river, v1.8.294)');
+  ok(src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 5000)') !== -1 &&
+     src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 5000)') !== -1 &&
      src.indexOf('estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500, cardSeed(hero.hole.concat(table.community), Math.min(3, table.livePlayers().length - 1)))') !== -1,
-    'postflop facing equity runs 500 sims, not 150: 150-sim noise flipped borderline calls 2/20 runs');
-  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 500)') !== -1,
-    'multiway facing equity runs 500 sims, not 300: 300-sim noise flipped borderline multiway calls (v1.8.183)');
+    'postflop facing equity runs 5000 sims, not 500: 500-sim seed-locked error ran to 5 points (v1.8.294)');
+  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 5000)') !== -1,
+    'multiway facing equity runs 5000 sims, not 500 (v1.8.294)');
   ok(src.indexOf('beating everyone still in') !== -1,
     'diluted message says everyone still in must lose');
   ok(src.indexOf('nonNutDraw:') !== -1 && src.indexOf('vulnerableMade:') !== -1,
@@ -543,8 +544,8 @@ console.log('\n43. v1.8.148: multiway dilution — shared-runout sim replaces th
 {
   ok(equitySrc.indexOf('function estimateEquityVsRanges(hole, community, tiers, iters)') !== -1,
     'equity layer exposes a shared-runout multi-opponent sim');
-  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 500)') !== -1,
-    'facing math uses the multi sim for multiway single-range spots');
+  ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 5000)') !== -1,
+    'facing math uses the multi sim for multiway single-range spots (5000 sims, v1.8.294)');
   ok(src.indexOf('adjEq = Math.pow(adjEq, nOpp)') === -1,
     'power-rule dilution is gone from the facing math');
 }

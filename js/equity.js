@@ -619,6 +619,10 @@ function estimateEquityVsBettingRangeCustomPostflop(hole, community, villainId, 
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
+  if (community.length === 5) {
+    var exact = estimateEquityVsRangePostflopExact(hole, community, maxTier);
+    if (exact != null) return exact;
+  }
   var seed = 987654321;
   hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
   seed = (seed * 31 + maxTier) % 2147483647;

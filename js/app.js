@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.293';
+  var APP_VERSION = '1.8.294';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -947,9 +947,9 @@
         var tiersL = [rangeTier];
         var callersAheadL = countCallersAhead();
         for (var oL = 1; oL < nOppL; oL++) tiersL.push(oL <= callersAheadL ? 3 : 0);
-        eq = estimateEquityVsRanges(hero.hole, table.community, tiersL, 2000);
+        eq = estimateEquityVsRanges(hero.hole, table.community, tiersL, 5000);
       } else if (rangeTier) {
-        eq = estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 2000);
+        eq = estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 5000);
       } else {
         eq = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500, cardSeed(hero.hole.concat(table.community), Math.min(3, table.livePlayers().length - 1)));
       }
@@ -2600,9 +2600,9 @@
     }
     var singleRange = !!rangeEqTier || !!vTier;
     var eq2 = rangeEqTier
-      ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 500)
+      ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 5000)
       : vTier
-      ? estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)
+      ? estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 5000)
       : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500, cardSeed(hero.hole.concat(table.community), Math.min(3, table.livePlayers().length - 1)));
 
     var effBB = effStackBB(vIdx);
@@ -2626,7 +2626,7 @@
       var tiers = [rangeEqTier || vTier];
       var callersAhead = countCallersAhead();
       for (var o = 1; o < nOpp; o++) tiers.push(o <= callersAhead ? 3 : 0);
-      adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 500) + credit - debit));
+      adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 5000) + credit - debit));
       diluted = true;
     }
     var bCredit = (hc === 'air' || hc === 'secondpair' || hc === 'weakpair')
@@ -2816,10 +2816,11 @@
 
     var strongAdj = rangeAdjust > 0.005;
 
+    var tierCounted = table.street === 'river' && !diluted;
     var eqSource = rangeEqTier
-      ? 'simulated 500× vs ' + vName + '\'s strong range'
+      ? (tierCounted ? 'counted exactly vs ' : 'simulated 5,000× vs ') + vName + '\'s strong range'
       : vTier
-      ? 'simulated 500× vs the kinds of hands ' + vName + ' plays'
+      ? (tierCounted ? 'counted exactly vs the kinds of hands ' : 'simulated 5,000× vs the kinds of hands ') + vName + ' plays'
       : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     if (diluted) eqSource = eqSource + ', beating everyone still in';

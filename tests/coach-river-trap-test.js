@@ -157,8 +157,8 @@ setTimeout(function () {
   ok(fdMw.advice === 'call', 'dilution multiway calls under the true shared-runout sim (got ' + fdMw.advice + ', v1.8.148)');
   ok(strip(fdMw.html).indexOf('beating everyone still in') !== -1,
     'dilution multiway message says everyone still in must lose (v1.8.141)');
-  ok(strip(fdMw.html).indexOf('500×') !== -1,
-    'dilution multiway message names the 500-sample multi sim (v1.8.148, 500 sims v1.8.183)');
+  ok(strip(fdMw.html).indexOf('5,000×') !== -1,
+    'dilution multiway message names the 5,000-sample multi sim (v1.8.148, 500 sims v1.8.183, 5,000 sims v1.8.294)');
   var weakPair = [{ r: 2, s: 1 }, { r: 13, s: 0 }];
   var fdMwFold = setupFacing('lag', weakPair, [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 4, 500, 400);
   console.log('  dilution multiway weak-pair says: ' + strip(fdMwFold.html).slice(0, 200));

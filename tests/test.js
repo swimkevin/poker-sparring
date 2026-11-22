@@ -106,6 +106,24 @@ function hand(str) {
   ok(e1 === e2, 'generic equity with an explicit card seed is deterministic (v1.8.286 — the coach passes cardSeed, bots call it unseeded so their fold rates stay distributions)');
 })();
 
+// ---------- seeded tier estimators: 5000 iters off-river, exact on the river (v1.8.294) ----------
+// The audit measured the seeded 500-iter tier prices against 20,000-sim
+// truth: top pair QJ on the Q72 flop was 55.1% against 59.9%, second pair
+// 7x on the Q72 turn 60.6% against 56.6% — up to 5 points of seed-locked
+// error. 2,000 iters was measured and fell short (turn cell 59.1%, still
+// 2.5 points off); 5,000 pins both within ~1 point, and the river price
+// is exact enumeration now, so the river cells land within 0.2 points.
+(function () {
+  var topQ = EQ.estimateEquityVsRangePostflop(hand('Qs Jh'), hand('Qd 7s 2c'), 3, 5000);
+  ok(topQ > 0.579 && topQ < 0.619, 'top pair QJ on Q72 flop vs tier-3 range ~59% (20k truth 59.9%), got ' + topQ.toFixed(3));
+  var second = EQ.estimateEquityVsRangePostflop(hand('7h 6d'), hand('Qd 7s 2c 5h'), 4, 5000);
+  ok(second > 0.546 && second < 0.586, 'second pair 7x on Q72 turn vs tier-4 range ~58% (20k truth 56.6%), got ' + second.toFixed(3));
+  var twoRiver = EQ.estimateEquityVsRangePostflop(hand('9d 4s'), hand('Kd Kc 9s 4h 2d'), 3, 500);
+  ok(twoRiver > 0.55 && twoRiver < 0.57, 'two pair 94 on KK9 river vs tier-3 range is exact at 500 iters too (exact 56.0%), got ' + twoRiver.toFixed(3));
+  var overRiver = EQ.estimateEquityVsRangePostflop(hand('Ks Kh'), hand('Qd 7s 2c 5h 9d'), 3, 500);
+  ok(overRiver > 0.816 && overRiver < 0.836, 'overpair KK on Q72 river vs tier-3 range is exact at 500 iters too (exact 82.6%), got ' + overRiver.toFixed(3));
+})();
+
 // ---------- SPR + commitment (coach) ----------
 (function () {
   ok(EQ.spr(200, 100) === 2, 'spr = effStack/pot');
