@@ -647,6 +647,11 @@ function heroPolicy(table, idx) {
   // threshold must sit several sigma above the true rate: 7% on ~1080
   // decisions keeps the flake probability negligible while still catching a
   // real regression (e.g. 15% aggression fails loudly).
+  // v1.8.210: the v1.8.209 bot retune moved Rohan's true rate to ~6.8%
+  // (sets now lead), so the 8% bar sat ~2 sigma above the mean and flaked
+  // (81/1003 = 8.07% on a 2026-11-11 run). Re-measured: 10x60-hand runs
+  // mean 6.76% sd 0.57%, 600-hand run 6.35% (621/9780). Bar moves to 10%
+  // (mean + 5 sigma ~ 9.6%); 15% aggression still fails loudly.
   var rAggro = 0, rTried = 0;
   for (var k = 0; k < 60; k++) {
     var t = mkTable('rohan');
@@ -661,7 +666,7 @@ function heroPolicy(table, idx) {
   }
   ok(rTried > 200, 'rohan decisions sampled (' + rTried + ')');
   // v1.8.76: Rohan sometimes bluffs (15%) — allow rare aggressive actions
-  ok(rAggro / rTried < 0.08, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
+  ok(rAggro / rTried < 0.10, 'Rohan rarely bets or raises (' + rAggro + ' aggressive of ' + rTried + ')');
 
   // (b1) Amogh bombs tier-1 monsters (QQ+/AKs) preflop: shoves relentlessly
   // when facing a raise, and always raises (shove or big open) first-in.
