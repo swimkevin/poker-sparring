@@ -1233,6 +1233,15 @@ setTimeout(function () {
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
       ok(two772RockPot.advice === 'fold' && quotedEq(two772RockPot) >= 7 && quotedEq(two772RockPot) <= 19,
         'bottom two pair on the 772 river vs the Rock pot-sized bet folds quoting 7-19% (exact 13%; the tier price quoted 56% and called)');
+      var RWET3 = [{ r: 12, s: 2 }, { r: 11, s: 2 }, { r: 7, s: 2 }, { r: 5, s: 1 }, { r: 2, s: 3 }];
+      var secondManiac = postflopVerdict([{ r: 14, s: 2 }, { r: 5, s: 0 }], 'maniac', 'river', 100, 185, RWET3, 2000, 2000,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 285 }], 2);
+      ok(secondManiac.advice === 'fold' && quotedEq(secondManiac) >= 24 && quotedEq(secondManiac) <= 28,
+        'second pair 5x on the QJ7 river vs the Maniac folds quoting 24-28% (betting-range exact 25.6% vs a 26% need; the double-counted blocker credit quoted 30% and called, v1.8.295)');
+      var airManiac = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 0 }], 'maniac', 'river', 100, 800, RWET3, 2000, 2000,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 900 }], 2);
+      ok(airManiac.advice === 'fold' && quotedEq(airManiac) >= 6 && quotedEq(airManiac) <= 10,
+        'ace-high on the QJ7 river vs the Maniac folds quoting 6-10% (betting-range exact 7.6% vs a 10% need; the double-counted blocker credit quoted 12%, v1.8.295)');
       var twoKK9Rock = postflopVerdict([{ r: 9, s: 1 }, { r: 4, s: 0 }], 'rock', 'river', 200, 400, RKK9, 2000, 2000,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
       ok(twoKK9Rock.advice === 'call' && quotedEq(twoKK9Rock) >= 48 && quotedEq(twoKK9Rock) <= 61,

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.294';
+  var APP_VERSION = '1.8.295';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2687,7 +2687,7 @@
       }
       if (eqMade != null) {
         adjEq = Math.max(0, Math.min(1, eqMade - drawRealizationDiscount(hc)));
-        if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
+        if (bCredit && !riverBetPriced && !betRangePriced && !raisePriced) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
         madePriced = true;
       }
     }
