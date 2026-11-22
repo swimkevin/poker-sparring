@@ -491,7 +491,7 @@ console.log('\n37. v1.8.141: equity vs range, multiway dilution, RIO, veto-call'
     'archetype-range source wording names the kinds of hands he plays');
   ok(src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 500)') !== -1 &&
      src.indexOf('estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)') !== -1 &&
-     src.indexOf('estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500)') !== -1,
+     src.indexOf('estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500, cardSeed(hero.hole.concat(table.community), Math.min(3, table.livePlayers().length - 1)))') !== -1,
     'postflop facing equity runs 500 sims, not 150: 150-sim noise flipped borderline calls 2/20 runs');
   ok(src.indexOf('estimateEquityVsRanges(hero.hole, table.community, tiers, 500)') !== -1,
     'multiway facing equity runs 500 sims, not 300: 300-sim noise flipped borderline multiway calls (v1.8.183)');

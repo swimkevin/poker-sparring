@@ -21,9 +21,17 @@ function seededRnd(seed) {
   };
 }
 
-function estimateEquity(hole, community, opponents, iters) {
+function cardSeed(cards, extra) {
+  var seed = 987654321;
+  cards.forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  seed = (seed * 31 + (extra || 0)) % 2147483647;
+  return seed;
+}
+
+function estimateEquity(hole, community, opponents, iters, seed) {
   iters = iters || 300;
   opponents = Math.max(1, opponents || 1);
+  var rnd = typeof seed === 'number' ? seededRnd(seed) : Math.random;
   var known = {};
   hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
   var full = [];
@@ -39,7 +47,7 @@ function estimateEquity(hole, community, opponents, iters) {
 
     var deck = full.slice();
     for (var d = 0; d < need; d++) {
-      var j = d + Math.floor(Math.random() * (deck.length - d));
+      var j = d + Math.floor(rnd() * (deck.length - d));
       var t = deck[d]; deck[d] = deck[j]; deck[j] = t;
     }
     var board = community.concat(deck.slice(0, boardNeed));
@@ -58,6 +66,10 @@ function estimateEquity(hole, community, opponents, iters) {
 
 function estimateEquityVsRange(hole, maxTier, iters) {
   iters = iters || 300;
+  var seed = 987654321;
+  hole.forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  seed = (seed * 31 + maxTier) % 2147483647;
+  var rnd = seededRnd(seed);
   var known = {};
   hole.forEach(function (c) { known[_key(c)] = 1; });
   var rest = [];
@@ -75,7 +87,7 @@ function estimateEquityVsRange(hole, maxTier, iters) {
 
   var score = 0;
   for (var k = 0; k < iters; k++) {
-    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vh = pool[Math.floor(rnd() * pool.length)];
     var vknown = {};
     vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
     hole.forEach(function (c) { vknown[_key(c)] = 1; });
@@ -85,7 +97,7 @@ function estimateEquityVsRange(hole, maxTier, iters) {
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
 
     for (var d = 0; d < 5; d++) {
-      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var jj = d + Math.floor(rnd() * (deck.length - d));
       var t = deck[d]; deck[d] = deck[jj]; deck[jj] = t;
     }
     var board = deck.slice(0, 5);
@@ -99,6 +111,10 @@ function estimateEquityVsRange(hole, maxTier, iters) {
 
 function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
   iters = iters || 150;
+  var seed = 987654321;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  seed = (seed * 31 + (wantMade ? 1 : 0)) % 2147483647;
+  var rnd = seededRnd(seed);
   var known = {};
   hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
   var rest = [];
@@ -116,7 +132,7 @@ function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
   var boardNeed = 5 - community.length;
   var score = 0;
   for (var k = 0; k < iters; k++) {
-    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vh = pool[Math.floor(rnd() * pool.length)];
     var vknown = {};
     vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
     hole.concat(community).forEach(function (c) { vknown[_key(c)] = 1; });
@@ -125,7 +141,7 @@ function estimateEquityVsBoardClass(hole, community, iters, wantMade) {
       for (var r2 = 2; r2 <= 14; r2++)
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
     for (var d = 0; d < boardNeed; d++) {
-      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var jj = d + Math.floor(rnd() * (deck.length - d));
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
@@ -149,6 +165,9 @@ function pairRankOf(hole, community) {
 }
 function estimateEquityVsMadePairPlus(hole, community, iters) {
   iters = iters || 150;
+  var seed = 987654321;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  var rnd = seededRnd(seed);
   var heroPair = pairRankOf(hole, community);
   var known = {};
   hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
@@ -169,7 +188,7 @@ function estimateEquityVsMadePairPlus(hole, community, iters) {
   var boardNeed = 5 - community.length;
   var score = 0;
   for (var k = 0; k < iters; k++) {
-    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vh = pool[Math.floor(rnd() * pool.length)];
     var vknown = {};
     vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
     hole.concat(community).forEach(function (c) { vknown[_key(c)] = 1; });
@@ -178,7 +197,7 @@ function estimateEquityVsMadePairPlus(hole, community, iters) {
       for (var r2 = 2; r2 <= 14; r2++)
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
     for (var d = 0; d < boardNeed; d++) {
-      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var jj = d + Math.floor(rnd() * (deck.length - d));
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
@@ -316,6 +335,10 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
+  var seed = 987654321;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  seed = (seed * 31 + maxTier) % 2147483647;
+  var rnd = seededRnd(seed);
   var known = {};
   hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
   var rest = [];
@@ -333,7 +356,7 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   var boardNeed = 5 - community.length;
   var score = 0;
   for (var k = 0; k < iters; k++) {
-    var vh = pool[Math.floor(Math.random() * pool.length)];
+    var vh = pool[Math.floor(rnd() * pool.length)];
     var vknown = {};
     vknown[_key(vh[0])] = 1; vknown[_key(vh[1])] = 1;
     hole.concat(community).forEach(function (c) { vknown[_key(c)] = 1; });
@@ -343,7 +366,7 @@ function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
 
     for (var d = 0; d < boardNeed; d++) {
-      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var jj = d + Math.floor(rnd() * (deck.length - d));
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
@@ -381,6 +404,10 @@ function estimateEquityVsRangePostflopExact(hole, community, maxTier) {
 
 function estimateEquityVsRanges(hole, community, tiers, iters) {
   iters = iters || 300;
+  var seed = 987654321;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  tiers.forEach(function (t) { seed = (seed * 31 + (t || 0)) % 2147483647; });
+  var rnd = seededRnd(seed);
   var known = {};
   hole.concat(community).forEach(function (c) { known[_key(c)] = 1; });
   var rest = [];
@@ -405,10 +432,10 @@ function estimateEquityVsRanges(hole, community, tiers, iters) {
       var h = null;
       for (var t = 0; t < 60; t++) {
         var cand;
-        if (pools[o]) cand = pools[o][Math.floor(Math.random() * pools[o].length)];
+        if (pools[o]) cand = pools[o][Math.floor(rnd() * pools[o].length)];
         else {
-          var a = Math.floor(Math.random() * rest.length);
-          var b = Math.floor(Math.random() * rest.length);
+          var a = Math.floor(rnd() * rest.length);
+          var b = Math.floor(rnd() * rest.length);
           if (a === b) continue;
           cand = [rest[a], rest[b]];
         }
@@ -427,7 +454,7 @@ function estimateEquityVsRanges(hole, community, tiers, iters) {
       for (var r2 = 2; r2 <= 14; r2++)
         if (!vknown[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
     for (var d = 0; d < boardNeed; d++) {
-      var jj = d + Math.floor(Math.random() * (deck.length - d));
+      var jj = d + Math.floor(rnd() * (deck.length - d));
       var tmp = deck[d]; deck[d] = deck[jj]; deck[jj] = tmp;
     }
     var board = community.concat(deck.slice(0, boardNeed));
@@ -765,7 +792,7 @@ function exploitLine(archetype) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
-    seededRnd: seededRnd,
+    seededRnd: seededRnd, cardSeed: cardSeed,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     estimateEquityVsRangePostflopExact: estimateEquityVsRangePostflopExact,
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,

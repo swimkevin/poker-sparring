@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.285';
+  var APP_VERSION = '1.8.286';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -942,7 +942,7 @@
       } else if (rangeTier) {
         eq = estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 2000);
       } else {
-        eq = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
+        eq = estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500, cardSeed(hero.hole.concat(table.community), Math.min(3, table.livePlayers().length - 1)));
       }
       if (a === 'call' && legal.toCall > 0) {
         var need = legal.callAmount / (pot + legal.callAmount);
@@ -2529,7 +2529,7 @@
       ? estimateEquityVsRangePostflop(hero.hole, table.community, rangeEqTier, 500)
       : vTier
       ? estimateEquityVsRangePostflop(hero.hole, table.community, vTier, 500)
-      : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500);
+      : estimateEquity(hero.hole, table.community, Math.min(3, table.livePlayers().length - 1), 500, cardSeed(hero.hole.concat(table.community), Math.min(3, table.livePlayers().length - 1)));
 
     var effBB = effStackBB(vIdx);
     var stubborn = V && V.archetype ? (V.archetype.stubborn || 0.5) : 0.5;

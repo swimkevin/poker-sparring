@@ -93,6 +93,17 @@ function hand(str) {
   var a = EQ.seededRnd(424242), b = EQ.seededRnd(424242);
   ok(a() === b(), 'seededRnd is deterministic per seed (two streams agree)');
   ok(Math.abs(EQ.seededRnd(424242)() - 0.128708) < 1e-6, 'seededRnd(424242) first draw is the mulberry32 golden value, not the glibc LCG');
+  var rp1 = EQ.estimateEquityVsRangePostflop(hand('Ah Kh'), hand('Qh 7d 2c'), 2, 500);
+  var rp2 = EQ.estimateEquityVsRangePostflop(hand('Ah Kh'), hand('Qh 7d 2c'), 2, 500);
+  ok(rp1 === rp2, 'tier-range postflop equity is deterministic per hand (seeded, v1.8.286 — probe41 measured up to 8.4 points of wobble before)');
+  var rg1 = EQ.estimateEquityVsRanges(hand('Ah Kh'), hand('Qh 7d 2c 5s'), [2, 0], 500);
+  var rg2 = EQ.estimateEquityVsRanges(hand('Ah Kh'), hand('Qh 7d 2c 5s'), [2, 0], 500);
+  ok(rg1 === rg2, 'multiway tier-range equity is deterministic per hand (seeded, v1.8.286)');
+  var seedHole = hand('Ah Kh'), seedBoard = hand('Qh 7d 2c');
+  var seedV = EQ.cardSeed(seedHole.concat(seedBoard), 3);
+  var e1 = EQ.estimateEquity(seedHole, seedBoard, 3, 500, seedV);
+  var e2 = EQ.estimateEquity(seedHole, seedBoard, 3, 500, seedV);
+  ok(e1 === e2, 'generic equity with an explicit card seed is deterministic (v1.8.286 — the coach passes cardSeed, bots call it unseeded so their fold rates stay distributions)');
 })();
 
 // ---------- SPR + commitment (coach) ----------
