@@ -25,14 +25,14 @@ The deeper reason I built it this way: this project is an autonomous agent with 
 This repo is built by autonomous AI agents working inside guardrails I set — the agents write the code, the gates decide whether it ships.
 
 - **Autonomy with bounds.** A daily loop picks the next improvement, implements it, and ships it as a versioned release — up to 5 versions a day (310 releases so far). Agents never book, pay, or submit anything, and never attempt sign-ins; anything needing my account or money waits for me.
-- **Evaluation before shipping.** Every release re-runs the full suite (42 suites, ~16,800 assertions measured) plus the solver lab (210 pinned spots, 0 failures) and a 10-hand live eval. Every bug gets a regression test verified to fail without its fix.
+- **Evaluation before shipping.** Every release re-runs the full suite (44 suites, ~16,800 assertions measured) plus the solver lab (210 pinned spots, 0 failures) and a 10-hand live eval. Every bug gets a regression test verified to fail without its fix.
 - **Cost and time.** A release costs one full suite run (~20 minutes) plus the lab and live eval — no human review in the loop for routine fixes, but the gates above are the review.
 - **Honest failure log.** What breaks is written down: 4 production incidents in `docs/INCIDENTS.md`, each with a regression test, and the lessons in `docs/AI-WORKFLOW.md` — including two emergency rollbacks (v1.8.212–215) that taught the release flow its cache discipline.
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.299) — iterative, tested releases, not one big bang
-- **6,000+ test assertions** across 42 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits — including a 12,021-assertion seeded differential sweep that checks the fast evaluator bit-for-bit against the reference evaluator
+- **Daily tested releases** (v1.8.300) — iterative, tested releases, not one big bang
+- **6,000+ test assertions** across 44 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits — including a 12,021-assertion seeded differential sweep that checks the fast evaluator bit-for-bit against the reference evaluator
 - **Solver lab** — 210+ pinned spots where the coach's advice is checked against exact expected value, 0 failures (see `tests/solver-lab.js`)
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies
 - **0 runtime dependencies** — vanilla HTML/CSS/JS, no framework, no bundler, no build step

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.299';
+  var APP_VERSION = '1.8.300';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -549,6 +549,7 @@
 
     var profit = hero.stack - handCtx.startStack;
     lastHeroEndStack = hero.stack;
+    var endedRecId = handRec ? handRec.id : null;
     if (handRec) {
       if (recap) handRec.coachNotes = recap.lines;
       finishHandRecord(handRec, table, e, profit);
@@ -570,7 +571,7 @@
     });
     recordHand({
       mode: gameMode, bb: table.bb, heroHole: hero.hole, community: table.community,
-      recId: handRec ? handRec.id : null,
+      recId: endedRecId,
       allHands: allHands,
       profitChips: profit, wonHand: won, vpip: handCtx.vpip, pfr: handCtx.pfr,
       postBet: handCtx.postBet, postCall: handCtx.postCall,
@@ -729,7 +730,7 @@
             p.sittingOut = true;
             UI.log(UI.escapeHtml(p.name) + ' busts out and leaves the table');
           }
-        } else if (p.stack < cfg.stack * 0.5) {
+        } else if (cfg.botRebuys !== false && p.stack < cfg.stack * 0.5) {
 
           p.stack = cfg.stack;
           UI.log(UI.escapeHtml(p.name) + ' tops up to ' + UI.fmt(cfg.stack));
