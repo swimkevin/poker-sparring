@@ -65,7 +65,7 @@ function preflopVerdict(hero, villainId, open, timeline, liveCount, bet1, bet2, 
   return w.coachVerdict();
 }
 
-function postflopVerdict(hero, villainId, street, currentBet, pot, board, heroStack, villainStack, timeline, liveCount, button) {
+function postflopVerdict(hero, villainId, street, currentBet, pot, board, heroStack, villainStack, timeline, liveCount, button, heroBet) {
   var btn = button == null ? 0 : button;
   var s = d.createElement('script');
   var arch = villainId
@@ -79,7 +79,7 @@ function postflopVerdict(hero, villainId, street, currentBet, pot, board, heroSt
     'var t = window.__pfTable;',
     't.button = ' + btn + '; t.street = "' + street + '"; t.currentBet = ' + currentBet + '; t.pot = ' + pot + ';',
     't.players[0].hole = ' + JSON.stringify(hero) + ';',
-    't.players[0].stack = ' + heroStack + '; t.players[0].bet = 0;',
+    't.players[0].stack = ' + heroStack + '; t.players[0].bet = ' + (heroBet || 0) + ';',
     't.players[1].stack = ' + villainStack + '; t.players[1].bet = ' + currentBet + ';',
     't.community = ' + JSON.stringify(board) + ';',
     'for (var i = ' + liveCount + '; i < 8; i++) t.players[i].folded = true;'
@@ -626,6 +626,40 @@ setTimeout(function () {
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
     ok(aliceKQ.advice === 'call', 'top pair calls Alice 1.5x overbet too — her sizing is random, so the overbet is not a strength tell (got ' + aliceKQ.advice + ')');
+
+    // Facing a RAISE is priced vs the raise range, not the bet range (v1.8.289):
+    // a raise range is far stronger (the bot raises only with eq > need+margin
+    // and eq > 0.74, plus a small bluff-raise mass). River second pair 7x vs
+    // the Maniac's raise to 600 (hero bet 200 into 400): the bet-range price
+    // is ~37% so the old coach called, but the raise-range truth is ~0% —
+    // calling loses ~398. Flop second pair vs the LAG's raise: bet price
+    // ~57%, raise truth ~17-20% — fold. Turn top pair QJ vs the LAG's
+    // raise: raise truth ~59% — call, and the message quotes the raise
+    // price (~59%), not the ~80% bet price. River top pair QJ vs the
+    // Maniac's raise: raise truth ~49-51% — call.
+    var raiseTimeline = function (street) {
+      return [
+        { t: 'action', street: street, player: 0, action: 'bet', bet: 200, pot: 600 },
+        { t: 'action', street: street, player: 1, action: 'raise', bet: 600, pot: 1200 }];
+    };
+    var raiseRiver2nd = postflopVerdict([{ r: 7, s: 1 }, { r: 6, s: 2 }], 'maniac', 'river', 600, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
+      raiseTimeline('river'), 2, 0, 200);
+    ok(raiseRiver2nd.advice === 'fold', 'river second pair folds to the Maniac raise — the raise range is nearly all better hands (got ' + raiseRiver2nd.advice + ')');
+    var raiseFlop2nd = postflopVerdict([{ r: 7, s: 1 }, { r: 6, s: 2 }], 'lag', 'flop', 600, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }], 2000, 2000,
+      raiseTimeline('flop'), 2, 0, 200);
+    ok(raiseFlop2nd.advice === 'fold', 'flop second pair folds to the LAG raise — the raise price is ~20% vs a 25% need (got ' + raiseFlop2nd.advice + ')');
+    var raiseTurnTop = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 0 }], 'lag', 'turn', 600, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
+      raiseTimeline('turn'), 2, 0, 200);
+    ok(raiseTurnTop.advice === 'call', 'turn top pair calls the LAG raise — the raise price is ~59% vs a 25% need (got ' + raiseTurnTop.advice + ')');
+    ok(stripAdvice(raiseTurnTop.html).indexOf('raises with on the turn') !== -1,
+      'the call message says the equity is against the hands he raises with, not bets (got ' + stripAdvice(raiseTurnTop.html).slice(0, 200) + ')');
+    var raiseRiverTop = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 0 }], 'maniac', 'river', 600, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
+      raiseTimeline('river'), 2, 0, 200);
+    ok(raiseRiverTop.advice === 'call', 'river top pair calls the Maniac raise — the raise price is ~51% vs a 25% need (got ' + raiseRiverTop.advice + ')');
 
     // A big river bet is NOT value-only heads-up (v1.8.270 corrects v1.8.264):
     // the v1.8.264 veto rested on a 22-holding sample that omitted the

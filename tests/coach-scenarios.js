@@ -1184,5 +1184,30 @@ console.log('\n94. v1.8.285: one seeded RNG everywhere, no glibc LCG');
     'seededGrossEq seeds the shared RNG from the spot name, so the gross figures stay deterministic per spot');
 }
 
+console.log('\n95. v1.8.289: facing a raise is priced vs the raise range');
+{
+  var eqSrc = fs.readFileSync(__dirname + '/../js/equity.js', 'utf8');
+  ok(eqSrc.indexOf('function estimateEquityVsRaiseRange(') !== -1 &&
+     eqSrc.indexOf('function estimateEquityVsRaiseRangePostflop(') !== -1,
+    'the raise pricers exist: an exact river enumerator and a seeded postflop sampler, mirroring the betting-range pricers (v1.8.289)');
+  ok(eqSrc.indexOf('if (eq1 > needV + margin) return eq1 > 0.74 ? aggression * 0.55 : 0;') !== -1 &&
+     eqSrc.indexOf("if (ms > 0.22 && eq1 > 0.25) return bluff * 0.16;") !== -1,
+    'the raise rule mirrors the bot exactly: a value raise needs eq over need+margin AND over 0.74 (prob agg*0.55), a bluff raise needs ms over 0.22 and eq over 0.25 (prob bluff*0.16) — the coach no longer prices a raise with the betting range (v1.8.289)');
+  ok(src.indexOf('function villainRaiseInfo(idx)') !== -1 &&
+     src.indexOf("entries[i].action === 'raise'") !== -1 &&
+     src.indexOf('needV: heroBet / (heroPot + heroBet)') !== -1,
+    'the coach detects a raise from the timeline (the villain\'s last action on the street is a raise) and reads the villain\'s own need from hero\'s bet before it (v1.8.289)');
+  ok(src.indexOf('estimateEquityVsRaiseRange(hero.hole, table.community,') !== -1 &&
+     src.indexOf('estimateEquityVsRaiseRangePostflop(hero.hole, table.community,') !== -1,
+    'the coach prices a raise with the raise pricers on the river and off it, and the leak tracker mirrors it in the bad-chase and weak-fold branches (v1.8.289)');
+  ok(src.indexOf("deep: sprV >= 2.5") !== -1,
+    'the raise price is used only when the villain is deep: below SPR 2.5 the bot shoves monsters, a range the raise pricer does not model, so the bet price stands (v1.8.289)');
+  ok(labSrc.indexOf("name: 'river-2ndpair-vs-maniac-raise-fold'") !== -1 &&
+     labSrc.indexOf("name: 'flop-2ndpair-vs-lag-raise-fold'") !== -1 &&
+     labSrc.indexOf("name: 'turn-toppair-vs-lag-raise-call'") !== -1 &&
+     labSrc.indexOf("name: 'river-toppair-vs-maniac-raise-call'") !== -1,
+    'the lab pins all four raise spots: second pair folds to a raise on the river and the flop, top pair calls it on the turn and the river — the lab had zero postflop raise-facing spots before (v1.8.289)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

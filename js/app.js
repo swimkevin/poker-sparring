@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.288';
+  var APP_VERSION = '1.8.289';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -956,7 +956,17 @@
             var betEqL = null;
             if (genericL) {
               var vAggrL = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-              if ((hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river') {
+              var raiseInfoL = villainRaiseInfo(table.players.indexOf(V));
+              var vStubbornL = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
+              var vStationL = V.archetype.id === 'station';
+              var raiseL = raiseInfoL && raiseInfoL.deep;
+              if (raiseL && table.street === 'river') {
+                betEqL = estimateEquityVsRaiseRange(hero.hole, table.community,
+                  vAggrL, villainBluffy(V.archetype), vStubbornL, raiseInfoL.needV, vStationL);
+              } else if (raiseL) {
+                betEqL = estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
+                  vAggrL, villainBluffy(V.archetype), vStubbornL, raiseInfoL.needV, vStationL);
+              } else if ((hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river') {
                 betEqL = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
                   vAggrL, villainBluffy(V.archetype));
               } else {
@@ -1034,13 +1044,19 @@
       }
       var needFold = legal.callAmount / (pot + legal.callAmount);
       var foldEq = eq;
+      var raiseInfoF = V ? villainRaiseInfo(table.players.indexOf(V)) : null;
+      var raiseF = raiseInfoF && raiseInfoF.deep;
       if (V && table.street === 'river' && liveOpponents().length === 1 &&
           (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
           V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1) {
         var vAggrF = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-        var betEqF = estimateEquityVsBettingRange(hero.hole, table.community,
-          vAggrF, villainBluffy(V.archetype), 1);
+        var vStubbornF = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
+        var betEqF = raiseF
+          ? estimateEquityVsRaiseRange(hero.hole, table.community,
+            vAggrF, villainBluffy(V.archetype), vStubbornF, raiseInfoF.needV, V.archetype.id === 'station')
+          : estimateEquityVsBettingRange(hero.hole, table.community,
+            vAggrF, villainBluffy(V.archetype), 1);
         if (betEqF != null) foldEq = betEqF;
       }
       if (V && table.street !== 'river' && liveOpponents().length === 1 &&
@@ -1049,8 +1065,12 @@
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1 &&
           !villainCalledBig(table.players.indexOf(V))) {
         var vAggrF2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-        var betEqF2 = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
-          vAggrF2, villainBluffy(V.archetype));
+        var vStubbornF2 = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
+        var betEqF2 = raiseF
+          ? estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
+            vAggrF2, villainBluffy(V.archetype), vStubbornF2, raiseInfoF.needV, V.archetype.id === 'station')
+          : estimateEquityVsBettingRangePostflop(hero.hole, table.community,
+            vAggrF2, villainBluffy(V.archetype));
         if (betEqF2 != null) foldEq = Math.max(0, betEqF2 - drawRealizationDiscount(hc));
       }
       if (a === 'fold' && legal.toCall > 0 && legal.toCall < pot * 0.35 && foldEq > needFold + 0.10) {
@@ -1285,6 +1305,31 @@
           : name + ' plays a wide range, so this barely narrows him down: pairs, draws, and some air are all in there.';
     }
     return '';
+  }
+
+  function villainRaiseInfo(idx) {
+    if (!handRec || !handRec.timeline) return null;
+    var entries = [];
+    handRec.timeline.forEach(function (t) {
+      if (t.t === 'action' && t.street === table.street) entries.push(t);
+    });
+    var ri = -1;
+    for (var i = entries.length - 1; i >= 0; i--) {
+      if (entries[i].player === idx && entries[i].action === 'raise') { ri = i; break; }
+      if (entries[i].player === idx && (entries[i].action === 'bet' || entries[i].action === 'call')) break;
+    }
+    if (ri < 0) return null;
+    var hi = -1;
+    for (var j = ri - 1; j >= 0; j--) {
+      if (entries[j].player === 0 && (entries[j].action === 'bet' || entries[j].action === 'raise')) { hi = j; break; }
+    }
+    if (hi < 0) return null;
+    var heroBet = entries[hi].bet || 0;
+    var heroPot = entries[hi].pot || 0;
+    if (!(heroBet > 0) || !(heroPot > 0)) return null;
+    var pl = table.players[idx];
+    var sprV = pl ? ((pl.stack || 0) + (pl.bet || 0)) / heroPot : 99;
+    return { needV: heroBet / (heroPot + heroBet), deep: sprV >= 2.5 };
   }
 
   function villainSizingTell(idx) {
@@ -2561,25 +2606,37 @@
     var madePriced = false;
     var riverBetPriced = false;
     var betRangePriced = false;
+    var raisePriced = false;
     var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
       ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
     if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && !diluted && !narrowedByCall) {
       var eqMade = null;
+      var raiseInfo = villainRaiseInfo(vIdx);
+      var vStubborn = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
+      var vStation = V.archetype.id === 'station';
       if (table.street === 'river' && liveOpponents().length === 1 &&
           (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && genericBettor) {
         var vAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-        eqMade = estimateEquityVsBettingRange(hero.hole, table.community,
-          vAggr, villainBluffy(V.archetype), 1);
-        if (eqMade != null) riverBetPriced = true;
+        if (raiseInfo && raiseInfo.deep)
+          eqMade = estimateEquityVsRaiseRange(hero.hole, table.community,
+            vAggr, villainBluffy(V.archetype), vStubborn, raiseInfo.needV, vStation);
+        else
+          eqMade = estimateEquityVsBettingRange(hero.hole, table.community,
+            vAggr, villainBluffy(V.archetype), 1);
+        if (eqMade != null) { riverBetPriced = true; if (raiseInfo && raiseInfo.deep) raisePriced = true; }
       }
       if (eqMade == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||
           hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||
           hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river' &&
           liveOpponents().length === 1 && genericBettor) {
         var vAggr2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
-        eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
-          vAggr2, villainBluffy(V.archetype));
-        if (eqMade != null) betRangePriced = true;
+        if (raiseInfo && raiseInfo.deep)
+          eqMade = estimateEquityVsRaiseRangePostflop(hero.hole, table.community,
+            vAggr2, villainBluffy(V.archetype), vStubborn, raiseInfo.needV, vStation);
+        else
+          eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,
+            vAggr2, villainBluffy(V.archetype));
+        if (eqMade != null) { betRangePriced = true; if (raiseInfo && raiseInfo.deep) raisePriced = true; }
       }
       if (eqMade == null && (hc === 'air' || hc === 'weakpair' ||
           (hc === 'secondpair' && table.street === 'river'))) {
@@ -2725,7 +2782,9 @@
       : 'simulated 500× vs random hands — only a rough guide, since we have no read on his range yet' +
         (rangeAdjust < -0.005 ? ', raised for their looseness' : '');
     if (diluted) eqSource = eqSource + ', beating everyone still in';
-    if (riverBetPriced) eqSource = 'against every hand ' + vName + ' bets on the river, weighted by how often he bets it';
+    if (riverBetPriced && raisePriced) eqSource = 'against every hand ' + vName + ' raises with on the river, weighted by how often he raises it';
+    else if (betRangePriced && raisePriced) eqSource = 'against every hand ' + vName + ' raises with on the ' + table.street + ', weighted by how often he raises it';
+    else if (riverBetPriced) eqSource = 'against every hand ' + vName + ' bets on the river, weighted by how often he bets it';
     else if (betRangePriced) eqSource = 'against every hand ' + vName + ' bets on the ' + table.street + ', weighted by how often he bets it';
     else if (madePriced) eqSource = 'simulated 2,000× vs the made hands ' + vName + ' bets — a betting range is mostly made hands, not bluffs';
 
@@ -2737,7 +2796,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : (riverBetPriced || betRangePriced) ? ' That counts the weaker pairs and bluffs he bets too — not just his best hands.' : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
+      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : (riverBetPriced || betRangePriced) ? (raisePriced ? ' That counts the weaker pairs and bluffs he raises with too — not just his best hands.' : ' That counts the weaker pairs and bluffs he bets too — not just his best hands.') : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."
