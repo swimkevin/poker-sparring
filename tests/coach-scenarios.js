@@ -1295,5 +1295,15 @@ console.log('\n100. v1.8.308: the lab gross check prices the made range for air 
     'the lab gross-checks the three Nathan air spots: the tier model prices ace-high at 45.9% against a 19% fold line (it fails the fold outright) while the made-range model passes all three (10.7% vs needs of 3%, 5% and 19%) (v1.8.308)');
 }
 
+console.log('\n101. v1.8.309: the lab checks the coach-implied equity against its own advice');
+{
+  ok(labSrc.indexOf("if (pct != null && v.advice === 'call' && pct < needF)") !== -1 &&
+     labSrc.indexOf("if (pct != null && v.advice === 'fold' && pct > needF + 0.03)") !== -1,
+    'a facing spot fails when the equity figure its own message quotes contradicts the advice: a call quoting below the need, or a fold quoting above the need plus the coach\'s own 0.03 call margin (v1.8.309)');
+  ok(labSrc.indexOf('% (quoted-vs-advice checked)') !== -1 &&
+     labSrc.indexOf('Monte Carlo, reported only') === -1,
+    'the facing-spot note no longer calls the coach-implied figure "reported only": 97 quoting spots are checked, and a probe (hidden_files/consistency-probe.js) measured 0 contradictions, with 1 point of headroom on both sides (closest fold quotes 20% vs an 18% need, closest call 31% vs 30%) (v1.8.309)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

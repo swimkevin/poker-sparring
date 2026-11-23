@@ -1444,7 +1444,11 @@ setTimeout(function () {
       var needF = toCallF / (potF + toCallF);
       evNote = pct == null ? 'no equity figure in message'
         : 'coach-implied eq ' + Math.round(pct * 100) + '% vs need ' + Math.round(needF * 100) +
-          '% (Monte Carlo, reported only)';
+          '% (quoted-vs-advice checked)';
+      if (pct != null && v.advice === 'call' && pct < needF)
+        problems.push('quoted eq ' + Math.round(pct * 100) + '% below need ' + Math.round(needF * 100) + '% on a call');
+      if (pct != null && v.advice === 'fold' && pct > needF + 0.03)
+        problems.push('quoted eq ' + Math.round(pct * 100) + '% above need ' + Math.round(needF * 100) + '% on a fold');
       if (spot.grossCheck) {
         var raiseGross = raiseGrossEq(spot, msg);
         var betGross = raiseGross != null ? null : bettingGrossEq(spot, msg);
