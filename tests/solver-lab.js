@@ -32,10 +32,11 @@
 // noise would make that flaky, but a 10-point gross disagreement on a
 // seeded betting-range simulation fails, since no plausible noise
 // explains it (the coach's own price tracks the betting-range gross
-// figure within 5.4 points on every gross-checked spot, probe
-// gross-model-probe.log — the 10-point line leaves ~4.6 points of
-// headroom; the tier model keeps its 20-point line because it is the
-// wrong range for a betting-range price).
+// figure within 5.4 points on every gross-checked generic spot, probe
+// gross-model-probe.log, and within 0.5 points on every gross-checked
+// custom spot, probe custom-gross-all-probe.log — the 10-point line leaves
+// ~4.6 points of headroom; the tier model keeps its 20-point line because
+// it is the wrong range for a betting-range price).
 // Leading spots are checked against guardrail
 // invariants rather than fake-precision EV: there is no single
 // "correct" bet size, only sizes that are clearly too big.
@@ -187,11 +188,22 @@ function bettingGrossEq(spot, msg) {
     ? w.ARCHETYPES.filter(function (a) { return a.id === spot.villain; })[0]
     : null;
   if (!arch) return null;
-  if (['alice', 'amogh', 'donald', 'nathan'].indexOf(arch.id) !== -1) return null;
   if (isNarrowedSpot(spot)) return null;
   var aggr = (typeof arch.aggression === 'number') ? arch.aggression : 0.5;
   var bluff = EQ.villainBluffy(arch);
   var nLive = spot.nLive || 2;
+  if (['alice', 'amogh', 'donald', 'nathan'].indexOf(arch.id) !== -1) {
+    if (nLive === 2) {
+      return spot.street === 'river'
+        ? EQ.estimateEquityVsBettingRangeCustom(spot.hero, spot.board, arch.id, aggr, bluff)
+        : EQ.estimateEquityVsBettingRangeCustomPostflop(spot.hero, spot.board, arch.id, aggr, bluff);
+    }
+    var callersAheadC = countCallersAheadSpot(spot);
+    var extraC = [];
+    var nOppC = Math.min(3, nLive - 1);
+    for (var oo = 1; oo < nOppC; oo++) extraC.push(oo <= callersAheadC ? 3 : 0);
+    return EQ.estimateEquityVsBettingRangeCustomMulti(spot.hero, spot.board, arch.id, aggr, bluff, extraC);
+  }
   if (nLive === 2) {
     return spot.street === 'river'
       ? EQ.estimateEquityVsBettingRange(spot.hero, spot.board, aggr, bluff, 1)
@@ -341,7 +353,8 @@ var SPOTS = [
       { t: 'action', street: 'river', player: 1, action: 'bet', bet: 600, pot: 1200 }] },
   { name: 'overpair-vs-alice-overbet-call', kind: 'facing', villain: 'alice',
     hero: [C(14, 0), C(14, 3)], board: Q725, street: 'turn',
-    potBefore: 400, bet: 600, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 400, bet: 600, heroStack: 2000, nLive: 2, expect: 'call', grossCheck: true,
+    expectWord: 'bets on the turn',
     timeline: betTimeline('turn', 600, 400) },
   { name: 'river-2ndpair-vs-maniac-raise-fold', kind: 'facing', villain: 'maniac',
     hero: [C(7, 1), C(6, 2)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 1)],
@@ -370,22 +383,27 @@ var SPOTS = [
   { name: 'twopair-KK9-vs-alice-call', kind: 'facing', villain: 'alice',
     hero: [C(9, 2), C(4, 1)], board: [C(13, 2), C(13, 3), C(9, 1), C(4, 0), C(2, 2)],
     street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    grossCheck: true, expectWord: 'bets on the river',
     timeline: betTimeline('river', 200, 400) },
   { name: 'twopair-KK9-vs-nathan-fold', kind: 'facing', villain: 'nathan',
     hero: [C(9, 2), C(4, 1)], board: [C(13, 2), C(13, 3), C(9, 1), C(4, 0), C(2, 2)],
     street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    grossCheck: true, expectWord: 'bets on the river',
     timeline: betTimeline('river', 200, 400) },
   { name: 'toppair-vs-alice-call', kind: 'facing', villain: 'alice',
     hero: [C(12, 1), C(11, 0)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 1)],
     street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    grossCheck: true, expectWord: 'bets on the river',
     timeline: betTimeline('river', 200, 400) },
   { name: 'twopair-772-vs-amogh-potbet-fold', kind: 'facing', villain: 'amogh',
     hero: [C(5, 3), C(2, 1)], board: [C(7, 2), C(7, 3), C(2, 0), C(5, 1), C(9, 2)],
     street: 'river', potBefore: 400, bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',
+    grossCheck: true, expectWord: 'bets on the river',
     timeline: betTimeline('river', 400, 400) },
   { name: 'toppair-vs-alice-overbet-call', kind: 'facing', villain: 'alice',
     hero: [C(13, 1), C(12, 1)], board: Q725, street: 'turn',
-    potBefore: 400, bet: 600, heroStack: 2000, nLive: 2, expect: 'call',
+    potBefore: 400, bet: 600, heroStack: 2000, nLive: 2, expect: 'call', grossCheck: true,
+    expectWord: 'bets on the turn',
     timeline: betTimeline('turn', 600, 400) },
   { name: 'thirdpair-vs-maniac-river-call', kind: 'facing', villain: 'maniac',
     hero: [C(7, 0), C(6, 0)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3), C(9, 1)],

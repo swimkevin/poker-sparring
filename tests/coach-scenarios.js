@@ -1254,5 +1254,18 @@ console.log('\n97. v1.8.302: the lab gross check prices the betting range, not t
     'the lab pins the nut-flush-draw pot-bet fold: the tier gross equity is 56.8% against a 53% line so the old model fails it, while the betting-range gross equity is 35.7% against a 43% line so the new model passes it (v1.8.302)');
 }
 
+console.log('\n98. v1.8.304: the lab gross check prices custom betting ranges too');
+{
+  ok(labSrc.indexOf('estimateEquityVsBettingRangeCustomMulti(spot.hero, spot.board, arch.id, aggr, bluff, extraC)') !== -1 &&
+     labSrc.indexOf('estimateEquityVsBettingRangeCustomPostflop(spot.hero, spot.board, arch.id, aggr, bluff)') !== -1 &&
+     labSrc.indexOf('estimateEquityVsBettingRangeCustom(spot.hero, spot.board, arch.id, aggr, bluff)') !== -1,
+    'the gross check recomputes equity with the custom betting-range model (heads-up custom postflop/river, multiway custom shared-runout) for Alice, Amogh, Donald, and Nathan, and falls back to the tier model when the custom estimator returns null (empty range, river multiway) (v1.8.304)');
+  ok(labSrc.indexOf("name: 'twopair-KK9-vs-alice-call'") !== -1 &&
+     labSrc.indexOf("name: 'twopair-KK9-vs-nathan-fold'") !== -1 &&
+     labSrc.indexOf("name: 'twopair-772-vs-amogh-potbet-fold'") !== -1 &&
+     labSrc.indexOf("name: 'overpair-vs-alice-overbet-call'") !== -1,
+    'the lab gross-checks six heads-up custom spots: the tier model fails three of them outright (two pair vs Alice 0.0% on a call, two pair vs Nathan 68.1% on a fold, two pair vs Amogh 69.5% on a fold) while the custom betting-range model passes all six within 0.5 points of the coach\'s price (v1.8.304)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
