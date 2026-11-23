@@ -640,12 +640,21 @@ function customBetProb(villainId, holding, ms, eq1, community, aggression, bluff
   if (villainId === 'donald') {
     var dd = detectDraws(holding, community);
     var hasDrawD = dd.flushDraw || dd.oesd;
+    var hasGutD = !hasDrawD && dd.gutshot;
     var pDraw = (hasDrawD && ms < 0.55) ? 0.65 : 0;
-    var pWet = (ms >= 0.4 && ms < 0.78 && isWetBoard(community)) ? 0.7 : 0;
+    var pWet = (ms >= 0.4 && ms < 0.78 && isWetBoard(community) && !isRiver) ? 0.7 : 0;
     var betLineD = 0.62 - aggression * 0.22 + (isRiver ? 0.04 : 0);
-    var bluffPD = bluff * 0.22 * (isRiver ? 1 : 0.55);
-    var pGeneric = (ms > 0.74 || eq1 > betLineD) ? 1 : (ms < 0.55 ? bluffPD : 0);
-    return pDraw + (1 - pDraw) * pWet + (1 - pDraw) * (1 - pWet) * pGeneric;
+    var semiD = 0;
+    if (hasDrawD && ms < 0.55) semiD = 0.25 + aggression * 0.35;
+    else if (hasGutD && ms < 0.55) semiD = 0.12 + aggression * 0.2;
+    var pGenD = 0;
+    if (ms > 0.74) pGenD = 1;
+    else if (ms >= 0.55 && eq1 > betLineD) pGenD = 1;
+    else if (semiD > 0) pGenD = semiD;
+    else if (ms >= 0.4 && ms < 0.55 && eq1 > betLineD) pGenD = 0.45 + aggression * 0.25;
+    else if (ms < 0.55) pGenD = bluff * (0.22 + bluff * 0.25) * (isRiver ? 1 : 0.55);
+    var baseD = pDraw + (1 - pDraw) * pWet;
+    return baseD + (1 - baseD) * pGenD;
   }
   return 0;
 }

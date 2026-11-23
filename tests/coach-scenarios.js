@@ -1227,8 +1227,8 @@ console.log('\n96. v1.8.290: custom villains are priced vs their own betting rul
     'Amogh bets the narrow line agg*0.12 with draw-only bluffs and checks mid-strength pairs 70% off the river (v1.8.290)');
   ok(equitySrc.indexOf('function isWetBoard(community)') !== -1 &&
      equitySrc.indexOf('var pDraw = (hasDrawD && ms < 0.55) ? 0.65 : 0;') !== -1 &&
-     equitySrc.indexOf('var pWet = (ms >= 0.4 && ms < 0.78 && isWetBoard(community)) ? 0.7 : 0;') !== -1,
-    'Donald adds a 65% draw bluff and a 70% wet-board overbet to the generic line (v1.8.290)');
+     equitySrc.indexOf('var pWet = (ms >= 0.4 && ms < 0.78 && isWetBoard(community) && !isRiver) ? 0.7 : 0;') !== -1,
+    'Donald adds a 65% draw bluff and a 70% wet-board overbet to the generic line (v1.8.290, v1.8.311: the overbet is off the river only — the bot never bombs a wet river board)');
   ok(src.indexOf("var customBettor = V && V.archetype &&") !== -1 &&
      src.indexOf('estimateEquityVsBettingRangeCustom(hero.hole, table.community,') !== -1 &&
      src.indexOf('estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,') !== -1,
@@ -1319,6 +1319,22 @@ console.log('\n102. v1.8.310: F10 — the trapper gate is priced vs the betting 
      labSrc.indexOf("name: 'trapper-flushboard-3rdnut-raise'") !== -1 &&
      labSrc.indexOf("name: 'madehand-flush-trapper-call'") !== -1,
     'the lab pins the F10 cells: top set vs Nathan on a three-flush board folds (betting-range equity 0%, raise loses 300), the fourth-nut flush calls (35.7%, raise loses 86), the third-nut flush raises to 450 (53.6%, raise gains 21), and the paired-board nut flush calls (48.2% — the old raise lost 11 and the tier quote still reads 87%) (v1.8.310)');
+}
+
+console.log('\n103. v1.8.311: Donald\'s betting-range model mirrors his real bet rule');
+{
+  ok(equitySrc.indexOf("var pWet = (ms >= 0.4 && ms < 0.78 && isWetBoard(community) && !isRiver) ? 0.7 : 0;") !== -1,
+    'Donald\'s wet-board overbet is modelled only off the river: the bot\'s overbet branch is gated on street !== \'river\', so the old model credited 0.7 to every mid hand on a wet river board he never bombs (v1.8.311)');
+  ok(equitySrc.indexOf("else if (ms >= 0.55 && eq1 > betLineD) pGenD = 1;") !== -1 &&
+     equitySrc.indexOf("else if (ms >= 0.4 && ms < 0.55 && eq1 > betLineD) pGenD = 0.45 + aggression * 0.25;") !== -1 &&
+     equitySrc.indexOf("else if (ms < 0.55) pGenD = bluff * (0.22 + bluff * 0.25) * (isRiver ? 1 : 0.55);") !== -1,
+    'the generic fall-through mirrors the bot: the equity line needs ms >= 0.55 for a certain bet, mid hands bet it only 45% + aggression*25%, and the bluff rate is bluff*(0.22 + bluff*0.25) with the 0.55 street factor off the river — the old model bet every holding with eq1 over the line and bluffed at bluff*0.22 (v1.8.311)');
+  ok(equitySrc.indexOf("if (hasDrawD && ms < 0.55) semiD = 0.25 + aggression * 0.35;") !== -1 &&
+     equitySrc.indexOf("else if (hasGutD && ms < 0.55) semiD = 0.12 + aggression * 0.2;") !== -1,
+    'draws get their second semi-bluff chance in the generic fall-through (a draw that misses the 65% bluff still semi-bluffs at 0.25 + aggression*0.35, gutshots at 0.12 + aggression*0.2) — the old model left draws at the 0.11 bluff rate after a missed draw bluff (v1.8.311)');
+  ok(labSrc.indexOf("name: 'secondpair-donald-wet-river-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-donald-dry-river-call'") !== -1,
+    'the lab pins the fix: second pair vs Donald on the wet river calls quoting 29% (old model 17%, a fold — real bot ~28-29%), on the dry river calls quoting 34% (old model 29%, real bot ~34-35%) (v1.8.311)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
