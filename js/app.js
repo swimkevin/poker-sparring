@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.300';
+  var APP_VERSION = '1.8.301';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -949,6 +949,17 @@
         var callersAheadL = countCallersAhead();
         for (var oL = 1; oL < nOppL; oL++) tiersL.push(oL <= callersAheadL ? 3 : 0);
         eq = estimateEquityVsRanges(hero.hole, table.community, tiersL, 5000);
+        var vIdxM = table.players.indexOf(V);
+        var rangeTierOrigM = (vRange.label === 'polarized' && (vTight > 0.6 || vBluffy < 0.25)) ? 2 : (vRange.label === 'strong' ? 3 : 0);
+        var narrowedM = !rangeTierOrigM && villainCalledBig(vIdxM);
+        var genericM = V.archetype && !V.archetype.neverRaise &&
+          ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+        if (genericM && !narrowedM) {
+          var vAggrM = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+          var multiEqM = estimateEquityVsBettingRangeMulti(hero.hole, table.community,
+            vAggrM, villainBluffy(V.archetype), tiersL.slice(1));
+          if (multiEqM != null) eq = multiEqM;
+        }
       } else if (rangeTier) {
         eq = estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 5000);
       } else {
@@ -2629,25 +2640,33 @@
       vulnerableMade: (hc === 'trips' || hc === 'twopair' || anyDraw) && boardPaired });
     var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
     var diluted = false;
+    var multiBetPriced = false;
+    var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
+      ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+    var customBettor = V && V.archetype &&
+      ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
     if (multiway && singleRange) {
       var nOpp = Math.min(3, table.livePlayers().length - 1);
       var tiers = [rangeEqTier || vTier];
       var callersAhead = countCallersAhead();
       for (var o = 1; o < nOpp; o++) tiers.push(o <= callersAhead ? 3 : 0);
-      adjEq = Math.max(0, Math.min(1, estimateEquityVsRanges(hero.hole, table.community, tiers, 5000) + credit - debit));
+      var multiEq = null;
+      if (!narrowedByCall && genericBettor) {
+        var vAggrM = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+        multiEq = estimateEquityVsBettingRangeMulti(hero.hole, table.community,
+          vAggrM, villainBluffy(V.archetype), tiers.slice(1));
+      }
+      if (multiEq != null) multiBetPriced = true;
+      adjEq = Math.max(0, Math.min(1, (multiEq != null ? multiEq : estimateEquityVsRanges(hero.hole, table.community, tiers, 5000)) + credit - debit));
       diluted = true;
     }
     var bCredit = (hc === 'air' || hc === 'secondpair' || hc === 'weakpair')
       ? blockerCredit(hero.hole, table.community) : 0;
-    if (bCredit) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
+    if (bCredit && !multiBetPriced) adjEq = Math.max(0, Math.min(1, adjEq + bCredit));
     var madePriced = false;
     var riverBetPriced = false;
     var betRangePriced = false;
     var raisePriced = false;
-    var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
-      ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
-    var customBettor = V && V.archetype &&
-      ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
     if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && !diluted && !narrowedByCall) {
       var eqMade = null;
       var raiseInfo = villainRaiseInfo(vIdx);
@@ -2749,7 +2768,7 @@
       tell.ratio >= 0.7 && onePairOrLess && hc !== 'nut';
     var loneRiverPriced = riverBetPriced && table.street === 'river' &&
       villainFirstRiverAggro(vIdx) && adjEq > need2;
-    var pricedEscape = (riverBetPriced || betRangePriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;
+    var pricedEscape = (riverBetPriced || betRangePriced || multiBetPriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;
     if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + (tightBigBet && tell.size === 'overbet'
@@ -2817,12 +2836,13 @@
           : 'With a strong made hand, raise for value to ~' + fmt(nutTo) + ' — but a better hand is already possible on this board, so don\'t treat it as a lock.');
     }
     var rp2 = tourneyRiskPremium(effBB);
-    var threshold = need2 + ((riverBetPriced || betRangePriced) ? 0 : rangeAdjust) + rp2;
+    var appliedAdjust = (riverBetPriced || betRangePriced || multiBetPriced) ? 0 : rangeAdjust;
+    var threshold = need2 + appliedAdjust + rp2;
 
-    var riverPrior = (table.street === 'river' && bluffy <= 0.55 && !riverBetPriced) ? 0.03 : 0;
+    var riverPrior = (table.street === 'river' && bluffy <= 0.55 && !riverBetPriced && !multiBetPriced) ? 0.03 : 0;
     threshold += riverPrior;
 
-    var strongAdj = rangeAdjust > 0.005;
+    var strongAdj = appliedAdjust > 0.005;
 
     var tierCounted = table.street === 'river' && !diluted;
     var eqSource = rangeEqTier
@@ -2836,6 +2856,7 @@
     else if (betRangePriced && raisePriced) eqSource = 'against every hand ' + vName + ' raises with on the ' + table.street + ', weighted by how often he raises it';
     else if (riverBetPriced) eqSource = 'against every hand ' + vName + ' bets on the river, weighted by how often he bets it';
     else if (betRangePriced) eqSource = 'against every hand ' + vName + ' bets on the ' + table.street + ', weighted by how often he bets it';
+    else if (multiBetPriced) eqSource = 'simulated 24,000× against every hand ' + vName + ' bets on the ' + table.street + ', weighted by how often he bets it, beating everyone still in';
     else if (madePriced) eqSource = 'simulated 2,000× vs the made hands ' + vName + ' bets — a betting range is mostly made hands, not bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +

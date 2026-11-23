@@ -1182,6 +1182,34 @@ setTimeout(function () {
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 500 }], 'fold');
       ok(leakSecondTurnLagFold && leakSecondTurnLagFold.type === 'weak-fold',
         'folding second pair to the LAG\'s small turn bet flags weak-fold (betting-range eq ~55% vs need + 10 = 27%)');
+      // Multiway marginal pairs are priced vs the bettor's betting range,
+      // not the tier pool (v1.8.301, F8): the tier pool priced weak pair vs
+      // the Maniac at 41% against a 31% betting-range truth, and second pair
+      // vs the Rock on the river at 14% against a 3% truth. The bands below
+      // fail on the old tier prices and pass on the estimator; the lab pins
+      // the S3 decision flip (second pair vs the LAG 4-way folds now).
+      var weakMultiManiac = postflopVerdict([{ r: 5, s: 0 }, { r: 9, s: 1 }], 'maniac', 'turn', 200, 500, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 700 }], 3);
+      ok(weakMultiManiac.advice === 'call' && quotedEq(weakMultiManiac) >= 26 && quotedEq(weakMultiManiac) <= 36,
+        'weak pair vs the Maniac\'s turn bet multiway quotes 26-36% (estimator 31%, truth 31%; the tier price quoted 41%)');
+      var topMultiRock = postflopVerdict([{ r: 12, s: 0 }, { r: 8, s: 1 }], 'rock', 'turn', 200, 500, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 700 }], 3);
+      ok(topMultiRock.advice === 'call' && quotedEq(topMultiRock) >= 54 && quotedEq(topMultiRock) <= 60,
+        'top pair vs the Rock\'s turn bet multiway quotes 54-60% (estimator 57%, truth 57%; the tier price quoted 53%)');
+      var secondRiverRockMulti = postflopVerdict([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', 'river', 300, 800, Q7259, 2000, 2000,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 800 },
+         { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }], 3);
+      ok(secondRiverRockMulti.advice === 'fold' && quotedEq(secondRiverRockMulti) != null && quotedEq(secondRiverRockMulti) <= 8,
+        'second pair vs the Rock\'s river bet multiway with a caller ahead quotes 0-8% (estimator 3%, truth 3%; the tier price quoted 14%)');
+      // The tracker mirrors the multiway betting-range price too (v1.8.301):
+      // calling the Rock's river bet multiway with second pair is a bad
+      // chase (betting-range eq ~3% vs a 21% need), where the tier price
+      // at ~14% stayed silent.
+      var leakSecondRiverRockMulti = postflopLeak([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', Q7259, 'river', 500, 300, 300,
+        [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 800 },
+         { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }], 'call', 300);
+      ok(leakSecondRiverRockMulti && leakSecondRiverRockMulti.type === 'bad-chase',
+        'calling the Rock\'s river bet multiway with second pair flags bad-chase (betting-range eq ~3% vs 21% need; the tier price quoted 14% and stayed silent)');
       // Trips and two pair are priced vs the betting range off the river
       // (v1.8.277): probe25 measured only the dry Q72 board, where the tier
       // range is within 5 points — probe27 measured wet and paired boards

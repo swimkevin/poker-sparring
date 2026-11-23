@@ -976,8 +976,8 @@ console.log('\n81. v1.8.264: a big river bet folds one pair or less from any vil
     'the river big-bet fold is gated on the river, a pot-ratio of 0.7+, and one pair or less — not on the villain being tight: the Maniac bets large 100% with made hands and ~0% with air on the river, and the LAG/Amogh/Station/Rock bluff air 0-4% there (v1.8.264)');
   ok(src.indexOf("if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)") !== -1,
     'the river fold joins the tight-player guard in one return, but stands down for a lone river bet priced against the betting range, and for any betting-range-priced spot whose equity clears need by 10 points (v1.8.288 equity escape): heads-up the Maniac bets every top pair, so a 0.75x bet is not value-only (v1.8.270 corrects the v1.8.264 veto, whose ~18% came from a 22-holding sample that omitted the worse-pair mass)');
-  ok(src.indexOf("var pricedEscape = (riverBetPriced || betRangePriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;") !== -1,
-    'the escape fires only on a betting-range price, never on an overbet: a >1.2x bet is outside every bot\'s normal sizing (Rock bets 0.55x), so a 2x shove keeps the guard — the bypass-overbet spot still folds (v1.8.288)');
+  ok(src.indexOf("var pricedEscape = (riverBetPriced || betRangePriced || multiBetPriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;") !== -1,
+    'the escape fires only on a betting-range price, never on an overbet: a >1.2x bet is outside every bot\'s normal sizing (Rock bets 0.55x), so a 2x shove keeps the guard — the bypass-overbet spot still folds (v1.8.288; the multiway betting-range price joins the escape in v1.8.301, same rule, still never on an overbet)');
   ok(src.indexOf('even loose players rarely bluff the river with air') !== -1,
     'the river fold message says why it applies to loose players too, not just tight ones (v1.8.264)');
   ok(labSrc.indexOf("name: 'thirdpair-vs-maniac-river-call'") !== -1 &&
@@ -1105,8 +1105,9 @@ console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the ri
   ok(src.indexOf('eqMade = estimateEquityVsBettingRangePostflop(hero.hole, table.community,') !== -1 &&
      src.indexOf("hc === 'weakpair'") !== -1 && src.indexOf("table.street !== 'river'") !== -1,
     'the coach prices weak pair off the river against the betting range: the pair-plus pool said 18-21% against the heads-up truth of 42%/38%/19% on the flop and 26%/22%/10% on the turn (probe12) (v1.8.274; extended to every one-pair hand in v1.8.275)');
-  ok(src.indexOf("((riverBetPriced || betRangePriced) ? 0 : rangeAdjust)") !== -1,
-    'the threshold does not discount for a wide range once the price IS the betting range: the discount double-counted looseness and called with 22% against a 25% need vs the Rock (v1.8.274)');
+  ok(src.indexOf("var appliedAdjust = (riverBetPriced || betRangePriced || multiBetPriced) ? 0 : rangeAdjust;") !== -1 &&
+     src.indexOf("var threshold = need2 + appliedAdjust + rp2;") !== -1,
+    'the threshold does not discount for a wide range once the price IS the betting range: the discount double-counted looseness and called with 22% against a 25% need vs the Rock (v1.8.274; the multiway betting-range price joins the zeroing in v1.8.301, same rule)');
   ok(labSrc.indexOf("name: 'weakpair-flop-vs-maniac-call'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-flop-vs-rock-fold'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-turn-vs-maniac-small-call'") !== -1,

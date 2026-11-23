@@ -88,6 +88,23 @@ function hand(str) {
   ok(twoPair772 > 0.45 && twoPair772 < 0.49, 'two pair on 772 vs Rock ~47% (exact truth 47.2% for these cards — the old 48.3% was probe35\'s different suits; eq1 sims 100→400 and second-stage samples 6000→24000, v1.8.293, close the 4.4-point gap), got ' + twoPair772.toFixed(3));
 })();
 
+// ---------- multiway betting-range estimator (v1.8.301, F8) ----------
+(function () {
+  var hero2p = hand('8s 7s'), boardQ = hand('Qd 7h 2s 5c');
+  var hu = EQ.estimateEquityVsBettingRangePostflop(hero2p, boardQ, 0.20, 0.02);
+  var m0 = EQ.estimateEquityVsBettingRangeMulti(hero2p, boardQ, 0.20, 0.02, []);
+  ok(hu === m0, 'multiway estimator with no extra opponents is exactly the heads-up estimator, got ' + m0.toFixed(3) + ' vs ' + hu.toFixed(3));
+  var m0b = EQ.estimateEquityVsBettingRangeMulti(hero2p, boardQ, 0.20, 0.02, []);
+  ok(m0 === m0b, 'multiway estimator is deterministic per hand (seeded)');
+  var mCaller = EQ.estimateEquityVsBettingRangeMulti(hero2p, boardQ, 0.20, 0.02, [3]);
+  ok(mCaller > 0.15 && mCaller < 0.25, 'second pair vs Rock + tier-3 caller ~20% (probe truth 19.5%; the tier price quoted 21%), got ' + mCaller.toFixed(3));
+  var weakManiac = EQ.estimateEquityVsBettingRangeMulti(hand('5s 9h'), boardQ, 0.95, 0.55, [0]);
+  ok(weakManiac > 0.26 && weakManiac < 0.36, 'weak pair vs Maniac + random behind ~31% (probe truth 31.0%; the tier price quoted 41%), got ' + weakManiac.toFixed(3));
+  var river2p = EQ.estimateEquityVsBettingRangeMulti(hero2p, hand('Qd 7h 2s 5c 9h'), 0.20, 0.02, [3]);
+  ok(river2p > 0.0 && river2p < 0.08, 'second pair vs Rock on the river + tier-3 caller ~3% (probe truth 3.3%; the tier price quoted 14%), got ' + river2p.toFixed(3));
+  ok(mCaller < hu - 0.10, 'the caller dilutes the heads-up price by more than 10 points (40% heads-up, ~20% multiway)');
+})();
+
 // ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------
 (function () {
   var a = EQ.seededRnd(424242), b = EQ.seededRnd(424242);

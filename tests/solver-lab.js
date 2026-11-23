@@ -408,6 +408,27 @@ var SPOTS = [
       { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 700 },
       { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200, pot: 900 }
     ] },
+  { name: 'multiway-secondpair-lag-4way-fold', kind: 'facing', villain: 'lag',
+    hero: [C(8, 0), C(7, 0)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 200, heroStack: 2000, nLive: 4, expect: 'fold', grossCheck: true,
+    expectWord: 'bets on the turn',
+    timeline: [
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 700 },
+      { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200, pot: 900 }
+    ] },
+  { name: 'multiway-weakpair-maniac-behind-call', kind: 'facing', villain: 'maniac',
+    hero: [C(5, 0), C(9, 1)], board: Q725, street: 'turn',
+    potBefore: 500, bet: 200, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true,
+    expectWord: 'bets on the turn',
+    timeline: betTimeline('turn', 200, 500) },
+  { name: 'multiway-secondpair-rock-river-caller-fold', kind: 'facing', villain: 'rock',
+    hero: [C(8, 0), C(7, 0)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 1)],
+    street: 'river', potBefore: 500, bet: 300, heroStack: 2000, nLive: 3, expect: 'fold',
+    grossCheck: true, expectWord: 'bets on the river',
+    timeline: [
+      { t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 800 },
+      { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }
+    ] },
   { name: 'trapper-small-bet', kind: 'facing', villain: 'nathan',
     hero: [C(13, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',
