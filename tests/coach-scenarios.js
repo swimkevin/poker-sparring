@@ -1247,8 +1247,8 @@ console.log('\n97. v1.8.302: the lab gross check prices the betting range, not t
      labSrc.indexOf("msg.indexOf('bets on the ' + spot.street) === -1") !== -1 &&
      labSrc.indexOf('estimateEquityVsBettingRangeMulti(spot.hero, spot.board, aggr, bluff, extra)') !== -1,
     'the gross check recomputes equity with the betting-range model (heads-up postflop/river, multiway shared-runout) whenever the coach prices the spot that way, and falls back to the tier model otherwise (v1.8.302)');
-  ok(labSrc.indexOf('var grossTol = (raiseGross != null || betGross != null) ? 0.10 : 0.20;') !== -1,
-    'the gross tolerance is 10 points on a price model (betting-range or raise-range) and 20 on the tier model: the coach\'s own price tracks the betting-range gross figure within 5.4 points on every gross-checked spot, while the tier figure runs 10-20 points high on folds (v1.8.302; the raise-range model joins the 10-point line in v1.8.305)');
+  ok(labSrc.indexOf('var grossTol = (raiseGross != null || betGross != null || madeGross != null) ? 0.10 : 0.20;') !== -1,
+    'the gross tolerance is 10 points on a price model (betting-range, raise-range or made-range) and 20 on the tier model: the coach\'s own price tracks the betting-range gross figure within 5.4 points on every gross-checked spot, while the tier figure runs 10-20 points high on folds (v1.8.302; the raise-range model joins the 10-point line in v1.8.305, the made-range model in v1.8.308)');
   ok(labSrc.indexOf("name: 'draw-nutfd-lag-potbet-fold'") !== -1 &&
      labSrc.indexOf("bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',") !== -1,
     'the lab pins the nut-flush-draw pot-bet fold: the tier gross equity is 56.8% against a 53% line so the old model fails it, while the betting-range gross equity is 35.7% against a 43% line so the new model passes it (v1.8.302)');
@@ -1280,6 +1280,19 @@ console.log('\n99. v1.8.305: the lab gross check prices the raise range for vill
      labSrc.indexOf("name: 'turn-toppair-vs-lag-raise-call'") !== -1 &&
      labSrc.indexOf("name: 'river-toppair-vs-maniac-raise-call'") !== -1,
     'the lab gross-checks three villain-raise spots: the tier model fails one outright (second pair vs the LAG on the flop: tier 56.0% against a 45% fold line) and runs 16-33 points loose on the other two (top pair vs the LAG on the turn 75.3% vs a 59% coach price; top pair vs the Maniac on the river 84.2% vs 51%) while the raise-range model passes all three within 0.4 points of the coach\'s price (v1.8.305)');
+}
+
+console.log('\n100. v1.8.308: the lab gross check prices the made range for air spots');
+{
+  ok(labSrc.indexOf('function madeGrossEq(spot, msg)') !== -1 &&
+     labSrc.indexOf("msg.indexOf('With no pair, you only win when he is bluffing') === -1") !== -1 &&
+     labSrc.indexOf('return EQ.estimateEquityVsMadeRange(spot.hero, spot.board, 2000);') !== -1,
+    'the gross check recomputes equity with the made-range model (seeded, 2,000 sims) when the coach prices air that way, and falls back to the betting-range, raise-range or tier model otherwise (v1.8.308)');
+  ok(labSrc.indexOf("name: 'air-betting-range-call'") !== -1 &&
+     labSrc.indexOf("timeline: betTimeline('turn', 15, 500), grossCheck: true") !== -1 &&
+     labSrc.indexOf("timeline: betTimeline('turn', 30, 500), grossCheck: true") !== -1 &&
+     labSrc.indexOf("timeline: betTimeline('turn', 150, 500), grossCheck: true") !== -1,
+    'the lab gross-checks the three Nathan air spots: the tier model prices ace-high at 45.9% against a 19% fold line (it fails the fold outright) while the made-range model passes all three (10.7% vs needs of 3%, 5% and 19%) (v1.8.308)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

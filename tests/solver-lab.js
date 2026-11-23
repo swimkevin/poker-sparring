@@ -220,6 +220,12 @@ function bettingGrossEq(spot, msg) {
   return EQ.estimateEquityVsBettingRangeMulti(spot.hero, spot.board, aggr, bluff, extra);
 }
 
+function madeGrossEq(spot, msg) {
+  if (spot.kind !== 'facing') return null;
+  if (msg.indexOf('With no pair, you only win when he is bluffing') === -1) return null;
+  return EQ.estimateEquityVsMadeRange(spot.hero, spot.board, 2000);
+}
+
 function raiseGrossEq(spot, msg) {
   if (spot.kind !== 'facing') return null;
   if (spot.heroBet == null) return null;
@@ -566,15 +572,15 @@ var SPOTS = [
   { name: 'air-betting-range-call', kind: 'facing', villain: 'nathan',
     hero: [C(14, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 15, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 15, 500) },
+    timeline: betTimeline('turn', 15, 500), grossCheck: true },
   { name: 'facing-air-nathan-30-call', kind: 'facing', villain: 'nathan',
     hero: [C(14, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 30, heroStack: 2000, nLive: 2, expect: 'call',
-    timeline: betTimeline('turn', 30, 500) },
+    timeline: betTimeline('turn', 30, 500), grossCheck: true },
   { name: 'air-betting-range-fold', kind: 'facing', villain: 'nathan',
     hero: [C(14, 0), C(13, 1)], board: Q725, street: 'turn',
     potBefore: 500, bet: 150, heroStack: 2000, nLive: 2, expect: 'fold',
-    timeline: betTimeline('turn', 150, 500) },
+    timeline: betTimeline('turn', 150, 500), grossCheck: true },
   { name: 'air-paired-772-vs-maniac-fold', kind: 'facing', villain: 'maniac',
     hero: [C(13, 0), C(12, 1)], board: [C(7, 2), C(7, 3), C(2, 0), C(5, 1), C(9, 2)],
     street: 'river', potBefore: 400, bet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
@@ -1442,10 +1448,11 @@ setTimeout(function () {
       if (spot.grossCheck) {
         var raiseGross = raiseGrossEq(spot, msg);
         var betGross = raiseGross != null ? null : bettingGrossEq(spot, msg);
-        var grossEq = raiseGross != null ? raiseGross : (betGross != null ? betGross : seededGrossEq(spot));
-        var grossTol = (raiseGross != null || betGross != null) ? 0.10 : 0.20;
-        var grossLabel = raiseGross != null ? 'raise range' : (betGross != null ? 'betting range' : 'tier range');
-        var grossTag = raiseGross != null ? 'raise-range' : (betGross != null ? 'betting-range' : 'tier');
+        var madeGross = (raiseGross == null && betGross == null) ? madeGrossEq(spot, msg) : null;
+        var grossEq = raiseGross != null ? raiseGross : (betGross != null ? betGross : (madeGross != null ? madeGross : seededGrossEq(spot)));
+        var grossTol = (raiseGross != null || betGross != null || madeGross != null) ? 0.10 : 0.20;
+        var grossLabel = raiseGross != null ? 'raise range' : (betGross != null ? 'betting range' : (madeGross != null ? 'made range' : 'tier range'));
+        var grossTag = raiseGross != null ? 'raise-range' : (betGross != null ? 'betting-range' : (madeGross != null ? 'made-range' : 'tier'));
         evNote += ' | seeded eq ' + (grossEq * 100).toFixed(1) + '% (' + grossLabel + ')';
         if (v.advice === 'call' && grossEq < needF - grossTol)
           problems.push('gross EV failure: ' + grossTag + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a call');
