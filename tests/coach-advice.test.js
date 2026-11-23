@@ -1651,15 +1651,15 @@ setTimeout(function () {
       ok(w.estimateEquityVsRangePostflopExact(flushHero, flushBoard.slice(0, 4), 3) === null,
         'exact river equity returns null before the river (no runouts left to enumerate)');
       var trapperTimeline = [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 600 }];
-      var firstMsg = null, stable = true;
+      var firstMsg = null, firstAdvice = null, stable = true;
       for (var i = 0; i < 25; i++) {
         var tv = postflopVerdict(flushHero, 'nathan', 'river', 100, 500, flushBoard, 2000, 2000, trapperTimeline, 2);
         var m = stripAdvice(tv.msg);
-        if (firstMsg === null) firstMsg = m;
-        else if (m !== firstMsg) stable = false;
+        if (firstMsg === null) { firstMsg = m; firstAdvice = tv.advice; }
+        else if (m !== firstMsg || tv.advice !== firstAdvice) stable = false;
       }
-      ok(stable && firstMsg.indexOf('charge the draws') !== -1,
-        'trapper flush verdict is identical across 25 runs and takes the generic value-raise line (exact equity below the gate, no Monte Carlo flip)');
+      ok(stable && firstAdvice === 'call' && firstMsg.indexOf('You win about 87%') !== -1,
+        'trapper flush verdict is identical across 25 runs and calls (betting-range equity 48.2% is below the 0.50 raise line, so no value raise — the 87% quote is the tier price, not the betting-range price, v1.8.310)');
     })();
 
     (function () {

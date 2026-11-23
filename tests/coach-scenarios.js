@@ -737,8 +737,9 @@ console.log('\n61. v1.8.196: squeeze sizing adds 1x per caller in front');
 
 console.log('\n62. v1.8.197: raise the near-nuts for value vs a station trapper\'s small bet');
 {
-  ok(src.indexOf('var trapperValue = passiveTrapper && foldy <= 0.25 && trapperEq >= 0.90;') !== -1,
-    'the trapper block lifts only when the villain is a station (folds little) and the coach equity crushes his range: trips vs Nathan raise, overpair at 82% still calls (v1.8.197, v1.8.282: the gate equity is the exact river enumeration, not the Monte Carlo adjEq)');
+  ok(src.indexOf('var trapperValue = passiveTrapper && foldy <= 0.25 &&') !== -1 &&
+     src.indexOf('(trapperBet != null ? trapperEq > 0.50 : trapperEq >= 0.90)') !== -1,
+    'the trapper block lifts only when the villain is a station (folds little) and the coach equity crushes his range: trips vs Nathan raise, overpair at 82% still calls (v1.8.197, v1.8.282, v1.8.310: the gate equity is the betting-range price with a 0.50 line when the estimator has a price, the exact river enumeration vs the tier pool only as the fallback)');
   ok(src.indexOf('estimateEquityVsRangePostflopExact(hero.hole, table.community, trapperTier)') !== -1,
     'the trapper gate prices exact river equity against the same tier pool the Monte Carlo priced, so the gate cannot flip between runs (v1.8.282)');
   ok(src.indexOf("(!passiveTrapper || trapperValue)") !== -1,
@@ -863,8 +864,8 @@ console.log('\n73. v1.8.227: only a hand nothing can beat is the nuts');
     'a strong made hand has a plain name, not the nuts');
   ok(src.indexOf("if (veto && !(hc === 'nut' && legal.canRaise))") !== -1,
     'the river veto still exempts only true nuts: a strong made hand goes through the veto math');
-  ok(/if \(\(hc === 'nut' \|\| hc === 'madehand'\) && legal\.canRaise\)/.test(src),
-    'the value-raise branch still raises a strong made hand for value, with the nuts wording kept for true nuts only');
+  ok(/if \(\(hc === 'nut' \|\| hc === 'madehand'\) && legal\.canRaise &&/.test(src),
+    'the value-raise branch still raises a strong made hand for value, with the nuts wording kept for true nuts only (v1.8.310: plus the trapper guard — a made hand whose betting-range price is at or below 0.50 does not take this branch)');
   ok(src.indexOf('but a better hand is already possible on this board') !== -1,
     'the made-hand raise lesson names the vulnerability instead of calling it the nuts');
   ok(src.indexOf("(hc === 'nut' || hc === 'madehand' || hc === 'overpair' || hc === 'toppair' || hc === 'trips' || hc === 'twopair')") !== -1,
@@ -1303,6 +1304,21 @@ console.log('\n101. v1.8.309: the lab checks the coach-implied equity against it
   ok(labSrc.indexOf('% (quoted-vs-advice checked)') !== -1 &&
      labSrc.indexOf('Monte Carlo, reported only') === -1,
     'the facing-spot note no longer calls the coach-implied figure "reported only": 97 quoting spots are checked, and a probe (hidden_files/consistency-probe.js) measured 0 contradictions, with 1 point of headroom on both sides (closest fold quotes 20% vs an 18% need, closest call 31% vs 30%) (v1.8.309)');
+}
+
+console.log('\n102. v1.8.310: F10 — the trapper gate is priced vs the betting range, not the tier pool');
+{
+  ok(src.indexOf('trapperBet = estimateEquityVsBettingRangeCustom(hero.hole, table.community,') !== -1 &&
+     src.indexOf('(trapperBet != null ? trapperEq > 0.50 : trapperEq >= 0.90)') !== -1,
+    'the trapper value-raise gate prices the villain\'s betting range on the river when the custom estimator has a price, with a 0.50 line (the raise breaks even at exactly half the betting-range equity when the trapper always calls it), and keeps the 0.90 tier line only when the estimator returns null (v1.8.310)');
+  ok(src.indexOf('!(passiveTrapper && trapperBet != null && trapperBet <= 0.50)') !== -1 &&
+     src.indexOf('if (trapperN && trapperBetN != null && trapperBetN <= 0.50) return null;') !== -1,
+    'the generic made-hand value raise is skipped too when the trapper\'s betting-range price is at or below the line, and the leak mirror does not flag the resulting call as missed value (v1.8.310)');
+  ok(labSrc.indexOf("name: 'trapper-flushboard-topset-fold'") !== -1 &&
+     labSrc.indexOf("name: 'trapper-flushboard-4thnut-call'") !== -1 &&
+     labSrc.indexOf("name: 'trapper-flushboard-3rdnut-raise'") !== -1 &&
+     labSrc.indexOf("name: 'madehand-flush-trapper-call'") !== -1,
+    'the lab pins the F10 cells: top set vs Nathan on a three-flush board folds (betting-range equity 0%, raise loses 300), the fourth-nut flush calls (35.7%, raise loses 86), the third-nut flush raises to 450 (53.6%, raise gains 21), and the paired-board nut flush calls (48.2% — the old raise lost 11 and the tier quote still reads 87%) (v1.8.310)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.309';
+  var APP_VERSION = '1.8.310';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1046,15 +1046,21 @@
           var foldyN = villainFoldy(V.archetype);
           var tellN = villainSizingTell(vIdxN);
           var trapperN = V.archetype && V.archetype.neverRaise && villainBluffy(V.archetype) <= 0.10;
+          var trapperBetN = null;
+          if (street === 'river' && trapperN && V.archetype &&
+              ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1)
+            trapperBetN = estimateEquityVsBettingRangeCustom(hero.hole, table.community,
+              V.archetype.id, (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5, villainBluffy(V.archetype));
           var trapperExactN = street === 'river' && rangeTier
             ? estimateEquityVsRangePostflopExact(hero.hole, table.community, rangeTier)
             : null;
           var trapperValueN = trapperN && foldyN <= 0.25 &&
-            (trapperExactN == null ? eq : trapperExactN) >= 0.90;
+            (trapperBetN != null ? trapperBetN > 0.50 : (trapperExactN == null ? eq : trapperExactN) >= 0.90);
           var smallBetN = tellN && tellN.unit === 'pot' && tellN.size === 'small' &&
             !isMultiway() && !villainShowedStrength(vIdxN) && (!trapperN || trapperValueN);
           var multN = smallBetN ? 3 : (foldyN < 0.25 ? 4 : 3);
           var nutToN = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * multN)));
+          if (trapperN && trapperBetN != null && trapperBetN <= 0.50) return null;
           return base('missed-value', 'Didn\'t raise the nuts',
             'Called ' + UI.fmt(legal.callAmount) + ' with ' + handClassName(hc) + ' against ' + V.name + ' instead of raising to ~' + UI.fmt(nutToN) + ' (' + multN + '× their bet)',
             'With the near-nuts, every street you don\'t build the pot costs money — raise to about ' + UI.fmt(nutToN) + ' (' + multN + '× their bet) and charge the worse hands now.');
@@ -2798,11 +2804,16 @@
 
     var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
     var trapperTier = rangeEqTier || vTier;
+    var trapperBet = null;
+    if (table.street === 'river' && passiveTrapper && customBettor)
+      trapperBet = estimateEquityVsBettingRangeCustom(hero.hole, table.community,
+        V.archetype.id, (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5, villainBluffy(V.archetype));
     var trapperExact = table.street === 'river' && trapperTier
       ? estimateEquityVsRangePostflopExact(hero.hole, table.community, trapperTier)
       : null;
-    var trapperEq = trapperExact == null ? adjEq : trapperExact;
-    var trapperValue = passiveTrapper && foldy <= 0.25 && trapperEq >= 0.90;
+    var trapperEq = trapperBet != null ? trapperBet : (trapperExact == null ? adjEq : trapperExact);
+    var trapperValue = passiveTrapper && foldy <= 0.25 &&
+      (trapperBet != null ? trapperEq > 0.50 : trapperEq >= 0.90);
     var strongShown = villainShowedStrength(vIdx);
     if (tell && tell.unit === 'pot') {
       if (tell.size === 'small' && legal.canRaise && !multiway && !strongShown && (!passiveTrapper || trapperValue) &&
@@ -2836,7 +2847,8 @@
         ' Don\'t pay ' + fmt(toCall) + ' to usually lose.' + rangeNote,
         'When the board plays itself, your cards add nothing: at best you split, and anyone betting usually has you beat. Fold and save your chips.');
 
-    if ((hc === 'nut' || hc === 'madehand') && legal.canRaise) {
+    if ((hc === 'nut' || hc === 'madehand') && legal.canRaise &&
+        !(passiveTrapper && trapperBet != null && trapperBet <= 0.50)) {
       var nutMult = foldy < 0.25 ? 4 : 3;
       var nutTo = Math.min(legal.maxRaiseTo, Math.max(legal.minRaiseTo, Math.round(table.currentBet * nutMult)));
       var nutAllIn = nutTo >= legal.maxRaiseTo;
