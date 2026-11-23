@@ -1241,5 +1241,18 @@ console.log('\n96. v1.8.290: custom villains are priced vs their own betting rul
     'the lab pins the four custom spots: two pair calls Alice and folds to Nathan, top pair calls Alice, two pair folds to Amogh\'s pot bet (v1.8.290)');
 }
 
+console.log('\n97. v1.8.302: the lab gross check prices the betting range, not the tier range');
+{
+  ok(labSrc.indexOf('function bettingGrossEq(spot, msg)') !== -1 &&
+     labSrc.indexOf("msg.indexOf('bets on the ' + spot.street) === -1") !== -1 &&
+     labSrc.indexOf('estimateEquityVsBettingRangeMulti(spot.hero, spot.board, aggr, bluff, extra)') !== -1,
+    'the gross check recomputes equity with the betting-range model (heads-up postflop/river, multiway shared-runout) whenever the coach prices the spot that way, and falls back to the tier model otherwise (v1.8.302)');
+  ok(labSrc.indexOf('var grossTol = betGross != null ? 0.10 : 0.20;') !== -1,
+    'the gross tolerance is 10 points on the betting-range model and 20 on the tier model: the coach\'s own price tracks the betting-range gross figure within 5.4 points on every gross-checked spot, while the tier figure runs 10-20 points high on folds (v1.8.302)');
+  ok(labSrc.indexOf("name: 'draw-nutfd-lag-potbet-fold'") !== -1 &&
+     labSrc.indexOf("bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',") !== -1,
+    'the lab pins the nut-flush-draw pot-bet fold: the tier gross equity is 56.8% against a 53% line so the old model fails it, while the betting-range gross equity is 35.7% against a 43% line so the new model passes it (v1.8.302)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

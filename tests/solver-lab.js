@@ -15,8 +15,13 @@
 //   - any leading bet above 1.5x pot outside short stack-to-pot
 //     and short-stack spots -> FAIL (the guardrail);
 //   - any gross-checked facing spot where a seeded shared-runout
-//     simulation disagrees with the coach's action by more than 20
-//     points of equity -> FAIL (a gross error, not noise);
+//     simulation disagrees with the coach's action by more than the
+//     tolerance for its price model -> FAIL (a gross error, not noise);
+//     the tolerance is 10 points when the coach prices the spot off
+//     the betting range (the gross equity is recomputed with the same
+//     betting-range model), 20 points otherwise (the tier-range model,
+//     which is the wrong range for a betting-range price and runs 10-20
+//     points high — v1.8.302);
 //   - any river spot where exact enumeration says calling loses money
 //     and the coach calls anyway -> FAIL, with the EV loss reported.
 // Honesty note: river spots with a made-hand pool get EXACT equity
@@ -24,8 +29,13 @@
 // exact. Other facing spots report the coach's own Monte Carlo
 // figure as coach-implied EV for the leak report only — the lab does
 // not fail on small Monte Carlo EV differences, because simulation
-// noise would make that flaky, but a 20-point gross disagreement on
-// a seeded simulation fails, since no plausible noise explains it.
+// noise would make that flaky, but a 10-point gross disagreement on a
+// seeded betting-range simulation fails, since no plausible noise
+// explains it (the coach's own price tracks the betting-range gross
+// figure within 5.4 points on every gross-checked spot, probe
+// gross-model-probe.log — the 10-point line leaves ~4.6 points of
+// headroom; the tier model keeps its 20-point line because it is the
+// wrong range for a betting-range price).
 // Leading spots are checked against guardrail
 // invariants rather than fake-precision EV: there is no single
 // "correct" bet size, only sizes that are clearly too big.
@@ -153,6 +163,45 @@ function seededGrossEq(spot) {
     Math.random = realRandom;
   }
   return eq;
+}
+function isNarrowedSpot(spot) {
+  var lastBet = {}, large = {}, called = false;
+  (spot.timeline || []).forEach(function (t) {
+    if (t.t !== 'action') return;
+    if (t.street === 'preflop' || t.street === spot.street) return;
+    if (t.action === 'bet' || t.action === 'raise') {
+      var key = t.player + '|' + t.street;
+      var prev = lastBet[key] || 0;
+      var added = (t.bet || 0) - prev;
+      var potBefore = (t.pot || 0) - added;
+      if (added > 0 && potBefore > 0 && added / potBefore >= 0.6) large[t.street] = true;
+      lastBet[key] = t.bet || 0;
+    } else if (t.action === 'call' && t.player === 1 && large[t.street]) called = true;
+  });
+  return called;
+}
+function bettingGrossEq(spot, msg) {
+  if (spot.kind !== 'facing') return null;
+  if (msg.indexOf('bets on the ' + spot.street) === -1) return null;
+  var arch = spot.villain
+    ? w.ARCHETYPES.filter(function (a) { return a.id === spot.villain; })[0]
+    : null;
+  if (!arch) return null;
+  if (['alice', 'amogh', 'donald', 'nathan'].indexOf(arch.id) !== -1) return null;
+  if (isNarrowedSpot(spot)) return null;
+  var aggr = (typeof arch.aggression === 'number') ? arch.aggression : 0.5;
+  var bluff = EQ.villainBluffy(arch);
+  var nLive = spot.nLive || 2;
+  if (nLive === 2) {
+    return spot.street === 'river'
+      ? EQ.estimateEquityVsBettingRange(spot.hero, spot.board, aggr, bluff, 1)
+      : EQ.estimateEquityVsBettingRangePostflop(spot.hero, spot.board, aggr, bluff);
+  }
+  var callersAhead = countCallersAheadSpot(spot);
+  var extra = [];
+  var nOpp = Math.min(3, nLive - 1);
+  for (var o = 1; o < nOpp; o++) extra.push(o <= callersAhead ? 3 : 0);
+  return EQ.estimateEquityVsBettingRangeMulti(spot.hero, spot.board, aggr, bluff, extra);
 }
 
 var C = function (r, s) { return { r: r, s: s }; };
@@ -1242,6 +1291,10 @@ var SPOTS = [
     hero: [C(14, 2), C(13, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
     street: 'turn', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',
     timeline: betTimeline('turn', 300, 400), grossCheck: true },
+  { name: 'draw-nutfd-lag-potbet-fold', kind: 'facing', villain: 'lag',
+    hero: [C(14, 2), C(13, 2)], board: [C(12, 2), C(7, 2), C(2, 0), C(5, 3)],
+    street: 'turn', potBefore: 400, bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: betTimeline('turn', 400, 400), grossCheck: true },
   { name: 'draw-combo-turn-vs-rock-call', kind: 'facing', villain: 'rock',
     hero: [C(10, 2), C(9, 2)], board: [C(12, 2), C(11, 2), C(7, 0), C(3, 3)],
     street: 'turn', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',
@@ -1309,12 +1362,15 @@ setTimeout(function () {
         : 'coach-implied eq ' + Math.round(pct * 100) + '% vs need ' + Math.round(needF * 100) +
           '% (Monte Carlo, reported only)';
       if (spot.grossCheck) {
-        var grossEq = seededGrossEq(spot);
-        evNote += ' | seeded eq ' + (grossEq * 100).toFixed(1) + '%';
-        if (v.advice === 'call' && grossEq < needF - 0.20)
-          problems.push('gross EV failure: seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a call');
-        if (v.advice === 'fold' && grossEq > needF + 0.20)
-          problems.push('gross EV failure: seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a fold');
+        var betGross = bettingGrossEq(spot, msg);
+        var grossEq = betGross != null ? betGross : seededGrossEq(spot);
+        var grossTol = betGross != null ? 0.10 : 0.20;
+        evNote += ' | seeded eq ' + (grossEq * 100).toFixed(1) + '%' +
+          (betGross != null ? ' (betting range)' : ' (tier range)');
+        if (v.advice === 'call' && grossEq < needF - grossTol)
+          problems.push('gross EV failure: ' + (betGross != null ? 'betting-range' : 'tier') + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a call');
+        if (v.advice === 'fold' && grossEq > needF + grossTol)
+          problems.push('gross EV failure: ' + (betGross != null ? 'betting-range' : 'tier') + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a fold');
       }
     }
     if (spot.expectWord && msg.indexOf(spot.expectWord) === -1)
