@@ -119,9 +119,12 @@ function titleText() {
   // on the hero, queued events never run. Must run BEFORE the fold-win
   // block below — that block calls onHandEnd directly, which paints a
   // Next-hand button for a hand that is not over and would fool this loop
-  // into exiting at once.
+  // into exiting at once. Guard is 500 (v1.8.307): the 250 bound expired
+  // in CI twice (v1.8.297 locally, v1.8.306 CI) on slow timer-driven
+  // play-outs — the hand still finishes, the loop just needs more wall
+  // time on a loaded runner.
   var guard2 = 0, over = false;
-  while (!over && guard2++ < 250) {
+  while (!over && guard2++ < 500) {
     if ($('btn-next-hand')) { over = true; break; }
     var st2 = ($('turn-status') || {}).textContent || '';
     var cc2 = $('btn-checkcall');

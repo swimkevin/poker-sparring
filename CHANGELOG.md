@@ -2,6 +2,10 @@
 
 Poker Sparring is a Texas Hold'em trainer with a solver-informed coach, 14 AI opponents modeled on real player types, and private online tables. The recent arc, in brief: the coach's advice is now priced against exact expected value (218+ pinned solver-lab spots, 0 failures); the leak tracker mirrors every coach rule, so the post-hand review can never disagree with the advice; the mobile table was re-spaced and re-polished from Kevin's iPhone checks; two emergency rollbacks (v1.8.212–215) taught the release flow its cache discipline — a phone running stale assets looks exactly like a broken build; and the copy was scrubbed of invented river cards, hardcoded ranks, and results-oriented recap praise. Full history below, newest first.
 
+## [1.8.307] — Test: widen the winner-highlight play-out guard for slow CI runners
+
+The v1.8.306 tests CI run failed on one assertion — "in-flight hand played out before rigged scenarios" in `tests/winner-highlight-test.js` — while the identical tree passed the full suite locally. This is the known timing flake from v1.8.297: the play-out loop's 250-iteration guard (25 seconds of 100ms sleeps) expired before the timer-driven hand finished on the loaded CI runner. The guard is widened to 500 iterations; the assertion is unchanged (the hand must still play out before the rigged scenarios run). No app, bot, or coach code changed. Lab stays 218 spots, 0 failures, total exact EV loss 0.
+
 ## [1.8.306] — Docs: this run's loop lessons land in AI-WORKFLOW.md
 
 Docs-only release; no app, bot, or coach code changed. The four lesson entries from the 2026-11-23 daily run now ship in `docs/AI-WORKFLOW.md`: the gross-check model arc (v1.8.301–305 — the lab's gross check now uses the coach's own price model on every facing spot, including the injection-layering note that a wrong need can mask a wrong model), archetype params come from the archetype objects (v1.8.303), the hand-reversal brace trap (v1.8.303), and the chip-conservation rebuy-threshold flake (v1.8.305). Lab stays 218 spots, 0 failures, total exact EV loss 0.
