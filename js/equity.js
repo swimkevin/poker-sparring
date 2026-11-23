@@ -763,6 +763,119 @@ function estimateEquityVsBettingRangeCustomPostflop(hole, community, villainId, 
   if (!wTot) return null;
   return wEq / wTot;
 }
+function estimateEquityVsBettingRangeCustomMulti(hole, community, villainId, aggression, bluff, extraTiers) {
+  if (!hole || !community || (community.length !== 3 && community.length !== 4)) return null;
+  if (typeof aggression !== 'number' || typeof bluff !== 'number') return null;
+  var boardNeed = 5 - community.length;
+  var seed = 987654321;
+  hole.concat(community).forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
+  seed = (seed * 31 + Math.round(aggression * 1000) + Math.round(bluff * 1000) + villainId.length) % 2147483647;
+  (extraTiers || []).forEach(function (t) { seed = (seed * 31 + (t || 0)) % 2147483647; });
+  var rnd = seededRnd(seed);
+  var boardKnown = {};
+  community.forEach(function (c) { boardKnown[_key(c)] = 1; });
+  var rest = [];
+  for (var s = 0; s < 4; s++)
+    for (var r = 2; r <= 14; r++)
+      if (!boardKnown[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
+  var heroKnown = {};
+  hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
+  var holdings = [];
+  var pBet = [];
+  for (var i = 0; i < rest.length; i++) {
+    for (var j = i + 1; j < rest.length; j++) {
+      var h = [rest[i], rest[j]];
+      if (heroKnown[_key(h[0])] || heroKnown[_key(h[1])]) continue;
+      holdings.push(h);
+      var ms = madeStrengthEv(evaluate7Fast(h.concat(community)), h, community);
+      var rem = [];
+      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j && !heroKnown[_key(rest[k])]) rem.push(rest[k]);
+      var wins = 0;
+      for (var q = 0; q < 100; q++) {
+        var need = boardNeed + 2;
+        for (var d = 0; d < need; d++) {
+          var jj = d + Math.floor(rnd() * (rem.length - d));
+          var tmp = rem[d]; rem[d] = rem[jj]; rem[jj] = tmp;
+        }
+        var board2 = community.concat(rem.slice(0, boardNeed));
+        var opp = [rem[boardNeed], rem[boardNeed + 1]];
+        var hs = evaluate7Fast(h.concat(board2)).score;
+        var os = evaluate7Fast(opp.concat(board2)).score;
+        if (hs > os) wins += 1;
+        else if (hs === os) wins += 0.5;
+      }
+      var eq1 = wins / 100;
+      pBet.push(customBetProb(villainId, h, ms, eq1, community, aggression, bluff, false));
+    }
+  }
+  var extraPools = (extraTiers || []).map(function (tier) {
+    if (!tier) return null;
+    var p3 = [];
+    for (var i3 = 0; i3 < rest.length; i3++)
+      for (var j3 = i3 + 1; j3 < rest.length; j3++) {
+        var h3 = [rest[i3], rest[j3]];
+        if (heroKnown[_key(h3[0])] || heroKnown[_key(h3[1])]) continue;
+        if (holeTier(h3) <= Math.min(6, Math.max(1, tier))) p3.push(h3);
+      }
+    return p3;
+  });
+  var deck = [];
+  var hk = {};
+  hole.concat(community).forEach(function (c) { hk[_key(c)] = 1; });
+  for (var s2 = 0; s2 < 4; s2++)
+    for (var r2 = 2; r2 <= 14; r2++)
+      if (!hk[_key({ r: r2, s: s2 })]) deck.push({ r: r2, s: s2 });
+  var wTot = 0, wEq = 0, acc = 0, att = 0;
+  while (acc < 6000 && att < 180000) {
+    att++;
+    var idx = Math.floor(rnd() * holdings.length);
+    var vh = holdings[idx];
+    var pv = pBet[idx];
+    if (pv <= 0 || rnd() > pv) continue;
+    var picked = {};
+    picked[_key(vh[0])] = 1; picked[_key(vh[1])] = 1;
+    var hands = [vh];
+    var ok = true;
+    for (var e = 0; e < extraPools.length; e++) {
+      var h2 = null;
+      for (var t = 0; t < 60; t++) {
+        var cand;
+        if (extraPools[e]) cand = extraPools[e][Math.floor(rnd() * extraPools[e].length)];
+        else {
+          var a2 = Math.floor(rnd() * rest.length);
+          var b2 = Math.floor(rnd() * rest.length);
+          if (a2 === b2) continue;
+          cand = [rest[a2], rest[b2]];
+        }
+        if (heroKnown[_key(cand[0])] || heroKnown[_key(cand[1])]) continue;
+        if (!picked[_key(cand[0])] && !picked[_key(cand[1])]) { h2 = cand; break; }
+      }
+      if (!h2) { ok = false; break; }
+      picked[_key(h2[0])] = 1; picked[_key(h2[1])] = 1;
+      hands.push(h2);
+    }
+    if (!ok) continue;
+    var pool2 = deck.filter(function (c) { return !picked[_key(c)]; });
+    for (var d2 = 0; d2 < boardNeed; d2++) {
+      var jj2 = d2 + Math.floor(rnd() * (pool2.length - d2));
+      var tmp2 = pool2[d2]; pool2[d2] = pool2[jj2]; pool2[jj2] = tmp2;
+    }
+    var full = community.concat(pool2.slice(0, boardNeed));
+    var myScore = evaluate7Fast(hole.concat(full)).score;
+    var best = true, strict = true;
+    hands.forEach(function (hh) {
+      var os2 = evaluate7Fast(hh.concat(full)).score;
+      if (os2 > myScore) { best = false; strict = false; }
+      else if (os2 === myScore) strict = false;
+    });
+    acc++;
+    wTot += 1;
+    if (strict) wEq += 1;
+    else if (best) wEq += 0.5;
+  }
+  if (!wTot) return null;
+  return wEq / wTot;
+}
 function estimateEquityVsRangePostflop(hole, community, maxTier, iters) {
   iters = iters || 150;
   maxTier = Math.min(6, Math.max(1, maxTier || 3));
@@ -1238,6 +1351,7 @@ if (typeof module !== 'undefined' && module.exports) {
     estimateEquityVsRaiseRangePostflop: estimateEquityVsRaiseRangePostflop,
     estimateEquityVsBettingRangeCustom: estimateEquityVsBettingRangeCustom,
     estimateEquityVsBettingRangeCustomPostflop: estimateEquityVsBettingRangeCustomPostflop,
+    estimateEquityVsBettingRangeCustomMulti: estimateEquityVsBettingRangeCustomMulti,
     estimateEquityVsBettingRangeMulti: estimateEquityVsBettingRangeMulti,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,

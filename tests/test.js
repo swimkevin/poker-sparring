@@ -105,6 +105,29 @@ function hand(str) {
   ok(mCaller < hu - 0.10, 'the caller dilutes the heads-up price by more than 10 points (40% heads-up, ~20% multiway)');
 })();
 
+// ---------- custom multiway betting-range estimator (v1.8.303) ----------
+(function () {
+  var boardQ = hand('Qd 7h 2s 5c');
+  var huA = EQ.estimateEquityVsBettingRangeCustomPostflop(hand('8s 7s'), boardQ, 'alice', 0.35, 0);
+  var m0A = EQ.estimateEquityVsBettingRangeCustomMulti(hand('8s 7s'), boardQ, 'alice', 0.35, 0, []);
+  ok(huA === m0A, 'custom multiway estimator with no extra opponents is exactly the custom heads-up estimator, got ' + m0A.toFixed(3) + ' vs ' + huA.toFixed(3));
+  var m0bA = EQ.estimateEquityVsBettingRangeCustomMulti(hand('8s 7s'), boardQ, 'alice', 0.35, 0, []);
+  ok(m0A === m0bA, 'custom multiway estimator is deterministic per hand (seeded)');
+  var huN = EQ.estimateEquityVsBettingRangeCustomPostflop(hand('Kh Kc'), hand('7h 7d 2s 5c'), 'nathan', 0.05, 0.02);
+  var m0N = EQ.estimateEquityVsBettingRangeCustomMulti(hand('Kh Kc'), hand('7h 7d 2s 5c'), 'nathan', 0.05, 0.02, []);
+  ok(huN === m0N && huN != null, 'the identity holds for Nathan too on a board where his monster-only range is non-empty (5.7% heads-up), got ' + (m0N == null ? 'null' : m0N.toFixed(3)));
+  var weakAmogh = EQ.estimateEquityVsBettingRangeCustomMulti(hand('2h 6s'), boardQ, 'amogh', 1.0, 0.15, [0]);
+  ok(weakAmogh > 0.10 && weakAmogh < 0.18, 'weak pair vs Amogh + random behind ~14% (probe truth 14.0%; the tier price quoted 27%), got ' + weakAmogh.toFixed(3));
+  var topDonald = EQ.estimateEquityVsBettingRangeCustomMulti(hand('Qh Jc'), boardQ, 'donald', 0.45, 0.5, [3]);
+  ok(topDonald > 0.45 && topDonald < 0.53, 'top pair vs Donald + tier-3 caller ~49% (probe truth 49.1%; the tier price quoted 39%), got ' + topDonald.toFixed(3));
+  var overAmogh = EQ.estimateEquityVsBettingRangeCustomMulti(hand('Kh Kc'), boardQ, 'amogh', 1.0, 0.15, [3]);
+  ok(overAmogh > 0.56 && overAmogh < 0.64, 'overpair vs Amogh + tier-3 caller ~60% (probe truth 60.1%; the tier price quoted 72%), got ' + overAmogh.toFixed(3));
+  var riverNull = EQ.estimateEquityVsBettingRangeCustomMulti(hand('8s 7s'), hand('Qd 7h 2s 5c 9h'), 'alice', 0.35, 0, [3]);
+  ok(riverNull == null, 'the custom multiway estimator returns null on the river (no custom river multiway model yet — the coach keeps the tier price there)');
+  var mCallerA = EQ.estimateEquityVsBettingRangeCustomMulti(hand('8s 7s'), boardQ, 'alice', 0.35, 0, [3]);
+  ok(mCallerA < huA - 0.10, 'the caller dilutes the custom heads-up price by more than 10 points (37% heads-up, ~18% multiway)');
+})();
+
 // ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------
 (function () {
   var a = EQ.seededRnd(424242), b = EQ.seededRnd(424242);

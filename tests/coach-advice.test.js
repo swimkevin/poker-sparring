@@ -1210,6 +1210,41 @@ setTimeout(function () {
          { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }], 'call', 300);
       ok(leakSecondRiverRockMulti && leakSecondRiverRockMulti.type === 'bad-chase',
         'calling the Rock\'s river bet multiway with second pair flags bad-chase (betting-range eq ~3% vs 21% need; the tier price quoted 14% and stayed silent)');
+      // Custom villains get the same multiway treatment (v1.8.303): the
+      // tier pool priced weak pair vs Amogh at 27% against a 14% custom
+      // betting-range truth (a losing call at a 25% need), top pair vs
+      // Donald at 39% against 49%, and overpair vs Amogh at 72% against
+      // 60%. The bands below fail on the old tier prices and pass on the
+      // custom estimator; the lab pins the S3 decision flip (weak pair vs
+      // Amogh folds now). Nathan keeps the tier price: his monster-only
+      // range is empty on Q725, so the custom estimator returns null.
+      var weakMultiAmogh = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'amogh', 'turn', 200, 400, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 3);
+      ok(weakMultiAmogh.advice === 'fold' && quotedEq(weakMultiAmogh) >= 10 && quotedEq(weakMultiAmogh) <= 18,
+        'weak pair vs Amogh\'s turn bet multiway quotes 10-18% (estimator 14%, truth 14%; the tier price quoted 27% and called)');
+      var topMultiDonald = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 3 }], 'donald', 'turn', 200, 400, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 },
+         { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200 }], 3);
+      ok(topMultiDonald.advice === 'call' && quotedEq(topMultiDonald) >= 45 && quotedEq(topMultiDonald) <= 53,
+        'top pair vs Donald\'s turn bet multiway with a caller ahead quotes 45-53% (estimator 49%, truth 49%; the tier price quoted 39%)');
+      var overMultiAmogh = postflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 3 }], 'amogh', 'turn', 200, 400, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 },
+         { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200 }], 3);
+      ok(overMultiAmogh.advice === 'call' && quotedEq(overMultiAmogh) >= 56 && quotedEq(overMultiAmogh) <= 64,
+        'overpair vs Amogh\'s turn bet multiway with a caller ahead quotes 56-64% (estimator 60%, truth 60%; the tier price quoted 72%)');
+      var secondMultiDonald = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'donald', 'turn', 200, 400, Q725, 2000, 2000,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 3);
+      ok(secondMultiDonald.advice === 'call' && quotedEq(secondMultiDonald) >= 33 && quotedEq(secondMultiDonald) <= 41,
+        'second pair vs Donald\'s turn bet multiway quotes 33-41% (estimator 37%, truth 37%; the tier price quoted 30%)');
+      // The tracker mirrors the custom multiway price too (v1.8.303):
+      // calling Alice's turn bet multiway with weak pair is a bad chase
+      // (custom betting-range eq ~10% vs a 23% need), where the tier price
+      // at ~19% stayed silent.
+      var leakWeakMultiAlice = postflopLeak([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'alice', Q725, 'turn', 400, 300, 300,
+        [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 300, pot: 700 },
+         { t: 'action', street: 'turn', player: 2, action: 'call', bet: 300 }], 'call', 300);
+      ok(leakWeakMultiAlice && leakWeakMultiAlice.type === 'bad-chase',
+        'calling Alice\'s turn bet multiway with weak pair flags bad-chase (custom betting-range eq ~10% vs 23% need; the tier price quoted ~19% and stayed silent)');
       // Trips and two pair are priced vs the betting range off the river
       // (v1.8.277): probe25 measured only the dry Q72 board, where the tier
       // range is within 5 points — probe27 measured wet and paired boards

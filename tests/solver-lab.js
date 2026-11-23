@@ -478,6 +478,32 @@ var SPOTS = [
       { t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 800 },
       { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }
     ] },
+  { name: 'multiway-weakpair-amogh-behind-fold', kind: 'facing', villain: 'amogh',
+    hero: [C(2, 1), C(6, 0)], board: Q725, street: 'turn',
+    potBefore: 400, bet: 200, heroStack: 2000, nLive: 3, expect: 'fold', grossCheck: true,
+    expectWord: 'bets on the turn',
+    timeline: betTimeline('turn', 200, 400) },
+  { name: 'multiway-toppair-donald-caller-call', kind: 'facing', villain: 'donald',
+    hero: [C(12, 1), C(11, 3)], board: Q725, street: 'turn',
+    potBefore: 400, bet: 200, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true,
+    expectWord: 'bets on the turn',
+    timeline: [
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 },
+      { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200, pot: 800 }
+    ] },
+  { name: 'multiway-overpair-amogh-caller-call', kind: 'facing', villain: 'amogh',
+    hero: [C(13, 1), C(13, 3)], board: Q725, street: 'turn',
+    potBefore: 400, bet: 200, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true,
+    expectWord: 'bets on the turn',
+    timeline: [
+      { t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 },
+      { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200, pot: 800 }
+    ] },
+  { name: 'multiway-secondpair-donald-behind-call', kind: 'facing', villain: 'donald',
+    hero: [C(7, 0), C(6, 1)], board: Q725, street: 'turn',
+    potBefore: 400, bet: 200, heroStack: 2000, nLive: 3, expect: 'call', grossCheck: true,
+    expectWord: 'bets on the turn',
+    timeline: betTimeline('turn', 200, 400) },
   { name: 'trapper-small-bet', kind: 'facing', villain: 'nathan',
     hero: [C(13, 1), C(13, 0)], board: Q725, street: 'turn',
     potBefore: 500, bet: 200, heroStack: 2000, nLive: 2, expect: 'call',

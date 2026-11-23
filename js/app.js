@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.302';
+  var APP_VERSION = '1.8.303';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -954,11 +954,18 @@
         var narrowedM = !rangeTierOrigM && villainCalledBig(vIdxM);
         var genericM = V.archetype && !V.archetype.neverRaise &&
           ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
+        var customM = V.archetype &&
+          ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
         if (genericM && !narrowedM) {
           var vAggrM = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
           var multiEqM = estimateEquityVsBettingRangeMulti(hero.hole, table.community,
             vAggrM, villainBluffy(V.archetype), tiersL.slice(1));
           if (multiEqM != null) eq = multiEqM;
+        } else if (customM && !narrowedM) {
+          var vAggrMC = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+          var multiEqMC = estimateEquityVsBettingRangeCustomMulti(hero.hole, table.community,
+            V.archetype.id, vAggrMC, villainBluffy(V.archetype), tiersL.slice(1));
+          if (multiEqMC != null) eq = multiEqMC;
         }
       } else if (rangeTier) {
         eq = estimateEquityVsRangePostflop(hero.hole, table.community, rangeTier, 5000);
@@ -2641,6 +2648,7 @@
     var adjEq = Math.max(0, Math.min(1, eq2 + credit - debit));
     var diluted = false;
     var multiBetPriced = false;
+    var multiBetCustom = false;
     var genericBettor = V && V.archetype && !V.archetype.neverRaise &&
       ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) === -1;
     var customBettor = V && V.archetype &&
@@ -2655,6 +2663,11 @@
         var vAggrM = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         multiEq = estimateEquityVsBettingRangeMulti(hero.hole, table.community,
           vAggrM, villainBluffy(V.archetype), tiers.slice(1));
+      } else if (!narrowedByCall && customBettor) {
+        var vAggrMC = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+        multiEq = estimateEquityVsBettingRangeCustomMulti(hero.hole, table.community,
+          V.archetype.id, vAggrMC, villainBluffy(V.archetype), tiers.slice(1));
+        if (multiEq != null) multiBetCustom = true;
       }
       if (multiEq != null) multiBetPriced = true;
       adjEq = Math.max(0, Math.min(1, (multiEq != null ? multiEq : estimateEquityVsRanges(hero.hole, table.community, tiers, 5000)) + credit - debit));
@@ -2856,7 +2869,7 @@
     else if (betRangePriced && raisePriced) eqSource = 'against every hand ' + vName + ' raises with on the ' + table.street + ', weighted by how often he raises it';
     else if (riverBetPriced) eqSource = 'against every hand ' + vName + ' bets on the river, weighted by how often he bets it';
     else if (betRangePriced) eqSource = 'against every hand ' + vName + ' bets on the ' + table.street + ', weighted by how often he bets it';
-    else if (multiBetPriced) eqSource = 'simulated 24,000× against every hand ' + vName + ' bets on the ' + table.street + ', weighted by how often he bets it, beating everyone still in';
+    else if (multiBetPriced) eqSource = 'simulated ' + (multiBetCustom ? '6,000' : '24,000') + '× against every hand ' + vName + ' bets on the ' + table.street + ', weighted by how often he bets it, beating everyone still in';
     else if (madePriced) eqSource = 'simulated 2,000× vs the made hands ' + vName + ' bets — a betting range is mostly made hands, not bluffs';
 
     var mathLine = 'Pot odds: calling <b>' + fmt(toCall) + '</b> to win <b>' + fmt(pot) + '</b> — ' +
