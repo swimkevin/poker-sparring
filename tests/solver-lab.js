@@ -18,10 +18,12 @@
 //     simulation disagrees with the coach's action by more than the
 //     tolerance for its price model -> FAIL (a gross error, not noise);
 //     the tolerance is 10 points when the coach prices the spot off
-//     the betting range (the gross equity is recomputed with the same
-//     betting-range model), 20 points otherwise (the tier-range model,
-//     which is the wrong range for a betting-range price and runs 10-20
-//     points high — v1.8.302);
+//     the betting range or the raise range (the gross equity is
+//     recomputed with the same model), 20 points otherwise (the
+//     tier-range model, which is the wrong range for a betting-range
+//     price and runs 10-20 points high — v1.8.302; for a villain raise
+//     it is the wrong range too, and fails outright on a second-pair
+//     fold — v1.8.305);
 //   - any river spot where exact enumeration says calling loses money
 //     and the coach calls anyway -> FAIL, with the EV loss reported.
 // Honesty note: river spots with a made-hand pool get EXACT equity
@@ -33,10 +35,12 @@
 // seeded betting-range simulation fails, since no plausible noise
 // explains it (the coach's own price tracks the betting-range gross
 // figure within 5.4 points on every gross-checked generic spot, probe
-// gross-model-probe.log, and within 0.5 points on every gross-checked
-// custom spot, probe custom-gross-all-probe.log — the 10-point line leaves
-// ~4.6 points of headroom; the tier model keeps its 20-point line because
-// it is the wrong range for a betting-range price).
+// gross-model-probe.log, within 0.5 points on every gross-checked
+// custom spot, probe custom-gross-all-probe.log, and within 0.4 points
+// on every gross-checked villain-raise spot, probe raise-gross-probe.log
+// — the 10-point line leaves ~4.6 points of headroom; the tier model
+// keeps its 20-point line because it is the wrong range for a
+// betting-range price).
 // Leading spots are checked against guardrail
 // invariants rather than fake-precision EV: there is no single
 // "correct" bet size, only sizes that are clearly too big.
@@ -216,6 +220,32 @@ function bettingGrossEq(spot, msg) {
   return EQ.estimateEquityVsBettingRangeMulti(spot.hero, spot.board, aggr, bluff, extra);
 }
 
+function raiseGrossEq(spot, msg) {
+  if (spot.kind !== 'facing') return null;
+  if (spot.heroBet == null) return null;
+  if (msg.indexOf('raises with on the ' + spot.street) === -1) return null;
+  var arch = spot.villain
+    ? w.ARCHETYPES.filter(function (a) { return a.id === spot.villain; })[0]
+    : null;
+  if (!arch) return null;
+  if (['alice', 'amogh', 'donald', 'nathan'].indexOf(arch.id) !== -1) return null;
+  if (isNarrowedSpot(spot)) return null;
+  var aggr = (typeof arch.aggression === 'number') ? arch.aggression : 0.5;
+  var bluff = EQ.villainBluffy(arch);
+  var stubborn = (typeof arch.stubborn === 'number') ? arch.stubborn : 0.5;
+  var heroBet = spot.heroBet;
+  var heroPot = spot.potBefore + heroBet;
+  (spot.timeline || []).forEach(function (t) {
+    if (t.t === 'action' && t.street === spot.street && t.player === 0 &&
+        (t.action === 'bet' || t.action === 'raise') && t.pot) heroPot = t.pot;
+  });
+  var needV = heroBet / (heroPot + heroBet);
+  var station = arch.id === 'station';
+  return spot.street === 'river'
+    ? EQ.estimateEquityVsRaiseRange(spot.hero, spot.board, aggr, bluff, stubborn, needV, station)
+    : EQ.estimateEquityVsRaiseRangePostflop(spot.hero, spot.board, aggr, bluff, stubborn, needV, station);
+}
+
 var C = function (r, s) { return { r: r, s: s }; };
 var Q725 = [C(12, 2), C(7, 1), C(2, 0), C(5, 3)];
 var TURN_TRIPS = [C(7, 1), C(4, 0), C(12, 1), C(4, 3)];
@@ -365,18 +395,21 @@ var SPOTS = [
   { name: 'flop-2ndpair-vs-lag-raise-fold', kind: 'facing', villain: 'lag',
     hero: [C(7, 1), C(6, 2)], board: [C(12, 2), C(7, 1), C(2, 0)],
     street: 'flop', potBefore: 400, bet: 600, heroBet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    grossCheck: true, expectWord: 'raises with on the flop',
     timeline: [
       { t: 'action', street: 'flop', player: 0, action: 'bet', bet: 200, pot: 600 },
       { t: 'action', street: 'flop', player: 1, action: 'raise', bet: 600, pot: 1200 }] },
   { name: 'turn-toppair-vs-lag-raise-call', kind: 'facing', villain: 'lag',
     hero: [C(12, 1), C(11, 0)], board: Q725, street: 'turn',
     potBefore: 400, bet: 600, heroBet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    grossCheck: true, expectWord: 'raises with on the turn',
     timeline: [
       { t: 'action', street: 'turn', player: 0, action: 'bet', bet: 200, pot: 600 },
       { t: 'action', street: 'turn', player: 1, action: 'raise', bet: 600, pot: 1200 }] },
   { name: 'river-toppair-vs-maniac-raise-call', kind: 'facing', villain: 'maniac',
     hero: [C(12, 1), C(11, 0)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 1)],
     street: 'river', potBefore: 400, bet: 600, heroBet: 200, heroStack: 2000, nLive: 2, expect: 'call',
+    grossCheck: true, expectWord: 'raises with on the river',
     timeline: [
       { t: 'action', street: 'river', player: 0, action: 'bet', bet: 200, pot: 600 },
       { t: 'action', street: 'river', player: 1, action: 'raise', bet: 600, pot: 1200 }] },
@@ -1400,21 +1433,24 @@ setTimeout(function () {
     }
     if (spot.kind === 'facing' || spot.kind === 'facing-preflop') {
       var pct = pctOf(msg);
-      var potF = spot.potBefore + spot.bet + callAheadTotal(spot);
-      var needF = spot.bet / (potF + spot.bet);
+      var toCallF = spot.bet - (spot.heroBet || 0);
+      var potF = spot.potBefore + spot.bet + (spot.heroBet || 0) + callAheadTotal(spot);
+      var needF = toCallF / (potF + toCallF);
       evNote = pct == null ? 'no equity figure in message'
         : 'coach-implied eq ' + Math.round(pct * 100) + '% vs need ' + Math.round(needF * 100) +
           '% (Monte Carlo, reported only)';
       if (spot.grossCheck) {
-        var betGross = bettingGrossEq(spot, msg);
-        var grossEq = betGross != null ? betGross : seededGrossEq(spot);
-        var grossTol = betGross != null ? 0.10 : 0.20;
-        evNote += ' | seeded eq ' + (grossEq * 100).toFixed(1) + '%' +
-          (betGross != null ? ' (betting range)' : ' (tier range)');
+        var raiseGross = raiseGrossEq(spot, msg);
+        var betGross = raiseGross != null ? null : bettingGrossEq(spot, msg);
+        var grossEq = raiseGross != null ? raiseGross : (betGross != null ? betGross : seededGrossEq(spot));
+        var grossTol = (raiseGross != null || betGross != null) ? 0.10 : 0.20;
+        var grossLabel = raiseGross != null ? 'raise range' : (betGross != null ? 'betting range' : 'tier range');
+        var grossTag = raiseGross != null ? 'raise-range' : (betGross != null ? 'betting-range' : 'tier');
+        evNote += ' | seeded eq ' + (grossEq * 100).toFixed(1) + '% (' + grossLabel + ')';
         if (v.advice === 'call' && grossEq < needF - grossTol)
-          problems.push('gross EV failure: ' + (betGross != null ? 'betting-range' : 'tier') + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a call');
+          problems.push('gross EV failure: ' + grossTag + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a call');
         if (v.advice === 'fold' && grossEq > needF + grossTol)
-          problems.push('gross EV failure: ' + (betGross != null ? 'betting-range' : 'tier') + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a fold');
+          problems.push('gross EV failure: ' + grossTag + ' seeded eq ' + (grossEq * 100).toFixed(1) + '% vs need ' + Math.round(needF * 100) + '% on a fold');
       }
     }
     if (spot.expectWord && msg.indexOf(spot.expectWord) === -1)

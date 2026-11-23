@@ -1247,8 +1247,8 @@ console.log('\n97. v1.8.302: the lab gross check prices the betting range, not t
      labSrc.indexOf("msg.indexOf('bets on the ' + spot.street) === -1") !== -1 &&
      labSrc.indexOf('estimateEquityVsBettingRangeMulti(spot.hero, spot.board, aggr, bluff, extra)') !== -1,
     'the gross check recomputes equity with the betting-range model (heads-up postflop/river, multiway shared-runout) whenever the coach prices the spot that way, and falls back to the tier model otherwise (v1.8.302)');
-  ok(labSrc.indexOf('var grossTol = betGross != null ? 0.10 : 0.20;') !== -1,
-    'the gross tolerance is 10 points on the betting-range model and 20 on the tier model: the coach\'s own price tracks the betting-range gross figure within 5.4 points on every gross-checked spot, while the tier figure runs 10-20 points high on folds (v1.8.302)');
+  ok(labSrc.indexOf('var grossTol = (raiseGross != null || betGross != null) ? 0.10 : 0.20;') !== -1,
+    'the gross tolerance is 10 points on a price model (betting-range or raise-range) and 20 on the tier model: the coach\'s own price tracks the betting-range gross figure within 5.4 points on every gross-checked spot, while the tier figure runs 10-20 points high on folds (v1.8.302; the raise-range model joins the 10-point line in v1.8.305)');
   ok(labSrc.indexOf("name: 'draw-nutfd-lag-potbet-fold'") !== -1 &&
      labSrc.indexOf("bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',") !== -1,
     'the lab pins the nut-flush-draw pot-bet fold: the tier gross equity is 56.8% against a 53% line so the old model fails it, while the betting-range gross equity is 35.7% against a 43% line so the new model passes it (v1.8.302)');
@@ -1265,6 +1265,21 @@ console.log('\n98. v1.8.304: the lab gross check prices custom betting ranges to
      labSrc.indexOf("name: 'twopair-772-vs-amogh-potbet-fold'") !== -1 &&
      labSrc.indexOf("name: 'overpair-vs-alice-overbet-call'") !== -1,
     'the lab gross-checks six heads-up custom spots: the tier model fails three of them outright (two pair vs Alice 0.0% on a call, two pair vs Nathan 68.1% on a fold, two pair vs Amogh 69.5% on a fold) while the custom betting-range model passes all six within 0.5 points of the coach\'s price (v1.8.304)');
+}
+
+console.log('\n99. v1.8.305: the lab gross check prices the raise range for villain raises');
+{
+  ok(labSrc.indexOf('function raiseGrossEq(spot, msg)') !== -1 &&
+     labSrc.indexOf("msg.indexOf('raises with on the ' + spot.street) === -1") !== -1 &&
+     labSrc.indexOf('estimateEquityVsRaiseRangePostflop(spot.hero, spot.board, aggr, bluff, stubborn, needV, station)') !== -1 &&
+     labSrc.indexOf('estimateEquityVsRaiseRange(spot.hero, spot.board, aggr, bluff, stubborn, needV, station)') !== -1,
+    'the gross check recomputes equity with the raise-range model (heads-up seeded postflop, exact river) when the coach prices a villain raise that way, and falls back to the betting-range or tier model otherwise (v1.8.305)');
+  ok(labSrc.indexOf('var toCallF = spot.bet - (spot.heroBet || 0);') !== -1,
+    'the gross-check need counts only the extra chips to call a raise (bet minus hero\'s own bet) and the pot including hero\'s bet — the old facing formula overstated the need on raise spots (38% instead of 25% on the four villain-raise spots) (v1.8.305)');
+  ok(labSrc.indexOf("name: 'flop-2ndpair-vs-lag-raise-fold'") !== -1 &&
+     labSrc.indexOf("name: 'turn-toppair-vs-lag-raise-call'") !== -1 &&
+     labSrc.indexOf("name: 'river-toppair-vs-maniac-raise-call'") !== -1,
+    'the lab gross-checks three villain-raise spots: the tier model fails one outright (second pair vs the LAG on the flop: tier 56.0% against a 45% fold line) and runs 16-33 points loose on the other two (top pair vs the LAG on the turn 75.3% vs a 59% coach price; top pair vs the Maniac on the river 84.2% vs 51%) while the raise-range model passes all three within 0.4 points of the coach\'s price (v1.8.305)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
