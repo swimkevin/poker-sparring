@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.311';
+  var APP_VERSION = '1.8.312';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2788,11 +2788,19 @@
     var loneRiverPriced = riverBetPriced && table.street === 'river' &&
       villainFirstRiverAggro(vIdx) && adjEq > need2;
     var pricedEscape = (riverBetPriced || betRangePriced || multiBetPriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;
+    var guardPriced = '';
+    if ((riverBetPriced || betRangePriced || multiBetPriced) && adjEq <= need2 + 0.03) {
+      var guardSource = (riverBetPriced && raisePriced) ? 'raises with on the river'
+        : (betRangePriced && raisePriced) ? 'raises with on the ' + table.street
+        : (riverBetPriced || multiBetPriced) ? 'bets on the river'
+        : 'bets on the ' + table.street;
+      guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
+    }
     if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)
       return mkVerdict('fold', 'strong',
         '<b>Fold</b> — ' + (tightBigBet && tell.size === 'overbet'
           ? 'an overbet from a tight player is almost always the nuts. Don\'t pay it off.'
-          : 'a big bet on the river is almost always a better hand — even loose players rarely bluff the river with air. Don\'t pay it off.') + rangeNote,
+          : 'a big bet on the river is almost always a better hand — even loose players rarely bluff the river with air. Don\'t pay it off.') + guardPriced + rangeNote,
         'Respect big bets on the river: it\'s a better hand far more often than a bluff.');
 
     if (commit === 'commit' && sprV <= 1 && (hc === 'nut' || hc === 'overpair') &&

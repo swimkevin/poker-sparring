@@ -1337,5 +1337,18 @@ console.log('\n103. v1.8.311: Donald\'s betting-range model mirrors his real bet
     'the lab pins the fix: second pair vs Donald on the wet river calls quoting 29% (old model 17%, a fold — real bot ~28-29%), on the dry river calls quoting 34% (old model 29%, real bot ~34-35%) (v1.8.311)');
 }
 
+console.log('\n104. v1.8.312: a guard fold quotes the price when the price supports the fold');
+{
+  ok(src.indexOf("if ((riverBetPriced || betRangePriced || multiBetPriced) && adjEq <= need2 + 0.03) {") !== -1 &&
+     src.indexOf("guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource") !== -1,
+    'when a big-bet guard folds a hand the coach already priced, the fold message quotes that price with the pot odds — but only when the price supports the fold (adjEq at or below need + 0.03), so an overbet fold the price model distrusts never quotes a number the advice contradicts (v1.8.312)');
+  ok(src.indexOf("(riverBetPriced && raisePriced) ? 'raises with on the river'") !== -1 &&
+     src.indexOf("(betRangePriced && raisePriced) ? 'raises with on the ' + table.street") !== -1,
+    'the guard clause reuses the math line\'s raise-range phrasing ("raises with on the river") so the lab\'s raise gross check can verify the quoted figure (v1.8.312)');
+  ok(labSrc.indexOf("name: 'river-2ndpair-vs-maniac-raise-fold'") !== -1 &&
+     labSrc.indexOf("expectWord: 'raises with on the river'") !== -1,
+    'the fourth raise spot gains a gross check: second pair vs the Maniac\'s river raise folds quoting 0% (raise range) against a 25% need — without the clause the lab fell back to the tier range at 63.2% and failed the fold outright (v1.8.312)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

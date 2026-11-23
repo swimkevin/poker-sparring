@@ -395,6 +395,7 @@ var SPOTS = [
   { name: 'river-2ndpair-vs-maniac-raise-fold', kind: 'facing', villain: 'maniac',
     hero: [C(7, 1), C(6, 2)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 1)],
     street: 'river', potBefore: 400, bet: 600, heroBet: 200, heroStack: 2000, nLive: 2, expect: 'fold',
+    grossCheck: true, expectWord: 'raises with on the river',
     timeline: [
       { t: 'action', street: 'river', player: 0, action: 'bet', bet: 200, pot: 600 },
       { t: 'action', street: 'river', player: 1, action: 'raise', bet: 600, pot: 1200 }] },
