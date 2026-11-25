@@ -1361,5 +1361,16 @@ console.log('\n105. v1.8.314: made-hand river calls quote the betting-range pric
     'the lab pins the F10 cell: the paired-board nut flush vs Nathan calls, and its gross check now verifies the 48% betting-range quote instead of the tier figure (v1.8.314)');
 }
 
+console.log('\n106. v1.8.315: Amogh\'s betting-range price uses the bot\'s own equity universe');
+{
+  ok(equitySrc.indexOf("if (b === a) continue;\n      if (keys[b][0] === keys[a][0]") !== -1 &&
+     equitySrc.indexOf("var p = customBetProb(villainId, pool[a], mss[a], eq1, community, aggression, bluff, true);") !== -1,
+    'the custom river estimator prices the bet decision on the bot\'s equity universe: its inner eq1 loop runs straight from the self-skip to the overlap check with no hero-card skip, because the bot\'s internal eq is computed over hands that can hold them — a pair of 5s reads 0.538 to the bot against its 0.54 line, not the 0.556 the hero-exclusive pool gives, so the old model credited those hands at p=1 and priced second pair 4.5 points high on the dry river (v1.8.315)');
+  ok(labSrc.indexOf("name: 'secondpair-amogh-dry-river-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-amogh-dry-river-fold'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-amogh-wet-river-fold'") !== -1,
+    'the lab pins the Amogh cells: second pair on the dry river calls a 75 bet quoting 21% (real bot 20.2%) and folds a 200 bet quoting 21% vs a 25% need, and folds the wet river quoting 5% (real bot ~9%) (v1.8.315)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

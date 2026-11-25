@@ -667,6 +667,24 @@ setTimeout(function () {
       [{ r: 7, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 5, s: 1 }, { r: 9, s: 2 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
     ok(amoghTwoPair.advice === 'fold', 'two pair folds to Amogh\'s river pot bet — ~26% vs a 33% need (got ' + amoghTwoPair.advice + ')');
+    // Amogh's betting-range price uses the bot's own equity universe
+    // (v1.8.315): the bot's internal eq is computed over hands that can
+    // hold hero's cards, so a pair of 5s reads 0.538 to the bot against
+    // its 0.54 line, not the 0.556 the hero-exclusive pool gives — the
+    // old model credited those hands at p=1 and priced second pair at
+    // 24.7% dry / 10.8% wet against a 20.2% / ~9% real-bot truth.
+    var amoghDryCall = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'amogh', 'river', 75, 400,
+      [{ r: 12, s: 0 }, { r: 7, s: 1 }, { r: 2, s: 2 }, { r: 5, s: 3 }, { r: 13, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 75, pot: 475 }], 2);
+    ok(amoghDryCall.advice === 'call', 'second pair calls Amogh\'s small dry-river bet — 21% vs a 14% need (got ' + amoghDryCall.advice + ')');
+    ok(stripAdvice(amoghDryCall.html).indexOf('You win about 21%') !== -1,
+      'second pair vs Amogh dry river quotes 21% (real bot 20.2%; the hero-exclusive pool quoted 25%)');
+    var amoghWetFold = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'amogh', 'river', 200, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 2 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
+    ok(amoghWetFold.advice === 'fold', 'second pair folds to Amogh\'s wet-river bet — 5% vs a 25% need (got ' + amoghWetFold.advice + ')');
+    ok(stripAdvice(amoghWetFold.html).indexOf('You win about 5%') !== -1,
+      'second pair vs Amogh wet river quotes 5% (real bot ~9%; the hero-exclusive pool quoted 11%)');
 
     // Facing a RAISE is priced vs the raise range, not the bet range (v1.8.289):
     // a raise range is far stronger (the bot raises only with eq > need+margin
