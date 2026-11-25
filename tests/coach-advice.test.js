@@ -211,6 +211,19 @@ setTimeout(function () {
     ok(stripAdvice(madeRaise.html).indexOf('to ~ 750') !== -1, 'made-hand raise states the size to ~750');
     ok(madeRaise.lesson.indexOf('nuts') === -1, 'made-hand raise lesson never says nuts');
     ok(madeRaise.lesson.indexOf('better hand is already possible') !== -1, 'made-hand raise lesson names the vulnerability');
+    // Made-hand river calls quote the betting-range price, not the tier
+    // price (v1.8.314, closes the F10 open item): the trapper gate priced
+    // this ace-high flush at 48% vs Nathan's betting range while the call
+    // message quoted 87% from the tier pool.
+    var f10Call = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'nathan', 'river', 100, 500,
+      [{ r: 12, s: 1 }, { r: 11, s: 1 }, { r: 9, s: 1 }, { r: 7, s: 3 }, { r: 7, s: 2 }], 2000, 2000,
+      [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 100, pot: 600 }], 2);
+    ok(!f10Call.error, 'f10 call verdict has no error' + (f10Call.error ? ' (' + f10Call.error + ')' : ''));
+    ok(f10Call.advice === 'call', 'paired-board nut flush vs Nathan calls (got ' + f10Call.advice + ')');
+    var f10Text = stripAdvice(f10Call.html);
+    ok(f10Text.indexOf('You win about 48%') !== -1, 'made-hand river call quotes the 48% betting-range price (got: ' + f10Text + ')');
+    ok(f10Text.indexOf('bets on the river') !== -1, 'made-hand river call names the betting range');
+    ok(f10Text.indexOf('87%') === -1, 'made-hand river call no longer quotes the 87% tier price');
     var nutRaise = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'lag', 'river', 250, 500,
       [{ r: 12, s: 1 }, { r: 11, s: 3 }, { r: 9, s: 1 }, { r: 7, s: 0 }, { r: 2, s: 1 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
@@ -1661,8 +1674,8 @@ setTimeout(function () {
         if (firstMsg === null) { firstMsg = m; firstAdvice = tv.advice; }
         else if (m !== firstMsg || tv.advice !== firstAdvice) stable = false;
       }
-      ok(stable && firstAdvice === 'call' && firstMsg.indexOf('You win about 87%') !== -1,
-        'trapper flush verdict is identical across 25 runs and calls (betting-range equity 48.2% is below the 0.50 raise line, so no value raise — the 87% quote is the tier price, not the betting-range price, v1.8.310)');
+      ok(stable && firstAdvice === 'call' && firstMsg.indexOf('You win about 48%') !== -1,
+        'trapper flush verdict is identical across 25 runs and calls (betting-range equity 48.2% is below the 0.50 raise line, so no value raise — the call now quotes the 48% betting-range price, not the 87% tier price, v1.8.314)');
     })();
 
     (function () {

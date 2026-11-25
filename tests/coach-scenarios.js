@@ -1350,5 +1350,16 @@ console.log('\n104. v1.8.312: a guard fold quotes the price when the price suppo
     'the fourth raise spot gains a gross check: second pair vs the Maniac\'s river raise folds quoting 0% (raise range) against a 25% need — without the clause the lab fell back to the tier range at 63.2% and failed the fold outright (v1.8.312)');
 }
 
+console.log('\n105. v1.8.314: made-hand river calls quote the betting-range price, not the tier price');
+{
+  ok(src.indexOf("hc === 'madehand' || hc === 'nut') && (genericBettor || customBettor)) {") !== -1,
+    'made-hand and nut hands are priced vs the betting range on the river like every one-pair class, so a river call quotes the price the decision used — the paired-board nut flush vs Nathan quoted 87% from the tier pool while the trapper gate priced it at 48.2% (v1.8.314)');
+  ok(src.indexOf("hc === 'madehand' || hc === 'nut') &&\n          (genericF || customF)) {") !== -1,
+    'the leak tracker mirrors the same river price for made-hand and nut hands, so its weak-fold check can never disagree with the coach quote (v1.8.314)');
+  ok(labSrc.indexOf("name: 'madehand-flush-trapper-call'") !== -1 &&
+     labSrc.indexOf("grossCheck: true,\n    timeline: betTimeline('river', 100, 500)") !== -1,
+    'the lab pins the F10 cell: the paired-board nut flush vs Nathan calls, and its gross check now verifies the 48% betting-range quote instead of the tier figure (v1.8.314)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

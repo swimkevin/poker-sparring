@@ -224,9 +224,19 @@ setTimeout(function () {
   ok(strip(ar.html).indexOf('random hands') === -1,
     'archetype-range message never falls back to random hands (v1.8.141)');
 
+  // v1.8.314: this spot used to call on the tier price — the small full
+  // house is strong vs Nathan's whole range. Priced vs his river betting
+  // range it wins only ~15% (he bets the river only with ms > 0.78: a 7,
+  // a 4, or a strong Queen all beat it) against a 34% need, so the coach
+  // folds on the math now. The half-pot turn call still does not narrow:
+  // the fold carries no veto language — the veto never fires here.
   var v5 = setup('nathan', 7, 2, 178, 355, 757, 711, 757);
   console.log('  nathan small-turn-bet says: ' + strip(v5.html).slice(0, 120));
-  ok(v5.advice !== 'fold', 'nathan small-turn-bet advice is not fold (half-pot call does not narrow, got ' + v5.advice + ')');
+  ok(v5.advice === 'fold', 'nathan small-turn-bet advice is fold on the priced math (got ' + v5.advice + ')');
+  ok(strip(v5.html).indexOf('You win about 15%') !== -1,
+    'nathan small-turn-bet quotes the 15% betting-range price, not the tier price');
+  ok(strip(v5.html).indexOf('called a big bet earlier') === -1,
+    'nathan small-turn-bet fold is the priced math, not the veto (half-pot call does not narrow)');
 
   function setupBypass(villainId, heroHole, board, street, potBefore, bet, heroStack) {
     var s = d.createElement('script');

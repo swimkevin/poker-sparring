@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.313';
+  var APP_VERSION = '1.8.314';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1092,7 +1092,7 @@
         ['alice', 'amogh', 'donald', 'nathan'].indexOf(V.archetype.id) !== -1;
       var genericF = V && V.archetype && !V.archetype.neverRaise && !customF;
       if (V && table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') &&
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand' || hc === 'nut') &&
           (genericF || customF)) {
         var vAggrF = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         var vStubbornF = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
@@ -2686,13 +2686,13 @@
     var riverBetPriced = false;
     var betRangePriced = false;
     var raisePriced = false;
-    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && !diluted && !narrowedByCall) {
+    if ((hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand' || hc === 'nut' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && !diluted && !narrowedByCall) {
       var eqMade = null;
       var raiseInfo = villainRaiseInfo(vIdx);
       var vStubborn = (typeof V.archetype.stubborn === 'number') ? V.archetype.stubborn : 0.5;
       var vStation = V.archetype.id === 'station';
       if (table.street === 'river' && liveOpponents().length === 1 &&
-          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair') && (genericBettor || customBettor)) {
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand' || hc === 'nut') && (genericBettor || customBettor)) {
         var vAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
         if (genericBettor && raiseInfo && raiseInfo.deep) {
           eqMade = estimateEquityVsRaiseRange(hero.hole, table.community,
@@ -2900,7 +2900,7 @@
       '. You win about <b>' + pct(adjEq) + '</b>' +
       ' (' + eqSource + '). ' +
       riskPremiumNote(rp2) + (narrowedByCall ? narrowedClause : '') +
-      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands.' : (riverBetPriced || betRangePriced) ? (raisePriced ? ' That counts the weaker pairs and bluffs he raises with too — not just his best hands.' : ' That counts the weaker pairs and bluffs he bets too — not just his best hands.') : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off.' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off.') : '');
+      (madePriced ? (hc === 'air' ? ' With no pair, you only win when he is bluffing — and most of his bets are made hands. ' : (riverBetPriced || betRangePriced) ? (raisePriced ? ' That counts the weaker pairs and bluffs he raises with too — not just his best hands. ' : ' That counts the weaker pairs and bluffs he bets too — not just his best hands. ') : hc === 'secondpair' ? ' Second pair is usually behind the top-pair hands he bets with — only his bluffs and worse pairs pay it off. ' : ' Less than top pair mostly loses to the made hands he bets — only his bluffs and worse pairs pay it off. ') : '');
 
     var bluffCatchNote = (hc === 'air' && toCall > 0)
       ? " Bluff-catching = calling hoping they're bluffing — only works vs bluffers."
