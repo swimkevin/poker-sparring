@@ -1372,5 +1372,16 @@ console.log('\n106. v1.8.315: Amogh\'s betting-range price uses the bot\'s own e
     'the lab pins the Amogh cells: second pair on the dry river calls a 75 bet quoting 21% (real bot 20.2%) and folds a 200 bet quoting 21% vs a 25% need, and folds the wet river quoting 5% (real bot ~9%) (v1.8.315)');
 }
 
+console.log('\n107. v1.8.316: the lab gross check covers the plain HU facing spots');
+{
+  var grossCount = (labSrc.match(/grossCheck: true/g) || []).length;
+  ok(grossCount >= 130,
+    'the gross check (seeded shared-runout recomputation, 10-pt same-model / 20-pt tier tolerance) now covers ' + grossCount + ' spots, including the 32 plain HU facing spots enabled in v1.8.316 — the lab ran 0 failures after the extension, so no gross pricing error hides in the air/weak/second-pair/draw cells vs Rock, Maniac and LAG (v1.8.316)');
+  ok(labSrc.indexOf("name: 'draw-mediumbet-call'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-vs-rock-turn-fold'") !== -1 &&
+     labSrc.indexOf("name: 'trapper-small-bet'") !== -1,
+    'the newly gross-checked cells include the draw call, the second-pair turn fold and the trapper small bet — their seeded equities (37.0% betting range, 38.2% betting range, 86.7% tier) track the quoted prices within tolerance (v1.8.316)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
