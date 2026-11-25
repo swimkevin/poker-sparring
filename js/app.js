@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.317';
+  var APP_VERSION = '1.8.318';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -1109,7 +1109,7 @@
         if (betEqF != null) foldEq = betEqF;
       }
       if (V && table.street !== 'river' && liveOpponents().length === 1 &&
-          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') &&
+          (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' || hc === 'madehand' || hc === 'nut' || hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') &&
           (genericF || customF) &&
           !villainCalledBig(table.players.indexOf(V))) {
         var vAggrF2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
@@ -2709,6 +2709,7 @@
       }
       if (eqMade == null && (hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||
           hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||
+          hc === 'madehand' || hc === 'nut' ||
           hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river' &&
           liveOpponents().length === 1 && (genericBettor || customBettor)) {
         var vAggr2 = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
@@ -2813,9 +2814,15 @@
     var passiveTrapper = !!(V && V.archetype && V.archetype.neverRaise && bluffy <= 0.10);
     var trapperTier = rangeEqTier || vTier;
     var trapperBet = null;
-    if (table.street === 'river' && passiveTrapper && customBettor)
-      trapperBet = estimateEquityVsBettingRangeCustom(hero.hole, table.community,
-        V.archetype.id, (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5, villainBluffy(V.archetype));
+    if (passiveTrapper && customBettor) {
+      var trapperAggr = (typeof V.archetype.aggression === 'number') ? V.archetype.aggression : 0.5;
+      if (table.street === 'river')
+        trapperBet = estimateEquityVsBettingRangeCustom(hero.hole, table.community,
+          V.archetype.id, trapperAggr, villainBluffy(V.archetype));
+      else
+        trapperBet = estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,
+          V.archetype.id, trapperAggr, villainBluffy(V.archetype));
+    }
     var trapperExact = table.street === 'river' && trapperTier
       ? estimateEquityVsRangePostflopExact(hero.hole, table.community, trapperTier)
       : null;

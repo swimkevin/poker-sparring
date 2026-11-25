@@ -1117,8 +1117,8 @@ console.log('\n90. v1.8.274: weak pair is priced vs the betting range off the ri
 
 console.log('\n91. v1.8.275: every one-pair hand is priced vs the betting range off the river');
 {
-  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||\n          hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river'") !== -1,
-    'the flop/turn betting-range price covers air plus all four one-pair classes plus trips and two pair: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27; draws join in v1.8.280, probe28/30; air joins in v1.8.287)');
+  ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' ||\n          hc === 'toppair' || hc === 'overpair' || hc === 'trips' || hc === 'twopair' ||\n          hc === 'madehand' || hc === 'nut' ||\n          hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river'") !== -1,
+    'the flop/turn betting-range price covers air plus all four one-pair classes plus trips, two pair, made hands and the nuts: the tier range understated top pair vs the Rock by 11-14 points and overstated second pair vs the Maniac on the turn by 11, while the estimator lands within ~3 points of the heads-up truth on every class (probe22, v1.8.275; trips and two pair join in v1.8.277, probe27; draws join in v1.8.280, probe28/30; air joins in v1.8.287; madehand and nut join in v1.8.318 — a Q-high flush vs Nathan\'s turn pot bet quoted the tier price and raised for value at 28% vs his betting range)');
   ok(src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
     'the leak tracker mirrors the estimator for air, second pair, trips and two pair too, so a bad-chase call is priced the way the coach prices it (v1.8.275; trips and two pair join in v1.8.277; air joins in v1.8.287)');
   ok(labSrc.indexOf("name: 'toppair-flop-vs-rock-call'") !== -1 &&
@@ -1397,6 +1397,18 @@ console.log('\n108. v1.8.317: multiway estimators price the bettor on multiway e
   ok(labSrc.indexOf("name: 'facing-multiway-toppair-call'") !== -1 &&
      labSrc.indexOf("name: 'multiway-weakpair-maniac-behind-call'") !== -1,
     'the generic multiway estimator is UNCHANGED: its crude p=1/bluffP step does not mirror the bot\'s semi-bluff rule (draws bet at 0.25+agg*0.35), so the multiway-eq change alone over-corrected Rock top pair (28.9% vs a 37.1% real-bot truth) and Maniac weak pair (12.4% vs 31.4%) — the proper generic bot-rule model is a follow-up, not forced here (v1.8.317)');
+}
+
+console.log('\n109. v1.8.318: made-hand pricing extends off the river');
+{
+  const appSrc = require('fs').readFileSync('js/app.js', 'utf8');
+  ok(appSrc.indexOf("hc === 'madehand' || hc === 'nut' ||\n          hc === 'draw' || hc === 'draw-weak' || hc === 'draw-strong') && table.street !== 'river'") !== -1,
+    'the off-river betting-range branch prices madehand/nut too — the v1.8.314 fix was river-only, so a Q-high flush on the turn vs Nathan\'s pot bet quoted the tier price and raised for value, while the flush is 28% vs his betting range (v1.8.318)');
+  ok(appSrc.indexOf("if (passiveTrapper && customBettor) {") !== -1 &&
+     appSrc.indexOf("trapperBet = estimateEquityVsBettingRangeCustomPostflop(hero.hole, table.community,") !== -1,
+    'the trapper guard computes trapperBet off the river too (postflop custom estimator) — the raise-for-value branch was gated only on the river, so off the river the trapper guard never fired and the coach raised into a trapper\'s monsters (v1.8.318)');
+  ok(labSrc.indexOf("name: 'madehand-flush-nathan-turn-potbet-fold'") !== -1,
+    'the lab pins the off-river cell: Q-high flush vs Nathan\'s turn pot bet folds quoting 28% vs a 33% need (v1.8.318)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

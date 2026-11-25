@@ -224,6 +224,22 @@ setTimeout(function () {
     ok(f10Text.indexOf('You win about 48%') !== -1, 'made-hand river call quotes the 48% betting-range price (got: ' + f10Text + ')');
     ok(f10Text.indexOf('bets on the river') !== -1, 'made-hand river call names the betting range');
     ok(f10Text.indexOf('87%') === -1, 'made-hand river call no longer quotes the 87% tier price');
+    // Made-hand pricing extends off the river (v1.8.318): the v1.8.314 fix
+    // was river-only, so a Q-high flush on the turn vs Nathan's pot bet
+    // quoted the tier price and raised for value — but Nathan only bets
+    // monsters, so the flush is 28% vs his betting range and the raise
+    // folds his worse hands and gets called by better. The trapper guard
+    // (trapperBet) is computed off the river too now, so the raise is
+    // blocked at 28% <= 50% and the coach folds on the priced math.
+    var offRiverMade = postflopVerdict([{ r: 5, s: 1 }, { r: 4, s: 1 }], 'nathan', 'turn', 400, 400,
+      [{ r: 12, s: 1 }, { r: 11, s: 1 }, { r: 9, s: 1 }, { r: 7, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
+    ok(!offRiverMade.error, 'off-river made-hand verdict has no error' + (offRiverMade.error ? ' (' + offRiverMade.error + ')' : ''));
+    ok(offRiverMade.advice === 'fold', 'Q-high flush vs Nathan\'s turn pot bet folds (got ' + offRiverMade.advice + ')');
+    var offRiverMadeText = stripAdvice(offRiverMade.html);
+    ok(offRiverMadeText.indexOf('You win about 28%') !== -1, 'off-river made-hand fold quotes the 28% betting-range price (got: ' + offRiverMadeText + ')');
+    ok(offRiverMadeText.indexOf('bets on the turn') !== -1, 'off-river made-hand fold names the betting range');
+    ok(offRiverMadeText.indexOf('Raise for value') === -1, 'off-river made-hand fold does not raise for value into a trapper');
     var nutRaise = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'lag', 'river', 250, 500,
       [{ r: 12, s: 1 }, { r: 11, s: 3 }, { r: 9, s: 1 }, { r: 7, s: 0 }, { r: 2, s: 1 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
