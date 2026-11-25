@@ -685,6 +685,24 @@ setTimeout(function () {
     ok(amoghWetFold.advice === 'fold', 'second pair folds to Amogh\'s wet-river bet — 5% vs a 25% need (got ' + amoghWetFold.advice + ')');
     ok(stripAdvice(amoghWetFold.html).indexOf('You win about 5%') !== -1,
       'second pair vs Amogh wet river quotes 5% (real bot ~9%; the hero-exclusive pool quoted 11%)');
+    // Multiway, the bettor's decision is priced on multiway equity
+    // (v1.8.317): the bot's eq is vs every live opponent on shared
+    // runouts, so a mid pair's 2-opp eq is ~0.35, not the ~0.55 the
+    // HU eq1 gave — the old model priced second pair vs Amogh's
+    // multiway turn bet at ~23% and called a 100 bet; the truth is
+    // ~3-4% and the fixed model quotes 10% dry / 12% wet, both folds.
+    var amoghMultiDry = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'amogh', 'turn', 100, 500,
+      [{ r: 12, s: 0 }, { r: 7, s: 1 }, { r: 2, s: 2 }, { r: 5, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 600 }], 3);
+    ok(amoghMultiDry.advice === 'fold', 'second pair folds to Amogh\'s multiway turn bet — 10% vs a 14% need (got ' + amoghMultiDry.advice + ')');
+    ok(stripAdvice(amoghMultiDry.html).indexOf('You win about 10%') !== -1,
+      'second pair vs Amogh multiway dry turn quotes 10% (real bot ~3-4%; the HU-eq1 model quoted ~23%)');
+    var amoghMultiWet = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'amogh', 'turn', 100, 500,
+      [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 600 }], 3);
+    ok(amoghMultiWet.advice === 'fold', 'second pair folds to Amogh\'s multiway wet turn bet — 12% vs a 14% need (got ' + amoghMultiWet.advice + ')');
+    ok(stripAdvice(amoghMultiWet.html).indexOf('You win about 12%') !== -1,
+      'second pair vs Amogh multiway wet turn quotes 12% (real bot ~7%; the HU-eq1 model quoted ~22%)');
 
     // Facing a RAISE is priced vs the raise range, not the bet range (v1.8.289):
     // a raise range is far stronger (the bot raises only with eq > need+margin
@@ -1254,8 +1272,8 @@ setTimeout(function () {
       // to 44.8%/31.7% — the old "truth" was the pre-fix model's own output.
       var weakMultiAmogh = postflopVerdict([{ r: 2, s: 1 }, { r: 6, s: 0 }], 'amogh', 'turn', 200, 400, Q725, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 3);
-      ok(weakMultiAmogh.advice === 'fold' && quotedEq(weakMultiAmogh) >= 10 && quotedEq(weakMultiAmogh) <= 18,
-        'weak pair vs Amogh\'s turn bet multiway quotes 10-18% (estimator 14%, truth 14%; the tier price quoted 27% and called)');
+      ok(weakMultiAmogh.advice === 'fold' && quotedEq(weakMultiAmogh) >= 5 && quotedEq(weakMultiAmogh) <= 11,
+        'weak pair vs Amogh\'s turn bet multiway quotes 5-11% (estimator 8%, real-bot multiway truth 8%; the v1.8.303 pin quoted 14% — that "truth" was the old HU-eq1 model\'s own output)');
       var topMultiDonald = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 3 }], 'donald', 'turn', 200, 400, Q725, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 },
          { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200 }], 3);
@@ -1264,8 +1282,8 @@ setTimeout(function () {
       var overMultiAmogh = postflopVerdict([{ r: 13, s: 1 }, { r: 13, s: 3 }], 'amogh', 'turn', 200, 400, Q725, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 },
          { t: 'action', street: 'turn', player: 2, action: 'call', bet: 200 }], 3);
-      ok(overMultiAmogh.advice === 'call' && quotedEq(overMultiAmogh) >= 56 && quotedEq(overMultiAmogh) <= 64,
-        'overpair vs Amogh\'s turn bet multiway with a caller ahead quotes 56-64% (estimator 60%, truth 60%; the tier price quoted 72%)');
+      ok(overMultiAmogh.advice === 'call' && quotedEq(overMultiAmogh) >= 46 && quotedEq(overMultiAmogh) <= 54,
+        'overpair vs Amogh\'s turn bet multiway with a caller ahead quotes 46-54% (estimator 50%, real-bot multiway truth 50%; the v1.8.303 pin quoted 60% — that "truth" was the old HU-eq1 model\'s own output)');
       var secondMultiDonald = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'donald', 'turn', 200, 400, Q725, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 3);
       ok(secondMultiDonald.advice === 'call' && quotedEq(secondMultiDonald) >= 28 && quotedEq(secondMultiDonald) <= 36,

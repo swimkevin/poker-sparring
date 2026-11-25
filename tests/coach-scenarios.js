@@ -1383,5 +1383,21 @@ console.log('\n107. v1.8.316: the lab gross check covers the plain HU facing spo
     'the newly gross-checked cells include the draw call, the second-pair turn fold and the trapper small bet — their seeded equities (37.0% betting range, 38.2% betting range, 86.7% tier) track the quoted prices within tolerance (v1.8.316)');
 }
 
+console.log('\n108. v1.8.317: multiway estimators price the bettor on multiway equity');
+{
+  ok(equitySrc.indexOf("var nOpp = Math.min(3, (extraTiers || []).length + 1);") !== -1 &&
+     equitySrc.indexOf("var need = boardNeed + 2 * nOpp;") !== -1 &&
+     equitySrc.indexOf("customBetProb(villainId, h, ms, eq1, community, aggression, bluff, false, nOpp > 1)") !== -1,
+    'the custom multiway estimator prices the bettor\'s decision on shared-runout equity vs every live opponent (nOpp, capped at 3 like the bot\'s Math.min(3, liveOpp)), not the HU eq1 — the bot\'s eq is vs all live opponents, so a mid pair\'s 2-opp eq is ~0.35 against a 0.50 line where the HU eq1 read ~0.55 and credited p=1; the bot-universe and multiway-bluff changes apply only when nOpp > 1, so the multi([]) == HU identity still holds (v1.8.317)');
+  ok(equitySrc.indexOf("var bluffP = bluff * (isMulti ? 0.12 : 0.30) * (isRiver ? 1 : 0.55);") !== -1,
+    'Amogh\'s multiway bluff rate is 0.12, not 0.30 — the bot uses bluff * 0.12 when liveOpp > 1 (v1.8.317)');
+  ok(labSrc.indexOf("name: 'secondpair-amogh-multiway-turn-dry-fold'") !== -1 &&
+     labSrc.indexOf("name: 'secondpair-amogh-multiway-turn-wet-fold'") !== -1,
+    'the lab pins the multiway cells: second pair vs Amogh\'s multiway turn bet folds quoting 10% dry (real bot ~3-4%) and 12% wet (real bot ~7%) — the HU-eq1 model quoted ~23%/~22% and called (v1.8.317)');
+  ok(labSrc.indexOf("name: 'facing-multiway-toppair-call'") !== -1 &&
+     labSrc.indexOf("name: 'multiway-weakpair-maniac-behind-call'") !== -1,
+    'the generic multiway estimator is UNCHANGED: its crude p=1/bluffP step does not mirror the bot\'s semi-bluff rule (draws bet at 0.25+agg*0.35), so the multiway-eq change alone over-corrected Rock top pair (28.9% vs a 37.1% real-bot truth) and Maniac weak pair (12.4% vs 31.4%) — the proper generic bot-rule model is a follow-up, not forced here (v1.8.317)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

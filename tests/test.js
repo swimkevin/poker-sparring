@@ -117,11 +117,11 @@ function hand(str) {
   var m0N = EQ.estimateEquityVsBettingRangeCustomMulti(hand('Kh Kc'), hand('7h 7d 2s 5c'), 'nathan', 0.05, 0.02, []);
   ok(huN === m0N && huN != null, 'the identity holds for Nathan too on a board where his monster-only range is non-empty (5.7% heads-up), got ' + (m0N == null ? 'null' : m0N.toFixed(3)));
   var weakAmogh = EQ.estimateEquityVsBettingRangeCustomMulti(hand('2h 6s'), boardQ, 'amogh', 1.0, 0.15, [0]);
-  ok(weakAmogh > 0.10 && weakAmogh < 0.18, 'weak pair vs Amogh + random behind ~14% (probe truth 14.0%; the tier price quoted 27%), got ' + weakAmogh.toFixed(3));
+  ok(weakAmogh > 0.05 && weakAmogh < 0.11, 'weak pair vs Amogh + random behind ~8% (real-bot multiway truth 7.8%, v1.8.317; the v1.8.303 pin quoted 14% — that "truth" was the old HU-eq1 model\'s own output), got ' + weakAmogh.toFixed(3));
   var topDonald = EQ.estimateEquityVsBettingRangeCustomMulti(hand('Qh Jc'), boardQ, 'donald', 0.45, 0.5, [3]);
   ok(topDonald > 0.41 && topDonald < 0.49, 'top pair vs Donald + tier-3 caller ~45% (model truth 44.8% under the corrected Donald rule, v1.8.311; the tier price quoted 39%), got ' + topDonald.toFixed(3));
   var overAmogh = EQ.estimateEquityVsBettingRangeCustomMulti(hand('Kh Kc'), boardQ, 'amogh', 1.0, 0.15, [3]);
-  ok(overAmogh > 0.56 && overAmogh < 0.64, 'overpair vs Amogh + tier-3 caller ~60% (probe truth 60.1%; the tier price quoted 72%), got ' + overAmogh.toFixed(3));
+  ok(overAmogh > 0.46 && overAmogh < 0.54, 'overpair vs Amogh + tier-3 caller ~50% (real-bot multiway truth 50.0%, v1.8.317; the v1.8.303 pin quoted 60% — that "truth" was the old HU-eq1 model\'s own output), got ' + overAmogh.toFixed(3));
   var riverNull = EQ.estimateEquityVsBettingRangeCustomMulti(hand('8s 7s'), hand('Qd 7h 2s 5c 9h'), 'alice', 0.35, 0, [3]);
   ok(riverNull == null, 'the custom multiway estimator returns null on the river (no custom river multiway model yet — the coach keeps the tier price there)');
   var mCallerA = EQ.estimateEquityVsBettingRangeCustomMulti(hand('8s 7s'), boardQ, 'alice', 0.35, 0, [3]);

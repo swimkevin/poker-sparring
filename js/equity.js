@@ -617,7 +617,7 @@ function isWetBoard(community) {
   }
   return false;
 }
-function customBetProb(villainId, holding, ms, eq1, community, aggression, bluff, isRiver) {
+function customBetProb(villainId, holding, ms, eq1, community, aggression, bluff, isRiver, isMulti) {
   if (villainId === 'alice') {
     return (ms >= 0.52 || eq1 >= 0.62) ? 1 : 0;
   }
@@ -632,7 +632,7 @@ function customBetProb(villainId, holding, ms, eq1, community, aggression, bluff
     if (ms >= 0.3 && ms <= 0.6 && !isRiver && !hasDraw) return wantsBet ? 0.3 : 0;
     if (!wantsBet) {
       if (ms >= 0.3) return 0;
-      var bluffP = bluff * 0.30 * (isRiver ? 1 : 0.55);
+      var bluffP = bluff * (isMulti ? 0.12 : 0.30) * (isRiver ? 1 : 0.55);
       return (hasDraw && ms < 0.55) ? bluffP : 0;
     }
     return 1;
@@ -788,6 +788,7 @@ function estimateEquityVsBettingRangeCustomMulti(hole, community, villainId, agg
       if (!boardKnown[_key({ r: r, s: s })]) rest.push({ r: r, s: s });
   var heroKnown = {};
   hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
+  var nOpp = Math.min(3, (extraTiers || []).length + 1);
   var holdings = [];
   var pBet = [];
   for (var i = 0; i < rest.length; i++) {
@@ -797,23 +798,31 @@ function estimateEquityVsBettingRangeCustomMulti(hole, community, villainId, agg
       holdings.push(h);
       var ms = madeStrengthEv(evaluate7Fast(h.concat(community)), h, community);
       var rem = [];
-      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j && !heroKnown[_key(rest[k])]) rem.push(rest[k]);
+      for (var k = 0; k < rest.length; k++) {
+        if (k === i || k === j) continue;
+        if (nOpp === 1 && heroKnown[_key(rest[k])]) continue;
+        rem.push(rest[k]);
+      }
       var wins = 0;
       for (var q = 0; q < 100; q++) {
-        var need = boardNeed + 2;
+        var need = boardNeed + 2 * nOpp;
         for (var d = 0; d < need; d++) {
           var jj = d + Math.floor(rnd() * (rem.length - d));
           var tmp = rem[d]; rem[d] = rem[jj]; rem[jj] = tmp;
         }
         var board2 = community.concat(rem.slice(0, boardNeed));
-        var opp = [rem[boardNeed], rem[boardNeed + 1]];
         var hs = evaluate7Fast(h.concat(board2)).score;
-        var os = evaluate7Fast(opp.concat(board2)).score;
-        if (hs > os) wins += 1;
-        else if (hs === os) wins += 0.5;
+        var win = true, tie = false;
+        for (var o = 0; o < nOpp; o++) {
+          var opp = [rem[boardNeed + o * 2], rem[boardNeed + o * 2 + 1]];
+          var os = evaluate7Fast(opp.concat(board2)).score;
+          if (os > hs) { win = false; break; }
+          if (os === hs) tie = true;
+        }
+        if (win) wins += tie ? 0.5 : 1;
       }
       var eq1 = wins / 100;
-      pBet.push(customBetProb(villainId, h, ms, eq1, community, aggression, bluff, false));
+      pBet.push(customBetProb(villainId, h, ms, eq1, community, aggression, bluff, false, nOpp > 1));
     }
   }
   var extraPools = (extraTiers || []).map(function (tier) {
