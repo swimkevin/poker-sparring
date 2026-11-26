@@ -1141,10 +1141,10 @@ console.log('\n92. v1.8.280: draws are priced vs the betting range off the river
   ok(src.indexOf('if (betEqF2 != null) foldEq = Math.max(0, betEqF2 - drawRealizationDiscount(hc));') !== -1,
     'the leak tracker mirrors the draw price for weak-fold too, so a fold the coach would call still flags (v1.8.280)');
   ok(labSrc.indexOf("name: 'draw-gutshot-flop-vs-maniac-fold'") !== -1 &&
-     labSrc.indexOf("name: 'draw-nutfd-turn-vs-rock-fold'") !== -1 &&
+     labSrc.indexOf("name: 'draw-nutfd-turn-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'draw-nutfd-turn-vs-lag-call'") !== -1 &&
      labSrc.indexOf("name: 'draw-combo-turn-vs-rock-call'") !== -1,
-    'the lab pins the draw flips and the two margin-zeroed 3/4-pot calls: the gutshot and nut-FD folds were calls under the tier price, and the 3/4-pot calls sit 0.8 points over need on the seeded estimator, so they are deterministic, not noise (v1.8.280)');
+    'the lab pins the draw flips and the two margin-zeroed 3/4-pot calls: the gutshot fold was a call under the tier price, and the nut-FD vs the Rock is a call under the betting-range price too since v1.8.323 (the draw rule puts the Rock\'s draw bluffs in his range, quoting 29% vs a 25% need); the 3/4-pot calls sit 0.8 points over need on the seeded estimator, so they are deterministic, not noise (v1.8.280)');
 }
 
 console.log('\n93. v1.8.281: preflop raise sizes are pinned in the lab and verdicts state amounts');
@@ -1251,9 +1251,9 @@ console.log('\n97. v1.8.302: the lab gross check prices the betting range, not t
     'the gross check recomputes equity with the betting-range model (heads-up postflop/river, multiway shared-runout) whenever the coach prices the spot that way, and falls back to the tier model otherwise (v1.8.302)');
   ok(labSrc.indexOf('var grossTol = (raiseGross != null || betGross != null || madeGross != null) ? 0.10 : 0.20;') !== -1,
     'the gross tolerance is 10 points on a price model (betting-range, raise-range or made-range) and 20 on the tier model: the coach\'s own price tracks the betting-range gross figure within 5.4 points on every gross-checked spot, while the tier figure runs 10-20 points high on folds (v1.8.302; the raise-range model joins the 10-point line in v1.8.305, the made-range model in v1.8.308)');
-  ok(labSrc.indexOf("name: 'draw-nutfd-lag-potbet-fold'") !== -1 &&
-     labSrc.indexOf("bet: 400, heroStack: 2000, nLive: 2, expect: 'fold',") !== -1,
-    'the lab pins the nut-flush-draw pot-bet fold: the tier gross equity is 56.8% against a 53% line so the old model fails it, while the betting-range gross equity is 35.7% against a 43% line so the new model passes it (v1.8.302)');
+  ok(labSrc.indexOf("name: 'draw-nutfd-lag-potbet-call'") !== -1 &&
+     labSrc.indexOf("bet: 400, heroStack: 2000, nLive: 2, expect: 'call',") !== -1,
+    'the lab pins the nut-flush-draw pot-bet call: the tier gross equity is 56.8% against a 53% line so the old model fails it, while the betting-range gross equity is 39.3% against a 33% need so the new model passes it as a call (v1.8.302; re-decided to a call in v1.8.323 when the draw rule put the LAG\'s draw bluffs in his range)');
 }
 
 console.log('\n98. v1.8.304: the lab gross check prices custom betting ranges too');
@@ -1421,7 +1421,19 @@ console.log('\n110. v1.8.322: the postflop custom estimators use the bot\'s equi
   ok(equitySrc.indexOf("for (var k = 0; k < rest.length; k++) if (k !== i && k !== j) rem.push(rest[k]);") !== -1,
     'the postflop custom estimator\'s eq1 sim deals the villain\'s holding vs a random opponent from a rem that includes hero\'s cards — the bot\'s eq1 is computed over hands that can hold them, so the hero-exclusive rem priced second pair 1.9 points high vs Alice (23.4% vs a 21.5% real-bot truth) and 1.8 high vs Amogh (48.5% vs 46.8%); the inclusive rem lands on both truths (21.5% and 46.7%) (v1.8.322)');
   ok(equitySrc.indexOf("if (k === i || k === j) continue;\n        rem.push(rest[k]);") !== -1,
-    'the multiway custom estimator\'s eq1 rem likewise includes hero\'s cards in every seat count — the old code excluded them only when nOpp === 1 (v1.8.322). The generic (non-custom) estimators still use the hero-exclusive rem — same shape, not yet measured (v1.8.315 note, still open).');
+    'the multiway custom estimator\'s eq1 rem likewise includes hero\'s cards in every seat count — the old code excluded them only when nOpp === 1 (v1.8.322). The generic estimators keep the hero-exclusive rem: v1.8.323 measured the bot\'s-universe direction there (Rock second pair -2.9 pts) and left it alone — v1.8.283 settled the generic side on exact enumeration, and the bot\'s-universe direction flips its pinned Maniac weak-pair call, so the generic universe question is entangled with the missing noise-smoothing ramp, not a one-line fix.');
+}
+
+console.log('\n111. v1.8.323: the generic betting-range price credits the bot\'s draw semi-bluffs');
+{
+  ok(equitySrc.indexOf("if (ld.flushDraw || ld.oesd) p = 0.25 + aggression * 0.35;") !== -1 &&
+     equitySrc.indexOf("else if (ld.gutshot) p = 0.12 + aggression * 0.2;") !== -1,
+    'the generic postflop estimator prices a draw at the bot\'s semi-bluff rate (flush/straight draw 0.25+agg*0.35, gutshot 0.12+agg*0.2) instead of the bluff rate — the bot semi-bluffs draws at those rates and checks when the coin flip misses, so a draw\'s bet probability is exactly semiP, never semiP plus the bluff rate (v1.8.323)');
+  ok(equitySrc.indexOf("if (ld2.flushDraw || ld2.oesd) p2 = 0.25 + aggression * 0.35;") !== -1,
+    'the multiway generic estimator prices draws the same way in its postflop branch (v1.8.323). The river estimators need no draw rule (a draw has no river) and the raise estimators keep their own raiseProb — the semi-bluff rule is a bet decision, not a raise decision.');
+  ok(labSrc.indexOf("name: 'draw-nutfd-turn-vs-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'draw-nutfd-lag-potbet-call'") !== -1,
+    'the lab re-decides the two nut-flush-draw spots to calls: the Rock\'s half-pot turn bet quotes 29% vs a 25% need and the LAG\'s pot bet 34% vs 33% — the old folds priced a draw-free range that credited the Rock\'s draws at a 0.2% bluff rate while the bot semi-bluffs them 32% of the time (v1.8.323)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

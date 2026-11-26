@@ -299,7 +299,12 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
       var eq1 = wins / 400;
       var p = 0;
       if (ms > 0.74 || eq1 > betLine) p = 1;
-      else if (ms < 0.55) p = bluffP;
+      else if (ms < 0.55) {
+        var ld = detectDraws(h, community);
+        if (ld.flushDraw || ld.oesd) p = 0.25 + aggression * 0.35;
+        else if (ld.gutshot) p = 0.12 + aggression * 0.2;
+        else p = bluffP;
+      }
       pBet.push(p);
     }
   }
@@ -406,7 +411,12 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
         var eq1b = wins / 400;
         var p2 = 0;
         if (ms > 0.74 || eq1b > betLine) p2 = 1;
-        else if (ms < 0.55) p2 = bluffP;
+        else if (ms < 0.55) {
+          var ld2 = detectDraws(h, community);
+          if (ld2.flushDraw || ld2.oesd) p2 = 0.25 + aggression * 0.35;
+          else if (ld2.gutshot) p2 = 0.12 + aggression * 0.2;
+          else p2 = bluffP;
+        }
         pBet.push(p2);
       }
     }

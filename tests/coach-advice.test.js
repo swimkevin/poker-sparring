@@ -613,17 +613,16 @@ setTimeout(function () {
     // The semi-bluff raise is gone (v1.8.262): the nut flush draw does not
     // raise — Rock folds top pair 0/200 to a 3x raise, so raising a draw
     // into his betting range loses ~385 chips/hand vs calling (paired
-    // N=2000). And the call is gone too at this price (v1.8.280): probe28/30
-    // show the nut flush draw vs the Rock on a dry turn realizes ~24%
-    // against this 33% price (bet 250 into 500) — the old tier price quoted
-    // 52% and called. It folds now; the raise is still wrong, and so is
-    // the call.
+    // N=2000). The call is back in v1.8.323: the draw rule puts the Rock's
+    // draw bluffs in his betting range, so the nut flush draw quotes 29%
+    // vs a 25% need and calls (the old fold priced the draw-free range).
+    // The raise is still wrong.
     var drawRock = postflopVerdict([{ r: 14, s: 1 }, { r: 13, s: 1 }], 'rock', 'turn', 250, 500,
       [{ r: 12, s: 1 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 250, pot: 750 }], 2);
     var drawRockEq = (function () { var m = /You win about (\d+)%/.exec(stripAdvice(drawRock.html)); return m ? parseInt(m[1], 10) : null; })();
-    ok(drawRock.advice === 'fold' && drawRockEq >= 20 && drawRockEq <= 28,
-      'nut flush draw folds vs Rock medium turn bet quoting 20-28% (realized 24%, raw 29%; the tier price quoted 52% and called)');
+    ok(drawRock.advice === 'call' && drawRockEq >= 27 && drawRockEq <= 31,
+      'nut flush draw calls vs Rock medium turn bet quoting 27-31% (raw 29% vs a 25% need; the tier price quoted 52% — v1.8.323 re-decides the call: the draw rule puts the Rock\'s draw bluffs in his range)');
 
     // Range note respects a tight villain (v1.8.230): a medium bet from Rock
     // does not make him "wide" — the note says the bet barely narrows him
@@ -1446,8 +1445,8 @@ setTimeout(function () {
         'gutshot vs the Maniac half-pot flop bet folds quoting 20-28% (realized 24%, raw 29%; the tier price quoted 53% and called)');
       var nutTurnRock = postflopVerdict([{ r: 14, s: 2 }, { r: 13, s: 2 }], 'rock', 'turn', 200, 400, DRY_TURN, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-      ok(nutTurnRock.advice === 'fold' && quotedEq(nutTurnRock) >= 20 && quotedEq(nutTurnRock) <= 28,
-        'nut flush draw vs the Rock half-pot turn bet folds quoting 20-28% (realized 24%, raw 29%; the tier price quoted 52% and called)');
+      ok(nutTurnRock.advice === 'call' && quotedEq(nutTurnRock) >= 27 && quotedEq(nutTurnRock) <= 31,
+        'nut flush draw vs the Rock half-pot turn bet calls quoting 27-31% (raw 29% vs a 25% need; the tier price quoted 52% — v1.8.323 re-decides the call: the draw rule puts the Rock\'s draw bluffs in his range)');
       var nonNutTurnBlankManiac = postflopVerdict([{ r: 8, s: 2 }, { r: 6, s: 2 }], 'maniac', 'turn', 200, 400, WET_TURN_BLANK, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
       ok(nonNutTurnBlankManiac.advice === 'fold' && quotedEq(nonNutTurnBlankManiac) >= 16 && quotedEq(nonNutTurnBlankManiac) <= 24,
