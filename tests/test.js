@@ -162,7 +162,7 @@ function hand(str) {
   var weakLow = EQ.customBetProb('alice', hand('Ah Kh'), 0.3, 0.5, boardT, 0.35, 0, false);
   ok(weakLow === 0, 'Alice never bets a weak low-eq hand (got ' + weakLow + ')');
   var quote = EQ.estimateEquityVsBettingRangeCustomPostflop(hand('7s 6d'), boardT, 'alice', 0.35, 0);
-  ok(quote > 0.23 && quote < 0.26, 'second pair 7x vs Alice turn ~25% after the gates (shipped 33%, real-bot truth ~22%), got ' + quote.toFixed(3));
+  ok(quote > 0.20 && quote < 0.23, 'second pair 7x vs Alice turn ~21% after the hero-inclusive eq1 fix (v1.8.320 gates gave 25%, real-bot truth 21.5%), got ' + quote.toFixed(3));
 })();
 
 // ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------

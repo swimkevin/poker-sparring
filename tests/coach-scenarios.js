@@ -1416,5 +1416,13 @@ console.log('\n109. v1.8.318: made-hand pricing extends off the river');
     'the lab pins the off-river cell: Q-high flush vs Nathan\'s turn pot bet folds quoting 28% vs a 33% need (v1.8.318)');
 }
 
+console.log('\n110. v1.8.322: the postflop custom estimators use the bot\'s equity universe');
+{
+  ok(equitySrc.indexOf("for (var k = 0; k < rest.length; k++) if (k !== i && k !== j) rem.push(rest[k]);") !== -1,
+    'the postflop custom estimator\'s eq1 sim deals the villain\'s holding vs a random opponent from a rem that includes hero\'s cards — the bot\'s eq1 is computed over hands that can hold them, so the hero-exclusive rem priced second pair 1.9 points high vs Alice (23.4% vs a 21.5% real-bot truth) and 1.8 high vs Amogh (48.5% vs 46.8%); the inclusive rem lands on both truths (21.5% and 46.7%) (v1.8.322)');
+  ok(equitySrc.indexOf("if (k === i || k === j) continue;\n        rem.push(rest[k]);") !== -1,
+    'the multiway custom estimator\'s eq1 rem likewise includes hero\'s cards in every seat count — the old code excluded them only when nOpp === 1 (v1.8.322). The generic (non-custom) estimators still use the hero-exclusive rem — same shape, not yet measured (v1.8.315 note, still open).');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

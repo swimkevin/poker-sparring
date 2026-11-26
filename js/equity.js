@@ -726,7 +726,7 @@ function estimateEquityVsBettingRangeCustomPostflop(hole, community, villainId, 
       holdings.push(h);
       var ms = madeStrengthEv(evaluate7Fast(h.concat(community)), h, community);
       var rem = [];
-      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j && !heroKnown[_key(rest[k])]) rem.push(rest[k]);
+      for (var k = 0; k < rest.length; k++) if (k !== i && k !== j) rem.push(rest[k]);
       var wins = 0;
       for (var q = 0; q < 100; q++) {
         var need = boardNeed + 2;
@@ -803,7 +803,6 @@ function estimateEquityVsBettingRangeCustomMulti(hole, community, villainId, agg
       var rem = [];
       for (var k = 0; k < rest.length; k++) {
         if (k === i || k === j) continue;
-        if (nOpp === 1 && heroKnown[_key(rest[k])]) continue;
         rem.push(rest[k]);
       }
       var wins = 0;
