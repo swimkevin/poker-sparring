@@ -619,7 +619,10 @@ function isWetBoard(community) {
 }
 function customBetProb(villainId, holding, ms, eq1, community, aggression, bluff, isRiver, isMulti) {
   if (villainId === 'alice') {
-    return (ms >= 0.52 || eq1 >= 0.62) ? 1 : 0;
+    if (ms >= 0.52) return 1;
+    if (eq1 < 0.62) return 0;
+    if (ms < 0.40) return 0.35;
+    return 0.60;
   }
   if (villainId === 'nathan') {
     return ms > 0.78 ? (isRiver ? 0.75 : 1) : 0;

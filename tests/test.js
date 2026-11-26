@@ -144,6 +144,27 @@ function hand(str) {
   ok(noDraw === 1, 'the gate does not touch a non-draw monster (got ' + noDraw + ')');
 })();
 
+// ---------- Alice check gates (v1.8.320) ----------
+// alicePostflop checks 65% of weak (ms < 0.40) high-eq hands and 40% of mid
+// (0.40 <= ms < 0.52) high-eq hands before betting, but customBetProb
+// credited every ms >= 0.52 OR eq1 >= 0.62 hand at p=1. Probe
+// (hidden_files/alice-turn-probe.js) on Qd7d2s5c: second pair 7x quotes
+// 31.1% shipped vs a 21.5% real-bot truth; the gates move the model to
+// 24.3%. Weak pair 2x: 9.6% shipped vs 8.9% truth, gates land on 8.9%.
+(function () {
+  var boardT = hand('Qd 7d 2s 5c');
+  var made = EQ.customBetProb('alice', hand('Ah Kh'), 0.6, 0.7, boardT, 0.35, 0, false);
+  ok(made === 1, 'Alice bets a made hand (ms >= 0.52) every time (got ' + made + ')');
+  var weakHigh = EQ.customBetProb('alice', hand('Ah Kh'), 0.3, 0.7, boardT, 0.35, 0, false);
+  ok(weakHigh === 0.35, 'Alice bets a weak high-eq hand 35% of the time — the bot checks 65% of them first (got ' + weakHigh + ')');
+  var midHigh = EQ.customBetProb('alice', hand('Ah Kh'), 0.45, 0.7, boardT, 0.35, 0, false);
+  ok(midHigh === 0.60, 'Alice bets a mid high-eq hand 60% of the time — the bot checks 40% of them first (got ' + midHigh + ')');
+  var weakLow = EQ.customBetProb('alice', hand('Ah Kh'), 0.3, 0.5, boardT, 0.35, 0, false);
+  ok(weakLow === 0, 'Alice never bets a weak low-eq hand (got ' + weakLow + ')');
+  var quote = EQ.estimateEquityVsBettingRangeCustomPostflop(hand('7s 6d'), boardT, 'alice', 0.35, 0);
+  ok(quote > 0.23 && quote < 0.26, 'second pair 7x vs Alice turn ~25% after the gates (shipped 33%, real-bot truth ~22%), got ' + quote.toFixed(3));
+})();
+
 // ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------
 (function () {
   var a = EQ.seededRnd(424242), b = EQ.seededRnd(424242);

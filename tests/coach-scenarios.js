@@ -1218,10 +1218,11 @@ console.log('\n96. v1.8.290: custom villains are priced vs their own betting rul
      equitySrc.indexOf('function estimateEquityVsBettingRangeCustomPostflop(') !== -1,
     'the custom pricers exist: an exact river enumerator and a seeded postflop sampler, one bet rule per villain (v1.8.290)');
   ok(equitySrc.indexOf("if (villainId === 'alice')") !== -1 &&
-     equitySrc.indexOf('return (ms >= 0.52 || eq1 >= 0.62) ? 1 : 0;') !== -1 &&
+     equitySrc.indexOf('if (ms < 0.40) return 0.35;') !== -1 &&
+     equitySrc.indexOf('return 0.60;') !== -1 &&
      equitySrc.indexOf("if (villainId === 'nathan')") !== -1 &&
      equitySrc.indexOf("return ms > 0.78 ? (isRiver ? 0.75 : 1) : 0;") !== -1,
-    'Alice bets any pair-plus or a strong draw, Nathan only bets monsters (75% on the river, always off it — his monsterThrough lets monsters bet); the old tier price quoted two pair 94 vs Alice at 0% against a ~54% truth (v1.8.290)');
+    'Alice bets any pair-plus every time, but checks 65% of weak and 40% of mid high-eq hands before betting (v1.8.320 — the old p=1 for every eq1 >= 0.62 hand quoted second pair 31% against a 21.5% real-bot truth); Nathan only bets monsters (75% on the river, always off it — his monsterThrough lets monsters bet); the old tier price quoted two pair 94 vs Alice at 0% against a ~54% truth (v1.8.290)');
   ok(equitySrc.indexOf("var betLine = 0.62 - aggression * 0.12 + (isRiver ? 0.04 : 0);") !== -1 &&
      equitySrc.indexOf('if (ms >= 0.3 && ms <= 0.6 && !isRiver && !hasDraw) return wantsBet ? 0.3 : 0;') !== -1,
     'Amogh bets the narrow line agg*0.12 with draw-only bluffs and checks mid-strength pairs 70% off the river (v1.8.290)');

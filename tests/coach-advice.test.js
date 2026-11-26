@@ -664,7 +664,9 @@ setTimeout(function () {
     // Alice's 200 into 400: the tier-1 price is 0% so the old coach folded,
     // but her betting range is top pair-plus and the truth is ~54% — call.
     // The same hand vs Nathan folds at ~0%: he only bets monsters. Top
-    // pair QJ vs Alice calls at ~64%. Two pair 52 on 77259 vs Amogh's pot
+    // pair QJ vs Alice calls at ~44% (v1.8.320: was ~64% — the old model
+    // credited every weak top pair at p=1, but Alice checks 40% of mid
+    // high-eq hands first). Two pair 52 on 77259 vs Amogh's pot
     // bet folds at ~26% vs a 33% need.
     var customKK9 = function (villain) {
       return postflopVerdict([{ r: 9, s: 2 }, { r: 4, s: 1 }], villain, 'river', 200, 400,
@@ -678,7 +680,7 @@ setTimeout(function () {
     var aliceTopPair = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 0 }], 'alice', 'river', 200, 400,
       [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 200, pot: 600 }], 2);
-    ok(aliceTopPair.advice === 'call', 'top pair calls Alice\'s river bet — ~64% vs a 25% need (got ' + aliceTopPair.advice + ')');
+    ok(aliceTopPair.advice === 'call', 'top pair calls Alice\'s river bet — ~44% vs a 25% need (got ' + aliceTopPair.advice + ')');
     var amoghTwoPair = postflopVerdict([{ r: 5, s: 3 }, { r: 2, s: 1 }], 'amogh', 'river', 400, 400,
       [{ r: 7, s: 2 }, { r: 7, s: 3 }, { r: 2, s: 0 }, { r: 5, s: 1 }, { r: 9, s: 2 }], 2000, 2000,
       [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 400, pot: 800 }], 2);
