@@ -31,7 +31,7 @@ This repo is built by autonomous AI agents working inside guardrails I set — t
 
 ## By the numbers
 
-- **Daily tested releases** (v1.8.320) — iterative, tested releases, not one big bang
+- **Daily tested releases** (v1.8.321) — iterative, tested releases, not one big bang
 - **6,000+ test assertions** across 44 suites: unit, component, smoke, netplay, worker, service worker, and live coach audits — including a 12,021-assertion seeded differential sweep that checks the fast evaluator bit-for-bit against the reference evaluator
 - **Solver lab** — 230+ pinned spots where the coach's advice is checked against exact expected value, 0 failures (see `tests/solver-lab.js`)
 - **14 AI opponent archetypes**, each with distinct, exploitable tendencies

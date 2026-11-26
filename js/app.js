@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.320';
+  var APP_VERSION = '1.8.321';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2790,12 +2790,16 @@
       villainFirstRiverAggro(vIdx) && adjEq > need2;
     var pricedEscape = (riverBetPriced || betRangePriced || multiBetPriced) && tell && tell.size !== 'overbet' && adjEq > need2 + 0.10;
     var guardPriced = '';
-    if ((riverBetPriced || betRangePriced || multiBetPriced) && adjEq <= need2 + 0.03) {
+    if (riverBetPriced || betRangePriced || multiBetPriced) {
       var guardSource = (riverBetPriced && raisePriced) ? 'raises with on the river'
         : (betRangePriced && raisePriced) ? 'raises with on the ' + table.street
         : (riverBetPriced || multiBetPriced) ? 'bets on the river'
         : 'bets on the ' + table.street;
-      guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
+      if (adjEq <= need2 + 0.03) {
+        guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
+      } else if (tightBigBet && tell && tell.size === 'overbet') {
+        guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — but an overbet this big is a much stronger slice than his average bet, so that ' + pct(adjEq) + ' overstates your chances here. Calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
+      }
     }
     if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)
       return mkVerdict('fold', 'strong',

@@ -1300,8 +1300,8 @@ console.log('\n100. v1.8.308: the lab gross check prices the made range for air 
 console.log('\n101. v1.8.309: the lab checks the coach-implied equity against its own advice');
 {
   ok(labSrc.indexOf("if (pct != null && v.advice === 'call' && pct < needF)") !== -1 &&
-     labSrc.indexOf("if (pct != null && v.advice === 'fold' && pct > needF + 0.03)") !== -1,
-    'a facing spot fails when the equity figure its own message quotes contradicts the advice: a call quoting below the need, or a fold quoting above the need plus the coach\'s own 0.03 call margin (v1.8.309)');
+     labSrc.indexOf("if (pct != null && v.advice === 'fold' && pct > needF + 0.03 && !overbetCaveat)") !== -1,
+    'a facing spot fails when the equity figure its own message quotes contradicts the advice: a call quoting below the need, or a fold quoting above the need plus the coach\'s own 0.03 call margin — except a tight-overbet fold whose message says the quoted figure overstates hero\'s chances against an overbet (v1.8.321): the price is quoted WITH the size tell, not bare against the advice (v1.8.309)');
   ok(labSrc.indexOf('% (quoted-vs-advice checked)') !== -1 &&
      labSrc.indexOf('Monte Carlo, reported only') === -1,
     'the facing-spot note no longer calls the coach-implied figure "reported only": 97 quoting spots are checked, and a probe (hidden_files/consistency-probe.js) measured 0 contradictions, with 1 point of headroom on both sides (closest fold quotes 20% vs an 18% need, closest call 31% vs 30%) (v1.8.309)');
@@ -1340,9 +1340,13 @@ console.log('\n103. v1.8.311: Donald\'s betting-range model mirrors his real bet
 
 console.log('\n104. v1.8.312: a guard fold quotes the price when the price supports the fold');
 {
-  ok(src.indexOf("if ((riverBetPriced || betRangePriced || multiBetPriced) && adjEq <= need2 + 0.03) {") !== -1 &&
+  ok(src.indexOf("if (riverBetPriced || betRangePriced || multiBetPriced) {") !== -1 &&
+     src.indexOf("if (adjEq <= need2 + 0.03) {") !== -1 &&
      src.indexOf("guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource") !== -1,
-    'when a big-bet guard folds a hand the coach already priced, the fold message quotes that price with the pot odds — but only when the price supports the fold (adjEq at or below need + 0.03), so an overbet fold the price model distrusts never quotes a number the advice contradicts (v1.8.312)');
+    'when a big-bet guard folds a hand the coach already priced, the fold message quotes that price with the pot odds — when the price supports the fold (adjEq at or below need + 0.03) (v1.8.312)');
+  ok(src.indexOf("} else if (tightBigBet && tell && tell.size === 'overbet') {") !== -1 &&
+     src.indexOf("so that ' + pct(adjEq) + ' overstates your chances here") !== -1,
+    'a tight-overbet fold the price distrusts quotes the price too (v1.8.321) — but WITH the size tell: the overbet is a much stronger slice than his average bet, so the quoted figure overstates hero\'s chances; the price is never quoted bare against the advice');
   ok(src.indexOf("(riverBetPriced && raisePriced) ? 'raises with on the river'") !== -1 &&
      src.indexOf("(betRangePriced && raisePriced) ? 'raises with on the ' + table.street") !== -1,
     'the guard clause reuses the math line\'s raise-range phrasing ("raises with on the river") so the lab\'s raise gross check can verify the quoted figure (v1.8.312)');

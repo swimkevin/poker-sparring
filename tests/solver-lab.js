@@ -1506,7 +1506,11 @@ setTimeout(function () {
           '% (quoted-vs-advice checked)';
       if (pct != null && v.advice === 'call' && pct < needF)
         problems.push('quoted eq ' + Math.round(pct * 100) + '% below need ' + Math.round(needF * 100) + '% on a call');
-      if (pct != null && v.advice === 'fold' && pct > needF + 0.03)
+      // A tight-overbet fold quotes its price WITH the size tell (v1.8.321):
+      // the message says the figure overstates hero's chances against an
+      // overbet, so the quote is qualified, not a bare contradiction.
+      var overbetCaveat = /overstates your chances here/.test(msg);
+      if (pct != null && v.advice === 'fold' && pct > needF + 0.03 && !overbetCaveat)
         problems.push('quoted eq ' + Math.round(pct * 100) + '% above need ' + Math.round(needF * 100) + '% on a fold');
       if (spot.grossCheck) {
         var raiseGross = raiseGrossEq(spot, msg);

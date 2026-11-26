@@ -656,6 +656,23 @@ setTimeout(function () {
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 600, pot: 1000 }], 2);
     ok(aliceKQ.advice === 'call', 'top pair calls Alice 1.5x overbet too — her sizing is random, so the overbet is not a strength tell (got ' + aliceKQ.advice + ')');
 
+    // A tight-overbet fold still quotes the price (v1.8.321): the Rock
+    // bets the turn and overbets the river, so he is not first river
+    // aggro and the priced 64% does not save the call — but the fold
+    // used to fire with no numbers at all. The line now quotes the
+    // price WITH the size tell: an overbet is a much stronger slice
+    // than his average bet, so the 64% overstates hero's chances.
+    var overbetRock = postflopVerdict([{ r: 12, s: 1 }, { r: 11, s: 0 }], 'rock', 'river', 520, 400,
+      [{ r: 12, s: 2 }, { r: 7, s: 1 }, { r: 2, s: 0 }, { r: 5, s: 3 }, { r: 9, s: 1 }], 2000, 2000,
+      [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 400 },
+       { t: 'action', street: 'turn', player: 0, action: 'call', bet: 200, pot: 600 },
+       { t: 'action', street: 'river', player: 1, action: 'bet', bet: 520, pot: 920 }], 2);
+    ok(overbetRock.advice === 'fold', 'top pair folds the Rock\'s river overbet after his turn bet (got ' + overbetRock.advice + ')');
+    ok(stripAdvice(overbetRock.html).indexOf('You win about 64%') !== -1,
+      'the overbet fold quotes the priced equity instead of firing bare');
+    ok(stripAdvice(overbetRock.html).indexOf('stronger slice') !== -1,
+      'the overbet fold names the size tell — the price overstates hero\'s chances against an overbet');
+
     // Custom villains are priced vs their own betting rule, not the preflop
     // open tier (v1.8.290): Alice bets any pair-plus (ms >= 0.52) or a strong
     // draw, Nathan only bets monsters (ms > 0.78) on the river, Amogh bets
