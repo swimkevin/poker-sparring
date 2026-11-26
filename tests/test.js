@@ -128,6 +128,22 @@ function hand(str) {
   ok(mCallerA < huA - 0.10, 'the caller dilutes the custom heads-up price by more than 10 points (37% heads-up, ~18% multiway)');
 })();
 
+// ---------- Amogh draw check gate (v1.8.319) ----------
+// amoghPostflop checks 35% of draws with ms < 0.55 before the bet decision,
+// but customBetProb credited draws at the full rate. Probe
+// (hidden_files/amogh-turn-probe.js) on Qd7d2s5c: second pair 7x quotes
+// 49.4% shipped vs a 46.8% real-bot truth; the gate moves the exact-eq1
+// model 50.7% -> 50.0%, closer to truth.
+(function () {
+  var boardT = hand('Qd 7d 2s 5c');
+  var wantDraw = EQ.customBetProb('amogh', hand('Ad Kd'), 0.1, 0.6, boardT, 1.0, 0.15, false);
+  ok(wantDraw === 0.65, 'Amogh bets a wants-to-bet draw 65% of the time — the bot checks 35% of draws first (got ' + wantDraw + ')');
+  var bluffDraw = EQ.customBetProb('amogh', hand('Ad Kd'), 0.1, 0.4, boardT, 1.0, 0.15, false);
+  ok(Math.abs(bluffDraw - 0.65 * (0.15 * 0.30 * 0.55)) < 1e-12, 'Amogh bluffs a weak draw at 65% of the bluff rate (got ' + bluffDraw + ')');
+  var noDraw = EQ.customBetProb('amogh', hand('Kh Kc'), 0.8, 0.7, boardT, 1.0, 0.15, false);
+  ok(noDraw === 1, 'the gate does not touch a non-draw monster (got ' + noDraw + ')');
+})();
+
 // ---------- seeded RNG: one mulberry32, shared (v1.8.285) ----------
 (function () {
   var a = EQ.seededRnd(424242), b = EQ.seededRnd(424242);

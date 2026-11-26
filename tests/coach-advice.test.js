@@ -706,7 +706,10 @@ setTimeout(function () {
     // runouts, so a mid pair's 2-opp eq is ~0.35, not the ~0.55 the
     // HU eq1 gave — the old model priced second pair vs Amogh's
     // multiway turn bet at ~23% and called a 100 bet; the truth is
-    // ~3-4% and the fixed model quotes 10% dry / 12% wet, both folds.
+    // ~3-4% and the fixed model quotes 10% dry / 11% wet, both folds.
+    // (v1.8.319: the wet quote was 12% before the draw check gate —
+    // Amogh checks 35% of draws first, so fewer draws sit in his
+    // betting range and the quote drops a point toward the ~7% truth.)
     var amoghMultiDry = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'amogh', 'turn', 100, 500,
       [{ r: 12, s: 0 }, { r: 7, s: 1 }, { r: 2, s: 2 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 600 }], 3);
@@ -716,9 +719,9 @@ setTimeout(function () {
     var amoghMultiWet = postflopVerdict([{ r: 7, s: 0 }, { r: 6, s: 1 }], 'amogh', 'turn', 100, 500,
       [{ r: 12, s: 2 }, { r: 7, s: 2 }, { r: 2, s: 0 }, { r: 5, s: 3 }], 2000, 2000,
       [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 100, pot: 600 }], 3);
-    ok(amoghMultiWet.advice === 'fold', 'second pair folds to Amogh\'s multiway wet turn bet — 12% vs a 14% need (got ' + amoghMultiWet.advice + ')');
-    ok(stripAdvice(amoghMultiWet.html).indexOf('You win about 12%') !== -1,
-      'second pair vs Amogh multiway wet turn quotes 12% (real bot ~7%; the HU-eq1 model quoted ~22%)');
+    ok(amoghMultiWet.advice === 'fold', 'second pair folds to Amogh\'s multiway wet turn bet — 11% vs a 14% need (got ' + amoghMultiWet.advice + ')');
+    ok(stripAdvice(amoghMultiWet.html).indexOf('You win about 11%') !== -1,
+      'second pair vs Amogh multiway wet turn quotes 11% (real bot ~7%; the HU-eq1 model quoted ~22%)');
 
     // Facing a RAISE is priced vs the raise range, not the bet range (v1.8.289):
     // a raise range is far stronger (the bot raises only with eq > need+margin

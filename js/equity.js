@@ -633,9 +633,9 @@ function customBetProb(villainId, holding, ms, eq1, community, aggression, bluff
     if (!wantsBet) {
       if (ms >= 0.3) return 0;
       var bluffP = bluff * (isMulti ? 0.12 : 0.30) * (isRiver ? 1 : 0.55);
-      return (hasDraw && ms < 0.55) ? bluffP : 0;
+      return (hasDraw && ms < 0.55) ? bluffP * 0.65 : 0;
     }
-    return 1;
+    return (hasDraw && ms < 0.55) ? 0.65 : 1;
   }
   if (villainId === 'donald') {
     var dd = detectDraws(holding, community);
@@ -1369,6 +1369,7 @@ if (typeof module !== 'undefined' && module.exports) {
     estimateEquityVsBettingRangeCustom: estimateEquityVsBettingRangeCustom,
     estimateEquityVsBettingRangeCustomPostflop: estimateEquityVsBettingRangeCustomPostflop,
     estimateEquityVsBettingRangeCustomMulti: estimateEquityVsBettingRangeCustomMulti,
+    customBetProb: customBetProb,
     estimateEquityVsBettingRangeMulti: estimateEquityVsBettingRangeMulti,
     estimateEquityVsRanges: estimateEquityVsRanges,
     estimateEquityVsMadePool: estimateEquityVsMadePool,
