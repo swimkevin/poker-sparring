@@ -1464,5 +1464,12 @@ console.log('\n113. v1.8.326: the generic multiway estimator prices the bettor o
     'no lab spot re-decides on the multiway-equity fix: the top-pair multiway call still clears its need (37% vs 28%) and the second-pair/weak-pair multiway folds are unchanged');
 }
 
+console.log('\n114. v1.8.327: Amogh\'s step is faithful — the ramp is refuted for the custom estimator');
+{
+  ok(equitySrc.indexOf("var wantsBet = eq1 > betLine || ms > 0.74;") !== -1 &&
+     equitySrc.indexOf("if (ms >= 0.3 && ms <= 0.6 && !isRiver && !hasDraw) return wantsBet ? 0.3 : 0;") !== -1,
+    'customBetProb(\'amogh\') keeps its step at the bet line: a botDecide decomposition on Qd7d2s5c (200 reps per holding, hidden_files/amogh-ramp-probe.js) shows the step model already matches the bot class-for-class (draw 21.1% vs 21.5%, mid 28.1% vs 28.4%, weak 3.0% vs 2.4%) and quotes the weak-pair cell at 17.9% against a 17.6% real-bot truth — the v1.8.319 note attributed the old ~3-point gap to the missing ramp, but the v1.8.322 hero-inclusive eq1 fix closed it, and a fitted probit ramp (best sigma 0.056) quotes 23%, five points worse; the ramp belongs to the generic estimators, whose eq1 is a 400-sim estimate, not to Amogh, whose 100-sim hero-inclusive eq1 already sits on truth (v1.8.327)');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);

@@ -145,6 +145,8 @@ function hand(str) {
   ok(Math.abs(bluffDraw - 0.65 * (0.15 * 0.30 * 0.55)) < 1e-12, 'Amogh bluffs a weak draw at 65% of the bluff rate (got ' + bluffDraw + ')');
   var noDraw = EQ.customBetProb('amogh', hand('Kh Kc'), 0.8, 0.7, boardT, 1.0, 0.15, false);
   ok(noDraw === 1, 'the gate does not touch a non-draw monster (got ' + noDraw + ')');
+  var weakAmogh = EQ.estimateEquityVsBettingRangeCustomPostflop(hand('2h 6s'), boardT, 'amogh', 1.0, 0.15);
+  ok(weakAmogh > 0.16 && weakAmogh < 0.20, 'weak pair 2h6s vs Amogh\'s turn bet ~18% (real-bot truth 17.6% — a botDecide decomposition over every holding, hidden_files/amogh-ramp-probe.js; the v1.8.319 note attributed the old ~3-point gap to the missing noise ramp, but the v1.8.322 hero-inclusive eq1 fix closed it: the step model is already faithful, class freqs within 0.6 points of the bot, and a probit ramp would quote 23% — the ramp is refuted for Amogh, not a fix), got ' + weakAmogh.toFixed(3));
 })();
 
 // ---------- Alice check gates (v1.8.320) ----------
