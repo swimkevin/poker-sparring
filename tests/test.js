@@ -85,7 +85,7 @@ function hand(str) {
   var gut2 = EQ.estimateEquityVsBettingRangePostflop(hand('Ts 8s'), hand('Qd Jd 7s'), 0.80, 0.35);
   ok(gut2 > 0.22 && gut2 < 0.34, 'gutshot suit variant ~28% too (seed-robust), got ' + gut2.toFixed(3));
   var twoPair772 = EQ.estimateEquityVsBettingRangePostflop(hand('5d 2s'), hand('7c 7d 2h 5s'), 0.20, 0.02);
-  ok(twoPair772 > 0.45 && twoPair772 < 0.49, 'two pair on 772 vs Rock ~47% (exact truth 47.2% for these cards — the old 48.3% was probe35\'s different suits; eq1 sims 100→400 and second-stage samples 6000→24000, v1.8.293, close the 4.4-point gap), got ' + twoPair772.toFixed(3));
+  ok(twoPair772 > 0.39 && twoPair772 < 0.44, 'two pair on 772 vs Rock ~42% (real-bot truth 34.4% — the old 47.2% "exact truth" was probe35 enumerating the OLD model exactly, not the bot; the v1.8.324 branch-order fix moves the quote 47% -> 42% toward truth, and the residual 7-point overshoot is the wet-board step/ramp open item: near-line one-pair hands the bot bets only sometimes are still credited at p=1/midP), got ' + twoPair772.toFixed(3));
 })();
 
 // ---------- multiway betting-range estimator (v1.8.301, F8) ----------
@@ -97,12 +97,12 @@ function hand(str) {
   var m0b = EQ.estimateEquityVsBettingRangeMulti(hero2p, boardQ, 0.20, 0.02, []);
   ok(m0 === m0b, 'multiway estimator is deterministic per hand (seeded)');
   var mCaller = EQ.estimateEquityVsBettingRangeMulti(hero2p, boardQ, 0.20, 0.02, [3]);
-  ok(mCaller > 0.15 && mCaller < 0.25, 'second pair vs Rock + tier-3 caller ~20% (probe truth 19.5%; the tier price quoted 21%), got ' + mCaller.toFixed(3));
+  ok(mCaller > 0.11 && mCaller < 0.17, 'second pair vs Rock + tier-3 caller ~14% (real-bot truth 13.2% — the old 19.5% "probe truth" was the old model\'s own output, per the v1.8.311 lesson; the v1.8.324 branch-order fix moves the quote 20% -> 14% onto truth), got ' + mCaller.toFixed(3));
   var weakManiac = EQ.estimateEquityVsBettingRangeMulti(hand('5s 9h'), boardQ, 0.95, 0.55, [0]);
-  ok(weakManiac > 0.26 && weakManiac < 0.36, 'weak pair vs Maniac + random behind ~31% (probe truth 31.0%; the tier price quoted 41%), got ' + weakManiac.toFixed(3));
+  ok(weakManiac > 0.18 && weakManiac < 0.26, 'weak pair vs Maniac + random behind ~22% (real-bot multiway truth 22.0% on the lab board — the old 31.0% "probe truth" was the old model\'s own output; the v1.8.324 fix moves the quote 31% -> 22% onto truth), got ' + weakManiac.toFixed(3));
   var river2p = EQ.estimateEquityVsBettingRangeMulti(hero2p, hand('Qd 7h 2s 5c 9h'), 0.20, 0.02, [3]);
   ok(river2p > 0.0 && river2p < 0.08, 'second pair vs Rock on the river + tier-3 caller ~3% (probe truth 3.3%; the tier price quoted 14%), got ' + river2p.toFixed(3));
-  ok(mCaller < hu - 0.10, 'the caller dilutes the heads-up price by more than 10 points (40% heads-up, ~20% multiway)');
+  ok(mCaller < hu - 0.10, 'the caller dilutes the heads-up price by more than 10 points (24% heads-up, ~14% multiway; v1.8.324 moves both down from the old 40%/20% — the old heads-up price was the p=1 fall-through inflating it)');
 })();
 
 // ---------- custom multiway betting-range estimator (v1.8.303) ----------

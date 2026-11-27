@@ -227,7 +227,7 @@ function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) 
   var mss = pool.map(function (h) { return madeStrength(h, community); });
   var keys = pool.map(function (h) { return [_key(h[0]), _key(h[1])]; });
   var betLine = 0.62 - aggression * 0.22 + 0.04;
-  var bluffP = bluff * 0.22;
+  var bluffP = bluff * (0.22 + bluff * 0.25);
   var myScore = evaluate7Fast(hole.concat(community)).score;
   var wTot = 0, wEq = 0;
   for (var a = 0; a < pool.length; a++) {
@@ -244,7 +244,9 @@ function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) 
     }
     var eq1 = tot ? sc / tot : 0;
     var p = 0;
-    if (eq1 > betLine || mss[a] > 0.74) p = 1;
+    if (mss[a] > 0.74) p = 1;
+    else if (mss[a] >= 0.55 && eq1 > betLine) p = 1;
+    else if (mss[a] >= 0.40 && mss[a] < 0.55 && eq1 > betLine) p = 0.45 + aggression * 0.25;
     else if (mss[a] < 0.55) p = bluffP;
     if (p <= 0) continue;
     wTot += p;
@@ -271,7 +273,7 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
   var heroKnown = {};
   hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
   var betLine = 0.62 - aggression * 0.22;
-  var bluffP = bluff * 0.22 * 0.55;
+  var bluffP = bluff * (0.22 + bluff * 0.25) * 0.55;
   var holdings = [];
   var pBet = [];
   for (var i = 0; i < rest.length; i++) {
@@ -298,11 +300,13 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
       }
       var eq1 = wins / 400;
       var p = 0;
-      if (ms > 0.74 || eq1 > betLine) p = 1;
+      if (ms > 0.74) p = 1;
+      else if (ms >= 0.55 && eq1 > betLine) p = 1;
       else if (ms < 0.55) {
         var ld = detectDraws(h, community);
         if (ld.flushDraw || ld.oesd) p = 0.25 + aggression * 0.35;
         else if (ld.gutshot) p = 0.12 + aggression * 0.2;
+        else if (ms >= 0.40 && eq1 > betLine) p = 0.45 + aggression * 0.25;
         else p = bluffP;
       }
       pBet.push(p);
@@ -356,7 +360,7 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
   var heroKnown = {};
   hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
   var betLine = 0.62 - aggression * 0.22 + (river ? 0.04 : 0);
-  var bluffP = bluff * 0.22 * (river ? 1 : 0.55);
+  var bluffP = bluff * ((extraTiers || []).length ? 0.10 : (0.22 + bluff * 0.25)) * (river ? 1 : 0.55);
   var holdings = [];
   var pBet = [];
   if (river) {
@@ -380,7 +384,9 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
       }
       var eq1 = tot ? sc / tot : 0;
       var p = 0;
-      if (eq1 > betLine || mss[a] > 0.74) p = 1;
+      if (mss[a] > 0.74) p = 1;
+      else if (mss[a] >= 0.55 && eq1 > betLine) p = 1;
+      else if (mss[a] >= 0.40 && mss[a] < 0.55 && eq1 > betLine) p = 0.45 + aggression * 0.25;
       else if (mss[a] < 0.55) p = bluffP;
       holdings.push(pool[a]);
       pBet.push(p);
@@ -410,11 +416,13 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
         }
         var eq1b = wins / 400;
         var p2 = 0;
-        if (ms > 0.74 || eq1b > betLine) p2 = 1;
+        if (ms > 0.74) p2 = 1;
+        else if (ms >= 0.55 && eq1b > betLine) p2 = 1;
         else if (ms < 0.55) {
           var ld2 = detectDraws(h, community);
           if (ld2.flushDraw || ld2.oesd) p2 = 0.25 + aggression * 0.35;
           else if (ld2.gutshot) p2 = 0.12 + aggression * 0.2;
+          else if (ms >= 0.40 && eq1b > betLine) p2 = 0.45 + aggression * 0.25;
           else p2 = bluffP;
         }
         pBet.push(p2);

@@ -909,8 +909,8 @@ console.log('\n76. v1.8.230: the lab gross-checks four more range-priced spots, 
     'facing-multiway-toppair-call (seeded eq 50.9% vs a 33.3% price) is gross-checked (v1.8.230)');
   ok(labSrc.indexOf("expectWord: 'Pay 90 to win 120', grossCheck: true") !== -1,
     'preflop-prize-figure (JJ vs Rock, seeded eq 48.4% vs a 42.9% price) is gross-checked (v1.8.230)');
-  ok(labSrc.indexOf("name: 'toppair-vs-rock-river-potbet-call'") !== -1,
-    'the top-pair call vs Rock\'s pot bet is pinned: the double-barrel truth is 57% and the betting-range price 64% vs a 33% need, so the equity escape stands the guard down (v1.8.288 corrects v1.8.230, whose gross-check-free note rested on the open-range price of a fold that is now a call)');
+  ok(labSrc.indexOf("name: 'toppair-vs-rock-river-potbet-fold'") !== -1,
+    'the top-pair fold vs Rock\'s pot bet is pinned: the double-barrel truth is 31.1% and the betting-range price ~32% vs a 33% need, so the fold stands (v1.8.324 re-decides the v1.8.288 call: the old "truth 57% / price 64%" were the old model\'s figures)');
   ok(src.indexOf("raise again for value to ~' + fmt(fourTo) + ' (about 2.3× their raise).") !== -1,
     'the 4-bet lesson states the exact size (to ~207), not just the bare 2.3x multiple — the recap quotes the lesson, so a size-less lesson hides the size (v1.8.230)');
   ok(src.indexOf('bet a medium size, so this barely narrows him down: pairs and draws are in there.') !== -1,
@@ -996,10 +996,10 @@ console.log('\n82. v1.8.265: air is priced vs the made hands he bets, on every s
   ok(labSrc.indexOf("name: 'air-vs-maniac-river-fold'") !== -1 &&
      labSrc.indexOf("name: 'air-vs-lag-river-fold'") !== -1 &&
      labSrc.indexOf("name: 'air-vs-maniac-flop-call'") !== -1 &&
-     labSrc.indexOf("name: 'air-vs-lag-flop-call'") !== -1 &&
-     labSrc.indexOf("name: 'air-vs-maniac-turn-fold'") !== -1 &&
-     labSrc.indexOf("name: 'air-vs-lag-turn-fold'") !== -1,
-    'the lab pins the air spots on flop, turn and river (v1.8.265; the flop folds are re-decided to calls in v1.8.287: the v1.8.265 "true 14.6%/12.7%" was the made-pool price, the betting-range truth is ~40%/36% and sequential EV says calling wins ~111/~29 chips)');
+     labSrc.indexOf("name: 'air-vs-lag-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-maniac-turn-call'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-lag-turn-call'") !== -1,
+    'the lab pins the air spots on flop, turn and river (v1.8.265; the flop folds are re-decided to calls in v1.8.287: the v1.8.265 "true 14.6%/12.7%" was the made-pool price, the betting-range truth is ~40%/36% and sequential EV says calling wins ~111/~29 chips; v1.8.324 re-decides the LAG flop spot back to a fold and both turn spots to calls: the generic betting-range price was overstating by up to 18 points because the estimator credited every eq-clearing holding at p=1, and the corrected real-bot truth is 30.4% flop vs LAG (below the 33% call line), 32.8% turn vs Maniac and 30.1% turn vs LAG (above the 28% line))');
 }
 
 console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too');
@@ -1011,9 +1011,9 @@ console.log('\n83. v1.8.266: weak pair is priced vs the made hands he bets too')
   ok(labSrc.indexOf("name: 'weak-vs-maniac-flop-call'") !== -1 &&
      labSrc.indexOf("name: 'weak-vs-lag-flop-call'") !== -1 &&
      labSrc.indexOf("name: 'weak-vs-maniac-turn-call'") !== -1 &&
-     labSrc.indexOf("name: 'weak-vs-lag-turn-fold'") !== -1 &&
+     labSrc.indexOf("name: 'weak-vs-lag-turn-call'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-maniac-flop-call'") !== -1,
-    'the lab pins the weak-pair flop calls and turn folds plus the second-pair small-bet call control (v1.8.266 spots re-decided in v1.8.274: the flop folds were the four-player truth, heads-up they call at 42%/38%; v1.8.283 re-decides the Maniac turn spot to a call: exact truth 28.3% vs a 25% need, the old fold was the hero-cards-in-the-eq1-pool flaw)');
+    'the lab pins the weak-pair flop calls and turn folds plus the second-pair small-bet call control (v1.8.266 spots re-decided in v1.8.274: the flop folds were the four-player truth, heads-up they call at 42%/38%; v1.8.283 re-decides the Maniac turn spot to a call: exact truth 28.3% vs a 25% need, the old fold was the hero-cards-in-the-eq1-pool flaw; v1.8.324 re-decides the LAG turn spot to a call: the corrected real-bot truth is 31.2% vs a 25% need, above the 28% call line)');
 }
 
 console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as good as it');
@@ -1029,9 +1029,9 @@ console.log('\n84. v1.8.267: second pair is priced vs the made hands at least as
      labSrc.indexOf("name: 'secondpair-vs-lag-flop-call'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-maniac-turn-call'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-lag-turn-call'") !== -1 &&
-     labSrc.indexOf("name: 'facing-2ndpair-rock-call'") !== -1 &&
+     labSrc.indexOf("name: 'facing-2ndpair-rock-fold'") !== -1 &&
      labSrc.indexOf("name: 'secondpair-vs-rock-turn-fold'") !== -1,
-    'the lab pins the second-pair calls at medium bets on flop and turn, the Rock small-bet call, and the Rock big-bet turn fold: the v1.8.267 folds were the four-player truth, heads-up they all call (v1.8.272)');
+    'the lab pins the second-pair calls at medium bets on flop and turn, the Rock small-bet call, and the Rock big-bet turn fold: the v1.8.267 folds were the four-player truth, heads-up they all call (v1.8.272); v1.8.324 re-decides the Rock flop pot-bet spot to a fold: the corrected real-bot truth is ~20% vs a 33% need, the old call was the p=1 fall-through inflating the price to ~37%');
 }
 
 console.log('\n85. v1.8.268: the leak tracker prices bad-chase calls the way the coach does');
@@ -1053,7 +1053,7 @@ console.log('\n86. v1.8.269: weak pair is priced vs the pair-plus pool too');
      labSrc.indexOf("name: 'weakpair-river-vs-lag-call'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-river-vs-rock-fold'") !== -1 &&
      labSrc.indexOf("name: 'weakpair-river-bottom-control'") !== -1,
-    'the lab pins the three middle-pair river spots plus the bottom-pair control: the Maniac/LAG calls are corrected to calls in v1.8.270 (heads-up truth 38%/30%), the Rock fold and bottom-pair control are unchanged (v1.8.269, v1.8.270)');
+    'the lab pins the three middle-pair river spots plus the bottom-pair control: the Maniac/LAG calls are corrected to calls in v1.8.270 (heads-up truth 35%/24%; v1.8.324: the old 38%/30% were the old model\'s figures), the Rock fold and bottom-pair control are unchanged (v1.8.269, v1.8.270)');
 }
 
 console.log('\n87. v1.8.270: river one-pair hands are priced vs the betting range');
@@ -1069,9 +1069,9 @@ console.log('\n87. v1.8.270: river one-pair hands are priced vs the betting rang
     'the big-bet veto stands down only for a lone river bet whose betting-range price clears need — a turn bet before the river bet keeps the veto (v1.8.270)');
   ok(src.indexOf('bluffy <= 0.55 && !riverBetPriced') !== -1,
     'the +0.03 river prior is zeroed for betting-range-priced spots: the under-bluffing is already in the price, and keeping it kept second pair vs LAG 200 a fold (v1.8.270)');
-  ok(labSrc.indexOf("name: 'toppair-river-vs-rock-call'") !== -1 &&
+  ok(labSrc.indexOf("name: 'toppair-river-vs-rock-fold'") !== -1 &&
      labSrc.indexOf("name: 'overpair-river-vs-rock-call'") !== -1,
-    'the lab pins top pair and overpair calls vs the Rock 0.75x river bet: heads-up he bets every top pair, so 64%/70% clear the 30% price (v1.8.270)');
+    'the lab pins a top-pair fold and an overpair call vs the Rock 0.75x river bet: heads-up he bets every top pair, but the corrected price is 32% for top pair (truth 31.6%, below the 33% call line) and ~39% for overpair (v1.8.324 re-decides the v1.8.270 top-pair call — the old 64%/70% were the p=1 quotes)');
 }
 
 console.log('\n88. v1.8.271: the leak tracker mirrors the betting-range price');
@@ -1081,7 +1081,7 @@ console.log('\n88. v1.8.271: the leak tracker mirrors the betting-range price');
     'bad-chase prices a river one-pair call against the betting range, falling back to the pair-plus pool off the river or for a non-generic villain: calling 7x vs the Maniac 200 is a correct call at 38%, not a chase (v1.8.271; draws join in v1.8.280 and the chase price is the realized equity, 5 points under the raw betting-range figure)');
   ok(src.indexOf('var foldEq = eq;') !== -1 &&
      src.indexOf('if (betEqF != null) foldEq = betEqF;') !== -1,
-    'weak-fold prices a river one-pair fold against the betting range too: folding 7x vs the Rock 50 is correct at ~6%, not a weak fold, while folding it vs the Maniac 50 still flags at ~38% (v1.8.271)');
+    'weak-fold prices a river one-pair fold against the betting range too: folding 7x vs the Rock 50 is correct at ~2%, not a weak fold, while folding it vs the Maniac 50 still flags at ~35% (v1.8.271; v1.8.324: the old ~6%/~38% were the old model\'s figures)');
   ok(src.indexOf('if (genericL) {') !== -1 &&
      src.indexOf("(hc === 'air' || hc === 'weakpair' || hc === 'secondpair' || hc === 'trips' || hc === 'twopair') && table.street !== 'river'") !== -1,
     'air uses the analytic price in the tracker too, matching the coach (v1.8.287 corrects v1.8.271, whose "analytic price is for one-pair hands only" left air on the uniform made pool that priced KQ-high at ~37% on a paired board against a ~8% truth)');
@@ -1400,8 +1400,8 @@ console.log('\n108. v1.8.317: multiway estimators price the bettor on multiway e
      labSrc.indexOf("name: 'secondpair-amogh-multiway-turn-wet-fold'") !== -1,
     'the lab pins the multiway cells: second pair vs Amogh\'s multiway turn bet folds quoting 10% dry (real bot ~3-4%) and 12% wet (real bot ~7%) — the HU-eq1 model quoted ~23%/~22% and called (v1.8.317)');
   ok(labSrc.indexOf("name: 'facing-multiway-toppair-call'") !== -1 &&
-     labSrc.indexOf("name: 'multiway-weakpair-maniac-behind-call'") !== -1,
-    'the generic multiway estimator is UNCHANGED: its crude p=1/bluffP step does not mirror the bot\'s semi-bluff rule (draws bet at 0.25+agg*0.35), so the multiway-eq change alone over-corrected Rock top pair (28.9% vs a 37.1% real-bot truth) and Maniac weak pair (12.4% vs 31.4%) — the proper generic bot-rule model is a follow-up, not forced here (v1.8.317)');
+     labSrc.indexOf("name: 'multiway-weakpair-maniac-behind-fold'") !== -1,
+    'the generic multiway estimator now mirrors the bot rule too (v1.8.323 adds the draw semi-bluff rate, v1.8.324 the bet-branch order and the liveOpp bluff rate) — but it still prices the bettor on HU eq1, not multiway equity: the multiway-eq change alone over-corrected Rock top pair (28.9% vs a 37.1% real-bot truth) and Maniac weak pair (12.4% vs 31.4%) in v1.8.317, so that factor stays open; the weak-pair-behind spot re-decides to a fold in v1.8.324 on the corrected price (real-bot multiway truth 22.0% vs a 22.2% need, below the 25.2% call line)');
 }
 
 console.log('\n109. v1.8.318: made-hand pricing extends off the river');
@@ -1434,6 +1434,23 @@ console.log('\n111. v1.8.323: the generic betting-range price credits the bot\'s
   ok(labSrc.indexOf("name: 'draw-nutfd-turn-vs-rock-call'") !== -1 &&
      labSrc.indexOf("name: 'draw-nutfd-lag-potbet-call'") !== -1,
     'the lab re-decides the two nut-flush-draw spots to calls: the Rock\'s half-pot turn bet quotes 29% vs a 25% need and the LAG\'s pot bet 34% vs 33% — the old folds priced a draw-free range that credited the Rock\'s draws at a 0.2% bluff rate while the bot semi-bluffs them 32% of the time (v1.8.323)');
+}
+
+console.log('\n112. v1.8.324: the generic betting-range price mirrors the bot\'s bet rule');
+{
+  ok(equitySrc.indexOf("else if (ms >= 0.55 && eq1 > betLine) p = 1;") !== -1 &&
+     equitySrc.indexOf("else if (ms >= 0.40 && eq1 > betLine) p = 0.45 + aggression * 0.25;") !== -1,
+    'the generic postflop estimator bets a holding for certain only at ms > 0.74 or ms >= 0.55 with eq over the line, and bets mid hands (ms 0.40-0.55, eq over the line) at 0.45+agg*0.25 — the old code credited EVERY eq-clearing holding at p=1, but the bot checks mid hands 55%-agg*25% of the time and bluffs low hands at the bluff rate; the real-bot truth proves it (Rock second pair turn 41.5% old vs 27.0% new vs 26.6% truth, top pair 73.2% vs 55.6% vs 55.4%) (v1.8.324)');
+  ok(equitySrc.indexOf("var bluffP = bluff * (0.22 + bluff * 0.25) * 0.55;") !== -1 &&
+     equitySrc.indexOf("var bluffP = bluff * ((extraTiers || []).length ? 0.10 : (0.22 + bluff * 0.25)) * (river ? 1 : 0.55);") !== -1,
+    'the bluff rate mirrors the bot too: heads-up bluff*(0.22+bluff*0.25) (the Maniac bluffs 0.108 postflop, not 0.067), multiway bluff*0.10 when extra tiers are present — with the HU rate all 24 flop/turn cells land within 0.6 points of real-bot truth (v1.8.324)');
+  ok(labSrc.indexOf("name: 'toppair-river-vs-rock-fold'") !== -1 &&
+     labSrc.indexOf("name: 'facing-2ndpair-rock-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-lag-flop-fold'") !== -1 &&
+     labSrc.indexOf("name: 'air-vs-maniac-turn-call'") !== -1 &&
+     labSrc.indexOf("name: 'draw-vs-rock-strongbet-call'") !== -1 &&
+     labSrc.indexOf("name: 'multiway-weakpair-maniac-behind-fold'") !== -1,
+    'the lab re-decides nine spots on the corrected prices: top pair river vs the Rock folds (truth 31.1% vs a 33% need), second pair flop vs the Rock folds (~20% vs 33%), air flop vs the LAG folds (truth 30.4% vs a 33% call line), air turn vs the Maniac/LAG and weak pair turn vs the LAG call (truths 32.8%/30.1%/31.2% vs a 28% line), the nut flush draw vs the Rock\'s strong turn bet calls (truth 37.4% raw, 32.8% realized vs 30%), and the multiway weak pair behind the Maniac folds (multiway truth 22.0% vs a 22.2% need) (v1.8.324)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
