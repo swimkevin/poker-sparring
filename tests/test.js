@@ -99,6 +99,8 @@ function hand(str) {
   ok(m0 === m0b, 'multiway estimator is deterministic per hand (seeded)');
   var mCaller = EQ.estimateEquityVsBettingRangeMulti(hero2p, boardQ, 0.20, 0.02, [3]);
   ok(mCaller > 0.11 && mCaller < 0.17, 'second pair vs Rock + tier-3 caller ~14% (real-bot truth 13.2% — the old 19.5% "probe truth" was the old model\'s own output, per the v1.8.311 lesson; the v1.8.324 branch-order fix moves the quote 20% -> 14% onto truth), got ' + mCaller.toFixed(3));
+  var topMulti = EQ.estimateEquityVsBettingRangeMulti(hand('Qs 8h'), boardQ, 0.20, 0.02, [0]);
+  ok(topMulti > 0.35 && topMulti < 0.38, 'top pair vs Rock + random caller ~37% (real-bot truth 34.4% — the v1.8.326 fix prices the bettor on multiway equity vs min(3, liveOpp) opponents, moving the quote 39% -> 37%; the residual 2.5 points is the eq1-universe follow-up), got ' + topMulti.toFixed(3));
   var weakManiac = EQ.estimateEquityVsBettingRangeMulti(hand('5s 9h'), boardQ, 0.95, 0.55, [0]);
   ok(weakManiac > 0.18 && weakManiac < 0.26, 'weak pair vs Maniac + random behind ~22% (real-bot multiway truth 22.0% on the lab board — the old 31.0% "probe truth" was the old model\'s own output; the v1.8.324 fix moves the quote 31% -> 22% onto truth), got ' + weakManiac.toFixed(3));
   var river2p = EQ.estimateEquityVsBettingRangeMulti(hero2p, hand('Qd 7h 2s 5c 9h'), 0.20, 0.02, [3]);

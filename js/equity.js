@@ -368,6 +368,7 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
   hole.forEach(function (c) { heroKnown[_key(c)] = 1; });
   var betLine = 0.62 - aggression * 0.22 + (river ? 0.04 : 0);
   var bluffP = bluff * ((extraTiers || []).length ? 0.10 : (0.22 + bluff * 0.25)) * (river ? 1 : 0.55);
+  var nOpp = Math.min(3, (extraTiers || []).length + 1);
   var holdings = [];
   var pBet = [];
   if (river) {
@@ -408,18 +409,23 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
         var rem = [];
         for (var k = 0; k < rest.length; k++) if (k !== i2 && k !== j2 && !heroKnown[_key(rest[k])]) rem.push(rest[k]);
         var wins = 0;
+        var useNOpp = (extraTiers || []).length ? nOpp : 1;
         for (var q = 0; q < 400; q++) {
-          var need = boardNeed + 2;
+          var need = boardNeed + 2 * useNOpp;
           for (var d = 0; d < need; d++) {
             var jj = d + Math.floor(rnd() * (rem.length - d));
             var tmp = rem[d]; rem[d] = rem[jj]; rem[jj] = tmp;
           }
           var board2 = community.concat(rem.slice(0, boardNeed));
-          var opp = [rem[boardNeed], rem[boardNeed + 1]];
           var hs = evaluate7Fast(h.concat(board2)).score;
-          var os = evaluate7Fast(opp.concat(board2)).score;
-          if (hs > os) wins += 1;
-          else if (hs === os) wins += 0.5;
+          var win = true, tie = false;
+          for (var o = 0; o < useNOpp; o++) {
+            var opp = [rem[boardNeed + o * 2], rem[boardNeed + o * 2 + 1]];
+            var os = evaluate7Fast(opp.concat(board2)).score;
+            if (os > hs) { win = false; break; }
+            if (os === hs) tie = true;
+          }
+          if (win) wins += tie ? 0.5 : 1;
         }
         var eq1b = wins / 400;
         var p2 = 0;

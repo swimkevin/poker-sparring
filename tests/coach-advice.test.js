@@ -1303,8 +1303,8 @@ setTimeout(function () {
         'weak pair vs the Maniac\'s turn bet multiway folds quoting 19-25% (estimator 22%, truth 23.1%; v1.8.324: the old 31% call was the p=1 quote — the corrected price is below the 25% call line)');
       var topMultiRock = postflopVerdict([{ r: 12, s: 0 }, { r: 8, s: 1 }], 'rock', 'turn', 200, 500, Q725, 2000, 2000,
         [{ t: 'action', street: 'turn', player: 1, action: 'bet', bet: 200, pot: 700 }], 3);
-      ok(topMultiRock.advice === 'call' && quotedEq(topMultiRock) >= 36 && quotedEq(topMultiRock) <= 42,
-        'top pair vs the Rock\'s turn bet multiway quotes 36-42% (estimator 39%, truth 34.4% — the multi estimator overstates by ~4 points, the v1.8.317 follow-up: it still prices the bettor on HU eq1; v1.8.324: the old 57% was the p=1 quote)');
+      ok(topMultiRock.advice === 'call' && quotedEq(topMultiRock) >= 35 && quotedEq(topMultiRock) <= 38,
+        'top pair vs the Rock\'s turn bet multiway quotes 35-38% (estimator 37%, truth 34.4% — the v1.8.326 fix prices the bettor on multiway equity vs min(3, liveOpp) opponents, moving the quote 39% -> 37% toward truth; the residual 2.5 points is the eq1-universe follow-up, same as the 772 cell; v1.8.324: the old 57% was the p=1 quote)');
       var secondRiverRockMulti = postflopVerdict([{ r: 8, s: 0 }, { r: 7, s: 0 }], 'rock', 'river', 300, 800, Q7259, 2000, 2000,
         [{ t: 'action', street: 'river', player: 1, action: 'bet', bet: 300, pot: 800 },
          { t: 'action', street: 'river', player: 2, action: 'call', bet: 300, pot: 1100 }], 3);

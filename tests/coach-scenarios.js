@@ -1454,5 +1454,15 @@ console.log('\n112. v1.8.324: the generic betting-range price mirrors the bot\'s
     'the lab re-decides nine spots on the corrected prices: top pair river vs the Rock folds (truth 31.1% vs a 33% need), second pair flop vs the Rock folds (~20% vs 33%), air flop vs the LAG folds (truth 30.4% vs a 33% call line), air turn vs the Maniac/LAG and weak pair turn vs the LAG call (truths 32.8%/30.1%/31.2% vs a 28% line), the nut flush draw vs the Rock\'s strong turn bet calls (truth 37.4% raw, 32.8% realized vs 30%), and the multiway weak pair behind the Maniac folds (multiway truth 22.0% vs a 22.2% need) (v1.8.324)');
 }
 
+console.log('\n113. v1.8.326: the generic multiway estimator prices the bettor on multiway equity');
+{
+  ok(equitySrc.indexOf("var nOpp = Math.min(3, (extraTiers || []).length + 1);") !== -1 &&
+     equitySrc.indexOf("var useNOpp = (extraTiers || []).length ? nOpp : 1;") !== -1 &&
+     equitySrc.indexOf("if (win) wins += tie ? 0.5 : 1;") !== -1,
+    'the generic multiway estimator prices the bettor\'s decision on equity vs min(3, liveOpp) opponents on shared runouts — the bot decides on estimateEquity vs min(3, liveOpp), but the generic multi priced the bettor on HU eq1; v1.8.317 made the same change for the custom multi and deliberately left the generic out because its step model over-corrected (Rock top pair 28.9% vs a 37.1% truth) — with the branch order and the ramp in place the variant lands top pair 39% -> 37% (truth 34.4%) without disturbing the second-pair (14%) or weak-pair (22%) cells, and multi([]) still equals the heads-up estimator exactly (v1.8.326)');
+  ok(labSrc.indexOf("name: 'toppair-river-vs-rock-fold'") !== -1,
+    'no lab spot re-decides on the multiway-equity fix: the top-pair multiway call still clears its need (37% vs 28%) and the second-pair/weak-pair multiway folds are unchanged');
+}
+
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");
 process.exit(fail ? 1 : 0);
