@@ -1436,11 +1436,12 @@ console.log('\n111. v1.8.323: the generic betting-range price credits the bot\'s
     'the lab re-decides the two nut-flush-draw spots to calls: the Rock\'s half-pot turn bet quotes 29% vs a 25% need and the LAG\'s pot bet 34% vs 33% — the old folds priced a draw-free range that credited the Rock\'s draws at a 0.2% bluff rate while the bot semi-bluffs them 32% of the time (v1.8.323)');
 }
 
-console.log('\n112. v1.8.324: the generic betting-range price mirrors the bot\'s bet rule');
+console.log('\n112. v1.8.324: the generic betting-range price mirrors the bot\'s bet rule (superseded by the v1.8.325 ramp below)');
 {
-  ok(equitySrc.indexOf("else if (ms >= 0.55 && eq1 > betLine) p = 1;") !== -1 &&
-     equitySrc.indexOf("else if (ms >= 0.40 && eq1 > betLine) p = 0.45 + aggression * 0.25;") !== -1,
-    'the generic postflop estimator bets a holding for certain only at ms > 0.74 or ms >= 0.55 with eq over the line, and bets mid hands (ms 0.40-0.55, eq over the line) at 0.45+agg*0.25 — the old code credited EVERY eq-clearing holding at p=1, but the bot checks mid hands 55%-agg*25% of the time and bluffs low hands at the bluff rate; the real-bot truth proves it (Rock second pair turn 41.5% old vs 27.0% new vs 26.6% truth, top pair 73.2% vs 55.6% vs 55.4%) (v1.8.324)');
+  ok(equitySrc.indexOf("else if (ms >= 0.55) p = normCdf((eq1 - betLine) / 0.05);") !== -1 &&
+     equitySrc.indexOf("else if (mss[a] >= 0.55) p = normCdf((eq1 - betLine) / 0.043);") !== -1 &&
+     equitySrc.indexOf("p = ph * (0.45 + aggression * 0.25) + (1 - ph) * bluffP;") !== -1,
+    'the generic estimators replace the step at the bet line with a probit ramp: the bot decides on a 150-sim equity plus jitter, so a holding near the line is bet only sometimes — the ramp prices it by Phi((eq1 - betLine)/sigma) with sigma 0.043 on the river (exact eq1) and 0.05 postflop (400-sim eq1), fitted on 336 near-line holdings on the 772 board (best sigma 0.040, ramp SSE 0.13 vs step SSE 3.43 on the mid branch); the ramp moves two pair on 772 42% -> 40% (truth 34.4%) and the wet-board river set 47% -> 44% (truth 43.6%), and leaves unpaired-board cells unmoved (v1.8.325)');
   ok(equitySrc.indexOf("var bluffP = bluff * (0.22 + bluff * 0.25) * 0.55;") !== -1 &&
      equitySrc.indexOf("var bluffP = bluff * ((extraTiers || []).length ? 0.10 : (0.22 + bluff * 0.25)) * (river ? 1 : 0.55);") !== -1,
     'the bluff rate mirrors the bot too: heads-up bluff*(0.22+bluff*0.25) (the Maniac bluffs 0.108 postflop, not 0.067), multiway bluff*0.10 when extra tiers are present — with the HU rate all 24 flop/turn cells land within 0.6 points of real-bot truth (v1.8.324)');

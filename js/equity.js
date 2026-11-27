@@ -21,6 +21,13 @@ function seededRnd(seed) {
   };
 }
 
+function normCdf(z) {
+  var t = 1 / (1 + 0.2316419 * Math.abs(z));
+  var d = 0.3989423 * Math.exp(-z * z / 2);
+  var p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return z > 0 ? 1 - p : p;
+}
+
 function cardSeed(cards, extra) {
   var seed = 987654321;
   cards.forEach(function (c) { seed = (seed * 31 + c.r * 7 + c.s) % 2147483647; });
@@ -245,8 +252,8 @@ function estimateEquityVsBettingRange(hole, community, aggression, bluff, nOpp) 
     var eq1 = tot ? sc / tot : 0;
     var p = 0;
     if (mss[a] > 0.74) p = 1;
-    else if (mss[a] >= 0.55 && eq1 > betLine) p = 1;
-    else if (mss[a] >= 0.40 && mss[a] < 0.55 && eq1 > betLine) p = 0.45 + aggression * 0.25;
+    else if (mss[a] >= 0.55) p = normCdf((eq1 - betLine) / 0.043);
+    else if (mss[a] >= 0.40 && mss[a] < 0.55) { var ph = normCdf((eq1 - betLine) / 0.043); p = ph * (0.45 + aggression * 0.25) + (1 - ph) * bluffP; }
     else if (mss[a] < 0.55) p = bluffP;
     if (p <= 0) continue;
     wTot += p;
@@ -301,12 +308,12 @@ function estimateEquityVsBettingRangePostflop(hole, community, aggression, bluff
       var eq1 = wins / 400;
       var p = 0;
       if (ms > 0.74) p = 1;
-      else if (ms >= 0.55 && eq1 > betLine) p = 1;
+      else if (ms >= 0.55) p = normCdf((eq1 - betLine) / 0.05);
       else if (ms < 0.55) {
         var ld = detectDraws(h, community);
         if (ld.flushDraw || ld.oesd) p = 0.25 + aggression * 0.35;
         else if (ld.gutshot) p = 0.12 + aggression * 0.2;
-        else if (ms >= 0.40 && eq1 > betLine) p = 0.45 + aggression * 0.25;
+        else if (ms >= 0.40) { var ph = normCdf((eq1 - betLine) / 0.05); p = ph * (0.45 + aggression * 0.25) + (1 - ph) * bluffP; }
         else p = bluffP;
       }
       pBet.push(p);
@@ -385,8 +392,8 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
       var eq1 = tot ? sc / tot : 0;
       var p = 0;
       if (mss[a] > 0.74) p = 1;
-      else if (mss[a] >= 0.55 && eq1 > betLine) p = 1;
-      else if (mss[a] >= 0.40 && mss[a] < 0.55 && eq1 > betLine) p = 0.45 + aggression * 0.25;
+      else if (mss[a] >= 0.55) p = normCdf((eq1 - betLine) / 0.043);
+      else if (mss[a] >= 0.40 && mss[a] < 0.55) { var ph = normCdf((eq1 - betLine) / 0.043); p = ph * (0.45 + aggression * 0.25) + (1 - ph) * bluffP; }
       else if (mss[a] < 0.55) p = bluffP;
       holdings.push(pool[a]);
       pBet.push(p);
@@ -417,12 +424,12 @@ function estimateEquityVsBettingRangeMulti(hole, community, aggression, bluff, e
         var eq1b = wins / 400;
         var p2 = 0;
         if (ms > 0.74) p2 = 1;
-        else if (ms >= 0.55 && eq1b > betLine) p2 = 1;
+        else if (ms >= 0.55) p2 = normCdf((eq1b - betLine) / 0.05);
         else if (ms < 0.55) {
           var ld2 = detectDraws(h, community);
           if (ld2.flushDraw || ld2.oesd) p2 = 0.25 + aggression * 0.35;
           else if (ld2.gutshot) p2 = 0.12 + aggression * 0.2;
-          else if (ms >= 0.40 && eq1b > betLine) p2 = 0.45 + aggression * 0.25;
+          else if (ms >= 0.40) { var ph2 = normCdf((eq1b - betLine) / 0.05); p2 = ph2 * (0.45 + aggression * 0.25) + (1 - ph2) * bluffP; }
           else p2 = bluffP;
         }
         pBet.push(p2);
@@ -1377,7 +1384,7 @@ function exploitLine(archetype) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     estimateEquity: estimateEquity, estimateEquityVsRange: estimateEquityVsRange,
-    seededRnd: seededRnd, cardSeed: cardSeed,
+    seededRnd: seededRnd, cardSeed: cardSeed, normCdf: normCdf,
     estimateEquityVsRangePostflop: estimateEquityVsRangePostflop,
     estimateEquityVsRangePostflopExact: estimateEquityVsRangePostflopExact,
     estimateEquityVsMadeRange: estimateEquityVsMadeRange,

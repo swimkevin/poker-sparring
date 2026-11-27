@@ -76,6 +76,7 @@ function hand(str) {
   ok(eq72 < 0.48, '72o vs random << 0.5, got ' + eq72.toFixed(3));
   var eqDraw = EQ.estimateEquity(hand('As Ks'), hand('Qs Js 2d'), 1, 300);
   ok(eqDraw > 0.45, 'nut flush draw + overs reasonable, got ' + eqDraw.toFixed(3));
+  ok(Math.abs(EQ.normCdf(0) - 0.5) < 0.001 && Math.abs(EQ.normCdf(1) - 0.8413) < 0.001 && Math.abs(EQ.normCdf(-1) - 0.1587) < 0.001, 'normCdf is the standard normal CDF (0 -> 0.5, 1 -> 0.841, -1 -> 0.159) — the v1.8.325 probit ramp prices near-line holdings by it');
 })();
 
 // ---------- betting-range estimator: seeded stream must not corrupt a cell (v1.8.279) ----------
@@ -85,7 +86,7 @@ function hand(str) {
   var gut2 = EQ.estimateEquityVsBettingRangePostflop(hand('Ts 8s'), hand('Qd Jd 7s'), 0.80, 0.35);
   ok(gut2 > 0.22 && gut2 < 0.34, 'gutshot suit variant ~28% too (seed-robust), got ' + gut2.toFixed(3));
   var twoPair772 = EQ.estimateEquityVsBettingRangePostflop(hand('5d 2s'), hand('7c 7d 2h 5s'), 0.20, 0.02);
-  ok(twoPair772 > 0.39 && twoPair772 < 0.44, 'two pair on 772 vs Rock ~42% (real-bot truth 34.4% — the old 47.2% "exact truth" was probe35 enumerating the OLD model exactly, not the bot; the v1.8.324 branch-order fix moves the quote 47% -> 42% toward truth, and the residual 7-point overshoot is the wet-board step/ramp open item: near-line one-pair hands the bot bets only sometimes are still credited at p=1/midP), got ' + twoPair772.toFixed(3));
+  ok(twoPair772 > 0.37 && twoPair772 < 0.41, 'two pair on 772 vs Rock ~40% (real-bot truth 34.4% — the old 47.2% "exact truth" was probe35 enumerating the OLD model exactly, not the bot; the v1.8.324 branch-order fix moves the quote 47% -> 42%, and the v1.8.325 probit ramp moves it 42% -> 40% toward truth; the residual 5.6-point overshoot is the eq1-universe follow-up — the bot prices its bet on equity vs a hero-inclusive opponent pool, the model on a hero-exclusive one), got ' + twoPair772.toFixed(3));
 })();
 
 // ---------- multiway betting-range estimator (v1.8.301, F8) ----------
