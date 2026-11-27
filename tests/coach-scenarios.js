@@ -24,6 +24,7 @@ const fs = require('fs');
 const src = fs.readFileSync(__dirname + '/../js/app.js', 'utf8');
 const equitySrc = fs.readFileSync(__dirname + '/../js/equity.js', 'utf8');
 const labSrc = fs.readFileSync(__dirname + '/../tests/solver-lab.js', 'utf8');
+const appSrc = fs.readFileSync(__dirname + '/../js/app.js', 'utf8');
 
 console.log('1. Limpers branch condition (v1.8.63 critical bug)');
 {
@@ -1469,6 +1470,16 @@ console.log('\n114. v1.8.327: Amogh\'s step is faithful — the ramp is refuted 
   ok(equitySrc.indexOf("var wantsBet = eq1 > betLine || ms > 0.74;") !== -1 &&
      equitySrc.indexOf("if (ms >= 0.3 && ms <= 0.6 && !isRiver && !hasDraw) return wantsBet ? 0.3 : 0;") !== -1,
     'customBetProb(\'amogh\') keeps its step at the bet line: a botDecide decomposition on Qd7d2s5c (200 reps per holding, hidden_files/amogh-ramp-probe.js) shows the step model already matches the bot class-for-class (draw 21.1% vs 21.5%, mid 28.1% vs 28.4%, weak 3.0% vs 2.4%) and quotes the weak-pair cell at 17.9% against a 17.6% real-bot truth — the v1.8.319 note attributed the old ~3-point gap to the missing ramp, but the v1.8.322 hero-inclusive eq1 fix closed it, and a fitted probit ramp (best sigma 0.056) quotes 23%, five points worse; the ramp belongs to the generic estimators, whose eq1 is a 400-sim estimate, not to Amogh, whose 100-sim hero-inclusive eq1 already sits on truth (v1.8.327)');
+}
+
+console.log('\n115. v1.8.328: river-large tight folds quote the price with the size tell');
+{
+  ok(appSrc.indexOf("} else if (tightBigBet && tell && table.street === 'river' && tell.size === 'large') {") !== -1 &&
+     appSrc.indexOf("but a large bet on the river from a tight player is a much stronger slice than his average bet, so that") !== -1,
+    'a tight player\'s large (0.8–1.2x pot) river bet folds with the price quoted and the size tell — v1.8.321 covered only overbets, so a priced river-large fold in the bare window (adjEq in (need+0.03, need+0.10]) folded with no numbers at all: top pair AQ vs the Rock\'s 0.85x-pot river bet quotes 36% vs a 31% need and folded bare (hidden_files/river-large-hunt-probe.js). The caveat uses the same \'overstates your chances here\' phrase the lab\'s quoted-vs-advice check already excepts, and the new lab spot toppair-river-large-vs-rock-fold pins it with expectWord (v1.8.328)');
+  ok(labSrc.indexOf("name: 'toppair-river-large-vs-rock-fold'") !== -1 &&
+     labSrc.indexOf("expectWord: 'overstates your chances here'") !== -1,
+    'the lab gains the river-large spot: top pair AQ vs the Rock\'s large river bet folds quoting 36% vs a 31% need (seeded eq 36.4%), with the caveat as the required word — the spot needs a flop-bet in the timeline, because a river-only timeline makes villainFirstRiverAggro true and the coach calls instead (loneRiverPriced)');
 }
 
 console.log("\n=== Results: " + pass + " passed, " + fail + " failed ===");

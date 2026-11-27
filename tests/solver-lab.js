@@ -1377,6 +1377,14 @@ var SPOTS = [
     hero: [C(12, 1), C(11, 3)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
     street: 'river', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'fold',
     timeline: betTimeline('river', 300, 400), grossCheck: true },
+  { name: 'toppair-river-large-vs-rock-fold', kind: 'facing', villain: 'rock',
+    hero: [C(12, 1), C(14, 1)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
+    street: 'river', potBefore: 400, bet: 340, heroStack: 2000, nLive: 2, expect: 'fold',
+    timeline: [
+      { t: 'action', street: 'flop', player: 1, action: 'bet', bet: 200, pot: 600 },
+      { t: 'action', street: 'flop', player: 0, action: 'call' },
+      { t: 'action', street: 'river', player: 1, action: 'bet', bet: 340, pot: 740 }
+    ], grossCheck: true, expectWord: 'overstates your chances here' },
   { name: 'overpair-river-vs-rock-call', kind: 'facing', villain: 'rock',
     hero: [C(13, 1), C(13, 3)], board: [C(12, 2), C(7, 1), C(2, 0), C(5, 3), C(9, 0)],
     street: 'river', potBefore: 400, bet: 300, heroStack: 2000, nLive: 2, expect: 'call',

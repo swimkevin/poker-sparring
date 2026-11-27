@@ -3,7 +3,7 @@
 
   function quiet(e) { if (typeof window !== 'undefined' && window.__psDebug) console.error(e); }
 
-  var APP_VERSION = '1.8.327';
+  var APP_VERSION = '1.8.328';
   try { if (/[?&]psdebug=1/.test(location.search)) window.__psDebug = true; } catch (e) { quiet(e); }
 
   var COACH_INTRO_KEY = 'ps_coach_intro_seen';
@@ -2799,6 +2799,8 @@
         guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
       } else if (tightBigBet && tell && tell.size === 'overbet') {
         guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — but an overbet this big is a much stronger slice than his average bet, so that ' + pct(adjEq) + ' overstates your chances here. Calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
+      } else if (tightBigBet && tell && table.street === 'river' && tell.size === 'large') {
+        guardPriced = ' You win about ' + pct(adjEq) + ' against every hand ' + vName + ' ' + guardSource + ' — but a large bet on the river from a tight player is a much stronger slice than his average bet, so that ' + pct(adjEq) + ' overstates your chances here. Calling ' + fmt(toCall) + ' to win ' + fmt(pot) + ' needs ' + pct(need2) + '.';
       }
     }
     if ((tightBigBet || riverBigValue) && !loneRiverPriced && !pricedEscape)
